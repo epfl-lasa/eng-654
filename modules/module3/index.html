@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>ENG-654 Module 3 — Inverse Kinematics</title>
+<style>
+:root{
+  color-scheme:dark;
+  --red:#e30613; --white:#ffffff; --black:#000000;
+  --font-primary:Arial,Helvetica,Verdana,sans-serif;
+  --font-secondary:"Space Grotesk",Arial,Helvetica,Verdana,sans-serif;
+  --font-heading:"Arial Black",Arial,Helvetica,Verdana,sans-serif;
+  --font-title:Impact,"Arial Black",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--black);color:var(--white);font-family:var(--font-primary)}
+button,input,select{font:inherit}
+.wrap{max-width:1500px;margin:auto;padding:18px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;gap:14px}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.main{grid-template-columns:minmax(0,1fr) 360px}
+.card,.panel{background:var(--black);border:1px solid var(--white);border-radius:0}
+.card{padding:14px}.panel{overflow:hidden}
+.muted{color:rgba(255,255,255,.66)}.small{font-size:.9rem}.hidden{display:none!important}
+.badge,.eyebrow{font-family:var(--font-secondary);font-weight:700;text-transform:uppercase;letter-spacing:.08rem;color:var(--red)}
+.badge{display:inline-block;padding:5px 9px;border:1px solid var(--red)}
+h1{font-family:var(--font-title);font-weight:400;text-transform:uppercase;line-height:.95;font-size:clamp(2.8rem,6vw,5.8rem);margin:.25em 0}
+h2,h3{font-family:var(--font-heading);font-weight:900}
+label{display:block;font-family:var(--font-secondary);font-weight:700;text-transform:uppercase;font-size:.78rem}
+input[type=text],input[type=number],select{
+ width:100%;margin-top:5px;padding:9px 10px;border:1px solid var(--white);border-radius:0;background:var(--black);color:var(--white)
+}
+input[type=range]{width:100%;accent-color:var(--red)}
+button{padding:9px 12px;border:1px solid var(--white);border-radius:0;background:var(--black);color:var(--white);cursor:pointer;
+ font-family:var(--font-secondary);font-weight:700;text-transform:uppercase}
+button:hover,button.active{background:var(--red);border-color:var(--red)}
+.metric{border:1px solid var(--white);padding:10px}.metric .value{font-size:1.2rem;font-variant-numeric:tabular-nums}
+.viewport-wrap{position:relative}#viewport{height:680px;width:100%}
+.overlay{position:absolute;left:12px;top:12px;background:rgba(0,0,0,.88);border:1px solid var(--white);padding:8px 10px;font-size:.9rem}
+.bottom{top:auto;bottom:12px;max-width:92%;color:rgba(255,255,255,.7)}
+.toggle{display:inline-flex;gap:7px;align-items:center;font-family:var(--font-secondary);font-weight:700;text-transform:uppercase;font-size:.75rem}
+.callout{border-left:4px solid var(--red);padding:10px 12px;border-top:1px solid var(--white);border-right:1px solid var(--white);border-bottom:1px solid var(--white)}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{border-bottom:1px solid rgba(255,255,255,.28);padding:7px 8px;text-align:left}
+th{font-family:var(--font-secondary);text-transform:uppercase;font-size:.75rem}
+tr.selected{outline:1px solid var(--red)}
+@media(max-width:1000px){.main{grid-template-columns:1fr}}
+@media(max-width:700px){.g3{grid-template-columns:1fr}#viewport{height:520px}}
+
+
+/* ---------- Shared ENG-654 compact module layout ---------- */
+#appView.hidden{display:none!important}
+h1.module-title{
+  max-width:none;
+  margin:.25rem 0 .35rem;
+  font-family:var(--font-title,Impact,"Arial Black",Arial,sans-serif);
+  font-size:clamp(1.85rem,2.8vw,2.8rem);
+  font-weight:400;
+  line-height:1;
+  white-space:nowrap;
+  text-transform:uppercase;
+}
+.module-collapsible{
+  border:1px solid var(--white,#fff);
+  background:var(--black,#000);
+}
+.module-collapsible > summary{
+  list-style:none;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  min-height:42px;
+  padding:10px 12px;
+  cursor:pointer;
+  color:var(--white,#fff);
+  font-family:var(--font-heading,"Arial Black",Arial,sans-serif);
+  font-size:.94rem;
+  font-weight:900;
+  line-height:1.1;
+  white-space:nowrap;
+}
+.module-collapsible > summary::-webkit-details-marker{display:none}
+.module-collapsible > summary::after{
+  content:"+";
+  flex:0 0 auto;
+  color:var(--red,#e30613);
+  font-family:var(--font-secondary,"Space Grotesk",Arial,sans-serif);
+  font-size:1.1rem;
+  font-weight:700;
+}
+.module-collapsible[open] > summary{
+  border-bottom:1px solid var(--white,#fff);
+}
+.module-collapsible[open] > summary::after{content:"−"}
+.module-collapsible-body{padding:12px}
+.module-side-stack{
+  display:grid;
+  gap:10px;
+  align-content:start;
+}
+.module-joint-preview .module-collapsible-body{
+  padding:9px 11px;
+}
+.module-joint-preview .joint-row,
+.module-joint-preview .card{
+  padding-top:4px;
+  padding-bottom:4px;
+}
+.module-joint-preview .small{
+  font-size:.72rem;
+}
+.module-joint-preview input[type="range"]{
+  margin:1px 0;
+}
+.module-joint-preview #jointControls,
+.module-joint-preview #sliders,
+.module-joint-preview #initialSliders{
+  max-height:none !important;
+  overflow:visible !important;
+}
+.module-joint-preview #sliders,
+.module-joint-preview #initialSliders{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:6px !important;
+}
+.compact-file-grid{
+  margin:12px 0;
+}
+@media(max-width:900px){
+  h1.module-title{
+    font-size:clamp(1.65rem,6vw,2.45rem);
+    white-space:normal;
+  }
+  .module-collapsible > summary{
+    white-space:normal;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<main id="appView">
+<p class="eyebrow">Interactive Simulation · Module 03</p>
+<h1 class="module-title">Inverse Kinematics Visualization</h1>
+<p class="muted">
+    Prescribe a desired end-effector pose, upload multiple candidate joint solutions, and compare how each configuration realizes the same Cartesian target.
+  </p>
+<details class="module-collapsible compact-file-grid" open=""><summary>Files &amp; inputs</summary><div class="module-collapsible-body">
+<label>URDF<input accept=".urdf,.xml" id="urdfInput" type="file"/></label>
+<label>Visual mesh files<input accept=".stl,.dae,model/stl,model/vnd.collada+xml" id="visualInput" multiple="" type="file"/></label>
+<label>IK solutions CSV<input accept=".csv,text/csv" id="ikCsv" type="file"/></label>
+</div></details>
+<div class="grid main">
+<section>
+<div class="panel viewport-wrap">
+<div id="viewport"></div>
+<div class="overlay"><span id="status">Load robot and IK solutions</span></div>
+<div class="overlay bottom">URDF materials = candidate robots · RGB = target/EE frames · Orange = joint axes</div>
+</div>
+<div class="row" style="margin-top:12px">
+<label class="toggle"><input checked="" id="showTarget" type="checkbox"/>Target frame</label>
+<label class="toggle"><input checked="" id="showSolutionFrames" type="checkbox"/>Solution EE frames</label>
+<button id="showAll">Show all</button><button id="hideAll">Hide all</button><button id="invert">Invert</button><button id="onlySelected">Only selected</button><button id="fitBtn">Fit camera</button>
+</div>
+</section>
+<aside class="module-side-stack">
+<details class="module-collapsible" open=""><summary>Module purpose</summary><div class="module-collapsible-body">
+
+<p class="small muted">Investigate multiplicity in inverse kinematics: several joint configurations may correspond to the same end-effector pose. Compare them geometrically and numerically.</p>
+</div></details>
+<details class="module-collapsible" open=""><summary>End-effector &amp; display</summary><div class="module-collapsible-body">
+<label>End-effector link<select id="eeLink"></select></label>
+<label style="margin-top:10px">Ghost opacity<input id="opacity" max=".8" min=".08" step=".02" type="range" value=".28"/></label>
+</div></details>
+<div class="grid" style="grid-template-columns:repeat(3,1fr)">
+<div class="metric"><div class="small muted">Loaded</div><div class="value" id="loadedCount">0</div></div>
+<div class="metric"><div class="small muted">Visible</div><div class="value" id="visibleCount">0</div></div>
+<div class="metric"><div class="small muted">Selected</div><div class="value" id="selectedCount">—</div></div>
+</div>
+</aside>
+</div>
+<details class="module-collapsible" open=""><summary>Target pose</summary><div class="module-collapsible-body">
+
+<div class="grid g3">
+<label>x [m]<input id="tx" step=".01" type="number" value=".4"/></label>
+<label>y [m]<input id="ty" step=".01" type="number" value="0"/></label>
+<label>z [m]<input id="tz" step=".01" type="number" value=".6"/></label>
+<label>Roll [deg]<input id="tr" step="1" type="number" value="0"/></label>
+<label>Pitch [deg]<input id="tp" step="1" type="number" value="0"/></label>
+<label>Yaw [deg]<input id="tyaw" step="1" type="number" value="0"/></label>
+</div>
+<button id="applyTarget" style="margin-top:10px">Apply target</button>
+</div></details>
+<details class="module-collapsible" open=""><summary>IK solution visibility</summary><div class="module-collapsible-body">
+
+<div class="row" id="toggles" style="margin:10px 0"></div>
+<div style="overflow:auto">
+<table><thead><tr><th>Show</th><th>#</th><th>Position error [mm]</th><th>Orientation error [deg]</th></tr></thead><tbody id="solutionTable"></tbody></table>
+</div>
+</div></details>
+</main>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/+esm';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js/+esm';
+import { STLLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/STLLoader.js/+esm';
+import { ColladaLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/ColladaLoader.js/+esm';
+import { mergeGeometries } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/utils/BufferGeometryUtils.js/+esm';
+
+const $=id=>document.getElementById(id);
+const DEFAULT_DATA_ROOT='../../assets/data';
+const DEFAULT_URDF_NAME='iiwa7_free_joints.urdf';
+const DEFAULT_IK_NAME='iiwa7_IK_q3_030deg.csv';
+const DEFAULT_STL_NAMES=Array.from({length:8},(_,i)=>`link_${i}.stl`);
+
+async function fetchDefaultFile(url,name,type){
+ const response=await fetch(url);
+ if(!response.ok)throw new Error(`Unable to load ${name} (${response.status}).`);
+ return new File([await response.blob()],name,{type});
+}
+
+function init(){
+ const viewport=$('viewport'),scene=new THREE.Scene();scene.background=new THREE.Color(0x000000);
+ const camera=new THREE.PerspectiveCamera(42,1,.001,1000);camera.up.set(0,0,1);camera.position.set(2.1,-2.1,1.7);
+ const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));viewport.appendChild(renderer.domElement);
+ const orbit=new OrbitControls(camera,renderer.domElement);orbit.enableDamping=true;orbit.target.set(0,0,.7);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x111111,2));const dl=new THREE.DirectionalLight(0xffffff,2.5);dl.position.set(3,-3,5);scene.add(dl);
+ const grid=new THREE.GridHelper(4,40,0x666666,0x2b2b2b);grid.rotation.x=Math.PI/2;scene.add(grid);scene.add(new THREE.AxesHelper(.25));
+ const loader=new STLLoader(),colladaLoader=new ColladaLoader(),targetGroup=new THREE.Group(),solutionRoot=new THREE.Group();scene.add(targetGroup,solutionRoot);
+
+ const state={robot:null,urdfText:'',files:new Map(),cache:new Map(),movable:[],solutions:[],robots:[],visibility:[],ee:null,target:{p:new THREE.Vector3(.4,0,.6),q:new THREE.Quaternion()},selected:-1};
+
+ function nums(s,d=[]){return s?s.trim().split(/\s+/).map(Number):[...d]}
+ function base(p){return String(p||'').replace(/\\/g,'/').split('/').pop().toLowerCase()}
+ function org(n){const o=n?.querySelector(':scope > origin');return{xyz:nums(o?.getAttribute('xyz'),[0,0,0]),rpy:nums(o?.getAttribute('rpy'),[0,0,0])}}
+ function om(o){const[x,y,z]=o.xyz,[r,p,yaw]=o.rpy;return new THREE.Matrix4().makeTranslation(x,y,z).multiply(new THREE.Matrix4().makeRotationZ(yaw)).multiply(new THREE.Matrix4().makeRotationY(p)).multiply(new THREE.Matrix4().makeRotationX(r))}
+ function stat(n,o){n.matrixAutoUpdate=false;n.matrix.copy(om(o))}
+ function parse(t){const d=new DOMParser().parseFromString(t,'application/xml'),R=d.querySelector('robot');if(!R)throw Error('Invalid URDF');
+ const materialTable=new Map();R.querySelectorAll(':scope > material').forEach(m=>{const rgba=m.querySelector(':scope > color')?.getAttribute('rgba');if(rgba&&m.getAttribute('name'))materialTable.set(m.getAttribute('name'),nums(rgba))});
+ const links=new Map();R.querySelectorAll(':scope > link').forEach(l=>{const visuals=[...l.querySelectorAll(':scope > visual')].map(v=>{const m=v.querySelector('geometry > mesh');if(!m)return null;let color=null;const mat=v.querySelector(':scope > material');if(mat){const inline=mat.querySelector(':scope > color')?.getAttribute('rgba');if(inline)color=nums(inline);else if(materialTable.has(mat.getAttribute('name')))color=materialTable.get(mat.getAttribute('name'))}return{filename:m.getAttribute('filename'),scale:nums(m.getAttribute('scale'),[1,1,1]),origin:org(v),color}}).filter(Boolean);links.set(l.getAttribute('name'),{name:l.getAttribute('name'),visuals})});const joints=[...R.querySelectorAll(':scope > joint')].map(j=>({name:j.getAttribute('name'),type:j.getAttribute('type')||'fixed',parent:j.querySelector('parent')?.getAttribute('link'),child:j.querySelector('child')?.getAttribute('link'),origin:org(j),axis:nums(j.querySelector('axis')?.getAttribute('xyz'),[1,0,0])}));const ch=new Set(joints.map(j=>j.child)),root=[...links.keys()].find(n=>!ch.has(n)),out=new Map();joints.forEach(j=>{if(!out.has(j.parent))out.set(j.parent,[]);out.get(j.parent).push(j)});const depth=new Map([[root,0]]);(function w(n){for(const j of out.get(n)||[]){depth.set(j.child,(depth.get(n)||0)+1);w(j.child)}})(root);const leaves=[...links.keys()].filter(n=>!out.has(n)).sort((a,b)=>(depth.get(b)||0)-(depth.get(a)||0));return{name:R.getAttribute('name')||'robot',links,joints,root,out,depth,leaves}}
+ function flattenCollada(text){const root=colladaLoader.parse(text,'').scene;root.updateMatrixWorld(true);const parts=[];root.traverse(o=>{if(!o.isMesh||!o.geometry?.getAttribute('position'))return;let g=o.geometry.clone();g.applyMatrix4(o.matrixWorld);for(const n of Object.keys(g.attributes))if(n!=='position')g.deleteAttribute(n);g.morphAttributes={};g.clearGroups();if(g.index)g=g.toNonIndexed();parts.push(g)});if(!parts.length)throw Error('DAE file contains no mesh geometry');const g=parts.length===1?parts[0]:mergeGeometries(parts,false);if(!g)throw Error('Unable to combine DAE mesh geometry');g.computeVertexNormals();g.computeBoundingSphere();return g}
+ async function geom(s){const k=base(s.filename);if(state.cache.has(k))return state.cache.get(k);const f=state.files.get(k);if(!f)return null;const g=/\.dae$/i.test(f.name||k)?flattenCollada(await f.text()):loader.parse(await f.arrayBuffer());if(!g.getAttribute('normal'))g.computeVertexNormals();state.cache.set(k,g);return g}
+ function solutionMaterial(rgba){
+   const c=rgba||[0.72,0.72,0.75,1];
+   const baseAlpha=Number.isFinite(c[3])?c[3]:1;
+   const opacity=Math.min(baseAlpha,+$('opacity').value);
+   return new THREE.MeshPhysicalMaterial({
+     color:new THREE.Color(c[0],c[1],c[2]),
+     transparent:true,opacity,depthWrite:false,
+     roughness:.35,metalness:.08,side:THREE.DoubleSide
+   });
+ }
+ function move(n,j,v){n.position.set(0,0,0);n.quaternion.identity();const a=new THREE.Vector3(...j.axis).normalize();if(j.type==='revolute'||j.type==='continuous')n.quaternion.setFromAxisAngle(a,v);else if(j.type==='prismatic')n.position.copy(a.multiplyScalar(v))}
+ async function build(q,index){
+   const root=new THREE.Group(),links=new Map(),motions=new Map();for(const l of state.robot.links.values())links.set(l.name,new THREE.Group());
+   function attach(name,parent){const node=links.get(name);parent.add(node);for(const j of state.robot.out.get(name)||[]){const jf=new THREE.Group();stat(jf,j.origin);node.add(jf);
+     const axisHelper=new THREE.ArrowHelper(new THREE.Vector3(...j.axis).normalize(),new THREE.Vector3(),.10,0xff8c00,.022,.013);
+     axisHelper.userData.jointAxis=true; jf.add(axisHelper);
+     const mn=new THREE.Group();jf.add(mn);motions.set(j.name,mn);const k=state.movable.findIndex(x=>x.name===j.name);move(mn,j,k>=0?q[k]:0);attach(j.child,mn)}}
+   attach(state.robot.root,root);
+   for(const l of state.robot.links.values())for(const s of l.visuals){const g=await geom(s);if(!g)continue;const vf=new THREE.Group();stat(vf,s.origin);links.get(l.name).add(vf);const mat=solutionMaterial(s.color);const mesh=new THREE.Mesh(g,mat);mesh.scale.set(...s.scale);vf.add(mesh)}
+   const frame=new THREE.AxesHelper(.11);links.get(state.ee)?.add(frame);frame.visible=$('showSolutionFrames').checked;root.updateMatrixWorld(true);return{root,links,index}
+ }
+ function pose(r){const n=r.links.get(state.ee);if(!n)return null;n.updateWorldMatrix(true,false);const p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3();n.matrixWorld.decompose(p,q,s);return{p,q}}
+ function applyTarget(){state.target.p.set(+$('tx').value,+$('ty').value,+$('tz').value);const e=new THREE.Euler(THREE.MathUtils.degToRad(+$('tr').value),THREE.MathUtils.degToRad(+$('tp').value),THREE.MathUtils.degToRad(+$('tyaw').value),'XYZ');state.target.q.setFromEuler(e);targetGroup.clear();targetGroup.position.copy(state.target.p);targetGroup.quaternion.copy(state.target.q);const a=new THREE.AxesHelper(.18);targetGroup.add(a);recompute()}
+ function err(r){const p=pose(r);if(!p)return{dp:NaN,dr:NaN};const dp=p.p.distanceTo(state.target.p),dot=Math.min(1,Math.abs(p.q.dot(state.target.q)));return{dp:dp*1000,dr:THREE.MathUtils.radToDeg(2*Math.acos(dot))}}
+ function recompute(){renderTable()}
+ function renderToggles(){const b=$('toggles');b.innerHTML='';state.robots.forEach((r,i)=>{const lab=document.createElement('label');lab.className='toggle';const c=document.createElement('input');c.type='checkbox';c.checked=state.visibility[i]!==false;c.onchange=()=>{state.visibility[i]=c.checked;r.root.visible=c.checked;renderCounts()};lab.append(c,document.createTextNode(`Solution ${i+1}`));b.appendChild(lab)});renderCounts()}
+ function renderCounts(){$('loadedCount').textContent=state.robots.length;$('visibleCount').textContent=state.visibility.filter(Boolean).length;$('selectedCount').textContent=state.selected>=0?state.selected+1:'—'}
+ function renderTable(){const tb=$('solutionTable');tb.innerHTML='';state.robots.forEach((r,i)=>{const e=err(r),tr=document.createElement('tr');if(i===state.selected)tr.classList.add('selected');const td0=document.createElement('td'),c=document.createElement('input');c.type='checkbox';c.checked=state.visibility[i]!==false;c.onchange=()=>{state.visibility[i]=c.checked;r.root.visible=c.checked;renderCounts()};td0.appendChild(c);tr.append(td0);for(const x of [i+1,e.dp.toFixed(3),e.dr.toFixed(4)]){const td=document.createElement('td');td.textContent=x;tr.append(td)}tr.onclick=()=>select(i);tb.append(tr)})}
+ function select(i){state.selected=i;state.robots.forEach((r,k)=>r.root.traverse(o=>{if(o.material&&'opacity'in o.material){o.material.opacity=k===i?Math.min(.75,+$('opacity').value*1.8):+$('opacity').value}}));renderCounts();renderTable()}
+ function setAll(v){state.visibility=state.visibility.map(()=>v);state.robots.forEach(r=>r.root.visible=v);renderToggles();renderTable()}
+ async function rebuild(){solutionRoot.clear();state.robots=[];state.visibility=state.solutions.map(()=>true);for(let i=0;i<state.solutions.length;i++){const r=await build(state.solutions[i],i);solutionRoot.add(r.root);state.robots.push(r)}renderToggles();renderTable();fit()}
+ async function prep(){if(!state.urdfText)return;state.robot=parse(state.urdfText);state.movable=state.robot.joints.filter(j=>['revolute','continuous','prismatic'].includes(j.type));state.ee=state.robot.leaves[0];$('eeLink').innerHTML='';[...state.robot.links.keys()].sort((a,b)=>(state.robot.depth.get(a)||0)-(state.robot.depth.get(b)||0)).forEach(n=>{const o=document.createElement('option');o.value=o.textContent=n;$('eeLink').appendChild(o)});$('eeLink').value=state.ee;if(state.solutions.length)await rebuild();$('status').textContent=`${state.robot.name} loaded`}
+ function parseCsv(t){const rows=t.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map(l=>l.split(/[,\t;]+/).map(Number)).filter(r=>r.length===state.movable.length&&r.every(Number.isFinite));if(!rows.length)throw Error('No valid IK rows');return rows}
+ function fit(){const b=new THREE.Box3().expandByObject(solutionRoot).expandByObject(targetGroup);if(b.isEmpty())return;const s=b.getBoundingSphere(new THREE.Sphere()),d=Math.max(.3,s.radius)/Math.sin(THREE.MathUtils.degToRad(camera.fov)/2)*1.25;camera.position.copy(s.center).add(new THREE.Vector3(1.2,-1.3,.8).normalize().multiplyScalar(d));orbit.target.copy(s.center)}
+ $('urdfInput').onchange=async e=>{const f=e.target.files[0];if(f){state.urdfText=await f.text();await prep()}};
+ $('visualInput').onchange=async e=>{state.files.clear();[...e.target.files].forEach(f=>state.files.set(f.name.toLowerCase(),f));state.cache.clear();if(state.robot&&state.solutions.length)await rebuild()};
+ $('ikCsv').onchange=async e=>{try{state.solutions=parseCsv(await e.target.files[0].text());await rebuild();$('status').textContent=`${state.solutions.length} IK solutions loaded`}catch(err){$('status').textContent=err.message}};
+ $('applyTarget').onclick=applyTarget;$('eeLink').onchange=async e=>{state.ee=e.target.value;if(state.solutions.length)await rebuild()};
+ $('opacity').oninput=()=>state.robots.forEach((r,i)=>r.root.traverse(o=>{if(o.material&&'opacity'in o.material)o.material.opacity=i===state.selected?Math.min(.75,+$('opacity').value*1.8):+$('opacity').value}));
+ $('showTarget').onchange=e=>targetGroup.visible=e.target.checked;
+ $('showSolutionFrames').onchange=e=>state.robots.forEach(r=>{const n=r.links.get(state.ee);if(n)for(const c of n.children)if(c.type==='AxesHelper')c.visible=e.target.checked});
+ $('showAll').onclick=()=>setAll(true);$('hideAll').onclick=()=>setAll(false);$('invert').onclick=()=>{state.visibility=state.visibility.map(v=>!v);state.robots.forEach((r,i)=>r.root.visible=state.visibility[i]);renderToggles();renderTable()};$('onlySelected').onclick=()=>{if(state.selected>=0){state.visibility=state.visibility.map((_,i)=>i===state.selected);state.robots.forEach((r,i)=>r.root.visible=state.visibility[i]);renderToggles();renderTable()}};
+ $('fitBtn').onclick=fit;
+ async function loadDefaultAssets(){
+  try{
+   const [files,urdfResponse,ikResponse]=await Promise.all([
+    Promise.all(DEFAULT_STL_NAMES.map(name=>
+     fetchDefaultFile(`${DEFAULT_DATA_ROOT}/visual/${name}`,name,'model/stl')
+    )),
+    fetch(`${DEFAULT_DATA_ROOT}/urdf/${DEFAULT_URDF_NAME}`),
+    fetch(`${DEFAULT_DATA_ROOT}/mod3/${DEFAULT_IK_NAME}`)
+   ]);
+   if(!urdfResponse.ok)throw new Error(`Unable to load ${DEFAULT_URDF_NAME} (${urdfResponse.status}).`);
+   if(!ikResponse.ok)throw new Error(`Unable to load ${DEFAULT_IK_NAME} (${ikResponse.status}).`);
+   state.files.clear();files.forEach(file=>state.files.set(file.name.toLowerCase(),file));
+   state.cache.clear();
+   state.urdfText=await urdfResponse.text();
+   await prep();
+   state.solutions=parseCsv(await ikResponse.text());
+   await rebuild();
+
+   const firstPose=state.robots.length?pose(state.robots[0]):null;
+   if(firstPose){
+    const euler=new THREE.Euler().setFromQuaternion(firstPose.q,'XYZ');
+    $('tx').value=firstPose.p.x.toFixed(6);
+    $('ty').value=firstPose.p.y.toFixed(6);
+    $('tz').value=firstPose.p.z.toFixed(6);
+    $('tr').value=THREE.MathUtils.radToDeg(euler.x).toFixed(6);
+    $('tp').value=THREE.MathUtils.radToDeg(euler.y).toFixed(6);
+    $('tyaw').value=THREE.MathUtils.radToDeg(euler.z).toFixed(6);
+    applyTarget();
+   }
+   $('status').textContent=
+    `${state.robot.name} loaded · ${state.solutions.length} bundled IK solutions`;
+  }catch(err){$('status').textContent=`Default asset load failed: ${err.message}`}
+ }
+ function resize(){renderer.setSize(viewport.clientWidth,viewport.clientHeight,false);camera.aspect=viewport.clientWidth/viewport.clientHeight;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(viewport);
+ function anim(){requestAnimationFrame(anim);orbit.update();renderer.render(scene,camera)}applyTarget();resize();anim()
+ loadDefaultAssets();
+}
+init();
+</script>
+</body></html>

@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Exponentials, PoE, and URDF — ENG-654</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/layouts.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/reveal.css">
+  <link rel="stylesheet" href="../css/navigation.css">
+  <link rel="stylesheet" href="../css/viz.css">
+  <link rel="stylesheet" href="../css/lecture-02.css">
+  <script>
+    window.MathJax = { tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] } };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script type="importmap">
+  { "imports": { "three": "../vendor/three/build/three.module.js", "three/addons/": "../vendor/three/examples/jsm/" } }
+  </script>
+</head>
+<body class="mode-deck narrative-lecture lecture-02">
+  <main id="deck" class="deck">
+
+    <section class="slide title-slide">
+      <div class="title-slide-content">
+        <p class="eyebrow">ENG-654 · Session 1 · Lecture 2</p>
+        <h1 class="course-title lecture-02-title">Exponentials, PoE &amp; URDF</h1>
+        <p class="subtitle">How does one geometric motion become a robot model that mathematics and simulation can share?</p>
+        <p class="lecture-promise">We will move from instantaneous motion, to finite rigid motion, to Product of Exponentials—and then read the same kinematic ideas directly from URDF.</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">The narrative</p>
+      <h2 class="slide-title">Three languages answer three different questions</h2>
+      <p class="slide-subtitle">The lecture follows one custom_3R robot through geometry, kinematics, and simulation.</p>
+      <div class="representation-path">
+        <article class="representation-node"><span>1</span><strong>Screw motion</strong><p>What instantaneous motion can one joint generate?</p></article>
+        <div class="representation-arrow">→</div>
+        <article class="representation-node"><span>2</span><strong>PoE</strong><p>How do joint motions compose into forward kinematics?</p></article>
+        <div class="representation-arrow">→</div>
+        <article class="representation-node"><span>3</span><strong>URDF</strong><p>How is the robot communicated to software?</p></article>
+      </div>
+      <div class="clean-callout"><strong>Central idea:</strong> the exponential map is the bridge from velocity geometry to finite transformations.</div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act I · Notation before use</p>
+      <h2 class="slide-title">A motion has a frame, a point, and a rate</h2>
+      <p class="slide-subtitle">These symbols will be used throughout the lecture; each has one job.</p>
+      <div class="notation-grid">
+        <div class="definition"><strong>Frames and configuration</strong><p>\(W\): fixed world frame.</p><p>\(B\): moving body frame.</p><p>\(q_i\): coordinate of joint \(i\).</p><p>\(\theta\): rotation travelled about an axis.</p></div>
+        <div class="definition"><strong>Velocity quantities</strong><p>\(\boldsymbol\omega\in\mathbb R^3\): angular-velocity axis and rate.</p><p>\(\mathbf v\in\mathbb R^3\): linear component of a rigid-body twist.</p><p>\(\boldsymbol\xi=(\boldsymbol\omega,\mathbf v)\in\mathbb R^6\): twist coordinates.</p></div>
+        <div class="definition"><strong>Operators</strong><p>\([\boldsymbol\omega]_\times\): skew matrix satisfying \([\boldsymbol\omega]_\times\mathbf p=\boldsymbol\omega\times\mathbf p\).</p><p>\(\widehat{\boldsymbol\xi}\in\mathfrak{se}(3)\): matrix form of a twist.</p><p>\(\exp(\cdot)\): matrix exponential.</p></div>
+        <div class="definition"><strong>Finite pose</strong><p>\(R\in SO(3)\): orientation.</p><p>\(\mathbf t\in\mathbb R^3\): translation.</p><p>\(T\in SE(3)\): homogeneous transformation.</p><p>\(M\): home pose when all \(q_i=0\).</p></div>
+      </div>
+    </section>
+
+    <section class="slide interactive-slide">
+      <p class="slide-kicker">Act I · A 2D warm-up</p>
+      <h2 class="slide-title">Constant angular velocity naturally produces an exponential</h2>
+      <p class="slide-subtitle">Before using a \(3\times3\) or \(4\times4\) matrix exponential, follow one point and one frame rotating in the plane.</p>
+      <div class="layout-40-60">
+        <div>
+          <p>Define the \(90^\circ\) rotation generator</p>
+          <div class="equation">\[J=\begin{bmatrix}0&-1\\1&0\end{bmatrix},\qquad J\mathbf p=\hat z\times\mathbf p.\]</div>
+          <div class="reveal-children">
+            <p><strong>Instantaneous motion:</strong> \(\dot{\mathbf p}(t)=\omega J\mathbf p(t)\).</p>
+            <p><strong>Accumulate small rotations:</strong> \(\mathbf p(t+\Delta t)\approx(I+\omega J\Delta t)\mathbf p(t)\).</p>
+            <p><strong>Take the continuous limit:</strong></p>
+          </div>
+          <div class="equation">\[\mathbf p(t)=e^{\omega Jt}\mathbf p(0)=e^{J\theta}\mathbf p(0),\qquad\theta=\omega t.\]</div>
+        </div>
+        <div class="visual-container"><div data-rotation2d-demo></div></div>
+      </div>
+      <p class="slide-takeaway"><strong>Takeaway:</strong> the exponential is not arbitrary notation—it is what repeated infinitesimal rotations converge to.</p>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act I · From rate to motion</p>
+      <h2 class="slide-title">The exponential answers a time-evolution question</h2>
+      <p class="slide-subtitle">If a matrix generator \(A\) produces the instantaneous change of a state, its exponential produces the finite change.</p>
+      <div class="layout-two-column divided">
+        <div><p class="lead">Begin with a constant linear differential equation.</p><div class="equation">\[\dot X(t)=A X(t),\qquad X(0)=I\]</div><p>The generator \(A\) tells us the tangent direction at each instant.</p></div>
+        <div><p class="lead">The unique finite evolution is</p><div class="equation">\[X(t)=e^{At}=I+At+\frac{(At)^2}{2!}+\cdots\]</div><p>For rigid motion, the generator lies in \(\mathfrak{se}(3)\), while the result lies in \(SE(3)\).</p></div>
+      </div>
+      <p class="slide-takeaway"><strong>Takeaway:</strong> exponentiation converts an instantaneous motion rule into a finite motion.</p>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act I · Angular velocity</p>
+      <h2 class="slide-title">Angular velocity describes how orientation changes</h2>
+      <p class="slide-subtitle">Its direction is the instantaneous rotation axis; its magnitude is the angular speed.</p>
+      <div class="layout-40-60">
+        <div><p>For a point \(\mathbf p\) attached to a body rotating about an axis through the origin,</p><div class="equation">\[\dot{\mathbf p}=\boldsymbol\omega\times\mathbf p=[\boldsymbol\omega]_\times\mathbf p\]</div><div class="definition"><strong>Right-hand rule:</strong> curled fingers give positive rotation; the thumb gives \(\boldsymbol\omega\).</div></div>
+        <div class="skew-card"><strong>The cross product becomes a linear operator</strong><div class="equation">\[[\boldsymbol\omega]_\times=\begin{bmatrix}0&-\omega_z&\omega_y\\\omega_z&0&-\omega_x\\-\omega_y&\omega_x&0\end{bmatrix}\]</div><p>Because the matrix is skew-symmetric, \([\boldsymbol\omega]_\times^T=-[\boldsymbol\omega]_\times\).</p></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act I · Linear velocity</p>
+      <h2 class="slide-title">A screw couples rotation and translation</h2>
+      <p class="slide-subtitle">Every instantaneous rigid-body motion is a rotation about an axis combined with translation along that axis.</p>
+      <div class="layout-two-column divided">
+        <div><p class="lead">Let the axis pass through point \(\mathbf r\), with unit direction \(\boldsymbol\omega\), and pitch \(h\).</p><div class="equation">\[\mathbf v=-\boldsymbol\omega\times\mathbf r+h\boldsymbol\omega\]</div><p>The first term locates the axis; the second adds translation along it.</p></div>
+        <div class="screw-cases"><div><strong>Revolute</strong><p>\(\|\boldsymbol\omega\|=1,\ h=0\)</p></div><div><strong>Helical</strong><p>\(\|\boldsymbol\omega\|=1,\ h\neq0\)</p></div><div><strong>Prismatic</strong><p>\(\boldsymbol\omega=\mathbf0,\ \|\mathbf v\|=1\)</p></div></div>
+      </div>
+      <div class="clean-callout">Here \(\mathbf v\) is not generally the velocity of the body-frame origin; it is the linear part of the twist representation.</div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act I · Twist coordinates</p>
+      <h2 class="slide-title">The hat operator turns six numbers into a generator</h2>
+      <p class="slide-subtitle">The matrix form is chosen so it acts on homogeneous points and exponentiates into a homogeneous transformation.</p>
+      <div class="layout-two-column divided">
+        <div><div class="equation">\[\boldsymbol\xi=\begin{bmatrix}\boldsymbol\omega\\\mathbf v\end{bmatrix}\in\mathbb R^6\]</div><p>A six-vector is convenient for storage and Jacobians.</p></div>
+        <div><div class="equation">\[\widehat{\boldsymbol\xi}=\begin{bmatrix}[\boldsymbol\omega]_\times&\mathbf v\\\mathbf0^T&0\end{bmatrix}\in\mathfrak{se}(3)\]</div><p>The hat matrix is convenient for applying the exponential map.</p></div>
+      </div>
+      <div class="equation">\[T(\theta)=e^{\widehat{\boldsymbol\xi}\theta}\in SE(3)\]</div>
+    </section>
+
+    <section class="slide interactive-slide">
+      <p class="slide-kicker">Act II · Interactive screw motion</p>
+      <h2 class="slide-title">One twist generates a family of poses</h2>
+      <p class="slide-subtitle">Change angle and pitch. Watch rotation around the axis and translation along it remain coupled.</p>
+      <div class="demo-prompt"><strong>Try it:</strong> set pitch to zero, then increase it. What part of the transformation changes?</div>
+      <div class="layout-full demo-layout"><div data-screw-exponential-demo></div></div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act II · Rodrigues derivation 1/3</p>
+      <h2 class="slide-title">The skew generator has only three independent powers</h2>
+      <p class="slide-subtitle">Let \(K=[\boldsymbol\omega]_\times\), where \(\|\boldsymbol\omega\|=1\). We first simplify powers of \(K\) before expanding the exponential.</p>
+      <div class="layout-two-column divided">
+        <div>
+          <p class="lead">Apply \(K^2\) to any vector \(\mathbf p\).</p>
+          <div class="equation">
+            \[
+            K^2\mathbf p
+            =\boldsymbol\omega\times(\boldsymbol\omega\times\mathbf p)
+            =\boldsymbol\omega(\boldsymbol\omega^T\mathbf p)-\mathbf p
+            \]
+          </div>
+          <p>The vector triple-product identity gives</p>
+          <div class="equation">\[K^2=\boldsymbol\omega\boldsymbol\omega^T-I.\]</div>
+        </div>
+        <div>
+          <p class="lead">Multiply once more by \(K\).</p>
+          <div class="equation">
+            \[
+            K^3=K(\boldsymbol\omega\boldsymbol\omega^T-I)
+            =(K\boldsymbol\omega)\boldsymbol\omega^T-K.
+            \]
+          </div>
+          <p>Because \(K\boldsymbol\omega=\boldsymbol\omega\times\boldsymbol\omega=\mathbf0\),</p>
+          <div class="equation">\[\boxed{K^3=-K},\qquad \boxed{K^4=-K^2}.\]</div>
+        </div>
+      </div>
+      <p class="slide-takeaway"><strong>Consequence:</strong> every higher power reduces to either \(K\) or \(K^2\).</p>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act II · Rodrigues derivation 2/3</p>
+      <h2 class="slide-title">Regroup the exponential into odd and even powers</h2>
+      <p class="slide-subtitle">Substitute \(K^3=-K\) and \(K^4=-K^2\) into the Taylor series.</p>
+      <div class="equation rodrigues-series">
+        \[
+        \begin{aligned}
+        e^{K\theta}
+        &=I+K\theta+\frac{K^2\theta^2}{2!}
+          +\frac{K^3\theta^3}{3!}
+          +\frac{K^4\theta^4}{4!}+\cdots\\[2mm]
+        &=I+
+          K\left(\theta-\frac{\theta^3}{3!}+\frac{\theta^5}{5!}-\cdots\right)
+          +K^2\left(\frac{\theta^2}{2!}-\frac{\theta^4}{4!}
+          +\frac{\theta^6}{6!}-\cdots\right).
+        \end{aligned}
+        \]
+      </div>
+      <div class="layout-two-column divided">
+        <div class="series-card"><strong>Odd coefficient</strong><div class="equation">\[\theta-\frac{\theta^3}{3!}+\frac{\theta^5}{5!}-\cdots=\sin\theta\]</div></div>
+        <div class="series-card"><strong>Even coefficient</strong><div class="equation">\[\frac{\theta^2}{2!}-\frac{\theta^4}{4!}+\frac{\theta^6}{6!}-\cdots=1-\cos\theta\]</div></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act II · Rodrigues derivation 3/3</p>
+      <h2 class="slide-title">Rodrigues’ formula is the closed-form exponential</h2>
+      <p class="slide-subtitle">Insert the sine and cosine series, then interpret how the three terms act on a vector.</p>
+      <div class="equation">
+        \[
+        \boxed{
+        R(\theta)=e^{[\boldsymbol\omega]_\times\theta}
+        =I+\sin\theta[\boldsymbol\omega]_\times
+        +(1-\cos\theta)[\boldsymbol\omega]_\times^2
+        }
+        \]
+      </div>
+      <div class="rodrigues-meaning">
+        <div><strong>\(I\mathbf p\)</strong><p>starts from the original vector</p></div>
+        <div><strong>\(\sin\theta\,(\boldsymbol\omega\times\mathbf p)\)</strong><p>moves in the tangential direction</p></div>
+        <div><strong>\((1-\cos\theta)\boldsymbol\omega\times(\boldsymbol\omega\times\mathbf p)\)</strong><p>supplies the radial correction</p></div>
+      </div>
+      <div class="clean-callout"><strong>Check:</strong> at \(\theta=0\), \(R=I\); differentiating at zero gives \(\left.\frac{dR}{d\theta}\right|_0=[\boldsymbol\omega]_\times\).</div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act II · From rotation to rigid transformation</p>
+      <h2 class="slide-title">The same exponential generates the full pose</h2>
+      <p class="slide-subtitle">Rodrigues provides the rotational block; integrating the twist’s linear component provides the translation.</p>
+      <div class="layout-two-column divided">
+        <div>
+          <div class="equation">
+            \[
+            e^{\widehat{\boldsymbol\xi}\theta}
+            =
+            \begin{bmatrix}
+            R(\theta)&G(\theta)\mathbf v\\
+            \mathbf0^T&1
+            \end{bmatrix}
+            \]
+          </div>
+          <div class="equation">
+            \[
+            G(\theta)=I\theta+(1-\cos\theta)K+(\theta-\sin\theta)K^2.
+            \]
+          </div>
+        </div>
+        <div>
+          <p>Using \(K=[\boldsymbol\omega]_\times\), the same translation can be written as</p>
+          <div class="equation">
+            \[
+            G(\theta)\mathbf v
+            =(I-R)(\boldsymbol\omega\times\mathbf v)
+            +\boldsymbol\omega\boldsymbol\omega^T\mathbf v\,\theta.
+            \]
+          </div>
+          <div class="definition"><strong>Pure translation:</strong> if \(\boldsymbol\omega=\mathbf0\), then \(R=I\) and \(\mathbf t=\mathbf v\theta\).</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act II · The adjoint map</p>
+      <h2 class="slide-title">One physical motion, different twist coordinates</h2>
+      <p class="slide-subtitle">The adjoint is the \(6\times6\) coordinate-change matrix induced by a rigid transformation. It rotates both components and accounts for the shift of origin.</p>
+      <div class="adjoint-layout">
+        <div class="definition">
+          <strong>Notation</strong>
+          <p>\({}^{A}\boldsymbol\xi=[{}^{A}\boldsymbol\omega;\,{}^{A}\mathbf v]\): twist coordinates expressed in \(A\).</p>
+          <p>\({}^{A}T_B=(R,\mathbf t)\): pose of \(B\) expressed in \(A\).</p>
+          <p>\(\operatorname{Ad}_T\): adjoint representation of \(T\).</p>
+        </div>
+        <div class="adjoint-formula">
+          <div class="equation">
+            \[
+            \operatorname{Ad}_{T}
+            =
+            \begin{bmatrix}
+            R&0\\
+            [\mathbf t]_\times R&R
+            \end{bmatrix},
+            \qquad
+            {}^{A}\boldsymbol\xi
+            =
+            \operatorname{Ad}_{{}^{A}T_B}\,{}^{B}\boldsymbol\xi.
+            \]
+          </div>
+          <p><strong>Why the lower-left block?</strong> Moving the coordinate origin changes linear velocity by \(\mathbf t\times\boldsymbol\omega\), even though the rigid-body motion is unchanged.</p>
+        </div>
+      </div>
+      <div class="adjoint-uses">
+        <div><strong>Change screw coordinates</strong><p>Express a joint axis from its local URDF frame in world or tool coordinates.</p></div>
+        <div><strong>Relate Jacobians</strong><p>Convert between space and body Jacobians: \(J_s=\operatorname{Ad}_{T}J_b\).</p></div>
+        <div><strong>Transform velocities</strong><p>Move spatial or body twists between sensor, base, and end-effector frames.</p></div>
+        <div><strong>Move forces dually</strong><p>Wrenches use the inverse transpose: \(\mathcal F_A=\operatorname{Ad}_{T}^{-T}\mathcal F_B\).</p></div>
+      </div>
+    </section>
+
+    <section class="slide interactive-slide">
+      <p class="slide-kicker">Act II · Interactive frame transformation</p>
+      <h2 class="slide-title">Move the observer, not the screw</h2>
+      <p class="slide-subtitle">The red screw is fixed in world geometry. Move frame \(B\) and observe how the same screw’s coordinates change.</p>
+      <div class="layout-full demo-layout"><div data-screw-frame-demo></div></div>
+      <p class="slide-takeaway"><strong>Takeaway:</strong> the adjoint gives portability between motion coordinates and frame transformations.</p>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act III · Notation before PoE</p>
+      <h2 class="slide-title">PoE stores one screw per joint and one home pose</h2>
+      <p class="slide-subtitle">We use the space form: every screw axis is expressed in the fixed world frame at the home configuration.</p>
+      <div class="notation-grid compact">
+        <div class="definition"><strong>\(\boldsymbol\xi_i\)</strong><p>Space screw of joint \(i\), expressed in \(W\), evaluated at \(q=\mathbf0\).</p></div>
+        <div class="definition"><strong>\(q_i\)</strong><p>Joint displacement: radians for revolute, metres for prismatic.</p></div>
+        <div class="definition"><strong>\(M\)</strong><p>End-effector pose \({}^{W}T_E\) at \(q=\mathbf0\).</p></div>
+        <div class="definition"><strong>\(T(q)\)</strong><p>End-effector pose after applying all joint motions.</p></div>
+      </div>
+      <div class="equation">\[T(q)=e^{\widehat{\boldsymbol\xi}_1q_1}e^{\widehat{\boldsymbol\xi}_2q_2}\cdots e^{\widehat{\boldsymbol\xi}_nq_n}M\]</div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act III · Build custom_3R</p>
+      <h2 class="slide-title">Read each screw directly from the home geometry</h2>
+      <p class="slide-subtitle">For a revolute joint through \(\mathbf r_i\) with unit axis \(\boldsymbol\omega_i\), use \(\mathbf v_i=-\boldsymbol\omega_i\times\mathbf r_i\).</p>
+      <table class="lecture-table">
+        <thead><tr><th>Joint</th><th>\(\boldsymbol\omega_i\)</th><th>Point \(\mathbf r_i\) on axis</th><th>\(\mathbf v_i\)</th></tr></thead>
+        <tbody><tr><td>1</td><td>\([0,0,1]^T\)</td><td>\([0,0,0.5]^T\)</td><td>\([0,0,0]^T\)</td></tr><tr><td>2</td><td>\([0,1,0]^T\)</td><td>\([1,0,1]^T\)</td><td>\([-1,0,1]^T\)</td></tr><tr><td>3</td><td>\([0,0,1]^T\)</td><td>\([3,1.25,1]^T\)</td><td>\([1.25,-3,0]^T\)</td></tr></tbody>
+      </table>
+      <div class="equation">\[M=\begin{bmatrix}I&[4.5,\ 1.25,\ 1.25]^T\\0&1\end{bmatrix}\]</div>
+    </section>
+
+    <section class="slide interactive-slide">
+      <p class="slide-kicker">Act III · custom_3R forward kinematics</p>
+      <h2 class="slide-title">Compose the three joint exponentials</h2>
+      <p class="slide-subtitle">Move the joint coordinates and inspect each factor, the end-effector path, and the resulting \(T(q)\).</p>
+      <div class="layout-full demo-layout"><div data-custom3r-poe-demo></div></div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act IV · From equation to model file</p>
+      <h2 class="slide-title">PoE computes motion; URDF describes the mechanism</h2>
+      <p class="slide-subtitle">A simulator needs names, topology, geometry, limits, mass properties, and interfaces—not only forward kinematics.</p>
+      <div class="layout-two-column divided"><div><div class="equation">\[T(q)=\prod_{i=1}^{n}e^{\widehat{\boldsymbol\xi}_iq_i}M\]</div><p>Compact and geometric, but it does not say which STL belongs to which link or how much a link weighs.</p></div><div><pre class="code-card"><code>&lt;robot name="custom_3r"&gt;
+  &lt;link name="base_link"/&gt;
+  &lt;joint name="joint_1" type="revolute"&gt;
+    ...
+  &lt;/joint&gt;
+&lt;/robot&gt;</code></pre><p>URDF is a machine-readable kinematic tree with physical metadata.</p></div></div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act IV · URDF anatomy</p>
+      <h2 class="slide-title">A URDF robot is a rooted graph of links and joints</h2>
+      <p class="slide-subtitle">Declare the structure before reading individual XML tags.</p>
+      <div class="urdf-tree"><div class="urdf-node root">base_link</div><div class="urdf-edge">joint_1</div><div class="urdf-node">link_1</div><div class="urdf-edge">joint_2</div><div class="urdf-node">link_2</div><div class="urdf-edge">joint_3</div><div class="urdf-node">link_3</div><div class="urdf-edge fixed">fixed</div><div class="urdf-node tool">tool0</div></div>
+      <div class="layout-three-column"><div class="definition"><strong>Link</strong><p>A rigid body and its visual, collision, and inertial descriptions.</p></div><div class="definition"><strong>Joint</strong><p>The allowed relative motion from one parent link to one child link.</p></div><div class="definition"><strong>Origin</strong><p>The joint or property frame relative to its parent, using <code>xyz</code> and <code>rpy</code>.</p></div></div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act IV · Link contents</p>
+      <h2 class="slide-title">One link carries three different models</h2>
+      <p class="slide-subtitle">Rendering, contact, and dynamics have different requirements, so URDF keeps them separate.</p>
+      <div class="layout-three-column">
+        <div class="urdf-tag-card"><code>&lt;visual&gt;</code><strong>Appearance</strong><p>Geometry, mesh scale, local origin, color, or named material.</p><pre><code>&lt;mesh filename="...stl"/&gt;
+&lt;material name="teal"/&gt;</code></pre></div>
+        <div class="urdf-tag-card"><code>&lt;collision&gt;</code><strong>Contact geometry</strong><p>Often simplified boxes, cylinders, spheres, or low-resolution meshes.</p><pre><code>&lt;box size="1 .2 .2"/&gt;</code></pre></div>
+        <div class="urdf-tag-card"><code>&lt;inertial&gt;</code><strong>Dynamics</strong><p>Mass, centre of mass, and the symmetric inertia tensor in the inertial frame.</p><pre><code>&lt;mass value="2.4"/&gt;
+&lt;inertia ixx="..." .../&gt;</code></pre></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act IV · Joint contents</p>
+      <h2 class="slide-title">A joint defines topology, motion, and admissible range</h2>
+      <p class="slide-subtitle">Each child has one parent; the joint origin is the child joint frame at zero displacement.</p>
+      <div class="layout-40-60"><div><pre class="code-card"><code>&lt;joint name="joint_2" type="revolute"&gt;
+  &lt;parent link="link_1"/&gt;
+  &lt;child link="link_2"/&gt;
+  &lt;origin xyz="1 0 .5" rpy="0 0 0"/&gt;
+  &lt;axis xyz="0 1 0"/&gt;
+  &lt;limit lower="-3.14" upper="3.14"
+         effort="100" velocity="2"/&gt;
+&lt;/joint&gt;</code></pre></div><div class="urdf-properties"><div><strong>Types</strong><p>fixed, revolute, continuous, prismatic, floating, planar</p></div><div><strong>Dynamics</strong><p>damping and friction describe simple joint losses.</p></div><div><strong>Mimic</strong><p>Relates one scalar joint coordinate to another.</p></div><div><strong>Safety/calibration</strong><p>Optional controller-oriented metadata.</p></div></div></div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act IV · Actuation and validation</p>
+      <h2 class="slide-title">Transmission is related to URDF, but not kinematics</h2>
+      <p class="slide-subtitle">A transmission maps actuator effort and motion to a joint interface; simulators and control frameworks interpret it.</p>
+      <div class="layout-two-column divided"><div><pre class="code-card"><code>&lt;transmission name="joint_2_drive"&gt;
+  &lt;type&gt;transmission_interface/
+        SimpleTransmission&lt;/type&gt;
+  &lt;joint name="joint_2"&gt;...&lt;/joint&gt;
+  &lt;actuator name="motor_2"&gt;
+    &lt;mechanicalReduction&gt;80&lt;/mechanicalReduction&gt;
+  &lt;/actuator&gt;
+&lt;/transmission&gt;</code></pre></div><div><ul class="minimal-list"><li><strong>Kinematics:</strong> links, joints, origins, axes.</li><li><strong>Dynamics:</strong> mass, inertia, friction, damping.</li><li><strong>Actuation:</strong> transmissions and simulator/control extensions.</li><li><strong>Validation:</strong> collision geometry and joint limits.</li></ul></div></div>
+    </section>
+
+    <section class="slide interactive-slide">
+      <p class="slide-kicker">Act IV · Bidirectional URDF laboratory</p>
+      <h2 class="slide-title">Edit the model—or drag its frames</h2>
+      <p class="slide-subtitle">Upload any rooted URDF tree or edit the XML directly: every declared link and joint origin is rebuilt as a synchronized frame graph.</p>
+      <div class="demo-prompt"><strong>Try it:</strong> add a link and its parent joint, edit an <code>xyz</code> value, or drag any non-root frame. The source and rendering update immediately.</div>
+      <div class="layout-full demo-layout"><div data-urdf-editor-demo></div></div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act V · URDF to DH</p>
+      <h2 class="slide-title">PUMA 560 reveals why conversion is not mechanical</h2>
+      <p class="slide-subtitle">URDF joint frames may be placed for CAD convenience; DH frames must satisfy geometric rules between consecutive axes.</p>
+      <div class="layout-two-column divided"><div><h3>URDF gives</h3><ul class="minimal-list"><li>A parent-to-child joint origin \(T_{\mathrm{origin},i}\)</li><li>A joint axis expressed in the joint frame</li><li>Mesh frames unrelated to DH placement</li></ul></div><div><h3>DH requires</h3><ul class="minimal-list"><li>\(z_{i-1}\) coincident with joint axis \(i\)</li><li>\(x_i\) along a common normal</li><li>Special choices for intersecting or parallel axes</li></ul></div></div>
+      <div class="challenge-strip"><span><strong>1</strong> propagate axes to one frame</span><span><strong>2</strong> find common normals</span><span><strong>3</strong> choose signs and offsets</span><span><strong>4</strong> verify FK numerically</span></div>
+      <p class="bridge-note">For the PUMA wrist, three axes intersect: the DH model is compact, but several valid frame choices can describe the same geometry.</p>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act V · URDF to PoE</p>
+      <h2 class="slide-title">PoE extraction follows the geometry directly</h2>
+      <p class="slide-subtitle">No common-normal construction is required: place every joint axis in a shared reference frame at the home pose.</p>
+      <div class="poe-extraction-flow"><div><strong>1 · Traverse URDF</strong><p>Compute each joint-frame pose \({}^{W}T_{J_i}\) at \(q=0\).</p></div><div><strong>2 · Transform axis</strong><p>\(\boldsymbol\omega_i={}^{W}R_{J_i}\mathbf a_i\), where \(\mathbf a_i\) is the URDF axis.</p></div><div><strong>3 · Form screw</strong><p>\(\mathbf r_i={}^{W}\mathbf t_{J_i}\), \(\mathbf v_i=-\boldsymbol\omega_i\times\mathbf r_i\).</p></div><div><strong>4 · Store home pose</strong><p>\(M={}^{W}T_E(0)\).</p></div></div>
+      <div class="equation">\[\boxed{\text{URDF origins + axes}\quad\Longrightarrow\quad\{\boldsymbol\xi_i\}_{i=1}^{n},\ M}\]</div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Act V · Honest limitations</p>
+      <h2 class="slide-title">URDF is a tree language, not a universal mechanism language</h2>
+      <p class="slide-subtitle">URDF handles branched rooted trees well, but one child cannot have two parents—so closed kinematic loops cannot be represented directly.</p>
+      <div class="layout-two-column divided"><div class="definition"><strong>Well represented</strong><p>Serial robots, branched trees, mobile manipulators, sensors, rigid attachments, standard one-DOF joints.</p></div><div class="warning"><strong>Needs curated modelling</strong><p>Parallel mechanisms and closed loops; rolling contact; antiparallelogram couplings; cable or tendon constraints; nonstandard multi-body joint laws.</p></div></div>
+      <div class="clean-callout">Approximation strategies include mimic joints, equivalent trees plus external constraints, simulator-specific plugins, or a richer multibody description format.</div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Synthesis · Choose the representation for the question</p>
+      <h2 class="slide-title">Minimal, geometric, and executable are complementary</h2>
+      <p class="slide-subtitle">No single representation dominates every stage of robot design and validation.</p>
+      <div class="representation-compare">
+        <article><h3>DH</h3><strong>Minimal kinematic structure</strong><p>Four scalars per link expose design conditions and enable synthesis.</p><div class="mini-equation">\(a_1=0\) immediately means an axis intersection; inequalities such as \(a_1&gt;\sqrt{d_2^2+a_2^2}\) can expose workspace or topology boundaries.</div></article>
+        <article><h3>PoE</h3><strong>Geometric motion structure</strong><p>Screw axes are coordinate-portable through the adjoint and connect naturally to velocities and the Jacobian.</p><div class="mini-equation">\(T(q)=\prod_i e^{\widehat\xi_iq_i}M\)</div></article>
+        <article><h3>URDF</h3><strong>Unified simulation language</strong><p>Geometry, topology, limits, collision, and inertia support kinematic/dynamic validation and digital twins.</p><div class="mini-equation">model + geometry + physics metadata</div></article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="slide-kicker">Conclusion</p>
+      <h2 class="slide-title">One robot, three useful abstractions</h2>
+      <div class="takeaway-stack">
+        <div class="takeaway-row"><span class="takeaway-number">1</span><div><strong>Exponentials integrate twists.</strong><p>They turn angular and linear velocity geometry into finite homogeneous transformations.</p></div></div>
+        <div class="takeaway-row"><span class="takeaway-number">2</span><div><strong>PoE composes joint motions.</strong><p>It provides a direct geometric forward-kinematics model and prepares us for Jacobians.</p></div></div>
+        <div class="takeaway-row"><span class="takeaway-number">3</span><div><strong>URDF communicates the physical model.</strong><p>It makes the kinematic tree, geometry, limits, and dynamic metadata available to software.</p></div></div>
+        <div class="takeaway-row"><span class="takeaway-number">4</span><div><strong>Representation choice is an engineering decision.</strong><p>Use DH for compact synthesis, PoE for motion geometry, and URDF for simulation and validation.</p></div></div>
+      </div>
+    </section>
+
+  </main>
+  <script src="../js/deck/nav-runtime.js"></script>
+  <script type="module" src="../js/main.js?v=20260814-2"></script>
+</body>
+</html>

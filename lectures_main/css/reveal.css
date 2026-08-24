@@ -1,0 +1,11 @@
+.fragment {
+  opacity: 0;
+  transform: translateY(0.5rem);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.fragment.revealed,
+body.mode-scroll .fragment {
+  opacity: 1;
+  transform: none;
+}

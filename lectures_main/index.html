@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ENG-654 Lecture Template</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layouts.css">
+  <link rel="stylesheet" href="css/components.css">
+  <style>
+    body { padding: clamp(2rem, 5vw, 6rem); }
+    .lecture-list { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; margin-top:2rem; }
+    .lecture-list a { display:block; text-decoration:none; color:var(--black); border-top:4px solid var(--epfl-red); padding:1rem; background:var(--soft); min-height:8rem; }
+    .lecture-list a:hover { outline:2px solid var(--epfl-red); }
+  </style>
+</head>
+<body>
+  <p class="eyebrow">ENG-654</p>
+  <h1 class="course-title">Kinematics-Grounded Motion Planning for Robots</h1>
+  <p class="subtitle">Reusable HTML/CSS/JS presentation template for the eight course lectures.</p>
+
+  <div class="lecture-list">
+    <a href="lectures/lecture_01.html"><strong>Lecture 1</strong><br>Introduction, Frames, Transformations, and DH Modelling</a>
+    <a href="lectures/lecture_02.html"><strong>Lecture 2</strong><br>Product of Exponentials and Reading URDF Models</a>
+    <a href="lectures/lecture_03.html"><strong>Lecture 3</strong><br>Analytical IK of a Representative 3R Robot</a>
+    <a href="lectures/lecture_04.html"><strong>Lecture 4</strong><br>Wrist-Partitioned 6R and 7R IK</a>
+    <a href="lectures/lecture_05.html"><strong>Lecture 5</strong><br>Jacobian-Based Singularity Analysis of 3R Robots</a>
+    <a href="lectures/lecture_06.html"><strong>Lecture 6</strong><br>IKS Distribution, Aspects, and Cuspidal Properties</a>
+    <a href="lectures/lecture_07.html"><strong>Lecture 7</strong><br>Joint-Space and Workspace Planning</a>
+    <a href="lectures/lecture_08.html"><strong>Lecture 8</strong><br>Motion Planning for Cuspidal and Redundant Robots</a>
+  </div>
+</body>
+</html>

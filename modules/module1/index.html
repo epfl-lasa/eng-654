@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>ENG-654 — URDF Visual Editor</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+:root{
+  color-scheme:dark;
+  --red:#e30613;
+  --white:#ffffff;
+  --black:#000000;
+  --muted:rgba(255,255,255,.66);
+  --border:rgba(255,255,255,.88);
+  --soft-border:rgba(255,255,255,.26);
+
+  --font-primary:Arial,Helvetica,Verdana,sans-serif;
+  --font-secondary:"Space Grotesk",Arial,Helvetica,Verdana,sans-serif;
+  --font-heading:"Arial Black",Arial,Helvetica,Verdana,sans-serif;
+  --font-title:Impact,"Arial Black",Arial,sans-serif;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--black);
+  color:var(--white);
+  font-family:var(--font-primary);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+button,input,select,textarea{font:inherit}
+
+button{
+  padding:9px 12px;
+  border-radius:0;
+  border:1px solid var(--white);
+  background:var(--black);
+  color:var(--white);
+  cursor:pointer;
+  font-family:var(--font-secondary);
+  font-size:.78rem;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.02rem;
+}
+button:hover{
+  background:var(--red);
+  border-color:var(--red);
+}
+button.active{
+  background:var(--red);
+  border-color:var(--red);
+  color:var(--white);
+}
+button:disabled{opacity:.42;cursor:not-allowed}
+
+input[type=file],
+input[type=number],
+select,
+textarea{
+  width:100%;
+  margin-top:5px;
+  padding:8px 10px;
+  border-radius:0;
+  border:1px solid var(--white);
+  background:var(--black);
+  color:var(--white);
+}
+input[type=file]::file-selector-button{
+  margin-right:10px;
+  padding:7px 10px;
+  border:0;
+  background:var(--white);
+  color:var(--black);
+  font-family:var(--font-secondary);
+  font-weight:700;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+input[type=range]{width:100%;accent-color:var(--red)}
+
+textarea{
+  resize:vertical;
+  min-height:240px;
+  font-family:"SFMono-Regular",Consolas,monospace;
+  font-size:12px;
+  line-height:1.45;
+}
+
+label{
+  display:block;
+  font-family:var(--font-secondary);
+  font-size:.78rem;
+  font-weight:700;
+  text-transform:uppercase;
+}
+
+.wrap{
+  max-width:1600px;
+  margin:auto;
+  padding:18px;
+}
+
+.row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.grid{display:grid;gap:14px}
+.topgrid{grid-template-columns:1fr 1fr 1fr}
+.main{grid-template-columns:minmax(0,1fr) 450px}
+
+.card{
+  background:var(--black);
+  border:1px solid var(--white);
+  border-radius:0;
+  padding:14px;
+}
+.panel{
+  background:var(--black);
+  border:1px solid var(--white);
+  border-radius:0;
+}
+
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+.mono{font-family:"SFMono-Regular",Consolas,monospace}
+
+.badge{
+  display:inline-block;
+  padding:5px 9px;
+  border:1px solid var(--red);
+  border-radius:0;
+  color:var(--red);
+  font-family:var(--font-secondary);
+  font-size:.78rem;
+  font-weight:700;
+  letter-spacing:.08rem;
+  text-transform:uppercase;
+}
+
+.viewport-wrap{
+  position:relative;
+  overflow:hidden;
+}
+#viewport{height:720px;width:100%}
+
+.overlay{
+  position:absolute;
+  left:11px;
+  top:11px;
+  background:rgba(0,0,0,.88);
+  border:1px solid var(--white);
+  border-radius:0;
+  padding:7px 9px;
+  font-size:.87rem;
+  pointer-events:none;
+}
+.overlay.bottom{
+  top:auto;
+  bottom:11px;
+  color:var(--muted);
+  max-width:92%;
+}
+
+.section-title{
+  margin:0 0 9px;
+  font-family:var(--font-heading);
+  font-size:1rem;
+  font-weight:900;
+  text-transform:none;
+}
+
+.info{
+  border-left:4px solid var(--red);
+  border-top:1px solid var(--white);
+  border-right:1px solid var(--white);
+  border-bottom:1px solid var(--white);
+  background:var(--black);
+  padding:10px 12px;
+  border-radius:0;
+}
+
+.good{color:var(--white)}
+.danger{color:var(--red)}
+
+#assetList{
+  max-height:250px;
+  overflow:auto;
+}
+#jointControls{
+  max-height:none;
+}
+
+.asset-row,.joint-row{
+  padding:6px 0;
+  border-bottom:1px solid var(--soft-border);
+}
+.asset-row:last-child,.joint-row:last-child{border-bottom:0}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+
+.metric{
+  background:var(--black);
+  border:1px solid var(--white);
+  padding:9px;
+  border-radius:0;
+}
+.metric .v{
+  font-family:var(--font-heading);
+  font-size:1.08rem;
+}
+
+summary{
+  cursor:pointer;
+  color:var(--red);
+  font-family:var(--font-secondary);
+  font-weight:700;
+  text-transform:uppercase;
+}
+
+h1{
+  margin:.2em 0 .18em;
+  max-width:16ch;
+  font-family:var(--font-title);
+  font-size:clamp(1.9rem,3.2vw,3.2rem);
+  font-weight:400;
+  line-height:.92;
+  text-transform:uppercase;
+}
+h2,h3{
+  margin:.3em 0;
+  font-family:var(--font-heading);
+  font-weight:900;
+}
+
+code{
+  color:var(--white);
+  font-family:"SFMono-Regular",Consolas,monospace;
+}
+
+
+.collapsible{
+  border:1px solid var(--white);
+  background:var(--black);
+}
+.collapsible > summary{
+  list-style:none;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  padding:11px 13px;
+  cursor:pointer;
+  color:var(--white);
+  font-family:var(--font-heading);
+  font-size:1rem;
+  font-weight:900;
+  text-transform:none;
+}
+.collapsible > summary::-webkit-details-marker{display:none}
+.collapsible > summary::after{
+  content:"+";
+  color:var(--red);
+  font-family:var(--font-secondary);
+  font-size:1.15rem;
+  font-weight:700;
+}
+.collapsible[open] > summary::after{content:"−"}
+.collapsible[open] > summary{
+  border-bottom:1px solid var(--white);
+}
+.collapsible-body{
+  padding:13px;
+}
+.side-stack{
+  display:grid;
+  gap:10px;
+  align-content:start;
+}
+.joint-preview-top{
+  margin-bottom:10px;
+}
+
+
+.joint-preview-top .collapsible-body{
+  padding:10px 12px;
+}
+.joint-preview-top .small{
+  font-size:.76rem;
+}
+.joint-preview-top .joint-row{
+  padding:4px 0;
+}
+.joint-preview-top .joint-row .small{
+  font-size:.72rem;
+}
+.joint-preview-top .joint-row input[type="range"]{
+  margin:2px 0;
+}
+.joint-preview-top #jointControls{
+  max-height:none;
+  overflow:visible;
+}
+.joint-preview-top #zeroJointsBtn{
+  margin-top:6px !important;
+  padding:7px 10px;
+  font-size:.72rem;
+}
+
+@media(max-width:1100px){
+  .main{grid-template-columns:1fr}
+  .topgrid{grid-template-columns:1fr 1fr}
+  #viewport{height:620px}
+}
+@media(max-width:700px){
+  .topgrid,.two,.three{grid-template-columns:1fr}
+  #viewport{height:500px}
+  h1{font-size:clamp(1.8rem,8vw,2.8rem)}
+}
+
+
+/* ---------- Shared ENG-654 compact module layout ---------- */
+#appView.hidden{display:none!important}
+h1.module-title{
+  max-width:none;
+  margin:.25rem 0 .35rem;
+  font-family:var(--font-title,Impact,"Arial Black",Arial,sans-serif);
+  font-size:clamp(1.85rem,2.8vw,2.8rem);
+  font-weight:400;
+  line-height:1;
+  white-space:nowrap;
+  text-transform:uppercase;
+}
+.module-collapsible{
+  border:1px solid var(--white,#fff);
+  background:var(--black,#000);
+}
+.module-collapsible > summary{
+  list-style:none;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  min-height:42px;
+  padding:10px 12px;
+  cursor:pointer;
+  color:var(--white,#fff);
+  font-family:var(--font-heading,"Arial Black",Arial,sans-serif);
+  font-size:.94rem;
+  font-weight:900;
+  line-height:1.1;
+  white-space:nowrap;
+}
+.module-collapsible > summary::-webkit-details-marker{display:none}
+.module-collapsible > summary::after{
+  content:"+";
+  flex:0 0 auto;
+  color:var(--red,#e30613);
+  font-family:var(--font-secondary,"Space Grotesk",Arial,sans-serif);
+  font-size:1.1rem;
+  font-weight:700;
+}
+.module-collapsible[open] > summary{
+  border-bottom:1px solid var(--white,#fff);
+}
+.module-collapsible[open] > summary::after{content:"−"}
+.module-collapsible-body{padding:12px}
+.module-side-stack{
+  display:grid;
+  gap:10px;
+  align-content:start;
+}
+.module-joint-preview .module-collapsible-body{
+  padding:9px 11px;
+}
+.module-joint-preview .joint-row,
+.module-joint-preview .card{
+  padding-top:4px;
+  padding-bottom:4px;
+}
+.module-joint-preview .small{
+  font-size:.72rem;
+}
+.module-joint-preview input[type="range"]{
+  margin:1px 0;
+}
+.module-joint-preview #jointControls,
+.module-joint-preview #sliders,
+.module-joint-preview #initialSliders{
+  max-height:none !important;
+  overflow:visible !important;
+}
+.module-joint-preview #sliders,
+.module-joint-preview #initialSliders{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:6px !important;
+}
+.compact-file-grid{
+  margin:12px 0;
+}
+@media(max-width:900px){
+  h1.module-title{
+    font-size:clamp(1.65rem,6vw,2.45rem);
+    white-space:normal;
+  }
+  .module-collapsible > summary{
+    white-space:normal;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap"><main id="appView">
+<div class="badge">Interactive Simulation · Module 01</div>
+<h1 class="module-title">Robot Visualization &amp; URDF Inspection</h1>
+<p class="muted">
+    Load a URDF and its visual STL files to inspect the robot structure, joint frames, joint axes,
+    and visual transforms directly in 3D. You can also edit visual or joint origins and export the modified URDF.
+  </p>
+<details class="module-collapsible compact-file-grid" open=""><summary>Files &amp; export</summary><div class="module-collapsible-body">
+<div class="card">
+<div class="section-title">1. URDF</div>
+<input accept=".urdf,.xml,text/xml" id="urdfInput" type="file"/>
+<div class="small muted" id="urdfStatus" style="margin-top:8px">No URDF loaded.</div>
+</div>
+<div class="card">
+<div class="section-title">2. Visual mesh files</div>
+<input accept=".stl,.dae,model/stl,model/vnd.collada+xml" id="stlInput" multiple="" type="file"/>
+<div class="small muted" id="stlStatus" style="margin-top:8px">No STL or DAE files loaded.</div>
+</div>
+<div class="card">
+<div class="section-title">3. Export</div>
+<div class="row">
+<button disabled="" id="downloadBtn">Download modified URDF</button>
+<button disabled="" id="copyTextBtn">Refresh XML text</button>
+</div>
+<div class="small muted" style="margin-top:8px">The downloaded file contains the current visual and joint transforms.</div>
+</div>
+</div></details>
+<div class="grid main">
+<section>
+<div class="panel viewport-wrap">
+<div id="viewport"></div>
+<div class="overlay"><span id="status">Load a URDF to begin</span></div>
+<div class="overlay bottom">
+          Click a visible mesh to select it · W = translate · E = rotate · R = scale visual mesh · Q = local/world
+        </div>
+</div>
+<div class="row" style="margin-top:11px">
+<button class="active" id="translateBtn">Translate</button>
+<button id="rotateBtn">Rotate</button>
+<button id="scaleBtn">Scale visual</button>
+<button id="spaceBtn">Space: local</button>
+<button id="fitBtn">Fit camera</button>
+<button disabled="" id="resetSelectedBtn">Reset selected transform</button>
+</div>
+<div class="row" style="margin-top:10px">
+<label class="row small" style="gap:6px">
+<input checked="" id="showJointFrames" style="width:auto;margin:0" type="checkbox"/>
+          Joint frames
+        </label>
+<label class="row small" style="gap:6px">
+<input checked="" id="showJointAxes" style="width:auto;margin:0" type="checkbox"/>
+          Revolute-joint axes
+        </label>
+<label class="row small" style="gap:6px">
+<input checked="" id="showJointLabels" style="width:auto;margin:0" type="checkbox"/>
+          Joint names
+        </label>
+<label class="small" style="min-width:190px">
+          Marker size
+          <input id="jointMarkerSize" max="0.5" min="0.04" step="0.01" style="width:120px;vertical-align:middle;margin-left:6px" type="range" value="0.14"/>
+</label>
+</div>
+<div class="row" style="margin-top:10px">
+<label class="small" style="min-width:260px">
+          All links opacity:
+          <span class="mono" id="globalOpacityValue">100%</span>
+<input id="globalOpacity" max="1" min="0.05" step="0.05" style="width:150px;vertical-align:middle;margin-left:6px" type="range" value="1"/>
+</label>
+<button id="resetOpacityBtn">Reset opacity</button>
+</div>
+<div class="info small" style="margin-top:12px">
+<strong>URDF semantics:</strong>
+        dragging a <em>visual</em> changes that link's <code>&lt;visual&gt;&lt;origin&gt;</code>.
+        Dragging a <em>joint</em> changes <code>&lt;joint&gt;&lt;origin&gt;</code> and therefore moves the complete downstream chain. The RGB arrows show the joint frame axes (X red, Y green, Z blue), the white dot is the exact frame origin, and the yellow line/arrow shows the URDF rotation axis for revolute/continuous joints.
+        Scaling is written to the selected mesh's <code>scale</code> attribute.
+      </div>
+</section>
+<aside class="module-side-stack"><details class="module-joint-preview collapsible joint-preview-top module-collapsible" open=""><summary>Joint preview</summary><div class="module-collapsible-body">
+
+<div class="collapsible-body">
+<div class="small muted">Use these sliders to verify that the edited kinematic chain behaves as expected. Joint values are preview-only and are not written into the URDF.</div>
+<div id="jointControls" style="margin-top:7px"></div>
+<button disabled="" id="zeroJointsBtn" style="margin-top:8px">Zero all joints</button>
+</div>
+</div></details>
+
+<details class="collapsible module-collapsible" open=""><summary>Editable element</summary><div class="module-collapsible-body">
+
+<div class="collapsible-body">
+<label>Select visual or joint
+            <select disabled="" id="editableSelect">
+<option value="">Load robot first</option>
+</select>
+</label>
+<div class="small muted" id="selectionInfo" style="margin-top:9px">Nothing selected.</div>
+</div>
+</div></details>
+<details class="collapsible module-collapsible" open=""><summary>Selected transform</summary><div class="module-collapsible-body">
+
+<div class="collapsible-body">
+<div class="small muted">Origin translation [m]</div>
+<div class="three" style="margin-top:5px">
+<label>x<input disabled="" id="tx" step="0.001" type="number"/></label>
+<label>y<input disabled="" id="ty" step="0.001" type="number"/></label>
+<label>z<input disabled="" id="tz" step="0.001" type="number"/></label>
+</div>
+<div class="small muted" style="margin-top:9px">URDF roll-pitch-yaw [rad]</div>
+<div class="three" style="margin-top:5px">
+<label>r<input disabled="" id="rr" step="0.01" type="number"/></label>
+<label>p<input disabled="" id="rp" step="0.01" type="number"/></label>
+<label>y<input disabled="" id="ry" step="0.01" type="number"/></label>
+</div>
+<button disabled="" id="applyNumericBtn" style="margin-top:9px">Apply numeric transform</button>
+<div id="opacityPanel" style="margin-top:12px">
+<div class="small muted">Selected visual opacity</div>
+<div class="row" style="margin-top:5px">
+<input disabled="" id="selectedOpacity" max="1" min="0.05" step="0.05" type="range" value="1"/>
+<span class="small mono" id="selectedOpacityValue">100%</span>
+</div>
+<div class="small muted">This is a visualization setting only; it is not written into the URDF material.</div>
+</div>
+<div id="scalePanel" style="margin-top:12px">
+<div class="small muted">Visual mesh scale</div>
+<div class="three" style="margin-top:5px">
+<label>sx<input disabled="" id="sx" step="0.01" type="number"/></label>
+<label>sy<input disabled="" id="sy" step="0.01" type="number"/></label>
+<label>sz<input disabled="" id="sz" step="0.01" type="number"/></label>
+</div>
+<button disabled="" id="applyScaleBtn" style="margin-top:9px">Apply mesh scale</button>
+</div>
+</div>
+</div></details>
+<details class="collapsible module-collapsible"><summary>Robot summary</summary><div class="module-collapsible-body">
+
+<div class="collapsible-body">
+<div class="two">
+<div class="metric"><div class="small muted">Links</div><div class="v" id="linkCount">0</div></div>
+<div class="metric"><div class="small muted">Joints</div><div class="v" id="jointCount">0</div></div>
+<div class="metric"><div class="small muted">Visuals</div><div class="v" id="visualCount">0</div></div>
+<div class="metric"><div class="small muted">Missing meshes</div><div class="v" id="missingCount">0</div></div>
+</div>
+<details style="margin-top:10px">
+<summary class="small">STL asset matching</summary>
+<div class="small muted" id="assetList" style="margin-top:7px">—</div>
+</details>
+</div>
+</div></details>
+</aside>
+</div>
+<details class="module-collapsible"><summary>Live URDF XML</summary><div class="module-collapsible-body">
+<div class="row" style="justify-content:space-between">
+<div>
+
+<div class="small muted">3D edits update this XML automatically. You may also edit the XML directly and rebuild the scene.</div>
+</div>
+<div class="row">
+<button disabled="" id="applyXmlBtn">Apply XML &amp; rebuild</button>
+<button disabled="" id="revertXmlBtn">Revert text to current model</button>
+</div>
+</div>
+<textarea disabled="" id="xmlEditor" spellcheck="false"></textarea>
+<div aria-live="polite" class="small muted" id="xmlFeedback"></div>
+</div></details>
+</main></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/+esm';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js/+esm';
+import { TransformControls } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/TransformControls.js/+esm';
+import { STLLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/STLLoader.js/+esm';
+import { ColladaLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/ColladaLoader.js/+esm';
+import { mergeGeometries } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/utils/BufferGeometryUtils.js/+esm';
+
+const $=id=>document.getElementById(id);
+const DEFAULT_DATA_ROOT='../../assets/data';
+const DEFAULT_URDF_NAME='iiwa7_free_joints.urdf';
+const DEFAULT_STL_NAMES=Array.from({length:8},(_,i)=>`link_${i}.stl`);
+
+async function fetchDefaultFile(url,name,type){
+  const response=await fetch(url);
+  if(!response.ok)throw new Error(`Unable to load ${name} (${response.status}).`);
+  return new File([await response.blob()],name,{type});
+}
+const viewport=$('viewport');
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x181a1f);
+
+const camera=new THREE.PerspectiveCamera(42,1,0.001,1000);
+camera.up.set(0,0,1);
+camera.position.set(2.2,-2.2,1.7);
+
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+viewport.appendChild(renderer.domElement);
+
+const orbit=new OrbitControls(camera,renderer.domElement);
+orbit.enableDamping=true;
+orbit.target.set(0,0,0.6);
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x30343c,1.7));
+const light=new THREE.DirectionalLight(0xffffff,3);
+light.position.set(3,-3,5);
+scene.add(light);
+
+const grid=new THREE.GridHelper(5,50,0x676d76,0x353940);
+grid.rotation.x=Math.PI/2;
+scene.add(grid);
+scene.add(new THREE.AxesHelper(0.3));
+
+const loader=new STLLoader();
+const colladaLoader=new ColladaLoader();
+const transform=new TransformControls(camera,renderer.domElement);
+scene.add(transform.getHelper());
+transform.setMode('translate');
+transform.setSpace('local');
+transform.setSize(0.85);
+transform.addEventListener('dragging-changed',e=>orbit.enabled=!e.value);
+
+const state={
+  originalText:'',
+  doc:null,
+  robot:null,
+  urdfFileName:'robot.urdf',
+  stlFiles:new Map(),
+  geometryCache:new Map(),
+  robotRoot:new THREE.Group(),
+  linkGroups:new Map(),
+  jointFrames:new Map(),
+  jointMotions:new Map(),
+  jointVisuals:new Map(),
+  editableItems:new Map(),
+  visualMeshes:[],
+  globalOpacity:1,
+  visualOpacity:new Map(),
+  selectedKey:'',
+  mode:'translate',
+  space:'local',
+  jointValues:new Map(),
+  syncingText:false
+};
+scene.add(state.robotRoot);
+
+function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+function nums(s,d=[]){
+  if(!s)return [...d];
+  const a=s.trim().split(/\s+/).map(Number);
+  return a.every(Number.isFinite)?a:[...d];
+}
+function basename(p){
+  return String(p||'').replace(/\\/g,'/').split('/').pop().toLowerCase();
+}
+function fmt(x){
+  if(Math.abs(x)<5e-12)x=0;
+  return Number(x.toFixed(8)).toString();
+}
+function originOf(node){
+  const o=node?.querySelector(':scope > origin');
+  return {
+    xyz:nums(o?.getAttribute('xyz'),[0,0,0]),
+    rpy:nums(o?.getAttribute('rpy'),[0,0,0])
+  };
+}
+function quaternionFromUrdfRPY(rpy){
+  const [r,p,y]=rpy;
+  const m=new THREE.Matrix4()
+    .makeRotationZ(y)
+    .multiply(new THREE.Matrix4().makeRotationY(p))
+    .multiply(new THREE.Matrix4().makeRotationX(r));
+  return new THREE.Quaternion().setFromRotationMatrix(m);
+}
+function urdfRPYFromQuaternion(q){
+  const m=new THREE.Matrix4().makeRotationFromQuaternion(q);
+  const e=m.elements;
+  const r11=e[0], r21=e[1], r31=e[2], r32=e[6], r33=e[10];
+  const r12=e[4], r22=e[5];
+  const p=Math.asin(clamp(-r31,-1,1));
+  const cp=Math.cos(p);
+  let r,y;
+  if(Math.abs(cp)>1e-7){
+    r=Math.atan2(r32,r33);
+    y=Math.atan2(r21,r11);
+  }else{
+    r=0;
+    y=Math.atan2(-r12,r22);
+  }
+  return [r,p,y];
+}
+function applyOriginToGroup(group,o){
+  group.position.set(...o.xyz);
+  group.quaternion.copy(quaternionFromUrdfRPY(o.rpy));
+  group.scale.set(1,1,1);
+}
+function ensureOrigin(node){
+  let o=node.querySelector(':scope > origin');
+  if(!o){
+    o=state.doc.createElement('origin');
+    node.insertBefore(o,node.firstChild);
+  }
+  return o;
+}
+function writeOrigin(node,group){
+  const o=ensureOrigin(node);
+  const rpy=urdfRPYFromQuaternion(group.quaternion);
+  o.setAttribute('xyz',`${fmt(group.position.x)} ${fmt(group.position.y)} ${fmt(group.position.z)}`);
+  o.setAttribute('rpy',`${fmt(rpy[0])} ${fmt(rpy[1])} ${fmt(rpy[2])}`);
+}
+function formatXml(xml){
+  const PADDING='  ';
+  const reg=/(>)(<)(\/*)/g;
+  let pad=0;
+  return xml.replace(reg,'$1\n$2$3').split('\n').map(line=>{
+    let indent=0;
+    if(line.match(/^<\/\w/)) pad=Math.max(0,pad-1);
+    else if(line.match(/^<\w[^>]*[^\/]>.*$/) && !line.match(/<\/\w+>$/)) indent=1;
+    const out=PADDING.repeat(pad)+line.trim();
+    pad+=indent;
+    return out;
+  }).join('\n');
+}
+function serializeCurrent(){
+  if(!state.doc)return '';
+  return formatXml(new XMLSerializer().serializeToString(state.doc));
+}
+function syncXmlEditor(){
+  if(!state.doc)return;
+  state.syncingText=true;
+  $('xmlEditor').value=serializeCurrent();
+  state.syncingText=false;
+}
+function parseURDF(text){
+  const doc=new DOMParser().parseFromString(text,'application/xml');
+  const err=doc.querySelector('parsererror');
+  if(err)throw new Error('Invalid URDF/XML: '+err.textContent.split('\n')[0]);
+  const robotNode=doc.querySelector('robot');
+  if(!robotNode)throw new Error('No <robot> element found.');
+
+  const materialTable=new Map();
+  robotNode.querySelectorAll(':scope > material').forEach(m=>{
+    const rgba=m.querySelector(':scope > color')?.getAttribute('rgba');
+    if(rgba&&m.getAttribute('name'))materialTable.set(m.getAttribute('name'),nums(rgba));
+  });
+
+  const links=new Map();
+  let visualCounter=0;
+  robotNode.querySelectorAll(':scope > link').forEach(linkNode=>{
+    const name=linkNode.getAttribute('name')||`link_${links.size}`;
+    const visuals=[...linkNode.querySelectorAll(':scope > visual')].map((v,idx)=>{
+      const geom=v.querySelector(':scope > geometry');
+      const mesh=geom?.querySelector(':scope > mesh');
+      const box=geom?.querySelector(':scope > box');
+      const cyl=geom?.querySelector(':scope > cylinder');
+      const sph=geom?.querySelector(':scope > sphere');
+      let kind='unknown', geometryData={};
+      if(mesh){
+        kind='mesh';
+        geometryData={
+          filename:mesh.getAttribute('filename')||'',
+          scale:nums(mesh.getAttribute('scale'),[1,1,1]),
+          meshNode:mesh
+        };
+      }else if(box){
+        kind='box';
+        geometryData={size:nums(box.getAttribute('size'),[0.1,0.1,0.1])};
+      }else if(cyl){
+        kind='cylinder';
+        geometryData={radius:Number(cyl.getAttribute('radius'))||0.05,length:Number(cyl.getAttribute('length'))||0.1};
+      }else if(sph){
+        kind='sphere';
+        geometryData={radius:Number(sph.getAttribute('radius'))||0.05};
+      }
+
+      let color=null;
+      const mat=v.querySelector(':scope > material');
+      if(mat){
+        const inline=mat.querySelector(':scope > color')?.getAttribute('rgba');
+        if(inline)color=nums(inline);
+        else if(materialTable.has(mat.getAttribute('name')))color=materialTable.get(mat.getAttribute('name'));
+      }
+
+      return {
+        id:`visual_${visualCounter++}`,
+        linkName:name,
+        index:idx,
+        xmlNode:v,
+        origin:originOf(v),
+        color,
+        kind,
+        ...geometryData
+      };
+    });
+    links.set(name,{name,xmlNode:linkNode,visuals});
+  });
+
+  const joints=[];
+  robotNode.querySelectorAll(':scope > joint').forEach(j=>{
+    const type=j.getAttribute('type')||'fixed';
+    const lim=j.querySelector(':scope > limit');
+    let lower=Number(lim?.getAttribute('lower'));
+    let upper=Number(lim?.getAttribute('upper'));
+    if(type==='continuous'){lower=-Math.PI;upper=Math.PI;}
+    if(!Number.isFinite(lower))lower=type==='prismatic'?-0.5:-Math.PI;
+    if(!Number.isFinite(upper))upper=type==='prismatic'?0.5:Math.PI;
+    joints.push({
+      name:j.getAttribute('name')||`joint_${joints.length}`,
+      type,
+      parent:j.querySelector(':scope > parent')?.getAttribute('link'),
+      child:j.querySelector(':scope > child')?.getAttribute('link'),
+      origin:originOf(j),
+      axis:nums(j.querySelector(':scope > axis')?.getAttribute('xyz'),[1,0,0]),
+      lower,upper,
+      xmlNode:j
+    });
+  });
+
+  const childLinks=new Set(joints.map(j=>j.child));
+  const root=[...links.keys()].find(n=>!childLinks.has(n))||[...links.keys()][0];
+  if(!root)throw new Error('URDF contains no links.');
+
+  const outgoing=new Map();
+  joints.forEach(j=>{
+    if(!outgoing.has(j.parent))outgoing.set(j.parent,[]);
+    outgoing.get(j.parent).push(j);
+  });
+
+  const depth=new Map([[root,0]]);
+  const visiting=new Set();
+  function walk(link){
+    if(visiting.has(link))return;
+    visiting.add(link);
+    for(const j of outgoing.get(link)||[]){
+      depth.set(j.child,(depth.get(link)||0)+1);
+      walk(j.child);
+    }
+  }
+  walk(root);
+
+  return {
+    doc,robotNode,
+    model:{
+      name:robotNode.getAttribute('name')||'robot',
+      links,joints,root,outgoing,depth
+    }
+  };
+}
+function flattenCollada(text){
+  const root=colladaLoader.parse(text,'').scene;
+  root.updateMatrixWorld(true);
+  const parts=[];
+  root.traverse(object=>{
+    if(!object.isMesh||!object.geometry?.getAttribute('position'))return;
+    let part=object.geometry.clone();
+    part.applyMatrix4(object.matrixWorld);
+    for(const name of Object.keys(part.attributes))if(name!=='position')part.deleteAttribute(name);
+    part.morphAttributes={};
+    part.clearGroups();
+    if(part.index)part=part.toNonIndexed();
+    parts.push(part);
+  });
+  if(!parts.length)throw new Error('DAE file contains no mesh geometry.');
+  const geometry=parts.length===1?parts[0]:mergeGeometries(parts,false);
+  if(!geometry)throw new Error('Unable to combine the mesh geometry in the DAE file.');
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+async function stlGeometry(filename){
+  const key=basename(filename);
+  if(state.geometryCache.has(key))return state.geometryCache.get(key);
+  const file=state.stlFiles.get(key);
+  if(!file)return null;
+  const g=/\.dae$/i.test(file.name||key)
+    ?flattenCollada(await file.text())
+    :loader.parse(await file.arrayBuffer());
+  if(!g.getAttribute('normal'))g.computeVertexNormals();
+  state.geometryCache.set(key,g);
+  return g;
+}
+function makeMaterial(rgba){
+  const c=rgba||[0.65,0.68,0.73,1];
+  return new THREE.MeshPhysicalMaterial({
+    color:new THREE.Color(c[0],c[1],c[2]),
+    transparent:true,
+    opacity:c[3]??1,
+    depthWrite:(c[3]??1)>=0.999,
+    roughness:0.28,metalness:0.2,clearcoat:0.18,
+    side:THREE.DoubleSide
+  });
+}
+function primitiveGeometry(v){
+  if(v.kind==='box')return new THREE.BoxGeometry(...v.size);
+  if(v.kind==='cylinder')return new THREE.CylinderGeometry(v.radius,v.radius,v.length,48).rotateX(Math.PI/2);
+  if(v.kind==='sphere')return new THREE.SphereGeometry(v.radius,40,24);
+  return null;
+}
+function applyJointMotion(node,j,value){
+  node.position.set(0,0,0);
+  node.quaternion.identity();
+  node.scale.set(1,1,1);
+  const axis=new THREE.Vector3(...j.axis);
+  if(axis.lengthSq()<1e-14)axis.set(1,0,0);
+  axis.normalize();
+  if(j.type==='revolute'||j.type==='continuous'){
+    node.quaternion.setFromAxisAngle(axis,value);
+  }else if(j.type==='prismatic'){
+    node.position.copy(axis.multiplyScalar(value));
+  }
+}
+function clearRobot(){
+  transform.detach();
+  state.robotRoot.traverse(o=>{
+    if(o.isMesh){
+      o.geometry?.dispose?.();
+      o.material?.dispose?.();
+    }
+  });
+  state.robotRoot.clear();
+  state.linkGroups.clear();
+  state.jointFrames.clear();
+  state.jointMotions.clear();
+  state.jointVisuals.clear();
+  state.editableItems.clear();
+  state.visualMeshes=[];
+}
+function makeTextSprite(text,color='#ffffff',fontSize=54){
+  const canvas=document.createElement('canvas');
+  const ctx=canvas.getContext('2d');
+  const font=`600 ${fontSize}px Inter, Arial, sans-serif`;
+  ctx.font=font;
+  const metrics=ctx.measureText(text);
+  const pad=18;
+  canvas.width=Math.ceil(metrics.width+2*pad);
+  canvas.height=Math.ceil(fontSize*1.45+2*pad);
+
+  ctx.font=font;
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+
+  // Dark translucent background for readability against STL geometry.
+  ctx.fillStyle='rgba(15,18,23,0.78)';
+  const r=12;
+  const w=canvas.width,h=canvas.height;
+  ctx.beginPath();
+  ctx.moveTo(r,0);ctx.lineTo(w-r,0);ctx.quadraticCurveTo(w,0,w,r);
+  ctx.lineTo(w,h-r);ctx.quadraticCurveTo(w,h,w-r,h);
+  ctx.lineTo(r,h);ctx.quadraticCurveTo(0,h,0,h-r);
+  ctx.lineTo(0,r);ctx.quadraticCurveTo(0,0,r,0);
+  ctx.closePath();ctx.fill();
+
+  ctx.fillStyle=color;
+  ctx.fillText(text,w/2,h/2+1);
+
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.minFilter=THREE.LinearFilter;
+  texture.magFilter=THREE.LinearFilter;
+
+  const material=new THREE.SpriteMaterial({
+    map:texture,
+    transparent:true,
+    depthTest:false,
+    depthWrite:false
+  });
+  const sprite=new THREE.Sprite(material);
+  sprite.userData.canvasTexture=texture;
+  return sprite;
+}
+
+function makeFrameArrow(direction,color,length){
+  return new THREE.ArrowHelper(
+    direction.clone().normalize(),
+    new THREE.Vector3(0,0,0),
+    length,
+    color,
+    length*0.24,
+    length*0.14
+  );
+}
+
+function makeJointVisualization(j){
+  const root=new THREE.Group();
+  root.name=`joint-viz:${j.name}`;
+
+  const markerSize=Math.max(0.01,Number($('jointMarkerSize')?.value)||0.14);
+  const showFrames=$('showJointFrames')?.checked ?? true;
+  const showAxes=$('showJointAxes')?.checked ?? true;
+  const showLabels=$('showJointLabels')?.checked ?? true;
+
+  // Explicit coordinate triad at the URDF joint origin.
+  // URDF convention: the joint <axis xyz="..."> is expressed in this frame.
+  const frameGroup=new THREE.Group();
+  frameGroup.name=`joint-frame-helper:${j.name}`;
+  frameGroup.visible=showFrames;
+
+  const xArrow=makeFrameArrow(new THREE.Vector3(1,0,0),0xff3b30,markerSize);
+  const yArrow=makeFrameArrow(new THREE.Vector3(0,1,0),0x34c759,markerSize);
+  const zArrow=makeFrameArrow(new THREE.Vector3(0,0,1),0x0a84ff,markerSize);
+  xArrow.name=`frame-x:${j.name}`;
+  yArrow.name=`frame-y:${j.name}`;
+  zArrow.name=`frame-z:${j.name}`;
+  frameGroup.add(xArrow,yArrow,zArrow);
+
+  // A small bright sphere marks the exact frame origin.
+  const originRadius=Math.max(markerSize*0.055,0.004);
+  const originSphere=new THREE.Mesh(
+    new THREE.SphereGeometry(originRadius,16,10),
+    new THREE.MeshBasicMaterial({
+      color:0xffffff,
+      depthTest:false,
+      depthWrite:false
+    })
+  );
+  originSphere.name=`joint-origin:${j.name}`;
+  originSphere.renderOrder=100;
+  frameGroup.add(originSphere);
+
+  // X/Y/Z labels placed just beyond each arrow tip.
+  const axisLabelScale=markerSize*0.20;
+  const labels=[
+    ['X','#ff6259',new THREE.Vector3(markerSize*1.12,0,0)],
+    ['Y','#5ee27a',new THREE.Vector3(0,markerSize*1.12,0)],
+    ['Z','#54a7ff',new THREE.Vector3(0,0,markerSize*1.12)]
+  ];
+  for(const [name,color,pos] of labels){
+    const s=makeTextSprite(name,color,44);
+    s.name=`frame-label-${name}:${j.name}`;
+    s.position.copy(pos);
+    s.scale.set(axisLabelScale*0.78,axisLabelScale*0.58,1);
+    frameGroup.add(s);
+  }
+  root.add(frameGroup);
+
+  // Joint name label close to the frame origin.
+  const jointLabel=makeTextSprite(j.name,'#ffffff',54);
+  jointLabel.name=`joint-name-label:${j.name}`;
+  jointLabel.position.set(
+    markerSize*0.12,
+    markerSize*0.12,
+    markerSize*0.32
+  );
+  jointLabel.scale.set(markerSize*1.18,markerSize*0.36,1);
+  jointLabel.visible=showLabels;
+  root.add(jointLabel);
+
+  // URDF joint axis is expressed in the joint frame.
+  // For revolute/continuous joints draw the complete axis through the origin
+  // plus an arrow indicating the positive rotation-axis direction.
+  let axisHelper=null;
+  if(j.type==='revolute'||j.type==='continuous'){
+    const axis=new THREE.Vector3(...j.axis);
+    if(axis.lengthSq()<1e-14)axis.set(1,0,0);
+    axis.normalize();
+
+    const axisLength=markerSize*1.65;
+    const geometry=new THREE.BufferGeometry().setFromPoints([
+      axis.clone().multiplyScalar(-axisLength),
+      axis.clone().multiplyScalar(axisLength)
+    ]);
+    const material=new THREE.LineBasicMaterial({
+      color:0xffd54a,
+      depthTest:false,
+      depthWrite:false
+    });
+    axisHelper=new THREE.Line(geometry,material);
+    axisHelper.name=`joint-axis-helper:${j.name}`;
+    axisHelper.visible=showAxes;
+    axisHelper.renderOrder=99;
+    root.add(axisHelper);
+
+    const arrow=new THREE.ArrowHelper(
+      axis,
+      new THREE.Vector3(),
+      axisLength,
+      0xffd54a,
+      markerSize*0.30,
+      markerSize*0.18
+    );
+    arrow.name=`joint-axis-arrow:${j.name}`;
+    arrow.visible=showAxes;
+    root.add(arrow);
+  }
+
+  root.userData.jointFrameHelper=frameGroup;
+  root.userData.jointAxisHelper=axisHelper;
+  root.userData.jointLabel=jointLabel;
+  return root;
+}
+
+function updateJointVisualizations(){
+  const size=Math.max(0.01,Number($('jointMarkerSize')?.value)||0.14);
+  const showFrames=$('showJointFrames')?.checked ?? true;
+  const showAxes=$('showJointAxes')?.checked ?? true;
+
+  // Rebuild helpers so changing size updates line/arrow geometry cleanly.
+  for(const j of state.robot?.joints||[]){
+    const jf=state.jointFrames.get(j.name);
+    const old=state.jointVisuals.get(j.name);
+    if(!jf)continue;
+
+    if(old){
+      jf.remove(old);
+      old.traverse(o=>{
+        o.geometry?.dispose?.();
+        if(o.material){
+          o.material.map?.dispose?.();
+          o.material.dispose?.();
+        }
+        o.userData?.canvasTexture?.dispose?.();
+      });
+    }
+
+    const viz=makeJointVisualization(j);
+    const frame=viz.userData.jointFrameHelper;
+    if(frame)frame.visible=showFrames;
+
+    viz.traverse(o=>{
+      if(o.name?.startsWith('joint-axis-'))o.visible=showAxes;
+    });
+    const label=viz.userData.jointLabel;
+    if(label)label.visible=$('showJointLabels')?.checked ?? true;
+
+    jf.add(viz);
+    state.jointVisuals.set(j.name,viz);
+  }
+  state.robotRoot.updateMatrixWorld(true);
+}
+
+async function buildRobot(){
+  clearRobot();
+  if(!state.robot)return;
+
+  const links=state.robot.links;
+  for(const l of links.values()){
+    const g=new THREE.Group();
+    g.name=l.name;
+    state.linkGroups.set(l.name,g);
+  }
+
+  const attached=new Set();
+  function attachLink(name,parent){
+    if(attached.has(name))return;
+    attached.add(name);
+    const linkGroup=state.linkGroups.get(name);
+    if(!linkGroup)return;
+    parent.add(linkGroup);
+
+    for(const j of state.robot.outgoing.get(name)||[]){
+      const jf=new THREE.Group();
+      jf.name=`joint-frame:${j.name}`;
+      applyOriginToGroup(jf,j.origin);
+      linkGroup.add(jf);
+      state.jointFrames.set(j.name,jf);
+
+      const jointViz=makeJointVisualization(j);
+      jf.add(jointViz);
+      state.jointVisuals.set(j.name,jointViz);
+
+      const motion=new THREE.Group();
+      motion.name=`joint-motion:${j.name}`;
+      jf.add(motion);
+      state.jointMotions.set(j.name,motion);
+      const q=state.jointValues.get(j.name)||0;
+      applyJointMotion(motion,j,q);
+
+      const key=`joint:${j.name}`;
+      state.editableItems.set(key,{
+        key,kind:'joint',label:`Joint · ${j.name}`,joint:j,group:jf,
+        initialOrigin:{xyz:[...j.origin.xyz],rpy:[...j.origin.rpy]}
+      });
+      attachLink(j.child,motion);
+    }
+  }
+  attachLink(state.robot.root,state.robotRoot);
+
+  for(const l of links.values()){
+    const linkGroup=state.linkGroups.get(l.name);
+    if(!linkGroup)continue;
+
+    for(const v of l.visuals){
+      const vf=new THREE.Group();
+      vf.name=`visual-frame:${l.name}:${v.index}`;
+      applyOriginToGroup(vf,v.origin);
+      linkGroup.add(vf);
+
+      let geom=null;
+      if(v.kind==='mesh')geom=await stlGeometry(v.filename);
+      else geom=primitiveGeometry(v);
+
+      let meshObj=null;
+      if(geom){
+        meshObj=new THREE.Mesh(geom,makeMaterial(v.color));
+        if(v.kind==='mesh')meshObj.scale.set(...v.scale);
+        meshObj.userData.baseOpacity=(v.color?.[3]??1);
+        const visualOpacity=state.visualOpacity.get(v.id)??1;
+        meshObj.material.opacity=meshObj.userData.baseOpacity*state.globalOpacity*visualOpacity;
+        meshObj.material.transparent=true;
+        meshObj.material.depthWrite=meshObj.material.opacity>=0.999;
+        vf.add(meshObj);
+        state.visualMeshes.push(meshObj);
+      }
+
+      const key=`visual:${v.id}`;
+      if(meshObj)meshObj.userData.editKey=key;
+      state.editableItems.set(key,{
+        key,kind:'visual',
+        label:`Visual · ${l.name} [${v.index}] · ${v.kind==='mesh'?basename(v.filename):v.kind}`,
+        visual:v,group:vf,mesh:meshObj,
+        initialOrigin:{xyz:[...v.origin.xyz],rpy:[...v.origin.rpy]},
+        initialScale:v.kind==='mesh'?[...v.scale]:[1,1,1]
+      });
+    }
+  }
+
+  state.robotRoot.updateMatrixWorld(true);
+  rebuildEditableSelect();
+  rebuildJointControls();
+  updateSummary();
+  applyOpacityToAllVisuals();
+  fitCamera();
+  $('editableSelect').disabled=false;
+  $('downloadBtn').disabled=false;
+  $('copyTextBtn').disabled=false;
+  $('applyXmlBtn').disabled=false;
+  $('revertXmlBtn').disabled=false;
+  $('xmlEditor').disabled=false;
+  $('zeroJointsBtn').disabled=false;
+  $('status').textContent=`${state.robot.name} loaded · click a mesh or choose an editable element`;
+}
+function rebuildEditableSelect(){
+  const sel=$('editableSelect');
+  sel.innerHTML='<option value="">— select —</option>';
+  const joints=[...state.editableItems.values()].filter(x=>x.kind==='joint')
+    .sort((a,b)=>(state.robot.depth.get(a.joint.child)||0)-(state.robot.depth.get(b.joint.child)||0));
+  const visuals=[...state.editableItems.values()].filter(x=>x.kind==='visual')
+    .sort((a,b)=>a.label.localeCompare(b.label));
+
+  const jg=document.createElement('optgroup');jg.label='Joints';
+  joints.forEach(x=>{const o=document.createElement('option');o.value=x.key;o.textContent=x.label;jg.appendChild(o);});
+  sel.appendChild(jg);
+
+  const vg=document.createElement('optgroup');vg.label='Visual geometries';
+  visuals.forEach(x=>{const o=document.createElement('option');o.value=x.key;o.textContent=x.label;vg.appendChild(o);});
+  sel.appendChild(vg);
+}
+function rebuildJointControls(){
+  const root=$('jointControls');
+  root.innerHTML='';
+  const movable=state.robot.joints.filter(j=>['revolute','continuous','prismatic'].includes(j.type));
+  if(!movable.length){
+    root.innerHTML='<div class="small muted">No movable joints.</div>';
+    return;
+  }
+  movable.forEach(j=>{
+    if(!state.jointValues.has(j.name))state.jointValues.set(j.name,0);
+    const row=document.createElement('div');
+    row.className='joint-row';
+    const label=document.createElement('div');
+    label.className='small';
+    label.textContent=`${j.name} (${j.type})`;
+    const range=document.createElement('input');
+    range.type='range';
+    range.min=String(j.lower);range.max=String(j.upper);
+    range.step=j.type==='prismatic'?'0.001':'0.01';
+    range.value=String(clamp(state.jointValues.get(j.name)||0,j.lower,j.upper));
+    const value=document.createElement('div');
+    value.className='small muted mono';
+    value.textContent=Number(range.value).toFixed(j.type==='prismatic'?3:2);
+    range.addEventListener('input',()=>{
+      const q=Number(range.value);
+      state.jointValues.set(j.name,q);
+      value.textContent=q.toFixed(j.type==='prismatic'?3:2);
+      const motion=state.jointMotions.get(j.name);
+      if(motion)applyJointMotion(motion,j,q);
+      state.robotRoot.updateMatrixWorld(true);
+    });
+    row.append(label,range,value);
+    root.appendChild(row);
+  });
+}
+function updateSummary(){
+  const visuals=[...state.robot.links.values()].flatMap(l=>l.visuals);
+  const missing=visuals.filter(v=>v.kind==='mesh'&&!state.stlFiles.has(basename(v.filename)));
+  $('linkCount').textContent=state.robot.links.size;
+  $('jointCount').textContent=state.robot.joints.length;
+  $('visualCount').textContent=visuals.length;
+  $('missingCount').textContent=missing.length;
+
+  const asset=$('assetList');
+  asset.innerHTML='';
+  if(!visuals.length){asset.textContent='No visual geometries.';return;}
+  visuals.forEach(v=>{
+    const div=document.createElement('div');
+    div.className='asset-row';
+    if(v.kind!=='mesh'){
+      div.innerHTML=`<span class="good">●</span> ${v.linkName}: ${v.kind} primitive`;
+    }else{
+      const ok=state.stlFiles.has(basename(v.filename));
+      div.innerHTML=`<span class="${ok?'good':'danger'}">●</span> ${v.linkName}: ${basename(v.filename)} ${ok?'matched':'missing'}`;
+    }
+    asset.appendChild(div);
+  });
+}
+function applyOpacityToVisualItem(item){
+  if(!item||item.kind!=='visual'||!item.mesh)return;
+  const local=state.visualOpacity.get(item.visual.id)??1;
+  const base=item.mesh.userData.baseOpacity??1;
+  const opacity=base*state.globalOpacity*local;
+  item.mesh.material.opacity=opacity;
+  item.mesh.material.transparent=true;
+  item.mesh.material.depthWrite=opacity>=0.999;
+  item.mesh.material.needsUpdate=true;
+}
+
+function applyOpacityToAllVisuals(){
+  for(const item of state.editableItems.values()){
+    if(item.kind==='visual')applyOpacityToVisualItem(item);
+  }
+  $('globalOpacityValue').textContent=`${Math.round(state.globalOpacity*100)}%`;
+  refreshSelectedOpacityUI();
+}
+
+function refreshSelectedOpacityUI(){
+  const item=selected();
+  const ok=!!(item&&item.kind==='visual'&&item.mesh);
+  $('selectedOpacity').disabled=!ok;
+  if(!ok){
+    $('selectedOpacity').value='1';
+    $('selectedOpacityValue').textContent='—';
+    return;
+  }
+  const local=state.visualOpacity.get(item.visual.id)??1;
+  $('selectedOpacity').value=String(local);
+  $('selectedOpacityValue').textContent=`${Math.round(local*100)}%`;
+}
+
+function selected(){return state.editableItems.get(state.selectedKey)||null;}
+function refreshTransformTarget(){
+  transform.detach();
+  const item=selected();
+  if(!item)return;
+  if(state.mode==='scale'){
+    if(item.kind==='visual'&&item.mesh){
+      transform.attach(item.mesh);
+    }
+  }else{
+    transform.attach(item.group);
+  }
+  transform.setMode(state.mode);
+  transform.setSpace(state.space);
+}
+function selectEditable(key){
+  state.selectedKey=key||'';
+  $('editableSelect').value=state.selectedKey;
+  const item=selected();
+
+  const ids=['tx','ty','tz','rr','rp','ry'];
+  ids.forEach(id=>$(id).disabled=!item);
+  $('applyNumericBtn').disabled=!item;
+  $('resetSelectedBtn').disabled=!item;
+
+  const scaleOK=!!(item&&item.kind==='visual'&&item.visual.kind==='mesh'&&item.mesh);
+  ['sx','sy','sz'].forEach(id=>$(id).disabled=!scaleOK);
+  $('applyScaleBtn').disabled=!scaleOK;
+  $('scaleBtn').disabled=!!(item&&item.kind==='joint');
+
+  if(!item){
+    $('selectionInfo').textContent='Nothing selected.';
+    refreshSelectedOpacityUI();
+    refreshTransformTarget();
+    return;
+  }
+
+  if(item.kind==='joint'){
+    $('selectionInfo').innerHTML=`Editing joint origin: <span class="mono">${item.joint.name}</span><br>parent ${item.joint.parent} → child ${item.joint.child}`;
+    if(state.mode==='scale')setMode('translate');
+  }else{
+    $('selectionInfo').innerHTML=`Editing visual origin for link <span class="mono">${item.visual.linkName}</span>`;
+  }
+
+  refreshNumericFields();
+  refreshSelectedOpacityUI();
+  refreshTransformTarget();
+}
+function refreshNumericFields(){
+  const item=selected();if(!item)return;
+  const g=item.group;
+  const rpy=urdfRPYFromQuaternion(g.quaternion);
+  $('tx').value=fmt(g.position.x);$('ty').value=fmt(g.position.y);$('tz').value=fmt(g.position.z);
+  $('rr').value=fmt(rpy[0]);$('rp').value=fmt(rpy[1]);$('ry').value=fmt(rpy[2]);
+  if(item.kind==='visual'&&item.mesh){
+    $('sx').value=fmt(item.mesh.scale.x);$('sy').value=fmt(item.mesh.scale.y);$('sz').value=fmt(item.mesh.scale.z);
+  }else{
+    $('sx').value='';$('sy').value='';$('sz').value='';
+  }
+}
+function writeSelectedToUrdf(){
+  const item=selected();if(!item)return;
+  if(item.kind==='joint'){
+    writeOrigin(item.joint.xmlNode,item.group);
+  }else{
+    writeOrigin(item.visual.xmlNode,item.group);
+    if(item.visual.kind==='mesh'&&item.visual.meshNode&&item.mesh){
+      const s=item.mesh.scale;
+      item.visual.meshNode.setAttribute('scale',`${fmt(s.x)} ${fmt(s.y)} ${fmt(s.z)}`);
+    }
+  }
+  refreshNumericFields();
+  syncXmlEditor();
+}
+transform.addEventListener('objectChange',()=>{
+  writeSelectedToUrdf();
+});
+function setMode(mode){
+  const item=selected();
+  if(mode==='scale'&&item?.kind==='joint')return;
+  state.mode=mode;
+  $('translateBtn').classList.toggle('active',mode==='translate');
+  $('rotateBtn').classList.toggle('active',mode==='rotate');
+  $('scaleBtn').classList.toggle('active',mode==='scale');
+  refreshTransformTarget();
+}
+function setSpace(space){
+  state.space=space;
+  $('spaceBtn').textContent=`Space: ${space}`;
+  transform.setSpace(space);
+}
+function applyNumericTransform(){
+  const item=selected();if(!item)return;
+  const vals=['tx','ty','tz','rr','rp','ry'].map(id=>Number($(id).value));
+  if(!vals.every(Number.isFinite)){
+    $('xmlFeedback').textContent='Numeric transform contains an invalid value.';
+    return;
+  }
+  item.group.position.set(vals[0],vals[1],vals[2]);
+  item.group.quaternion.copy(quaternionFromUrdfRPY(vals.slice(3)));
+  writeSelectedToUrdf();
+  state.robotRoot.updateMatrixWorld(true);
+}
+function applyScale(){
+  const item=selected();
+  if(!item||item.kind!=='visual'||!item.mesh)return;
+  const s=['sx','sy','sz'].map(id=>Number($(id).value));
+  if(!s.every(Number.isFinite)||s.some(x=>Math.abs(x)<1e-12)){
+    $('xmlFeedback').textContent='Scale values must be finite and non-zero.';
+    return;
+  }
+  item.mesh.scale.set(...s);
+  writeSelectedToUrdf();
+}
+function resetSelected(){
+  const item=selected();if(!item)return;
+  applyOriginToGroup(item.group,item.initialOrigin);
+  if(item.kind==='visual'&&item.mesh)item.mesh.scale.set(...item.initialScale);
+  writeSelectedToUrdf();
+  state.robotRoot.updateMatrixWorld(true);
+}
+function fitCamera(){
+  if(!state.robotRoot.children.length)return;
+  const box=new THREE.Box3().setFromObject(state.robotRoot);
+  if(box.isEmpty())return;
+  const sphere=box.getBoundingSphere(new THREE.Sphere());
+  const r=Math.max(sphere.radius,0.25);
+  const d=r/Math.sin(THREE.MathUtils.degToRad(camera.fov)/2)*1.25;
+  camera.position.copy(sphere.center).add(new THREE.Vector3(1.2,-1.3,0.85).normalize().multiplyScalar(d));
+  orbit.target.copy(sphere.center);
+  orbit.update();
+}
+function downloadUrdf(){
+  if(!state.doc)return;
+  const text=serializeCurrent();
+  const blob=new Blob([text],{type:'application/xml'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const base=state.urdfFileName.replace(/\.(urdf|xml)$/i,'');
+  a.href=url;
+  a.download=`${base}_edited.urdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+async function loadUrdfText(text,{setOriginal=true}={}){
+  const {doc,model}=parseURDF(text);
+  state.doc=doc;
+  state.robot=model;
+  if(setOriginal)state.originalText=text;
+  state.jointValues.clear();
+  await buildRobot();
+  syncXmlEditor();
+  $('urdfStatus').textContent=`${model.name}: ${model.links.size} links, ${model.joints.length} joints`;
+  $('xmlFeedback').textContent='URDF parsed successfully.';
+}
+async function rebuildFromEditor(){
+  try{
+    await loadUrdfText($('xmlEditor').value,{setOriginal:false});
+    $('xmlFeedback').textContent='XML applied and scene rebuilt.';
+  }catch(e){
+    $('xmlFeedback').textContent=e.message;
+  }
+}
+
+$('urdfInput').addEventListener('change',async e=>{
+  const f=e.target.files?.[0];if(!f)return;
+  state.urdfFileName=f.name;
+  try{
+    await loadUrdfText(await f.text(),{setOriginal:true});
+  }catch(err){
+    $('urdfStatus').textContent=err.message;
+    $('status').textContent=err.message;
+  }
+});
+$('stlInput').addEventListener('change',async e=>{
+  state.stlFiles.clear();
+  [...e.target.files].forEach(f=>state.stlFiles.set(f.name.toLowerCase(),f));
+  state.geometryCache.clear();
+  $('stlStatus').textContent=`${state.stlFiles.size} STL/DAE file(s) loaded.`;
+  if(state.robot){
+    await buildRobot();
+    syncXmlEditor();
+  }
+});
+$('editableSelect').addEventListener('change',e=>selectEditable(e.target.value));
+$('translateBtn').addEventListener('click',()=>setMode('translate'));
+$('rotateBtn').addEventListener('click',()=>setMode('rotate'));
+$('scaleBtn').addEventListener('click',()=>setMode('scale'));
+$('spaceBtn').addEventListener('click',()=>setSpace(state.space==='local'?'world':'local'));
+$('fitBtn').addEventListener('click',fitCamera);
+$('showJointFrames').addEventListener('change',()=>{
+  for(const viz of state.jointVisuals.values()){
+    const frame=viz.userData.jointFrameHelper;
+    if(frame)frame.visible=$('showJointFrames').checked;
+  }
+});
+$('showJointAxes').addEventListener('change',()=>{
+  for(const viz of state.jointVisuals.values()){
+    viz.traverse(o=>{
+      if(o.name?.startsWith('joint-axis-'))o.visible=$('showJointAxes').checked;
+    });
+  }
+});
+$('showJointLabels').addEventListener('change',()=>{
+  for(const viz of state.jointVisuals.values()){
+    const label=viz.userData.jointLabel;
+    if(label)label.visible=$('showJointLabels').checked;
+  }
+});
+$('jointMarkerSize').addEventListener('input',()=>{
+  if(state.robot)updateJointVisualizations();
+});
+$('globalOpacity').addEventListener('input',()=>{
+  state.globalOpacity=Number($('globalOpacity').value);
+  applyOpacityToAllVisuals();
+});
+$('resetOpacityBtn').addEventListener('click',()=>{
+  state.globalOpacity=1;
+  state.visualOpacity.clear();
+  $('globalOpacity').value='1';
+  applyOpacityToAllVisuals();
+});
+$('selectedOpacity').addEventListener('input',()=>{
+  const item=selected();
+  if(!item||item.kind!=='visual'||!item.mesh)return;
+  const v=Number($('selectedOpacity').value);
+  state.visualOpacity.set(item.visual.id,v);
+  $('selectedOpacityValue').textContent=`${Math.round(v*100)}%`;
+  applyOpacityToVisualItem(item);
+});
+$('applyNumericBtn').addEventListener('click',applyNumericTransform);
+$('applyScaleBtn').addEventListener('click',applyScale);
+$('resetSelectedBtn').addEventListener('click',resetSelected);
+$('downloadBtn').addEventListener('click',downloadUrdf);
+$('copyTextBtn').addEventListener('click',syncXmlEditor);
+$('revertXmlBtn').addEventListener('click',()=>{syncXmlEditor();$('xmlFeedback').textContent='Text restored from the current 3D model.';});
+$('applyXmlBtn').addEventListener('click',rebuildFromEditor);
+$('zeroJointsBtn').addEventListener('click',()=>{
+  state.jointValues.clear();
+  state.robot?.joints.forEach(j=>{
+    const n=state.jointMotions.get(j.name);
+    if(n)applyJointMotion(n,j,0);
+  });
+  rebuildJointControls();
+  state.robotRoot.updateMatrixWorld(true);
+});
+
+async function loadDefaultAssets(){
+  try{
+    const stlFiles=await Promise.all(DEFAULT_STL_NAMES.map(name=>
+      fetchDefaultFile(`${DEFAULT_DATA_ROOT}/visual/${name}`,name,'model/stl')
+    ));
+    state.stlFiles.clear();
+    stlFiles.forEach(file=>state.stlFiles.set(file.name.toLowerCase(),file));
+    state.geometryCache.clear();
+    $('stlStatus').textContent=`${state.stlFiles.size} bundled mesh files loaded.`;
+
+    const response=await fetch(`${DEFAULT_DATA_ROOT}/urdf/${DEFAULT_URDF_NAME}`);
+    if(!response.ok)throw new Error(`Unable to load ${DEFAULT_URDF_NAME} (${response.status}).`);
+    state.urdfFileName=DEFAULT_URDF_NAME;
+    await loadUrdfText(await response.text(),{setOriginal:true});
+  }catch(err){
+    $('urdfStatus').textContent=`Default asset load failed: ${err.message}`;
+    $('status').textContent=err.message;
+  }
+}
+
+loadDefaultAssets();
+
+renderer.domElement.addEventListener('pointerdown',e=>{
+  if(transform.dragging||transform.axis)return;
+  if(!state.visualMeshes.length)return;
+  const rect=renderer.domElement.getBoundingClientRect();
+  const mouse=new THREE.Vector2(
+    ((e.clientX-rect.left)/rect.width)*2-1,
+    -((e.clientY-rect.top)/rect.height)*2+1
+  );
+  const ray=new THREE.Raycaster();
+  ray.setFromCamera(mouse,camera);
+  const hits=ray.intersectObjects(state.visualMeshes,false);
+  if(hits.length){
+    const key=hits[0].object.userData.editKey;
+    if(key)selectEditable(key);
+  }
+});
+
+window.addEventListener('keydown',e=>{
+  if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
+  if(e.key.toLowerCase()==='w')setMode('translate');
+  if(e.key.toLowerCase()==='e')setMode('rotate');
+  if(e.key.toLowerCase()==='r')setMode('scale');
+  if(e.key.toLowerCase()==='q')setSpace(state.space==='local'?'world':'local');
+});
+
+function resize(){
+  const w=viewport.clientWidth,h=viewport.clientHeight;
+  renderer.setSize(w,h,false);
+  camera.aspect=w/Math.max(h,1);
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(viewport);
+resize();
+
+function animate(){
+  requestAnimationFrame(animate);
+  orbit.update();
+  renderer.render(scene,camera);
+}
+animate();
+</script>
+</body>
+</html>

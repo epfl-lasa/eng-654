@@ -1,0 +1,185 @@
+.lecture-04 .ik6r-demo {
+  position: relative;
+  min-height: 31rem;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #fcfcfc;
+}
+
+.lecture-04 .ik6r-demo.is-compact { min-height: 22rem; }
+
+.lecture-04 .layout-30-70 {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 7fr);
+  gap: clamp(1rem, 2vw, 2rem);
+  align-items: stretch;
+  min-height: 0;
+}
+
+.lecture-04 .ik6r-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.lecture-04 .ik6r-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.lecture-04 .ik6r-note {
+  position: absolute;
+  right: .7rem;
+  bottom: .55rem;
+  left: .7rem;
+  z-index: 2;
+  margin: 0;
+  padding: .36rem .52rem;
+  border-left: 3px solid var(--epfl-red);
+  background: rgba(255,255,255,.93);
+  color: var(--muted);
+  font-size: clamp(.68rem, .8vw, .88rem);
+  line-height: 1.3;
+  pointer-events: none;
+}
+
+.lecture-04 .ik6r-note.is-error { color: var(--epfl-red); }
+
+.lecture-04 .ik6r-controls {
+  position: absolute;
+  top: .55rem;
+  right: .55rem;
+  left: .55rem;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: .25rem .45rem;
+  pointer-events: none;
+}
+
+.lecture-04 .ik6r-slider,
+.lecture-04 .ik6r-select,
+.lecture-04 .ik6r-toggle {
+  display: inline-grid;
+  grid-template-columns: auto 4.2rem 2.8rem;
+  align-items: center;
+  gap: .22rem;
+  padding: .2rem .3rem;
+  border: 1px solid rgba(0,0,0,.12);
+  background: rgba(255,255,255,.94);
+  color: var(--muted);
+  font-size: clamp(.62rem, .72vw, .8rem);
+  font-weight: 700;
+  pointer-events: auto;
+}
+
+.lecture-04 .ik6r-slider input { width: 4.2rem; }
+.lecture-04 .ik6r-slider output { text-align: right; font-variant-numeric: tabular-nums; }
+.lecture-04 .ik6r-select { grid-template-columns: auto auto; }
+.lecture-04 .ik6r-select select { max-width: 15rem; padding: .15rem .25rem; font: inherit; }
+.lecture-04 .ik6r-toggle {
+  grid-template-columns: auto auto;
+  cursor: pointer;
+  text-transform: capitalize;
+}
+.lecture-04 .ik6r-toggle input { accent-color: var(--epfl-red); }
+
+.lecture-04 .wrist-equation {
+  border-left: 5px solid #2775ff;
+  background: rgba(39,117,255,.06);
+}
+
+.lecture-04 .wrist-point-layout,
+.lecture-04 .wrist-flip-layout,
+.lecture-04 .puma-target-layout { align-items: start; }
+
+.lecture-04 .solution-count {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.lecture-04 .solution-count > div {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  background: var(--white);
+}
+
+.lecture-04 .solution-count strong {
+  display: block;
+  color: var(--epfl-red);
+  font-size: clamp(1.8rem, 3vw, 3rem);
+}
+
+.lecture-04 .ik6-table { font-size: clamp(.62rem, .82vw, .9rem); }
+.lecture-04 .ik6-table th,
+.lecture-04 .ik6-table td { padding: .3rem .42rem; }
+
+.lecture-04 .axis-sequence {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: .45rem;
+  margin-top: .8rem;
+}
+
+.lecture-04 .axis-sequence div {
+  padding: .7rem .35rem;
+  border-top: 4px solid var(--black);
+  background: var(--white);
+  text-align: center;
+}
+
+.lecture-04 .axis-sequence div:nth-child(n+4) { border-top-color: var(--epfl-red); }
+
+.lecture-04 .dh-compare-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.08fr);
+  gap: .7rem;
+  align-items: center;
+}
+
+.lecture-04 .dh-table-card {
+  min-width: 0;
+  padding: .55rem .65rem;
+  border-top: 4px solid var(--black);
+  background: #fff;
+}
+
+.lecture-04 .dh-table-card:last-child { border-top-color: var(--epfl-red); }
+.lecture-04 .dh-table-card h3 { margin: 0; font-size: clamp(1rem, 1.35vw, 1.45rem); }
+.lecture-04 .table-caption { margin: .16rem 0 .42rem; color: var(--muted); font-size: clamp(.65rem, .72vw, .78rem); }
+
+.lecture-04 .dh-mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: clamp(.58rem, .68vw, .76rem);
+  text-align: center;
+}
+
+.lecture-04 .dh-mini-table th,
+.lecture-04 .dh-mini-table td { padding: .19rem .25rem; border-bottom: 1px solid var(--line); }
+.lecture-04 .dh-mini-table thead { border-bottom: 2px solid var(--black); }
+.lecture-04 .dh-source-row { background: rgba(39,117,255,.1); }
+.lecture-04 .dh-result-row { background: rgba(255,0,0,.08); font-weight: 700; }
+
+.lecture-04 .dh-parameter-transfer {
+  display: grid;
+  gap: .25rem;
+  justify-items: center;
+  color: var(--epfl-red);
+  font-size: clamp(.75rem, .9vw, 1rem);
+  font-weight: 800;
+}
+
+.lecture-04 .dh-parameter-transfer strong { font-size: 1.8rem; line-height: .8; }
+
+@media (max-width: 900px) {
+  .lecture-04 .ik6r-demo { min-height: 25rem; }
+  .lecture-04 .solution-count { grid-template-columns: 1fr; }
+  .lecture-04 .dh-compare-grid { grid-template-columns: 1fr; }
+  .lecture-04 .dh-parameter-transfer { grid-template-columns: auto auto auto; }
+}

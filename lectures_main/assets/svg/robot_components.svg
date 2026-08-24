@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520">
+  <rect width="900" height="520" fill="#fff"/>
+  <g fill="none" stroke="#111" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M120 390 L250 280 L380 240 L520 160"/>
+    <circle cx="120" cy="390" r="38" fill="#fff"/>
+    <circle cx="250" cy="280" r="34" fill="#fff"/>
+    <circle cx="380" cy="240" r="30" fill="#fff"/>
+    <rect x="502" y="138" width="76" height="44" rx="8" fill="#fff"/>
+  </g>
+  <g fill="none" stroke="#82B366" stroke-width="9" stroke-linecap="round">
+    <path d="M650 110 L570 340"/>
+    <path d="M650 110 L735 345"/>
+    <path d="M650 110 L650 370"/>
+  </g>
+  <circle cx="650" cy="110" r="46" fill="#D79B00" stroke="#111" stroke-width="8"/>
+  <circle cx="570" cy="340" r="28" fill="#82B366" stroke="#111" stroke-width="7"/>
+  <circle cx="735" cy="345" r="28" fill="#82B366" stroke="#111" stroke-width="7"/>
+  <circle cx="650" cy="370" r="28" fill="#82B366" stroke="#111" stroke-width="7"/>
+  <line x1="445" y1="260" x2="510" y2="260" stroke="#ff0000" stroke-width="10" stroke-linecap="round"/>
+  <polygon points="510,236 568,260 510,284" fill="#ff0000"/>
+  <text x="95" y="70" font-family="Inter,Arial" font-size="32" font-weight="800" fill="#111">Open-chain module</text>
+  <text x="560" y="70" font-family="Inter,Arial" font-size="32" font-weight="800" fill="#111">Closed-chain module</text>
+  <text x="115" y="465" font-family="Inter,Arial" font-size="20" fill="#666">serial arm</text>
+  <text x="572" y="465" font-family="Inter,Arial" font-size="20" fill="#666">parallel mechanism</text>
+</svg>

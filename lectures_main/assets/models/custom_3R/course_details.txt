@@ -1,0 +1,6 @@
+Course name: ENG-654 – Kinematics Grounded Motion Planning for Robots
+Credits: 4 ECTS
+Course structure: How are the 4 ECTS distributed between lectures, exercises, practical work and/or project work? ( For example: 2 ECTS lectures + 1 ECTS exercises + 1 ECTS project. )
+Evaluation: How will the course be evaluated? ( For example: written exam, oral exam, presentation, report, project, etc. Please also indicate when the evaluation takes place during the semester)
+Teachers: Aude Billard, Durgesh Haribhau Salunkhe and Arda Yigit — could you please confirm?
+Teaching contribution: How is the teaching workload distributed among the three teachers? Is it equally shared, or does one teacher contribute more than the others? We need to specify it exactly each teacher contributions interms of hours. 

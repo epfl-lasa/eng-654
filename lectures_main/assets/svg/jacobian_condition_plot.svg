@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560">
+ <rect width="1000" height="560" fill="#fff"/>
+ <g transform="translate(105,65)">
+  <text x="0" y="-18" font-family="Inter,Arial" font-size="27" font-weight="800" fill="#111">Conditioning changes along a path</text>
+  <line x1="0" y1="390" x2="800" y2="390" stroke="#111" stroke-width="3"/>
+  <line x1="0" y1="390" x2="0" y2="20" stroke="#111" stroke-width="3"/>
+  <text x="755" y="428" font-family="Inter,Arial" font-size="18" fill="#555">path parameter</text>
+  <text x="-78" y="35" font-family="Inter,Arial" font-size="18" fill="#555">metric</text>
+  <g stroke="#e7e7e7" stroke-width="2"><path d="M0 320 H800 M0 250 H800 M0 180 H800 M0 110 H800 M0 40 H800"/></g>
+  <path d="M0 340 C75 330 120 300 178 245 C240 185 280 140 333 182 C383 222 395 327 464 314 C535 300 550 133 625 105 C690 80 735 145 800 198" fill="none" stroke="#6C8EBF" stroke-width="7" stroke-linecap="round"/>
+  <path d="M0 95 C80 100 160 110 250 126 C340 150 400 190 455 285 C510 370 590 367 655 290 C705 232 750 210 800 205" fill="none" stroke="#ff0000" stroke-width="7" stroke-linecap="round"/>
+  <rect x="430" y="255" width="115" height="115" rx="18" fill="#ff0000" opacity=".09" stroke="#ff0000" stroke-width="3"/>
+  <text x="444" y="247" font-family="Inter,Arial" font-size="17" fill="#ff0000" font-weight="800">near singular</text>
+  <circle cx="488" cy="330" r="9" fill="#ff0000"/>
+  <g transform="translate(560,40)">
+   <rect x="0" y="0" width="260" height="86" rx="18" fill="#fff" stroke="#e7e7e7"/>
+   <line x1="20" y1="28" x2="70" y2="28" stroke="#6C8EBF" stroke-width="7" stroke-linecap="round"/><text x="84" y="35" font-family="Inter,Arial" font-size="18" fill="#111">manipulability</text>
+   <line x1="20" y1="60" x2="70" y2="60" stroke="#ff0000" stroke-width="7" stroke-linecap="round"/><text x="84" y="67" font-family="Inter,Arial" font-size="18" fill="#111">condition number</text>
+  </g>
+ </g>
+</svg>

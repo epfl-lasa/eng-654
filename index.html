@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+    <meta name="description" content="ENG-654 Kinematics grounded motion planning for robots at EPFL.">
+    <title>ENG-654 | Kinematics Grounded Motion Planning for Robots</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.png">
+    <link rel="stylesheet" href="/projects/epfl_course/course.css">
+</head>
+
+<body>
+    <header class="site-header">
+        <a class="brand" href="/projects/epfl_course/" aria-label="Back to course homepage">
+            <span class="brand-mark">ENG</span>
+            <span>ENG-654</span>
+        </a>
+        <nav class="nav-links" aria-label="Course navigation">
+            <a href="#overview">Overview</a>
+            <a href="#instructors">Instructors</a>
+            <a href="#content">Content</a>
+            <a href="#lectures">Lectures</a>
+            <a href="#simulations">Simulations</a>
+            <a href="#resources">Resources</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="hero-copy">
+                <p class="eyebrow">EPFL, Robotics, Control and Intelligent Systems</p>
+                <h1>Kinematics grounded motion planning for robots</h1>
+                <p class="hero-text">
+                    Students learn forward and inverse kinematics, singularity analysis, and
+                    constraint-aware path planning for modern robotic manipulators, then implement
+                    kinematic models and planners in a final project.
+                </p>
+                <div class="hero-actions">
+                    <a class="primary-action" href="https://go.epfl.ch/ENG-654" target="_blank"
+                        rel="noopener noreferrer">Moodle</a>
+                    <a class="secondary-action" href="#content">Explore syllabus</a>
+                </div>
+            </div>
+
+            <aside class="course-card" aria-label="Course quick facts">
+                <p class="card-label">Course details</p>
+                <h2>ENG-654</h2>
+                <dl>
+                    <div>
+                        <dt>Credits</dt>
+                        <dd>4 ECTS</dd>
+                    </div>
+                    <div>
+                        <dt>Language</dt>
+                        <dd>English</dd>
+                    </div>
+                    <div>
+                        <dt>Assessment</dt>
+                        <dd>Project report</dd>
+                    </div>
+                    <div>
+                        <dt>Capacity</dt>
+                        <dd>30 students</dd>
+                    </div>
+                </dl>
+            </aside>
+        </section>
+
+        <section class="content-band course-intro" id="overview">
+            <div class="section-heading">
+                <p class="eyebrow">Overview</p>
+                <h2>Why kinematics still matters</h2>
+            </div>
+            <div class="intro-layout">
+                <div class="intro-copy">
+                    <p>
+                        Planning a path from A to B may look solved, but pick-and-place tasks in cluttered
+                        environments still demand fast, safe replanning when objects move unexpectedly.
+                        The difficulty is often geometric: robot motion is inherently limited by kinematics.
+                    </p>
+                    <p>
+                        This course develops an analytical, intuition-driven understanding of robot
+                        kinematics, singularity visualization, and constraint-aware motion planning with
+                        joint limits, collision avoidance, and singularity robustness.
+                    </p>
+                </div>
+                <img src="/projects/epfl_course/assets/kuka_iiwa_planner2.png"
+                    alt="Robot arm simulation preview for ENG-654 exercises">
+            </div>
+        </section>
+
+        <section class="content-band light-band" id="instructors">
+            <div class="section-heading">
+                <p class="eyebrow">Teaching Team</p>
+                <h2>Instructors</h2>
+            </div>
+            <div class="instructor-grid">
+                <article class="instructor-card">
+                    <!-- <div class="avatar avatar-initials" aria-hidden="true">AB</div> -->
+                    <img class="avatar" src="/projects/epfl_course/assets/aude_profile.jpg"
+                        alt="Portrait of Aude Billard">
+                    <h3>Aude Billard</h3>
+                    <p>Full Professor at EPFL and head of LASA lab.</p>
+                    <details>
+                        <summary>More information</summary>
+                        <p>
+                            Aude Billard leads the Learning Algorithms and Systems Laboratory at EPFL.
+                            Her research spans robot learning, control, and safe human-robot interaction.
+                        </p>
+                    </details>
+                </article>
+
+                <article class="instructor-card">
+                    <!-- <div class="avatar avatar-initials" aria-hidden="true">AY</div> -->
+                    <img class="avatar" src="/projects/epfl_course/assets/arda_profile.jpg"
+                        alt="Portrait of Arda Yigit">
+                    <h3>Arda Yigit</h3>
+                    <p>CR at CNRS, France.</p>
+                    <details>
+                        <summary>More information</summary>
+                        <p>
+                            Arda Yigit is a CNRS researcher working in robotics, with interests in robot
+                            design, contact-rich interaction, and mechanically capable robotic systems.
+                        </p>
+                    </details>
+                </article>
+
+                <article class="instructor-card">
+                    <img class="avatar" src="/projects/epfl_course/assets/durgesh_profile.jpg"
+                        alt="Portrait of Durgesh Salunkhe">
+                    <h3>Durgesh Salunkhe</h3>
+                    <p>Postdoctoral researcher at LASA, EPFL.</p>
+                    <details>
+                        <summary>More information</summary>
+                        <p>
+                            Durgesh Salunkhe works on robot kinematics, motion planning, and the geometric
+                            analysis of robotic manipulators.
+                        </p>
+                    </details>
+                </article>
+            </div>
+        </section>
+
+        <section class="split-section" id="content">
+            <div>
+                <p class="eyebrow">Syllabus</p>
+                <h2>From models to robust motion</h2>
+                <p class="section-note">
+                    The course is hands-on and project-oriented, with practical sessions in realistic
+                    robot simulations.
+                </p>
+            </div>
+            <div class="timeline">
+                <article>
+                    <span>Robot modeling for planning</span>
+                    <p>Frames, DH parameters, URDF, joint limits, and collision geometry.</p>
+                </article>
+                <article>
+                    <span>Analytical kinematics</span>
+                    <p>Forward and inverse kinematics, multiple IK solutions, and solution continuation along a path.
+                    </p>
+                </article>
+                <article>
+                    <span>Singularity analysis</span>
+                    <p>Visualization and interpretation of possible motions near singular configurations.</p>
+                </article>
+                <article>
+                    <span>Differential kinematics</span>
+                    <p>Jacobians as tools for conditioning metrics, interpretation, and robustness analysis.</p>
+                </article>
+                <article>
+                    <span>Constraint-aware planning</span>
+                    <p>Joint limits, singularity-aware planning, and execution in simulation.</p>
+                </article>
+                <article>
+                    <span>Advanced glimpses</span>
+                    <p>Screw-theory formulation and an introductory view of Conformal Geometric Algebra.</p>
+                </article>
+                <article>
+                    <span>Final project</span>
+                    <p>An end-to-end kinematics-grounded planning pipeline with evaluation and a concise report.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="simulation-band" id="lectures">
+            <div class="section-heading">
+                <p class="eyebrow">Lecture Series</p>
+                <div>
+                    <h2>Eight lectures, from foundations to planning</h2>
+                    <p class="section-note">
+                        Follow the complete course sequence through interactive lecture decks covering robot models,
+                        analytical kinematics, singularities, and motion planning.
+                    </p>
+                    <a class="lecture-index-link" href="/projects/epfl_course/lectures_main/">
+                        Browse the lecture library →
+                    </a>
+                </div>
+            </div>
+
+            <div class="module-grid lecture-grid">
+                <a class="module-card" href="/projects/epfl_course/lectures_main/lectures/lecture_01.html">
+                    <span class="module-number">01</span>
+                    <div>
+                        <h3>Frames, transformations &amp; DH modelling</h3>
+                        <p>Build the coordinate-frame and transformation foundations used to model serial robots.</p>
+                    </div>
+                    <span class="module-action">Open lecture →</span>
+                </a>
+
+                <a class="module-card" href="/projects/epfl_course/lectures_main/lectures/lecture_02.html">
+                    <span class="module-number">02</span>
+                    <div>
+                        <h3>Product of exponentials &amp; URDF</h3>
+                        <p>Connect screw-based kinematic models with the structure of practical URDF robot models.</p>
+                    </div>
+                    <span class="module-action">Open lecture →</span>
+                </a>
+
+                <a class="module-card" href="/projects/epfl_course/lectures_main/lectures/lecture_03.html">
+                    <span class="module-number">03</span>
+                    <div>
+                        <h3>Analytical IK of a 3R robot</h3>
+                        <p>Derive and interpret the multiple inverse-kinematic solutions of a representative robot.</p>
+                    </div>
+                    <span class="module-action">Open lecture →</span>
+                </a>
+
+                <a class="module-card" href="/projects/epfl_course/lectures_main/lectures/lecture_04.html">
+                    <span class="module-number">04</span>
+                    <div>
+                        <h3>Wrist-partitioned 6R &amp; 7R IK</h3>
+                        <p>Extend analytical inverse kinematics to industrial and redundant manipulators.</p>
+                    </div>
+                    <span class="module-action">Open lecture →</span>
+                </a>
+
+                <a class="module-card" href="/projects/epfl_course/lectures_main/lectures/lecture_05.html">
+                    <span class="module-number">05</span>
+                    <div>
+                        <h3>Jacobian-based singularity analysis</h3>
+                        <p>Use Jacobians to identify, classify, and understand singular configurations.</p>
+                    </div>
+                    <span class="module-action">Open lecture →</span>
+                </a>
+
+                <a class="module-card" href="/projects/epfl_course/lectures_main/lectures/lecture_06.html">
+                    <span class="module-number">06</span>
+                    <div>
+                        <h3>IKS distribution &amp; cuspidality</h3>
+                        <p>Explore aspects, inverse-kinematic solution distributions, and cuspidal properties.</p>
+                    </div>
+                    <span class="module-action">Open lecture →</span>
+                </a>
+
+                <a class="module-card" href="/projects/epfl_course/lectures_main/lectures/lecture_07.html">
+                    <span class="module-number">07</span>
+                    <div>
+                        <h3>Joint-space &amp; workspace planning</h3>
+                        <p>Compare planning representations and develop trajectories under kinematic constraints.</p>
+                    </div>
+                    <span class="module-action">Open lecture →</span>
+                </a>
+
+                <a class="module-card" href="/projects/epfl_course/lectures_main/lectures/lecture_08.html">
+                    <span class="module-number">08</span>
+                    <div>
+                        <h3>Planning for complex robots</h3>
+                        <p>Plan motion for cuspidal and redundant robots while accounting for their geometry.</p>
+                    </div>
+                    <span class="module-action">Open lecture →</span>
+                </a>
+            </div>
+        </section>
+
+
+        <section class="simulation-band" id="simulations">
+            <div class="section-heading">
+                <p class="eyebrow">Interactive Laboratory</p>
+                <div>
+                    <h2>Five modules, one robot kinematics workflow</h2>
+                    <p class="section-note">
+                        The simulation modules follow the progression of the course: first read and inspect a robot,
+                        then command it, compare inverse-kinematic solutions, explore redundancy, and finally execute
+                        complete motion-planning trajectories.
+                    </p>
+                </div>
+            </div>
+
+            <div class="module-grid">
+                <a class="module-card" href="/projects/epfl_course/modules/module1/">
+                    <span class="module-number">01</span>
+                    <div>
+                        <h3>Robot visualization</h3>
+                        <p>
+                            Load a URDF and its geometry, inspect the robot structure, and visualize link, joint,
+                            and reference frames. This module builds the geometric intuition needed to read a robot
+                            model before doing any kinematic computation.
+                        </p>
+                    </div>
+                    <span class="module-action">Open module →</span>
+                </a>
+
+                <a class="module-card" href="/projects/epfl_course/modules/module2/">
+                    <span class="module-number">02</span>
+                    <div>
+                        <h3>Joint commands &amp; forward kinematics</h3>
+                        <p>
+                            Command the robot through sliders, CSV trajectories, or the Python WebSocket interface,
+                            and observe the resulting end-effector pose. The module connects joint coordinates directly
+                            to forward kinematics and robot motion.
+                        </p>
+                    </div>
+                    <span class="module-action">Open module →</span>
+                </a>
+
+                <a class="module-card" href="/projects/epfl_course/modules/module3/">
+                    <span class="module-number">03</span>
+                    <div>
+                        <h3>Inverse kinematics</h3>
+                        <p>
+                            Prescribe an end-effector pose and compare multiple inverse-kinematic configurations of
+                            the same robot. Solutions can be displayed individually or together, making the multiplicity
+                            of inverse kinematics visible rather than merely numerical.
+                        </p>
+                    </div>
+                    <span class="module-action">Open module →</span>
+                </a>
+
+                <a class="module-card" href="/projects/epfl_course/modules/module4/">
+                    <span class="module-number">04</span>
+                    <div>
+                        <h3>Redundancy &amp; self-motion</h3>
+                        <p>
+                            Capture a fixed end-effector pose and vary the redundancy parameter while the remaining
+                            joints compensate. A reference robot, animated ghost, self-motion trace, and draggable
+                            obstacle with live clearance make null-space motion tangible.
+                        </p>
+                    </div>
+                    <span class="module-action">Open module →</span>
+                </a>
+
+                <a class="module-card" href="/projects/epfl_course/modules/module5/">
+                    <span class="module-number">05</span>
+                    <div>
+                        <h3>Motion planning &amp; execution</h3>
+                        <p>
+                            Load a desired workspace pose path and a seven-joint trajectory, then animate the robot
+                            while comparing the prescribed Cartesian path with the forward-kinematic trace produced
+                            by the joint motion.
+                        </p>
+                    </div>
+                    <span class="module-action">Open module →</span>
+                </a>
+            </div>
+        </section>
+
+        <section class="content-band details-band">
+            <div class="section-heading">
+                <p class="eyebrow">Logistics</p>
+                <h2>Course details</h2>
+            </div>
+            <div class="detail-grid">
+                <div>
+                    <span>Type</span>
+                    <strong>Optional</strong>
+                </div>
+                <div>
+                    <span>Frequency</span>
+                    <strong>Only this year</strong>
+                </div>
+                <div>
+                    <span>Next time</span>
+                    <strong>Fall 2026</strong>
+                </div>
+                <div>
+                    <span>Contact hours</span>
+                    <strong>56 h</strong>
+                </div>
+                <div>
+                    <span>Courses</span>
+                    <strong>26 h</strong>
+                </div>
+                <div>
+                    <span>Exercises</span>
+                    <strong>6 h</strong>
+                </div>
+                <div>
+                    <span>Project</span>
+                    <strong>24 h</strong>
+                </div>
+                <div>
+                    <span>Exam</span>
+                    <strong>Project report</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-band light-band" id="resources">
+            <div class="section-heading">
+                <p class="eyebrow">Preparation</p>
+                <h2>Prerequisites and resources</h2>
+            </div>
+            <div class="resource-list">
+                <a href="https://edu.epfl.ch/coursebook/en/basics-of-robotics-for-manipulation-MICRO-450"
+                    target="_blank" rel="noopener noreferrer">
+                    <span>Prerequisite course</span>
+                    <small>MICRO-450 or equivalent</small>
+                </a>
+                <a href="https://www.ieee-ras.org/ras-university/?ras_page=docs/chap1_basic_motion_ctrl/kinematics.html"
+                    target="_blank" rel="noopener noreferrer">
+                    <span>RAS University</span>
+                    <small>Basic kinematics</small>
+                </a>
+                <a href="https://www.ieee-ras.org/ras-university/?ras_page=docs/chap5_adv_kin/01_singularity_analysis.html"
+                    target="_blank" rel="noopener noreferrer">
+                    <span>RAS University</span>
+                    <small>Singularity analysis</small>
+                </a>
+            </div>
+            <p class="keyword-line">
+                Robot kinematics, forward/inverse kinematics, Jacobian, singularities, multiple IK
+                solutions, cuspidality, constraint-aware motion planning, joint limits, robot simulation
+            </p>
+        </section>
+    </main>
+</body>
+
+</html>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot name="custom_3r">
+
+  <!--
+  Initial assembly generated from the supplied STL meshes and joint data.
+
+  Assumption for this first version:
+  - Each STL is expressed in its corresponding link frame.
+  - Therefore visual/collision mesh origins are xyz="0 0 0", rpy="0 0 0".
+  - The joint origins below are used exactly as supplied and are relative
+  to their parent link frames, as required by URDF.
+
+  Units:
+  - STL geometry appears to be in metres.
+  - URDF distances are metres and angles are radians.
+  -->
+
+  <material name="color_1">
+  <color rgba="0.35 0.35 0.35 1.0"/>
+  </material>
+  <material name="color_2">
+  <color rgba="0.95 0.45 0.08 1.0"/>
+  </material>
+  <material name="color_1">
+    <color rgba="0.20 0.22 0.23 1.0"/>
+  </material>
+
+  <material name="color_2">
+    <color rgba="0.05 0.42 0.43 1.0"/>
+  </material>
+
+  <material name="gray_white">
+    <color rgba="0.7 0.7 0.7 1.0"/>
+  </material>
+
+  <link name="base_link">
+  <visual>
+  <origin xyz="0 0 0" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://custom_3r_description/meshes/base_link.stl"/>
+  </geometry>
+  <material name="color_1"/>
+  </visual>
+  <collision>
+  <origin xyz="0 0 0" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://custom_3r_description/meshes/base_link.stl"/>
+  </geometry>
+  </collision>
+  </link>
+
+  <link name="link_1">
+  <visual>
+  <origin xyz="0 0 0" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://custom_3r_description/meshes/link_1.stl"/>
+  </geometry>
+  <material name="color_2"/>
+  </visual>
+  <collision>
+  <origin xyz="0 0 0" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://custom_3r_description/meshes/link_1.stl"/>
+  </geometry>
+  </collision>
+  </link>
+
+  <joint name="joint_1" type="revolute">
+  <parent link="base_link"/>
+  <child link="link_1"/>
+  <origin xyz="0 0 0.5" rpy="0 0 0"/>
+  <axis xyz="0 0 1"/>
+  <limit lower="-3.141592653589793" upper="3.141592653589793" effort="100" velocity="2.0"/>
+  </joint>
+
+  <link name="link_2">
+  <visual>
+  <origin xyz="0 0.25 0" rpy="0 0 -1.5707"/>
+  <geometry>
+  <mesh filename="package://custom_3r_description/meshes/link_2.stl" scale="1 1 1"/>
+  </geometry>
+  <material name="gray_white"/>
+  </visual>
+  <collision>
+  <origin xyz="0 0 0" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://custom_3r_description/meshes/link_2.stl"/>
+  </geometry>
+  </collision>
+  </link>
+
+  <joint name="joint_2" type="revolute">
+  <parent link="link_1"/>
+  <child link="link_2"/>
+  <origin xyz="1 0 0.5" rpy="0 0 0"/>
+  <axis xyz="0 1 0"/>
+  <limit lower="-3.141592653589793" upper="3.141592653589793" effort="100" velocity="2.0"/>
+  </joint>
+
+  <link name="link_3">
+  <visual>
+  <origin xyz="0 0 0.25" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://custom_3r_description/meshes/link_3.stl" scale="1 1 1"/>
+  </geometry>
+  <material name="color_2"/>
+  </visual>
+  <collision>
+  <origin xyz="0 0 0" rpy="0 0 0"/>
+  <geometry>
+  <mesh filename="package://custom_3r_description/meshes/link_3.stl"/>
+  </geometry>
+  </collision>
+  </link>
+
+  <joint name="joint_3" type="revolute">
+  <parent link="link_2"/>
+  <child link="link_3"/>
+  <origin xyz="2 1.25 0.0" rpy="0 0 0"/>
+  <axis xyz="0 0 1"/>
+  <limit lower="-3.141592653589793" upper="3.141592653589793" effort="100" velocity="2.0"/>
+  </joint>
+
+  <!-- Convenient fixed end-effector frame at link_3 origin for now.
+  Move this origin later if the actual TCP is elsewhere. -->
+  <link name="tool0"/>
+  <joint name="tool0_fixed_joint" type="fixed">
+  <parent link="link_3"/>
+  <child link="tool0"/>
+  <origin xyz="1.5 0 0.25" rpy="0 0 0"/>
+  </joint>
+
+</robot>

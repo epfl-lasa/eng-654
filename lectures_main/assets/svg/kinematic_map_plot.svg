@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560">
+ <rect width="1000" height="560" fill="#fff"/>
+ <g transform="translate(70,70)">
+  <text x="0" y="-22" font-family="Inter,Arial" font-size="26" font-weight="800" fill="#111">Joint-space path</text>
+  <line x1="0" y1="360" x2="390" y2="360" stroke="#111" stroke-width="3"/>
+  <line x1="0" y1="360" x2="0" y2="10" stroke="#111" stroke-width="3"/>
+  <text x="350" y="398" font-family="Inter,Arial" font-size="18" fill="#555">q₁</text>
+  <text x="-45" y="25" font-family="Inter,Arial" font-size="18" fill="#555">q₂</text>
+  <path d="M35,310 C90,240 112,120 182,110 C246,100 258,240 330,225 C365,218 378,160 388,122" fill="none" stroke="#ff0000" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="35" cy="310" r="12" fill="#111"/><circle cx="388" cy="122" r="12" fill="#ff0000"/>
+  <g opacity=".28" stroke="#6C8EBF" stroke-width="2">
+    <path d="M30 40 H390 M30 90 H390 M30 140 H390 M30 190 H390 M30 240 H390 M30 290 H390 M30 340 H390"/>
+    <path d="M50 20 V360 M100 20 V360 M150 20 V360 M200 20 V360 M250 20 V360 M300 20 V360 M350 20 V360"/>
+  </g>
+ </g>
+ <g transform="translate(580,70)">
+  <text x="0" y="-22" font-family="Inter,Arial" font-size="26" font-weight="800" fill="#111">Workspace trace</text>
+  <line x1="0" y1="360" x2="350" y2="360" stroke="#111" stroke-width="3"/>
+  <line x1="0" y1="360" x2="0" y2="10" stroke="#111" stroke-width="3"/>
+  <text x="323" y="398" font-family="Inter,Arial" font-size="18" fill="#555">x</text>
+  <text x="-28" y="25" font-family="Inter,Arial" font-size="18" fill="#555">z</text>
+  <path d="M40,320 C110,270 140,190 210,170 C280,150 310,92 342,50" fill="none" stroke="#050505" stroke-width="9" stroke-linecap="round"/>
+  <path d="M82,292 l26,-8 M147,213 l24,-18 M225,163 l25,-14 M303,102 l20,-24" stroke="#D79B00" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="40" cy="320" r="12" fill="#111"/><circle cx="342" cy="50" r="12" fill="#ff0000"/>
+  <rect x="240" y="260" width="72" height="72" rx="16" fill="#9673A6" opacity=".25" stroke="#9673A6" stroke-width="4"/>
+  <text x="218" y="355" font-family="Inter,Arial" font-size="17" fill="#555">obstacle / forbidden set</text>
+ </g>
+ <path d="M475 255 H536" stroke="#ff0000" stroke-width="8" stroke-linecap="round"/>
+ <polygon points="536,232 590,255 536,278" fill="#ff0000"/>
+ <text x="430" y="310" font-family="Inter,Arial" font-size="20" fill="#555">FK / IK / planning</text>
+</svg>

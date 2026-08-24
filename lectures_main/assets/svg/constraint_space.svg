@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560">
+ <rect width="1000" height="560" fill="#fff"/>
+ <g transform="translate(190,80)">
+  <circle cx="310" cy="230" r="74" fill="#D79B00" stroke="#111" stroke-width="7"/>
+  <text x="272" y="238" font-family="Inter,Arial" font-size="22" font-weight="900" fill="#111">platform</text>
+  <g stroke="#82B366" stroke-width="9" stroke-linecap="round">
+    <path d="M310 230 L120 380"/><path d="M310 230 L500 380"/><path d="M310 230 L310 30"/>
+  </g>
+  <g fill="#fff" stroke="#111" stroke-width="6">
+    <circle cx="120" cy="380" r="34"/><circle cx="500" cy="380" r="34"/><circle cx="310" cy="30" r="34"/>
+  </g>
+  <g stroke="#ff0000" stroke-width="7" stroke-linecap="round">
+    <path d="M155 345 L210 292"/><path d="M465 345 L410 292"/><path d="M310 70 L310 145"/>
+  </g>
+  <polygon points="210,292 193,302 200,315" fill="#ff0000"/><polygon points="410,292 427,302 420,315" fill="#ff0000"/><polygon points="310,145 296,125 324,125" fill="#ff0000"/>
+  <rect x="45" y="405" width="530" height="30" rx="8" fill="#f2f2f2"/>
+ </g>
+ <g transform="translate(50,80)">
+  <text x="0" y="0" font-family="Inter,Arial" font-size="22" font-weight="800" fill="#111">Motion space</text>
+  <text x="0" y="34" font-family="Inter,Arial" font-size="18" fill="#555">twists the platform can execute</text>
+  <path d="M10 85 h140" stroke="#050505" stroke-width="6"/><polygon points="150,85 126,72 126,98" fill="#050505"/>
+ </g>
+ <g transform="translate(742,80)">
+  <text x="0" y="0" font-family="Inter,Arial" font-size="22" font-weight="800" fill="#111">Constraint space</text>
+  <text x="0" y="34" font-family="Inter,Arial" font-size="18" fill="#555">wrenches that do no work</text>
+  <path d="M0 85 h140" stroke="#ff0000" stroke-width="6"/><polygon points="0,85 24,72 24,98" fill="#ff0000"/>
+ </g>
+ <text x="294" y="520" font-family="Inter,Arial" font-size="23" fill="#111"><tspan font-weight="800">Reciprocity:</tspan> allowable motion is shaped by admissible constraints.</text>
+</svg>

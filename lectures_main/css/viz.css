@@ -1,0 +1,86 @@
+.robot-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.robot2r-interactive {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.robot2r-interactive .robot-svg {
+  flex: 1;
+  min-height: 0;
+}
+
+.robot-controls {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vgap-sm);
+  padding-top: var(--vgap-sm);
+}
+
+.world-axis {
+  stroke: #cccccc;
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+}
+
+.axis-x { stroke: var(--epfl-red); stroke-width: 4; }
+.axis-y { stroke: var(--science-green); stroke-width: 4; }
+.axis-z { stroke: var(--science-blue); stroke-width: 4; }
+
+.robot-link {
+  stroke: var(--black);
+  stroke-width: 14;
+  stroke-linecap: round;
+}
+
+.robot-joint {
+  fill: var(--white);
+  stroke: var(--black);
+  stroke-width: 5;
+}
+
+.robot-ee {
+  fill: var(--epfl-red);
+  stroke: var(--black);
+  stroke-width: 3;
+}
+
+.ee-path {
+  fill: none;
+  stroke: var(--science-blue);
+  stroke-width: 4;
+  opacity: 0.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.frame-label,
+.joint-value {
+  fill: var(--black);
+  font-size: 18px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 600;
+}
+
+.three-viewer {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--white);
+  border: 1px solid var(--line);
+}
+
+.three-viewer canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>ENG-654 Module 4 — Null-Space &amp; Clearance Visualizer</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
+:root{
+  color-scheme:dark;
+  --red:#e30613;--white:#ffffff;--black:#000000;
+  --font-primary:Arial,Helvetica,Verdana,sans-serif;
+  --font-secondary:"Space Grotesk",Arial,Helvetica,Verdana,sans-serif;
+  --font-heading:"Arial Black",Arial,Helvetica,Verdana,sans-serif;
+  --font-title:Impact,"Arial Black",Arial,sans-serif
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--black);color:var(--white);font-family:var(--font-primary);-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit}
+.wrap{max-width:1500px;margin:auto;padding:18px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;gap:14px}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.main{grid-template-columns:minmax(0,1fr) 360px}
+.card{background:var(--black);border:1px solid var(--white);border-radius:0;padding:14px}
+.panel{background:var(--black);border:1px solid var(--white);border-radius:0}
+.muted{color:rgba(255,255,255,.68)}.small{font-size:.9rem}.hidden{display:none!important}
+.badge{display:inline-block;padding:5px 9px;border:1px solid var(--red);color:var(--red);font-family:var(--font-secondary);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06rem}
+label{display:block;font-family:var(--font-secondary);font-size:.86rem;font-weight:600}
+input[type=text],input[type=number],select{
+  width:100%;margin-top:5px;padding:9px 10px;border:1px solid var(--white);border-radius:0;
+  background:var(--black);color:var(--white)
+}
+input[type=file]{color:var(--white);font-family:var(--font-secondary)}
+input[type=range]{width:100%;accent-color:var(--red)}
+button{padding:9px 12px;border:1px solid var(--white);border-radius:0;background:var(--black);color:var(--white);cursor:pointer;font-family:var(--font-secondary);font-size:.82rem;font-weight:700;text-transform:uppercase}
+button:hover{background:var(--red);border-color:var(--red)}
+.metric{background:var(--black);border:1px solid var(--white);border-radius:0;padding:10px}
+.metric .value{font-family:var(--font-heading);font-size:1.25rem;font-variant-numeric:tabular-nums}
+#viewport{height:680px;width:100%;background:var(--black)}
+.viewport-wrap{position:relative;overflow:hidden}
+.overlay{position:absolute;left:12px;top:12px;background:rgba(0,0,0,.88);border:1px solid var(--white);border-radius:0;padding:8px 10px;font-family:var(--font-secondary);font-size:.82rem}
+.bottom{top:auto;bottom:12px;max-width:90%;color:rgba(255,255,255,.72)}
+.toggle{display:inline-flex;gap:7px;align-items:center;font-family:var(--font-secondary);font-size:.82rem;font-weight:700;text-transform:uppercase}
+.sliders{grid-template-columns:repeat(4,minmax(0,1fr))}
+.callout{border-left:4px solid var(--red);padding:10px 12px;background:var(--black);border-top:1px solid var(--white);border-right:1px solid var(--white);border-bottom:1px solid var(--white)}
+h1{font-family:var(--font-title);font-weight:400;line-height:.92;text-transform:none}
+h2,h3{font-family:var(--font-heading);font-weight:900}
+h1,h2,h3{margin:.3em 0}
+.mono{font-variant-numeric:tabular-nums}
+@media(max-width:1000px){.main{grid-template-columns:1fr}.sliders{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.g3,.sliders{grid-template-columns:1fr}#viewport{height:520px}}
+
+
+/* ---------- Shared ENG-654 compact module layout ---------- */
+#appView.hidden{display:none!important}
+h1.module-title{
+  max-width:none;
+  margin:.25rem 0 .35rem;
+  font-family:var(--font-title,Impact,"Arial Black",Arial,sans-serif);
+  font-size:clamp(1.85rem,2.8vw,2.8rem);
+  font-weight:400;
+  line-height:1;
+  white-space:nowrap;
+  text-transform:uppercase;
+}
+.module-collapsible{
+  border:1px solid var(--white,#fff);
+  background:var(--black,#000);
+}
+.module-collapsible > summary{
+  list-style:none;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  min-height:42px;
+  padding:10px 12px;
+  cursor:pointer;
+  color:var(--white,#fff);
+  font-family:var(--font-heading,"Arial Black",Arial,sans-serif);
+  font-size:.94rem;
+  font-weight:900;
+  line-height:1.1;
+  white-space:nowrap;
+}
+.module-collapsible > summary::-webkit-details-marker{display:none}
+.module-collapsible > summary::after{
+  content:"+";
+  flex:0 0 auto;
+  color:var(--red,#e30613);
+  font-family:var(--font-secondary,"Space Grotesk",Arial,sans-serif);
+  font-size:1.1rem;
+  font-weight:700;
+}
+.module-collapsible[open] > summary{
+  border-bottom:1px solid var(--white,#fff);
+}
+.module-collapsible[open] > summary::after{content:"−"}
+.module-collapsible-body{padding:12px}
+.module-side-stack{
+  display:grid;
+  gap:10px;
+  align-content:start;
+}
+.module-joint-preview .module-collapsible-body{
+  padding:9px 11px;
+}
+.module-joint-preview .joint-row,
+.module-joint-preview .card{
+  padding-top:4px;
+  padding-bottom:4px;
+}
+.module-joint-preview .small{
+  font-size:.72rem;
+}
+.module-joint-preview input[type="range"]{
+  margin:1px 0;
+}
+.module-joint-preview #jointControls,
+.module-joint-preview #sliders,
+.module-joint-preview #initialSliders{
+  max-height:none !important;
+  overflow:visible !important;
+}
+.module-joint-preview #sliders,
+.module-joint-preview #initialSliders{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:6px !important;
+}
+.compact-file-grid{
+  margin:12px 0;
+}
+@media(max-width:900px){
+  h1.module-title{
+    font-size:clamp(1.65rem,6vw,2.45rem);
+    white-space:normal;
+  }
+  .module-collapsible > summary{
+    white-space:normal;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<main id="appView">
+<div class="badge">Module 4 · Redundancy &amp; Clearance</div>
+<h1 class="module-title">Redundancy, Self-Motion &amp; Clearance</h1>
+<p class="muted">
+      Default configuration is preloaded. Capture its pose, add and drag a spherical obstacle, then vary q₃ manually to move along the self-motion manifold while monitoring obstacle clearance.
+    </p>
+<details class="module-collapsible compact-file-grid" open=""><summary>Files &amp; inputs</summary><div class="module-collapsible-body">
+<label>URDF
+        <input accept=".urdf,.xml" id="urdfInput" type="file"/>
+</label>
+<label>Visual mesh files
+        <input accept=".stl,.dae,model/stl,model/vnd.collada+xml" id="visualInput" multiple="" type="file"/>
+</label>
+<label>IK configurations CSV
+        <input accept=".csv,text/csv" id="ikCsv" type="file"/>
+</label>
+<label>Collision mesh files
+        <input accept=".stl,.dae,model/stl,model/vnd.collada+xml" id="collisionInput" multiple="" type="file"/>
+</label>
+</div></details>
+<div class="grid main">
+<section>
+<div class="panel viewport-wrap">
+<div id="viewport"></div>
+<div class="overlay"><span id="status">Load URDF and visual STL files</span></div>
+<div class="overlay bottom">URDF materials = robot · RGB = frames · Orange = joint axes · translucent copy = captured/self-motion reference · yellow sphere = obstacle</div>
+</div>
+<div class="row" style="margin-top:12px">
+<label class="toggle"><input checked="" id="showReference" type="checkbox"/>50% reference</label>
+<label class="toggle"><input checked="" id="showGhost" type="checkbox"/>Motion ghost</label>
+<label class="toggle"><input checked="" id="showTarget" type="checkbox"/>Target frame</label>
+<label class="toggle"><input checked="" id="showActual" type="checkbox"/>Current FK frame</label>
+<label class="toggle"><input checked="" id="showJointAxes" type="checkbox"/>Joint axes</label>
+<label class="toggle"><input checked="" id="showTrace" type="checkbox"/>Self-motion trace</label>
+<label class="toggle"><input checked="" id="showGeometry" type="checkbox"/>Arm-angle geometry</label>
+<button id="replayGhost">Replay ghost sweep</button>
+<button id="fitBtn">Fit camera</button>
+</div>
+</section>
+<aside class="module-side-stack"><details class="module-collapsible module-joint-preview" open=""><summary>Joint preview · Reference configuration</summary><div class="module-collapsible-body">
+<div class="row" style="justify-content:space-between">
+<div>
+
+<div class="small muted">The following configuration is loaded by default.</div>
+</div>
+<div class="row">
+<button id="defaultBtn">Default configuration</button>
+<button id="captureBtn">Capture fixed pose</button>
+</div>
+</div>
+<div class="grid sliders" id="initialSliders" style="margin-top:12px"></div>
+</div></details>
+<details class="module-collapsible"><summary>Kinematic selections</summary><div class="module-collapsible-body">
+<label>End-effector link<select id="eeLink"></select></label>
+<label style="margin-top:10px">Redundancy joint<select id="redundancyJoint"></select></label>
+<label style="margin-top:10px">Tracked arm-point link<select id="armPointLink"></select></label>
+</div></details>
+<div class="grid g3">
+<div class="metric"><div class="small muted">Pose Δp</div><div class="value" id="posError">—</div><div class="small muted">mm</div></div>
+<div class="metric"><div class="small muted">Pose ΔR</div><div class="value" id="rotError">—</div><div class="small muted">deg</div></div>
+<div class="metric"><div class="small muted">ψ</div><div class="value" id="armAngle">—</div><div class="small muted">deg</div></div>
+</div>
+<details class="module-collapsible"><summary>Spherical obstacle</summary><div class="module-collapsible-body">
+
+<label class="toggle"><input id="obstacleEnabled" type="checkbox"/>Add obstacle</label>
+<div class="grid" style="grid-template-columns:1fr 1fr;margin-top:10px">
+<label class="small">Radius [m]
+              <input id="obstacleRadius" max="1" min="0.01" step="0.01" type="number" value="0.12"/>
+</label>
+<label class="small">Safety margin [m]
+              <input id="safetyMargin" max="0.5" min="0" step="0.01" type="number" value="0.05"/>
+</label>
+</div>
+<div class="grid g3" style="margin-top:10px">
+<label class="small">x<input id="obsX" step="0.02" type="number" value="0.45"/></label>
+<label class="small">y<input id="obsY" step="0.02" type="number" value="0.25"/></label>
+<label class="small">z<input id="obsZ" step="0.02" type="number" value="0.65"/></label>
+</div>
+<p class="small muted" id="obstacleStatus">
+            Add the sphere, drag it near the robot, then vary q₃ manually to study clearance along the self-motion manifold.
+          </p>
+</div></details>
+<div class="grid" style="grid-template-columns:1fr 1fr">
+<div class="metric"><div class="small muted">Clearance</div><div class="value" id="clearanceValue">—</div><div class="small muted">mm incl. safety</div></div>
+<div class="metric"><div class="small muted">Nearest link</div><div class="value" id="nearestLink" style="font-size:1rem">—</div></div>
+</div>
+<details class="module-collapsible"><summary>Solver</summary><div class="module-collapsible-body">
+
+<div class="grid" style="grid-template-columns:1fr 1fr">
+<label class="small">Damping λ<input id="damping" min="0.00001" step="0.001" type="number" value="0.02"/></label>
+<label class="small">IK iterations<input id="iterations" max="200" min="1" type="number" value="50"/></label>
+<label class="small">Continuation Δq<input id="maxStep" max="0.2" min="0.005" step="0.005" type="number" value="0.03"/></label>
+</div>
+<p class="small muted" id="solverStatus">Capture a pose first.</p>
+</div></details>
+</aside>
+</div>
+
+<details class="module-collapsible" id="selfMotionSection" open="" style="margin-top:15px;opacity:.55"><summary>Explore self-motion</summary><div class="module-collapsible-body">
+<div class="row" style="justify-content:space-between">
+<div>
+
+<div class="small muted">The selected joint is prescribed while the remaining joints compensate to keep the pose fixed.</div>
+</div>
+<button id="resetCaptured">Return to captured configuration</button>
+</div>
+<div style="margin-top:12px">
+<div class="row" style="justify-content:space-between">
+<strong id="redundancySliderName">Joint 3</strong>
+<span class="muted" id="redundancySliderValue">—</span>
+</div>
+<input disabled="" id="redundancySlider" max="3.14" min="-3.14" step="0.005" type="range"/>
+</div>
+</div></details>
+<div class="callout small" style="margin-top:15px">
+      The obstacle does not command the robot. It is only a geometric probe. Drag the sphere near the arm and use the q₃ slider yourself: the remaining joints compensate to preserve the captured end-effector pose, while the clearance measurement shows whether the chosen self-motion configuration moves the robot toward or away from collision.
+    </div>
+</main>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/+esm';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js/+esm';
+import { STLLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/STLLoader.js/+esm';
+import { ColladaLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/ColladaLoader.js/+esm';
+import { mergeGeometries } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/utils/BufferGeometryUtils.js/+esm';
+
+const DEFAULT_Q = [
+  1.016450153508,
+  1.304558322717,
+  0.523598775598,
+  2.125142500082,
+ -2.512960349762,
+ -0.961980876726,
+  1.580355551154
+];
+const DEFAULT_TARGET_POSITION=[0.2,0.0,0.8];
+const DEFAULT_DATA_ROOT='../../assets/data';
+const DEFAULT_URDF_NAME='iiwa7_free_joints.urdf';
+const DEFAULT_IK_NAME='iiwa7_IK_q3_030deg.csv';
+const DEFAULT_STL_NAMES=Array.from({length:8},(_,i)=>`link_${i}.stl`);
+
+const $ = id => document.getElementById(id);
+
+async function fetchDefaultFile(url,name,type){
+  const response=await fetch(url);
+  if(!response.ok)throw new Error(`Unable to load ${name} (${response.status}).`);
+  return new File([await response.blob()],name,{type});
+}
+
+function initialize() {
+  const viewport = $('viewport');
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000000);
+
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.001, 1000);
+  camera.up.set(0,0,1);
+  camera.position.set(2.2,-2.2,1.8);
+
+  const renderer = new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.shadowMap.enabled = true;
+  viewport.appendChild(renderer.domElement);
+
+  const orbit = new OrbitControls(camera, renderer.domElement);
+  orbit.enableDamping = true;
+  orbit.target.set(0,0,.7);
+
+  scene.add(new THREE.HemisphereLight(0xffffff,0x000000,1.8));
+  const dl = new THREE.DirectionalLight(0xffffff,3);
+  dl.position.set(3,-3,5);
+  scene.add(dl);
+
+  const floor = new THREE.Mesh(
+    new THREE.CircleGeometry(4,96),
+    new THREE.MeshStandardMaterial({color:0x000000,roughness:1})
+  );
+  floor.position.z = -.003;
+  scene.add(floor);
+
+  const grid = new THREE.GridHelper(4,40,0x666666,0x2b2b2b); grid.material.transparent=true; grid.material.opacity=.55;
+  grid.rotation.x = Math.PI/2;
+  scene.add(grid);
+  scene.add(new THREE.AxesHelper(.28));
+
+  const loader = new STLLoader();
+  const colladaLoader = new ColladaLoader();
+
+  const state = {
+    urdfText:'',
+    robot:null,
+    visualFiles:new Map(),
+    geometryCache:new Map(),
+    ikConfigurations:[],
+
+    movable:[],
+    q:[],
+    capturedQ:null,
+    target:null,
+
+    liveRoot:new THREE.Group(),
+    referenceRoot:new THREE.Group(),
+    ghostRoot:new THREE.Group(),
+    targetFrame:new THREE.Group(),
+    actualFrame:new THREE.Group(),
+
+    linkNodes:new Map(),
+    jointFrames:new Map(),
+    motionNodes:new Map(),
+    ghostMotionNodes:new Map(),
+    liveMeshes:[],
+
+    redundancyIndex:2,
+    eeLink:null,
+    armPointLink:null,
+    referenceArmDirection:null,
+
+    tracePoints:[],
+    history:[],
+    ghostQueue:[],
+    ghostIndex:0,
+    ghostPlaying:false,
+    lastGhostTime:0,
+
+    obstacle:null,
+    obstacleShell:null,
+    jointAxisHelpers:[]
+  };
+
+  scene.add(
+    state.referenceRoot,
+    state.ghostRoot,
+    state.liveRoot,
+    state.targetFrame,
+    state.actualFrame
+  );
+
+  const accent = new THREE.Color(0xe30613);
+
+  function makeLine(opacity=.7) {
+    return new THREE.Line(
+      new THREE.BufferGeometry(),
+      new THREE.LineBasicMaterial({color:accent,transparent:true,opacity})
+    );
+  }
+
+  const traceLine = makeLine(.65);
+  const residualLine = makeLine(.9);
+  const axisLine = makeLine(.4);
+  const refArmLine = makeLine(.4);
+  const curArmLine = makeLine(.9);
+  const angleArc = makeLine(.8);
+  scene.add(traceLine,residualLine,axisLine,refArmLine,curArmLine,angleArc);
+
+  const armMarker = new THREE.Mesh(
+    new THREE.SphereGeometry(.024,18,12),
+    new THREE.MeshPhysicalMaterial({color:accent})
+  );
+  scene.add(armMarker);
+
+  function nums(s,d=[]) {
+    return s ? s.trim().split(/\s+/).map(Number) : [...d];
+  }
+  function basename(p) {
+    return String(p||'').replace(/\\/g,'/').split('/').pop().toLowerCase();
+  }
+  function originOf(n) {
+    const o = n?.querySelector(':scope > origin');
+    return {
+      xyz: nums(o?.getAttribute('xyz'),[0,0,0]),
+      rpy: nums(o?.getAttribute('rpy'),[0,0,0])
+    };
+  }
+  function originMatrix(o) {
+    const [x,y,z] = o.xyz;
+    const [r,p,yaw] = o.rpy;
+    return new THREE.Matrix4()
+      .makeTranslation(x,y,z)
+      .multiply(new THREE.Matrix4().makeRotationZ(yaw))
+      .multiply(new THREE.Matrix4().makeRotationY(p))
+      .multiply(new THREE.Matrix4().makeRotationX(r));
+  }
+  function setStatic(obj,o) {
+    obj.matrixAutoUpdate = false;
+    obj.matrix.copy(originMatrix(o));
+  }
+
+  function parseURDF(text) {
+    const doc = new DOMParser().parseFromString(text,'application/xml');
+    if (doc.querySelector('parsererror')) throw new Error('Invalid URDF XML');
+    const robot = doc.querySelector('robot');
+    if (!robot) throw new Error('No <robot> element');
+
+    const materialTable = new Map();
+    robot.querySelectorAll(':scope > material').forEach(m => {
+      const rgba = m.querySelector(':scope > color')?.getAttribute('rgba');
+      if (rgba && m.getAttribute('name')) materialTable.set(m.getAttribute('name'), nums(rgba));
+    });
+
+    const links = new Map();
+    robot.querySelectorAll(':scope > link').forEach(linkNode => {
+      const name = linkNode.getAttribute('name');
+      const visuals = [...linkNode.querySelectorAll(':scope > visual')].map(v => {
+        const mesh = v.querySelector(':scope > geometry > mesh');
+        if (!mesh) return null;
+        let color = null;
+        const mat = v.querySelector(':scope > material');
+        if (mat) {
+          const inline = mat.querySelector(':scope > color')?.getAttribute('rgba');
+          if (inline) color = nums(inline);
+          else if (materialTable.has(mat.getAttribute('name'))) color = materialTable.get(mat.getAttribute('name'));
+        }
+        return {
+          filename:mesh.getAttribute('filename'),
+          scale:nums(mesh.getAttribute('scale'),[1,1,1]),
+          origin:originOf(v),
+          color
+        };
+      }).filter(Boolean);
+      links.set(name,{name,visuals});
+    });
+
+    const joints = [];
+    robot.querySelectorAll(':scope > joint').forEach(j => {
+      const type = j.getAttribute('type') || 'fixed';
+      const lim = j.querySelector(':scope > limit');
+      let lower = Number(lim?.getAttribute('lower'));
+      let upper = Number(lim?.getAttribute('upper'));
+      if (type === 'continuous') { lower = -Math.PI; upper = Math.PI; }
+      if (!Number.isFinite(lower)) lower = type === 'prismatic' ? -1 : -Math.PI;
+      if (!Number.isFinite(upper)) upper = type === 'prismatic' ? 1 : Math.PI;
+      joints.push({
+        name:j.getAttribute('name'),
+        type,
+        parent:j.querySelector(':scope > parent')?.getAttribute('link'),
+        child:j.querySelector(':scope > child')?.getAttribute('link'),
+        origin:originOf(j),
+        axis:nums(j.querySelector(':scope > axis')?.getAttribute('xyz'),[1,0,0]),
+        lower,upper
+      });
+    });
+
+    const children = new Set(joints.map(j=>j.child));
+    const root = [...links.keys()].find(n=>!children.has(n));
+    const outgoing = new Map();
+    joints.forEach(j => {
+      if (!outgoing.has(j.parent)) outgoing.set(j.parent,[]);
+      outgoing.get(j.parent).push(j);
+    });
+
+    const depth = new Map([[root,0]]);
+    function walk(link) {
+      for (const j of outgoing.get(link) || []) {
+        depth.set(j.child,(depth.get(link)||0)+1);
+        walk(j.child);
+      }
+    }
+    walk(root);
+
+    const leaves = [...links.keys()]
+      .filter(n=>!outgoing.has(n))
+      .sort((a,b)=>(depth.get(b)||0)-(depth.get(a)||0));
+
+    return {name:robot.getAttribute('name')||'robot',links,joints,root,outgoing,depth,leaves};
+  }
+
+  function flattenCollada(text) {
+    const root=colladaLoader.parse(text,'').scene;
+    root.updateMatrixWorld(true);
+    const parts=[];
+    root.traverse(object=>{
+      if(!object.isMesh||!object.geometry?.getAttribute('position'))return;
+      let part=object.geometry.clone();
+      part.applyMatrix4(object.matrixWorld);
+      for(const name of Object.keys(part.attributes))if(name!=='position')part.deleteAttribute(name);
+      part.morphAttributes={};
+      part.clearGroups();
+      if(part.index)part=part.toNonIndexed();
+      parts.push(part);
+    });
+    if(!parts.length)throw new Error('DAE file contains no mesh geometry.');
+    const geometry=parts.length===1?parts[0]:mergeGeometries(parts,false);
+    if(!geometry)throw new Error('Unable to combine the mesh geometry in the DAE file.');
+    geometry.computeVertexNormals();
+    geometry.computeBoundingSphere();
+    return geometry;
+  }
+
+  async function geometry(spec) {
+    const key = basename(spec.filename);
+    if (state.geometryCache.has(key)) return state.geometryCache.get(key);
+
+    const file = state.visualFiles.get(key);
+    if (!file) return null;
+
+    const g=/\.dae$/i.test(file.name||key)
+      ?flattenCollada(await file.text())
+      :loader.parse(await file.arrayBuffer());
+    if(!g.getAttribute('normal'))g.computeVertexNormals();
+    g.computeBoundingSphere();
+    state.geometryCache.set(key,g);
+    return g;
+  }
+
+  function material(rgba,mode) {
+    const c = rgba || [.72,.72,.75,1];
+    const alpha = Number.isFinite(c[3]) ? c[3] : 1;
+    const color = new THREE.Color(c[0],c[1],c[2]);
+
+    if (mode === 'reference') {
+      return new THREE.MeshPhysicalMaterial({
+        color,
+        transparent:true,
+        opacity:Math.min(.50,alpha),
+        depthWrite:false,
+        roughness:.30,metalness:.12,side:THREE.DoubleSide
+      });
+    }
+
+    if (mode === 'ghost') {
+      return new THREE.MeshPhysicalMaterial({
+        color,
+        transparent:true,
+        opacity:Math.min(.16,alpha),
+        depthWrite:false,
+        roughness:.35,metalness:.05,side:THREE.DoubleSide
+      });
+    }
+
+    return new THREE.MeshPhysicalMaterial({
+      color,
+      transparent:alpha<.999,
+      opacity:alpha,
+      depthWrite:alpha>=.999,
+      roughness:.28,metalness:.12,clearcoat:.15,side:THREE.DoubleSide
+    });
+  }
+
+  function applyJoint(node,j,value) {
+    node.position.set(0,0,0);
+    node.quaternion.identity();
+    const axis = new THREE.Vector3(...j.axis).normalize();
+
+    if (j.type === 'revolute' || j.type === 'continuous') {
+      node.quaternion.setFromAxisAngle(axis,value);
+    } else if (j.type === 'prismatic') {
+      node.position.copy(axis.multiplyScalar(value));
+    }
+  }
+
+  async function buildRobot(root,q,mode,record=false) {
+    root.clear();
+
+    const links = new Map();
+    const jFrames = new Map();
+    const motions = new Map();
+
+    if (record) { state.liveMeshes = []; state.jointAxisHelpers = []; }
+
+    for (const l of state.robot.links.values()) links.set(l.name,new THREE.Group());
+
+    const qMap = new Map(state.movable.map((j,i)=>[j.name,q[i]||0]));
+
+    function attach(name,parent) {
+      const node = links.get(name);
+      parent.add(node);
+
+      for (const j of state.robot.outgoing.get(name) || []) {
+        const jf = new THREE.Group();
+        setStatic(jf,j.origin);
+        node.add(jf);
+        jFrames.set(j.name,jf);
+
+        if (mode === 'live') {
+          const axisHelper = new THREE.ArrowHelper(
+            new THREE.Vector3(...j.axis).normalize(),
+            new THREE.Vector3(),
+            .12, 0xff8c00, .028, .016
+          );
+          axisHelper.userData.jointAxis = true;
+          jf.add(axisHelper);
+          state.jointAxisHelpers.push(axisHelper);
+        }
+
+        const motion = new THREE.Group();
+        jf.add(motion);
+        motions.set(j.name,motion);
+        applyJoint(motion,j,qMap.get(j.name)||0);
+
+        attach(j.child,motion);
+      }
+    }
+    attach(state.robot.root,root);
+
+    for (const l of state.robot.links.values()) {
+      for (const spec of l.visuals) {
+        const g = await geometry(spec);
+        if (!g) continue;
+
+        const frame = new THREE.Group();
+        setStatic(frame,spec.origin);
+        links.get(l.name).add(frame);
+
+        const mesh = new THREE.Mesh(g,material(spec.color,mode));
+        mesh.scale.set(...spec.scale);
+        frame.add(mesh);
+
+        if (record) state.liveMeshes.push({mesh,link:l.name});
+      }
+    }
+
+    root.updateMatrixWorld(true);
+
+    if (record) {
+      state.linkNodes = links;
+      state.jointFrames = jFrames;
+      state.motionNodes = motions;
+    }
+    if (mode === 'ghost') state.ghostMotionNodes = motions;
+  }
+
+  function applyQTo(nodes,q) {
+    state.movable.forEach((j,i)=>{
+      const n = nodes.get(j.name);
+      if (n) applyJoint(n,j,q[i]);
+    });
+  }
+  function applyLive() {
+    applyQTo(state.motionNodes,state.q);
+    state.liveRoot.updateMatrixWorld(true);
+    updateVisuals();
+    updateClearanceUI();
+  }
+  function applyGhost(q) {
+    applyQTo(state.ghostMotionNodes,q);
+    state.ghostRoot.updateMatrixWorld(true);
+  }
+
+  function poseOf(link) {
+    const n = state.linkNodes.get(link);
+    if (!n) return null;
+    n.updateWorldMatrix(true,false);
+    const p = new THREE.Vector3();
+    const q = new THREE.Quaternion();
+    const s = new THREE.Vector3();
+    n.matrixWorld.decompose(p,q,s);
+    return {position:p,quaternion:q,matrix:n.matrixWorld.clone()};
+  }
+
+  function qError(target,current) {
+    let q = target.clone().multiply(current.clone().invert()).normalize();
+    if (q.w < 0) q.set(-q.x,-q.y,-q.z,-q.w);
+    const h = Math.hypot(q.x,q.y,q.z);
+    if (h < 1e-10) return new THREE.Vector3();
+    return new THREE.Vector3(q.x,q.y,q.z).multiplyScalar(2*Math.atan2(h,q.w)/h);
+  }
+
+  function poseError() {
+    const c = poseOf(state.eeLink);
+    return {
+      c,
+      ep:state.target.position.clone().sub(c.position),
+      er:qError(state.target.quaternion,c.quaternion)
+    };
+  }
+
+  function jacobian() {
+    const ee = poseOf(state.eeLink).position;
+    const J = Array.from({length:6},()=>Array(state.movable.length).fill(0));
+
+    state.movable.forEach((j,k)=>{
+      const jf = state.jointFrames.get(j.name);
+      jf.updateWorldMatrix(true,false);
+
+      const p = new THREE.Vector3();
+      const q = new THREE.Quaternion();
+      const s = new THREE.Vector3();
+      jf.matrixWorld.decompose(p,q,s);
+
+      const a = new THREE.Vector3(...j.axis).normalize().applyQuaternion(q).normalize();
+
+      let v,w;
+      if (j.type === 'prismatic') {
+        v = a;
+        w = new THREE.Vector3();
+      } else {
+        w = a;
+        v = a.clone().cross(ee.clone().sub(p));
+      }
+
+      J[0][k]=v.x; J[1][k]=v.y; J[2][k]=v.z;
+      J[3][k]=w.x; J[4][k]=w.y; J[5][k]=w.z;
+    });
+
+    return J;
+  }
+
+  function linearSolve(A,b) {
+    const n=b.length;
+    const M=A.map((r,i)=>[...r,b[i]]);
+
+    for(let c=0;c<n;c++){
+      let p=c;
+      for(let r=c+1;r<n;r++) if(Math.abs(M[r][c])>Math.abs(M[p][c])) p=r;
+      if(Math.abs(M[p][c])<1e-12) return null;
+
+      [M[c],M[p]]=[M[p],M[c]];
+      const d=M[c][c];
+      for(let j=c;j<=n;j++) M[c][j]/=d;
+
+      for(let r=0;r<n;r++){
+        if(r===c) continue;
+        const f=M[r][c];
+        for(let j=c;j<=n;j++) M[r][j]-=f*M[c][j];
+      }
+    }
+
+    return M.map(r=>r[n]);
+  }
+
+  function solveFixed(index,value) {
+    state.q[index]=value;
+    applyLive();
+
+    const free=state.movable.map((_,i)=>i).filter(i=>i!==index);
+    const lambda=Math.max(1e-6,Number($('damping').value)||.02);
+    const iterations=Number($('iterations').value)||50;
+    let ok=false;
+
+    for(let it=0;it<iterations;it++){
+      const e=poseError();
+
+      if(e.ep.length()<1e-5 && e.er.length()<1e-4){
+        ok=true;
+        break;
+      }
+
+      const all=jacobian();
+      const J=all.map(row=>free.map(i=>row[i]));
+      const ev=[e.ep.x,e.ep.y,e.ep.z,e.er.x,e.er.y,e.er.z];
+
+      const A=Array.from({length:6},(_,r)=>Array.from({length:6},(_,c)=>{
+        let sum=0;
+        for(let k=0;k<free.length;k++) sum+=J[r][k]*J[c][k];
+        return sum+(r===c?lambda*lambda:0);
+      }));
+
+      const y=linearSolve(A,ev);
+      if(!y) break;
+
+      free.forEach((idx,k)=>{
+        let dq=0;
+        for(let r=0;r<6;r++) dq+=J[r][k]*y[r];
+        dq=Math.max(-.08,Math.min(.08,dq));
+
+        const joint=state.movable[idx];
+        let v=state.q[idx]+dq;
+        if(joint.type!=='continuous') v=Math.max(joint.lower,Math.min(joint.upper,v));
+        state.q[idx]=v;
+      });
+
+      state.q[index]=value;
+      applyLive();
+    }
+
+    return ok;
+  }
+
+  function moveRedundant(target) {
+    const idx=state.redundancyIndex;
+    const start=state.q[idx];
+    const step=Math.max(.005,Number($('maxStep').value)||.03);
+    const N=Math.max(1,Math.ceil(Math.abs(target-start)/step));
+
+    const segment=[[...state.q]];
+    let ok=true;
+
+    for(let i=1;i<=N;i++){
+      if(!solveFixed(idx,start+(target-start)*i/N)) ok=false;
+      segment.push([...state.q]);
+      state.history.push([...state.q]);
+      appendTrace();
+    }
+
+    updateMetrics(ok);
+    updateSlider();
+    updateClearanceUI();
+    startGhost(segment);
+
+    if(state.obstacle?.visible){
+      const result=minClearance();
+      if(Number.isFinite(result.clearance)){
+        $('obstacleStatus').textContent =
+          result.clearance >= 0
+            ? `q₃ = ${THREE.MathUtils.radToDeg(state.q[idx]).toFixed(2)}°: collision-free, clearance ${(result.clearance*1000).toFixed(1)} mm from ${result.link}.`
+            : `q₃ = ${THREE.MathUtils.radToDeg(state.q[idx]).toFixed(2)}°: collision / safety penetration ${(-result.clearance*1000).toFixed(1)} mm at ${result.link}.`;
+      }
+    }
+  }
+
+  function pointToAABBDistance(point, min, max) {
+    const dx = Math.max(min.x - point.x, 0, point.x - max.x);
+    const dy = Math.max(min.y - point.y, 0, point.y - max.y);
+    const dz = Math.max(min.z - point.z, 0, point.z - max.z);
+    return Math.hypot(dx,dy,dz);
+  }
+
+  function minClearance() {
+    if(!state.obstacle || !state.obstacle.visible) {
+      return {clearance:Infinity,link:'—'};
+    }
+
+    state.liveRoot.updateMatrixWorld(true);
+
+    const obstacleCenter = state.obstacle.getWorldPosition(new THREE.Vector3());
+    const obstacleRadius = Number($('obstacleRadius').value) || .12;
+    const safety = Number($('safetyMargin').value) || 0;
+    const effectiveRadius = obstacleRadius + safety;
+
+    let best = Infinity;
+    let nearest = '—';
+
+    for(const item of state.liveMeshes) {
+      const box = new THREE.Box3().setFromObject(item.mesh);
+      if(box.isEmpty()) continue;
+
+      const min = box.min;
+      const max = box.max;
+      const d = pointToAABBDistance(obstacleCenter,min,max) - effectiveRadius;
+
+      if(d < best) {
+        best = d;
+        nearest = item.link;
+      }
+    }
+
+    return {clearance:best,link:nearest};
+  }
+
+  function startGhost(path) {
+    if(!state.ghostMotionNodes.size || path.length<2) return;
+    state.ghostQueue=path.map(q=>[...q]);
+    state.ghostIndex=0;
+    state.ghostPlaying=true;
+    state.lastGhostTime=0;
+    state.ghostRoot.visible=$('showGhost').checked;
+  }
+
+  function replayGhost() {
+    if(state.history.length>1) startGhost(state.history);
+  }
+
+  function updateGhost(time) {
+    if(!state.ghostPlaying) return;
+    if(state.lastGhostTime && time-state.lastGhostTime<45) return;
+
+    state.lastGhostTime=time;
+    applyGhost(state.ghostQueue[state.ghostIndex++]);
+
+    if(state.ghostIndex>=state.ghostQueue.length) state.ghostPlaying=false;
+  }
+
+  function setLine(line,points) {
+    line.geometry.dispose();
+    line.geometry=new THREE.BufferGeometry().setFromPoints(points);
+  }
+
+  function shoulder() {
+    const jf=state.jointFrames.get(state.movable[0]?.name);
+    jf?.updateWorldMatrix(true,false);
+    return jf ? new THREE.Vector3().setFromMatrixPosition(jf.matrixWorld) : new THREE.Vector3();
+  }
+
+  function armPoint() {
+    return poseOf(state.armPointLink)?.position || new THREE.Vector3();
+  }
+
+  function armGeometry() {
+    if(!state.target) return null;
+
+    const s=shoulder();
+    const ee=state.target.position.clone();
+    const axis=ee.clone().sub(s).normalize();
+    const arm=armPoint();
+
+    const rel=arm.clone().sub(s);
+    const center=s.clone().add(axis.clone().multiplyScalar(rel.dot(axis)));
+    const radial=arm.clone().sub(center);
+
+    if(radial.length()<1e-8) return null;
+
+    const dir=radial.clone().normalize();
+    const ref=state.referenceArmDirection || dir.clone();
+    const angle=Math.atan2(axis.dot(ref.clone().cross(dir)),ref.dot(dir));
+
+    return {s,ee,axis,arm,center,radius:radial.length(),dir,ref,angle};
+  }
+
+  function updateVisuals() {
+    if(!state.target) return;
+
+    const c=poseOf(state.eeLink);
+    state.actualFrame.position.copy(c.position);
+    state.actualFrame.quaternion.copy(c.quaternion);
+    setLine(residualLine,[c.position,state.target.position]);
+
+    const g=armGeometry();
+    if(!g) return;
+
+    armMarker.position.copy(g.arm);
+    setLine(axisLine,[g.s,g.ee]);
+    setLine(refArmLine,[g.center,g.center.clone().add(g.ref.clone().multiplyScalar(g.radius))]);
+    setLine(curArmLine,[g.center,g.arm]);
+
+    const pts=[];
+    for(let i=0;i<=32;i++){
+      const q=new THREE.Quaternion().setFromAxisAngle(g.axis,g.angle*i/32);
+      pts.push(g.center.clone().add(g.ref.clone().applyQuaternion(q).multiplyScalar(g.radius*.7)));
+    }
+    setLine(angleArc,pts);
+
+    const show=$('showGeometry').checked;
+    axisLine.visible=show;
+    refArmLine.visible=show;
+    curArmLine.visible=show;
+    angleArc.visible=show;
+    armMarker.visible=show;
+  }
+
+  function appendTrace() {
+    if(!state.target) return;
+    const p=armPoint();
+    const last=state.tracePoints.at(-1);
+    if(last && last.distanceToSquared(p)<1e-8) return;
+
+    state.tracePoints.push(p.clone());
+    setLine(traceLine,state.tracePoints);
+  }
+
+  function updateMetrics(ok) {
+    if(!state.target) return;
+    const e=poseError();
+    const g=armGeometry();
+
+    $('posError').textContent=(e.ep.length()*1000).toFixed(3);
+    $('rotError').textContent=THREE.MathUtils.radToDeg(e.er.length()).toFixed(4);
+    $('armAngle').textContent=g ? THREE.MathUtils.radToDeg(g.angle).toFixed(2) : '—';
+    $('solverStatus').textContent=ok ? 'Pose lock maintained.' : 'Pose-lock residual remains.';
+  }
+
+  function updateClearanceUI() {
+    const r=minClearance();
+    $('clearanceValue').textContent=Number.isFinite(r.clearance) ? (r.clearance*1000).toFixed(1) : '—';
+    $('nearestLink').textContent=r.link;
+  }
+
+  function updateSlider() {
+    if(!state.movable.length) return;
+    const j=state.movable[state.redundancyIndex];
+    const s=$('redundancySlider');
+
+    s.min=j.lower;
+    s.max=j.upper;
+    s.value=state.q[state.redundancyIndex];
+
+    $('redundancySliderName').textContent=j.name;
+    $('redundancySliderValue').textContent=
+      THREE.MathUtils.radToDeg(state.q[state.redundancyIndex]).toFixed(2)+'°';
+  }
+
+  const obstacleRaycaster = new THREE.Raycaster();
+  const obstaclePointer = new THREE.Vector2();
+  const obstacleDragPlane = new THREE.Plane();
+  const obstacleDragOffset = new THREE.Vector3();
+  const obstacleDragPoint = new THREE.Vector3();
+  let obstacleDragging = false;
+
+  function pointerToNDC(event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    obstaclePointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    obstaclePointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  }
+
+  function reportObstacleClearance() {
+    updateClearanceUI();
+    const result=minClearance();
+    if(Number.isFinite(result.clearance)){
+      $('obstacleStatus').textContent =
+        result.clearance >= 0
+          ? `Collision-free. Clearance ${(result.clearance*1000).toFixed(1)} mm. Move q₃ manually to compare configurations.`
+          : `Collision / safety-margin penetration ${(-result.clearance*1000).toFixed(1)} mm. Move q₃ manually along the self-motion manifold.`;
+    }
+  }
+
+  renderer.domElement.addEventListener('pointerdown',event=>{
+    if(!state.obstacle?.visible) return;
+    pointerToNDC(event);
+    obstacleRaycaster.setFromCamera(obstaclePointer,camera);
+    const hit=obstacleRaycaster.intersectObject(state.obstacle,false)[0];
+    if(!hit) return;
+
+    obstacleDragging=true;
+    orbit.enabled=false;
+
+    const normal=camera.getWorldDirection(new THREE.Vector3()).normalize();
+    obstacleDragPlane.setFromNormalAndCoplanarPoint(normal,state.obstacle.position);
+
+    if(obstacleRaycaster.ray.intersectPlane(obstacleDragPlane,obstacleDragPoint)){
+      obstacleDragOffset.copy(state.obstacle.position).sub(obstacleDragPoint);
+    } else {
+      obstacleDragOffset.set(0,0,0);
+    }
+
+    renderer.domElement.setPointerCapture?.(event.pointerId);
+  });
+
+  renderer.domElement.addEventListener('pointermove',event=>{
+    if(!obstacleDragging || !state.obstacle?.visible) return;
+    pointerToNDC(event);
+    obstacleRaycaster.setFromCamera(obstaclePointer,camera);
+
+    if(obstacleRaycaster.ray.intersectPlane(obstacleDragPlane,obstacleDragPoint)){
+      state.obstacle.position.copy(obstacleDragPoint).add(obstacleDragOffset);
+      state.obstacleShell?.position.copy(state.obstacle.position);
+      syncObstacleInputs();
+      reportObstacleClearance();
+    }
+  });
+
+  function endObstacleDrag(event){
+    if(!obstacleDragging) return;
+    obstacleDragging=false;
+    orbit.enabled=true;
+    renderer.domElement.releasePointerCapture?.(event.pointerId);
+  }
+  renderer.domElement.addEventListener('pointerup',endObstacleDrag);
+  renderer.domElement.addEventListener('pointercancel',endObstacleDrag);
+
+  function createObstacle() {
+    if(state.obstacle){
+      scene.remove(state.obstacle,state.obstacleShell);
+      state.obstacle.geometry.dispose();
+      state.obstacle.material.dispose();
+      state.obstacleShell?.geometry.dispose();
+      state.obstacleShell?.material.dispose();
+    }
+
+    const r=Number($('obstacleRadius').value)||.12;
+    const safety=Number($('safetyMargin').value)||0;
+
+    state.obstacle=new THREE.Mesh(
+      new THREE.SphereGeometry(1,36,24),
+      new THREE.MeshPhysicalMaterial({
+        color:0xffc107,transparent:true,opacity:.78,roughness:.22,metalness:.05
+      })
+    );
+    state.obstacle.scale.setScalar(r);
+    state.obstacle.position.set(
+      Number($('obsX').value)||0,
+      Number($('obsY').value)||0,
+      Number($('obsZ').value)||0
+    );
+    scene.add(state.obstacle);
+
+    state.obstacleShell=new THREE.Mesh(
+      new THREE.SphereGeometry(1,28,18),
+      new THREE.MeshBasicMaterial({
+        color:0xff8c00,wireframe:true,transparent:true,opacity:.35
+      })
+    );
+    state.obstacleShell.scale.setScalar(r+safety);
+    state.obstacleShell.position.copy(state.obstacle.position);
+    scene.add(state.obstacleShell);
+
+    updateClearanceUI();
+    $('obstacleStatus').textContent='Drag the sphere directly in the 3D view, then move q₃ manually to change clearance.';
+  }
+
+  function disableObstacle() {
+    if(state.obstacle) state.obstacle.visible=false;
+    if(state.obstacleShell) state.obstacleShell.visible=false;
+    obstacleDragging=false;
+    orbit.enabled=true;
+    $('obstacleStatus').textContent='Obstacle disabled.';
+    updateClearanceUI();
+  }
+
+  function syncObstacleInputs() {
+    if(!state.obstacle) return;
+    $('obsX').value=state.obstacle.position.x.toFixed(3);
+    $('obsY').value=state.obstacle.position.y.toFixed(3);
+    $('obsZ').value=state.obstacle.position.z.toFixed(3);
+  }
+
+  function updateObstacleFromInputs() {
+    if(!$('obstacleEnabled').checked) return;
+    createObstacle();
+    updateClearanceUI();
+  }
+
+  function initialSliders(disabled=false) {
+    const box=$('initialSliders');
+    box.innerHTML='';
+
+    state.movable.forEach((j,i)=>{
+      const w=document.createElement('div');
+      w.className='card';
+
+      const top=document.createElement('div');
+      top.className='row';
+      top.style.justifyContent='space-between';
+
+      const a=document.createElement('span');
+      a.textContent=j.name;
+
+      const b=document.createElement('span');
+      b.className='small muted';
+      b.textContent=THREE.MathUtils.radToDeg(state.q[i]).toFixed(1)+'°';
+
+      top.append(a,b);
+
+      const s=document.createElement('input');
+      s.type='range';
+      s.min=j.lower;
+      s.max=j.upper;
+      s.step=.005;
+      s.value=state.q[i];
+      s.disabled=disabled;
+
+      s.addEventListener('input',()=>{
+        state.q[i]=Number(s.value);
+        applyLive();
+        b.textContent=THREE.MathUtils.radToDeg(state.q[i]).toFixed(1)+'°';
+        updateSlider();
+      });
+
+      w.append(top,s);
+      box.appendChild(w);
+    });
+  }
+
+  async function prepare() {
+    if(!state.urdfText) return;
+
+    state.robot=parseURDF(state.urdfText);
+    state.movable=state.robot.joints.filter(j=>['revolute','continuous','prismatic'].includes(j.type));
+
+    const defaultQ=state.ikConfigurations[1]||state.ikConfigurations[0]||DEFAULT_Q;
+    state.q=state.movable.map((_,i)=>i<defaultQ.length ? defaultQ[i] : 0);
+
+    state.redundancyIndex=Math.min(2,state.movable.length-1);
+    state.eeLink=state.robot.leaves[0];
+
+    const ordered=[...state.robot.links.keys()]
+      .sort((a,b)=>(state.robot.depth.get(a)||0)-(state.robot.depth.get(b)||0));
+
+    state.armPointLink=ordered[Math.floor(ordered.length/2)];
+
+    $('eeLink').innerHTML='';
+    $('redundancyJoint').innerHTML='';
+    $('armPointLink').innerHTML='';
+
+    ordered.forEach(n=>{
+      const a=document.createElement('option');
+      a.value=n;a.textContent=n;
+      $('eeLink').appendChild(a);
+
+      const b=document.createElement('option');
+      b.value=n;b.textContent=n;
+      $('armPointLink').appendChild(b);
+    });
+
+    state.movable.forEach((j,i)=>{
+      const o=document.createElement('option');
+      o.value=i;
+      o.textContent=`${i+1}: ${j.name}`;
+      $('redundancyJoint').appendChild(o);
+    });
+
+    $('eeLink').value=state.eeLink;
+    $('redundancyJoint').value=state.redundancyIndex;
+    $('armPointLink').value=state.armPointLink;
+
+    await buildRobot(state.liveRoot,state.q,'live',true);
+    initialSliders(false);
+    updateSlider();
+    fitCamera();
+
+    $('status').textContent=
+      `${state.robot.name} loaded · default configuration applied`;
+  }
+
+  async function capture() {
+    if(!state.robot) return;
+
+    state.capturedQ=[...state.q];
+
+    const p=poseOf(state.eeLink);
+    state.target={
+      position:new THREE.Vector3(...DEFAULT_TARGET_POSITION),
+      quaternion:p.quaternion.clone(),
+      matrix:new THREE.Matrix4().compose(
+        new THREE.Vector3(...DEFAULT_TARGET_POSITION),
+        p.quaternion.clone(),
+        new THREE.Vector3(1,1,1)
+      )
+    };
+
+    const s=shoulder();
+    const axis=state.target.position.clone().sub(s).normalize();
+    const arm=armPoint();
+    const center=s.clone().add(
+      axis.clone().multiplyScalar(arm.clone().sub(s).dot(axis))
+    );
+    state.referenceArmDirection=arm.clone().sub(center).normalize();
+
+    state.tracePoints=[];
+    state.history=[[...state.q]];
+    appendTrace();
+
+    await buildRobot(state.referenceRoot,state.capturedQ,'reference',false);
+    await buildRobot(state.ghostRoot,state.capturedQ,'ghost',false);
+
+    state.referenceRoot.visible=$('showReference').checked;
+    state.ghostRoot.visible=$('showGhost').checked;
+
+    state.targetFrame.clear();
+    state.actualFrame.clear();
+
+    state.targetFrame.position.copy(state.target.position);
+    state.targetFrame.quaternion.copy(state.target.quaternion);
+    state.targetFrame.add(new THREE.AxesHelper(.19));
+
+    state.actualFrame.add(new THREE.AxesHelper(.115));
+
+    $('redundancySlider').disabled=false;
+    $('selfMotionSection').style.opacity='1';
+    initialSliders(true);
+
+    updateMetrics(true);
+    updateSlider();
+    updateVisuals();
+    updateClearanceUI();
+
+    $('solverStatus').textContent =
+      'Pose captured. Move q₃ manually; the remaining joints will compensate to maintain the end-effector pose.';
+    $('status').textContent =
+      'Pose captured · manual self-motion active';
+  }
+
+  function resetCaptured() {
+    if(!state.capturedQ) return;
+
+    state.q=[...state.capturedQ];
+    applyLive();
+    applyGhost(state.capturedQ);
+
+    state.tracePoints=[];
+    state.history=[[...state.capturedQ]];
+    appendTrace();
+
+    updateMetrics(true);
+    updateSlider();
+    updateClearanceUI();
+
+  }
+
+  function resetDefault() {
+    if(state.target) return;
+
+    const defaultQ=state.ikConfigurations[1]||state.ikConfigurations[0]||DEFAULT_Q;
+    state.q=state.movable.map((_,i)=>i<defaultQ.length ? defaultQ[i] : 0);
+    applyLive();
+    initialSliders(false);
+    updateSlider();
+  }
+
+  function fitCamera() {
+    const box=new THREE.Box3().expandByObject(state.liveRoot);
+    if(state.referenceRoot.visible) box.expandByObject(state.referenceRoot);
+    if(state.obstacle?.visible) box.expandByObject(state.obstacle);
+    if(box.isEmpty()) return;
+
+    const sp=box.getBoundingSphere(new THREE.Sphere());
+    const r=Math.max(sp.radius,.3);
+    const d=r/Math.sin(THREE.MathUtils.degToRad(camera.fov)/2)*1.2;
+
+    camera.position.copy(sp.center).add(
+      new THREE.Vector3(1.2,-1.3,.85).normalize().multiplyScalar(d)
+    );
+    orbit.target.copy(sp.center);
+    orbit.update();
+  }
+
+  $('urdfInput').addEventListener('change',async e=>{
+    const f=e.target.files?.[0];
+    if(!f) return;
+    state.urdfText=await f.text();
+    await prepare();
+  });
+
+  $('visualInput').addEventListener('change',async e=>{
+    state.visualFiles.clear();
+    [...e.target.files].forEach(f=>state.visualFiles.set(f.name.toLowerCase(),f));
+    state.geometryCache.clear();
+    if(state.robot) await prepare();
+  });
+
+  function parseIkCsv(text){
+    const rows=text.split(/\r?\n/).map(line=>line.trim()).filter(Boolean)
+      .map(line=>line.split(/[,\t;]+/).map(Number))
+      .filter(row=>row.length===7&&row.every(Number.isFinite));
+    if(!rows.length)throw new Error('No valid seven-joint IK configurations found.');
+    return rows;
+  }
+
+  $('ikCsv').addEventListener('change',async e=>{
+    const file=e.target.files?.[0];
+    if(!file)return;
+    try{
+      state.ikConfigurations=parseIkCsv(await file.text());
+      if(state.robot){await prepare();await capture();}
+    }catch(err){
+      $('status').textContent=err.message;
+    }
+  });
+
+  $('collisionInput').addEventListener('change',()=>{});
+
+  $('eeLink').addEventListener('change',e=>state.eeLink=e.target.value);
+  $('redundancyJoint').addEventListener('change',e=>{
+    state.redundancyIndex=Number(e.target.value);
+    updateSlider();
+  });
+  $('armPointLink').addEventListener('change',e=>state.armPointLink=e.target.value);
+
+  $('captureBtn').addEventListener('click',capture);
+  $('resetCaptured').addEventListener('click',resetCaptured);
+  $('defaultBtn').addEventListener('click',resetDefault);
+
+  $('redundancySlider').addEventListener('input',e=>{
+    if(state.target) moveRedundant(Number(e.target.value));
+  });
+
+  $('showReference').addEventListener('change',e=>state.referenceRoot.visible=e.target.checked);
+  $('showGhost').addEventListener('change',e=>state.ghostRoot.visible=e.target.checked);
+  $('showTarget').addEventListener('change',e=>state.targetFrame.visible=e.target.checked);
+  $('showActual').addEventListener('change',e=>state.actualFrame.visible=e.target.checked);
+  $('showJointAxes').addEventListener('change',e=>state.jointAxisHelpers.forEach(a=>a.visible=e.target.checked));
+  $('showTrace').addEventListener('change',e=>traceLine.visible=e.target.checked);
+  $('showGeometry').addEventListener('change',updateVisuals);
+  $('replayGhost').addEventListener('click',replayGhost);
+  $('fitBtn').addEventListener('click',fitCamera);
+
+  $('obstacleEnabled').addEventListener('change',e=>{
+    e.target.checked ? createObstacle() : disableObstacle();
+  });
+
+  
+
+  ['obstacleRadius','safetyMargin','obsX','obsY','obsZ'].forEach(id=>{
+    $(id).addEventListener('change',updateObstacleFromInputs);
+  });
+
+  async function loadDefaultAssets(){
+    try{
+      const [stlFiles,ikResponse,urdfResponse]=await Promise.all([
+        Promise.all(DEFAULT_STL_NAMES.map(name=>
+          fetchDefaultFile(`${DEFAULT_DATA_ROOT}/visual/${name}`,name,'model/stl')
+        )),
+        fetch(`${DEFAULT_DATA_ROOT}/mod4/${DEFAULT_IK_NAME}`),
+        fetch(`${DEFAULT_DATA_ROOT}/urdf/${DEFAULT_URDF_NAME}`)
+      ]);
+      if(!ikResponse.ok)throw new Error(`Unable to load ${DEFAULT_IK_NAME} (${ikResponse.status}).`);
+      if(!urdfResponse.ok)throw new Error(`Unable to load ${DEFAULT_URDF_NAME} (${urdfResponse.status}).`);
+
+      state.visualFiles.clear();
+      stlFiles.forEach(file=>state.visualFiles.set(file.name.toLowerCase(),file));
+      state.geometryCache.clear();
+      state.ikConfigurations=parseIkCsv(await ikResponse.text());
+      state.urdfText=await urdfResponse.text();
+      await prepare();
+      await capture();
+      state.history=state.ikConfigurations.map(q=>[...q]);
+      $('status').textContent=
+        `${state.robot.name} loaded · target pose (0.2, 0.0, 0.8) · ${state.ikConfigurations.length} IK configurations`;
+    }catch(err){
+      $('status').textContent=`Default asset load failed: ${err.message}`;
+    }
+  }
+
+  function resize(){
+    const w=viewport.clientWidth;
+    const h=viewport.clientHeight;
+    renderer.setSize(w,h,false);
+    camera.aspect=w/Math.max(h,1);
+    camera.updateProjectionMatrix();
+  }
+
+  new ResizeObserver(resize).observe(viewport);
+
+  function animate(t){
+    requestAnimationFrame(animate);
+    updateGhost(t);
+    orbit.update();
+    renderer.render(scene,camera);
+  }
+
+  resize();
+  animate();
+  loadDefaultAssets();
+}
+initialize();
+</script>
+</body>
+</html>

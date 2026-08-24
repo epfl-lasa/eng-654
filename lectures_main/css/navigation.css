@@ -1,0 +1,117 @@
+/*
+  Subtle deck navigation.
+  Visual navigation is intentionally minimal: two transparent arrows
+  overlaid at the bottom-right corner. Keyboard shortcuts remain active:
+  ←/→ or PageUp/PageDown for navigation, T for deck/scroll mode,
+  F for fullscreen, Home/End for first/last slide.
+*/
+
+.deck-nav {
+  position: fixed;
+  right: clamp(0.8rem, 2vw, 1.5rem);
+  bottom: clamp(0.8rem, 2vh, 1.5rem);
+  z-index: 5000;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+
+  padding: 0.25rem;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+
+  opacity: 0.42;
+  transition:
+    opacity 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.deck-nav:hover,
+.deck-nav:focus-within {
+  opacity: 0.92;
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(0, 0, 0, 0.16);
+}
+
+.deck-nav button {
+  width: clamp(1.7rem, 2.7vw, 2.25rem);
+  height: clamp(1.7rem, 2.7vw, 2.25rem);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.72);
+
+  font-size: clamp(1rem, 1.7vw, 1.35rem);
+  line-height: 1;
+  cursor: pointer;
+
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    transform 120ms ease;
+}
+
+.deck-nav button:hover,
+.deck-nav button:focus-visible {
+  color: var(--epfl-red);
+  background: rgba(0, 0, 0, 0.045);
+  outline: none;
+}
+
+.deck-nav button:active {
+  transform: scale(0.94);
+}
+
+/* Keep these legacy navigation progress elements harmless if older HTML/JS still contains them. */
+.deck-progress,
+.deck-progress-bar,
+.deck-nav .slide-counter {
+  display: none;
+}
+
+.slide-number {
+  position: absolute;
+  left: clamp(0.9rem, 2vw, 1.5rem);
+  bottom: clamp(0.85rem, 1.8vh, 1.35rem);
+  z-index: 80;
+
+  color: rgba(0, 0, 0, 0.34);
+  font-size: clamp(0.65rem, 0.75vw, 0.9rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+
+  pointer-events: none;
+  user-select: none;
+}
+
+.slide-number::before {
+  content: '';
+  display: inline-block;
+  width: clamp(1.2rem, 2.4vw, 2rem);
+  height: 1px;
+  margin-right: 0.55rem;
+  vertical-align: middle;
+  background: rgba(255, 0, 0, 0.45);
+}
+
+.title-slide .slide-number {
+  color: rgba(0, 0, 0, 0.26);
+}
+
+body.mode-scroll .slide-number {
+  position: absolute;
+}
+
+body.mode-scroll .deck-nav {
+  position: fixed;
+}

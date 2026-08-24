@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 560">
+ <rect width="1100" height="560" fill="#fff"/>
+ <defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#ff0000"/></marker></defs>
+ <g font-family="Inter,Arial">
+  <g transform="translate(50,160)">
+   <circle cx="70" cy="70" r="65" fill="#fff" stroke="#111" stroke-width="5"/>
+   <text x="70" y="62" text-anchor="middle" font-size="24" font-weight="900">Task</text><text x="70" y="92" text-anchor="middle" font-size="15" fill="#555">desired pose/path</text>
+  </g>
+  <g transform="translate(290,160)">
+   <circle cx="70" cy="70" r="65" fill="#fff" stroke="#6C8EBF" stroke-width="5"/>
+   <text x="70" y="62" text-anchor="middle" font-size="24" font-weight="900">Model</text><text x="70" y="92" text-anchor="middle" font-size="15" fill="#555">URDF, DH, PoE</text>
+  </g>
+  <g transform="translate(530,160)">
+   <circle cx="70" cy="70" r="65" fill="#fff" stroke="#D79B00" stroke-width="5"/>
+   <text x="70" y="62" text-anchor="middle" font-size="24" font-weight="900">Check</text><text x="70" y="92" text-anchor="middle" font-size="15" fill="#555">IK, limits, rank</text>
+  </g>
+  <g transform="translate(770,160)">
+   <circle cx="70" cy="70" r="65" fill="#fff" stroke="#82B366" stroke-width="5"/>
+   <text x="70" y="62" text-anchor="middle" font-size="24" font-weight="900">Plan</text><text x="70" y="92" text-anchor="middle" font-size="15" fill="#555">feasible trajectory</text>
+  </g>
+  <path d="M190 230 H285" stroke="#ff0000" stroke-width="6" marker-end="url(#arrow)"/>
+  <path d="M430 230 H525" stroke="#ff0000" stroke-width="6" marker-end="url(#arrow)"/>
+  <path d="M670 230 H765" stroke="#ff0000" stroke-width="6" marker-end="url(#arrow)"/>
+  <g transform="translate(216,336)"><rect width="155" height="56" rx="14" fill="#fff" stroke="#e7e7e7"/><text x="78" y="35" text-anchor="middle" font-size="16" fill="#555">geometry exact?</text></g>
+  <g transform="translate(454,336)"><rect width="155" height="56" rx="14" fill="#fff" stroke="#e7e7e7"/><text x="78" y="35" text-anchor="middle" font-size="16" fill="#555">path connected?</text></g>
+  <g transform="translate(694,336)"><rect width="155" height="56" rx="14" fill="#fff" stroke="#e7e7e7"/><text x="78" y="35" text-anchor="middle" font-size="16" fill="#555">clear of singularities?</text></g>
+  <text x="50" y="72" font-size="30" font-weight="900" fill="#111">Certified planning pipeline</text>
+  <text x="50" y="110" font-size="20" fill="#555">Each stage produces evidence, not just a numerical answer.</text>
+ </g>
+</svg>

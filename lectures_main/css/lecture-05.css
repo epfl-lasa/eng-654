@@ -1,0 +1,97 @@
+/* Lecture 05: singularities from analytic Jacobians to URDF automation. */
+.lecture-05 .course-title { max-width: 16ch; margin-inline: auto; }
+.lecture-05 .slide-title { margin-bottom: .35rem; }
+.l5-slide .slide-subtitle { margin: 0 0 .65rem; color: var(--muted); font-size: clamp(.95rem,1.2vw,1.28rem); }
+.slide-kicker { margin: 0 0 .28rem; color: var(--epfl-red); font-size: var(--font-small); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.lecture-05 .lecture-promise { max-width: 66ch; }
+.lecture-05 .demo-prompt {
+  margin: 0 0 .55rem;
+  padding: .45rem .65rem;
+  border-left: 3px solid var(--epfl-red);
+  background: color-mix(in srgb, var(--epfl-red) 4%, white);
+  font-size: clamp(.82rem,1vw,1.05rem);
+  line-height: 1.35;
+}
+.l5-question { font-size: clamp(1.45rem,2.4vw,2.7rem); line-height: 1.22; font-weight: 650; max-width: 28ch; }
+.l5-question::before { content: "?"; color: var(--epfl-red); margin-right: .55rem; }
+.l5-accent { color: var(--epfl-red); }
+.l5-columns { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; min-height: 0; }
+.l5-three { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; min-height: 0; }
+.l5-card { border: 1px solid var(--line); border-top: 4px solid var(--science-blue); padding: .75rem .9rem; background: #fff; min-width: 0; }
+.l5-card.red { border-top-color: var(--epfl-red); }
+.l5-card.green { border-top-color: var(--science-green); }
+.l5-card.yellow { border-top-color: var(--science-yellow); }
+.l5-card h3 { margin: 0 0 .4rem; font-size: clamp(1.05rem,1.45vw,1.55rem); }
+.l5-card p { margin: .25rem 0; font-size: clamp(.82rem,1.05vw,1.12rem); }
+.l5-big-equation { font-size: clamp(1.4rem,2.25vw,2.55rem); text-align: center; margin: auto 0; }
+.l5-box { border: 2px solid #111; padding: .7rem 1rem; text-align: center; background: #fff; }
+.l5-box.red { border-color: var(--epfl-red); }
+.l5-takeaway { margin-top: .55rem; padding: .6rem .9rem; border-left: 5px solid var(--epfl-red); background: #fff5f5; font-size: clamp(.95rem,1.3vw,1.4rem); }
+.l5-flow { display: flex; align-items: stretch; justify-content: center; gap: .4rem; flex-wrap: wrap; }
+.l5-flow > span { display: grid; place-items: center; min-width: 7rem; padding: .7rem .8rem; border: 1px solid #bbb; background: #fff; font-weight: 700; text-align: center; }
+.l5-flow > i { display: grid; place-items: center; color: var(--epfl-red); font-style: normal; font-size: 1.5rem; }
+.l5-chain { display: flex; justify-content: center; align-items: center; gap: .45rem; font-size: clamp(1.2rem,2vw,2.2rem); font-weight: 700; }
+.l5-chain span { border: 2px solid #222; border-radius: 50%; width: 2.6em; height: 2.6em; display: grid; place-items: center; }
+.l5-chain .cut { border: 0; border-radius: 0; width: auto; color: var(--epfl-red); }
+.l5-matrix { overflow: auto; font-family: ui-monospace,SFMono-Regular,Consolas,monospace; font-size: clamp(.65rem,.86vw,.88rem); font-variant-numeric: tabular-nums; white-space: pre; line-height: 1.45; }
+.l5-table { width: 100%; border-collapse: collapse; font-size: clamp(.72rem,.98vw,1.05rem); }
+.l5-table th,.l5-table td { padding: .35rem .5rem; border-bottom: 1px solid var(--line); text-align: center; }
+.l5-table th { background: #f3f3f3; }
+
+.sing-lab { width: 100%; height: 100%; min-height: 0; display: grid; grid-template-columns: minmax(0,1.55fr) minmax(15rem,.85fr); border: 1px solid var(--line); background: #fff; overflow: hidden; }
+.l5-slide > .layout-full.sing-lab,
+.l5-slide > .layout-full.sing-builder { flex: 1 1 0; height: 0; min-height: 0; }
+.sing-lab.single { grid-template-columns: 1fr; }
+.sing-stage { position: relative; min-width: 0; min-height: 0; background: radial-gradient(circle at 45% 42%,#fff 0,#f4f5f6 70%,#e9ebed 100%); overflow: hidden; }
+.sing-stage canvas,.sing-stage svg { display: block; width: 100%; height: 100%; touch-action: none; }
+.sing-hud { position: absolute; top: .55rem; left: .55rem; padding: .35rem .5rem; border-left: 3px solid var(--epfl-red); background: rgba(255,255,255,.9); font-size: clamp(.65rem,.76vw,.82rem); pointer-events: none; }
+.sing-panel { padding: .65rem .75rem; overflow: auto; display: flex; flex-direction: column; gap: .5rem; background: #fff; border-left: 1px solid var(--line); }
+.sing-panel h3 { margin: 0; font-size: clamp(.9rem,1.05vw,1.15rem); }
+.sing-panel p { margin: 0; font-size: clamp(.67rem,.8vw,.86rem); line-height: 1.3; }
+.sing-controls { display: grid; gap: .32rem; }
+.sing-control { display: grid; grid-template-columns: 2.5rem 1fr 3.7rem; align-items: center; gap: .35rem; font-size: clamp(.65rem,.77vw,.82rem); }
+.sing-control input[type=range] { width: 100%; accent-color: var(--epfl-red); }
+.sing-control output { text-align: right; font-variant-numeric: tabular-nums; }
+.sing-selects { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .35rem; }
+.sing-selects label { display: grid; gap: .2rem; font-size: clamp(.6rem,.72vw,.76rem); font-weight: 700; }
+.sing-selects select,.sing-panel button,.sing-panel input[type=file] { width: 100%; min-width: 0; padding: .3rem; font-size: clamp(.62rem,.75vw,.8rem); }
+.sing-case-buttons { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .3rem; }
+.sing-vector-toggles { display: grid; gap: .24rem; padding: .35rem .4rem; border: 1px solid var(--line); background: #fafafa; }
+.sing-vector-toggles > div { display: grid; grid-template-columns: 6.2rem repeat(3,minmax(0,1fr)); gap: .25rem; align-items: center; }
+.sing-vector-toggles strong { font-size: clamp(.58rem,.68vw,.74rem); }
+.sing-vector-toggles label { display: flex; align-items: center; gap: .18rem; font-size: clamp(.58rem,.68vw,.74rem); white-space: nowrap; }
+.sing-vector-toggles input { margin: 0; accent-color: var(--epfl-red); }
+.sing-column-readout { display: grid; gap: .28rem; }
+.sing-column-readout > div { display: grid; grid-template-columns: 3.1rem 1fr auto; gap: .35rem; align-items: center; padding: .28rem .4rem; border-left: 4px solid; background: #f7f7f7; opacity: .62; font-size: clamp(.58rem,.7vw,.76rem); }
+.sing-column-readout > div.active { opacity: 1; background: #fff; }
+.sing-column-readout code { font-size: inherit; white-space: nowrap; }
+.sing-metric { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: .4rem; padding: .45rem .55rem; background: #f2f3f4; border-left: 4px solid var(--science-green); font-size: clamp(.65rem,.8vw,.88rem); }
+.sing-metric strong { font-family: ui-monospace,SFMono-Regular,Consolas,monospace; font-size: clamp(.78rem,1.05vw,1.16rem); }
+.sing-metric.near { border-left-color: var(--epfl-red); background: #fff0f0; }
+.sing-status { min-height: 2.1em; color: var(--muted); font-size: clamp(.62rem,.73vw,.78rem); }
+.sing-status.error { color: #b00020; }
+.sing-toggle { display: flex; align-items: center; gap: .35rem; font-size: clamp(.62rem,.74vw,.8rem); }
+.sing-legend { display: flex; gap: .7rem; flex-wrap: wrap; font-size: clamp(.62rem,.72vw,.76rem); }
+.sing-legend i { display: inline-block; width: .85em; height: .85em; margin-right: .2rem; border-radius: 50%; }
+.sing-formula { padding: .45rem .55rem; background: #f7f7f7; font-family: ui-monospace,SFMono-Regular,Consolas,monospace; font-size: clamp(.62rem,.76vw,.82rem); overflow-wrap: anywhere; white-space: pre-wrap; }
+.sing-factor { border-left: 4px solid var(--science-blue); line-height: 1.35; }
+.l5-det-equation { font-size: clamp(.84rem,1.2vw,1.28rem); }
+.l5-symbolic-matrix { font-size: clamp(.68rem,.94vw,1.02rem); overflow-x: auto; overflow-y: hidden; }
+.sing-builder { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(17rem,.85fr); height: 100%; min-height: 0; border: 1px solid var(--line); }
+.sing-pipeline { display: flex; flex-wrap: wrap; gap: .3rem; }
+.sing-pipeline span { border: 1px solid #ccc; padding: .22rem .35rem; font-size: clamp(.56rem,.66vw,.72rem); }
+.sing-pipeline span.active { color: #fff; background: #111; border-color: #111; }
+.sing-urdf-tree { font-family: ui-monospace,SFMono-Regular,Consolas,monospace; font-size: clamp(.58rem,.7vw,.75rem); white-space: pre-wrap; padding: .4rem; background: #f7f7f7; max-height: 8rem; overflow: auto; }
+.sing-heatmap { position: relative; width: 100%; height: 100%; min-height: 0; }
+.sing-heatmap canvas { width: 100%; height: 100%; touch-action: none; }
+.sing-tabs { display: flex; gap: .25rem; }
+.sing-tabs button.active { color: #fff; background: #111; }
+.sing-dh-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .25rem; }
+.sing-dh-grid label { font-size: clamp(.55rem,.66vw,.72rem); }
+.sing-dh-grid input { width: 100%; padding: .2rem; }
+
+@media (max-width: 900px) {
+  .sing-lab,.sing-builder { grid-template-columns: 1fr; grid-template-rows: minmax(45vh,1fr) auto; }
+  .sing-panel { border-left: 0; border-top: 1px solid var(--line); max-height: 42vh; }
+  .l5-columns,.l5-three { grid-template-columns: 1fr; }
+}

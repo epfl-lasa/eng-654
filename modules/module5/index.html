@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>ENG-654 Module 5 — Motion Planning Visualizer</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
+:root{
+  color-scheme:dark;
+  --red:#e30613;--white:#ffffff;--black:#000000;
+  --font-primary:Arial,Helvetica,Verdana,sans-serif;
+  --font-secondary:"Space Grotesk",Arial,Helvetica,Verdana,sans-serif;
+  --font-heading:"Arial Black",Arial,Helvetica,Verdana,sans-serif;
+  --font-title:Impact,"Arial Black",Arial,sans-serif
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--black);color:var(--white);font-family:var(--font-primary);-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit}
+.wrap{max-width:1500px;margin:auto;padding:18px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;gap:14px}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.main{grid-template-columns:minmax(0,1fr) 360px}
+.card{background:var(--black);border:1px solid var(--white);border-radius:0;padding:14px}
+.panel{background:var(--black);border:1px solid var(--white);border-radius:0}
+.muted{color:rgba(255,255,255,.68)}.small{font-size:.9rem}.hidden{display:none!important}
+.badge{display:inline-block;padding:5px 9px;border:1px solid var(--red);color:var(--red);font-family:var(--font-secondary);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06rem}
+label{display:block;font-family:var(--font-secondary);font-size:.86rem;font-weight:600}
+input[type=text],input[type=number],select{
+  width:100%;margin-top:5px;padding:9px 10px;border:1px solid var(--white);border-radius:0;
+  background:var(--black);color:var(--white)
+}
+input[type=file]{color:var(--white);font-family:var(--font-secondary)}
+input[type=range]{width:100%;accent-color:var(--red)}
+button{padding:9px 12px;border:1px solid var(--white);border-radius:0;background:var(--black);color:var(--white);cursor:pointer;font-family:var(--font-secondary);font-size:.82rem;font-weight:700;text-transform:uppercase}
+button:hover{background:var(--red);border-color:var(--red)}
+.metric{background:var(--black);border:1px solid var(--white);border-radius:0;padding:10px}
+.metric .value{font-family:var(--font-heading);font-size:1.25rem;font-variant-numeric:tabular-nums}
+#viewport{height:680px;width:100%;background:var(--black)}
+.viewport-wrap{position:relative;overflow:hidden}
+.overlay{position:absolute;left:12px;top:12px;background:rgba(0,0,0,.88);border:1px solid var(--white);border-radius:0;padding:8px 10px;font-family:var(--font-secondary);font-size:.82rem}
+.bottom{top:auto;bottom:12px;max-width:90%;color:rgba(255,255,255,.72)}
+.toggle{display:inline-flex;gap:7px;align-items:center;font-family:var(--font-secondary);font-size:.82rem;font-weight:700;text-transform:uppercase}
+.sliders{grid-template-columns:repeat(4,minmax(0,1fr))}
+.callout{border-left:4px solid var(--red);padding:10px 12px;background:var(--black);border-top:1px solid var(--white);border-right:1px solid var(--white);border-bottom:1px solid var(--white)}
+h1{font-family:var(--font-title);font-weight:400;line-height:.92;text-transform:none}
+h2,h3{font-family:var(--font-heading);font-weight:900}
+h1,h2,h3{margin:.3em 0}
+.mono{font-variant-numeric:tabular-nums}
+@media(max-width:1000px){.main{grid-template-columns:1fr}.sliders{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.g3,.sliders{grid-template-columns:1fr}#viewport{height:520px}}
+
+.legend-dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+.blue-path{background:#3f83ff}
+.red-path{background:var(--red)}
+
+
+/* ---------- Shared ENG-654 compact module layout ---------- */
+#appView.hidden{display:none!important}
+h1.module-title{
+  max-width:none;
+  margin:.25rem 0 .35rem;
+  font-family:var(--font-title,Impact,"Arial Black",Arial,sans-serif);
+  font-size:clamp(1.85rem,2.8vw,2.8rem);
+  font-weight:400;
+  line-height:1;
+  white-space:nowrap;
+  text-transform:uppercase;
+}
+.module-collapsible{
+  border:1px solid var(--white,#fff);
+  background:var(--black,#000);
+}
+.module-collapsible > summary{
+  list-style:none;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  min-height:42px;
+  padding:10px 12px;
+  cursor:pointer;
+  color:var(--white,#fff);
+  font-family:var(--font-heading,"Arial Black",Arial,sans-serif);
+  font-size:.94rem;
+  font-weight:900;
+  line-height:1.1;
+  white-space:nowrap;
+}
+.module-collapsible > summary::-webkit-details-marker{display:none}
+.module-collapsible > summary::after{
+  content:"+";
+  flex:0 0 auto;
+  color:var(--red,#e30613);
+  font-family:var(--font-secondary,"Space Grotesk",Arial,sans-serif);
+  font-size:1.1rem;
+  font-weight:700;
+}
+.module-collapsible[open] > summary{
+  border-bottom:1px solid var(--white,#fff);
+}
+.module-collapsible[open] > summary::after{content:"−"}
+.module-collapsible-body{padding:12px}
+.module-side-stack{
+  display:grid;
+  gap:10px;
+  align-content:start;
+}
+.module-joint-preview .module-collapsible-body{
+  padding:9px 11px;
+}
+.module-joint-preview .joint-row,
+.module-joint-preview .card{
+  padding-top:4px;
+  padding-bottom:4px;
+}
+.module-joint-preview .small{
+  font-size:.72rem;
+}
+.module-joint-preview input[type="range"]{
+  margin:1px 0;
+}
+.module-joint-preview #jointControls,
+.module-joint-preview #sliders,
+.module-joint-preview #initialSliders{
+  max-height:none !important;
+  overflow:visible !important;
+}
+.module-joint-preview #sliders,
+.module-joint-preview #initialSliders{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:6px !important;
+}
+.compact-file-grid{
+  margin:12px 0;
+}
+@media(max-width:900px){
+  h1.module-title{
+    font-size:clamp(1.65rem,6vw,2.45rem);
+    white-space:normal;
+  }
+  .module-collapsible > summary{
+    white-space:normal;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<main id="appView">
+<div class="badge">Module 5 · Motion Planning</div>
+<h1 class="module-title">Workspace &amp; Joint-Path Execution</h1>
+<p class="muted">
+      Load the robot model, a workspace-pose CSV <span class="mono">x,y,z,qw,qx,qy,qz</span>,
+      and a joint trajectory CSV with exactly seven joint columns.
+    </p>
+<details class="module-collapsible compact-file-grid" open=""><summary>Files &amp; inputs</summary><div class="module-collapsible-body">
+<label>URDF<input accept=".urdf,.xml" id="urdfInput" type="file"/></label>
+<label>Visual mesh files<input accept=".stl,.dae,model/stl,model/vnd.collada+xml" id="visualInput" multiple="" type="file"/></label>
+<label>Collision mesh files<input accept=".stl,.dae,model/stl,model/vnd.collada+xml" id="collisionInput" multiple="" type="file"/></label>
+</div></details>
+<div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+<details class="module-collapsible" open=""><summary>Workspace path poses</summary><div class="module-collapsible-body">
+
+<p class="small muted">Seven columns: x, y, z, qw, qx, qy, qz. Header optional.</p>
+<input accept=".csv,text/csv" id="workspaceCsv" type="file"/>
+<div class="row" style="margin-top:10px">
+<span class="legend-dot blue-path"></span><span class="small">Prescribed workspace position path (blue)</span>
+</div>
+<p class="small muted" id="workspaceStatus">No workspace path loaded.</p>
+</div></details>
+<details class="module-collapsible" open=""><summary>Joint-space path</summary><div class="module-collapsible-body">
+
+<p class="small muted">m rows × 7 columns, in radians. Header optional.</p>
+<input accept=".csv,text/csv" id="jointCsv" type="file"/>
+<div class="row" style="margin-top:10px">
+<span class="legend-dot red-path"></span><span class="small">Executed FK end-effector trace (EPFL red)</span>
+</div>
+<p class="small muted" id="jointStatus">No joint path loaded.</p>
+</div></details>
+</div>
+<div class="grid main">
+<section>
+<div class="panel viewport-wrap">
+<div id="viewport"></div>
+<div class="overlay"><span id="status">Load the robot model and both path files</span></div>
+<div class="overlay bottom">Ghost = starting configuration · White = prescribed workspace path · RGB frames = prescribed EE poses · Red = FK trace generated by the joint trajectory</div>
+</div>
+<div class="row" style="margin-top:12px">
+<label class="toggle"><input checked="" id="showStartingGhost" type="checkbox"/>Starting configuration</label>
+<label class="toggle"><input checked="" id="showWorkspacePath" type="checkbox"/>Workspace path</label>
+<label class="toggle"><input checked="" id="showPoseFrames" type="checkbox"/>Workspace pose frames</label>
+<label class="toggle"><input checked="" id="showExecutedTrace" type="checkbox"/>Executed trace</label>
+<label class="toggle"><input checked="" id="showCurrentEE" type="checkbox"/>Current EE frame</label>
+<button id="clearTrace">Clear red trace</button>
+<button id="fitBtn">Fit camera</button>
+</div>
+</section>
+<aside class="module-side-stack">
+<details class="module-collapsible" open=""><summary>Path display</summary><div class="module-collapsible-body">
+<label>End-effector link<select id="eeLink"></select></label>
+<label style="margin-top:10px">Pose-frame interval
+            <input id="frameInterval" min="1" step="1" type="number" value="20"/>
+</label>
+<p class="small muted">For example, interval 20 shows a frame at samples 0, 20, 40, … and always at the final point.</p>
+</div></details>
+<div class="grid" style="grid-template-columns:1fr 1fr">
+<div class="metric"><div class="small muted">Workspace poses</div><div class="value" id="workspaceCount">0</div></div>
+<div class="metric"><div class="small muted">Joint samples</div><div class="value" id="jointCount">0</div></div>
+<div class="metric"><div class="small muted">Current sample</div><div class="value" id="currentSample">—</div></div>
+<div class="metric"><div class="small muted">Animation</div><div class="value" id="playState" style="font-size:1rem">Stopped</div></div>
+</div>
+<details class="module-collapsible"><summary>Animation</summary><div class="module-collapsible-body">
+
+<div class="row">
+<button id="playBtn">Play</button>
+<button id="pauseBtn">Pause</button>
+<button id="stopBtn">Stop</button>
+</div>
+<label style="margin-top:10px">Sample period [s]
+            <input id="sampleDt" min="0.001" step="0.005" type="number" value="0.05"/>
+</label>
+<label style="margin-top:10px">Playback speed
+            <select id="speed">
+<option value="0.25">0.25×</option>
+<option value="0.5">0.5×</option>
+<option selected="" value="1">1×</option>
+<option value="2">2×</option>
+<option value="4">4×</option>
+</select>
+</label>
+<label style="margin-top:10px">Trajectory sample
+            <input disabled="" id="scrubber" max="0" min="0" step="1" type="range" value="0"/>
+</label>
+<div class="small muted mono" id="scrubText">0 / 0</div>
+</div></details>
+<details class="module-collapsible"><summary>Current FK end-effector</summary><div class="module-collapsible-body">
+
+<div class="small mono">
+<div>p = <span id="fkPosition">—</span></div>
+<div style="margin-top:5px">q = <span id="fkQuaternion">—</span></div>
+</div>
+</div></details>
+<details class="module-collapsible"><summary>Path correspondence</summary><div class="module-collapsible-body">
+
+<p class="small muted">
+            The blue path and the red executed path are deliberately independent. The joint trajectory is animated according to its own row index.
+            If both files contain different numbers of samples, no implicit resampling is performed.
+          </p>
+</div></details>
+</aside>
+</div>
+<div class="callout small" style="margin-top:15px">
+      The workspace CSV defines the desired Cartesian path. Its position columns generate the white curve, while its quaternion columns define the discrete RGB end-effector frames. The joint CSV is executed through the URDF kinematic chain, and the resulting FK end-effector positions accumulate as the red trace.
+    </div>
+</main>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/+esm';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js/+esm';
+import { STLLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/STLLoader.js/+esm';
+import { ColladaLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/ColladaLoader.js/+esm';
+import { mergeGeometries } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/utils/BufferGeometryUtils.js/+esm';
+
+const $=id=>document.getElementById(id);
+const DEFAULT_DATA_ROOT='../../assets/data';
+const DEFAULT_URDF_NAME='iiwa7_free_joints.urdf';
+const DEFAULT_JOINT_PATH_NAME='kuka_iiwa7_rectangle_joint_path_500.csv';
+const DEFAULT_WORKSPACE_PATH_NAME='kuka_iiwa7_rectangle_workspace_path_500_quaternion.csv';
+const DEFAULT_STL_NAMES=Array.from({length:8},(_,i)=>`link_${i}.stl`);
+
+async function fetchDefaultFile(url,name,type){
+  const response=await fetch(url);
+  if(!response.ok)throw new Error(`Unable to load ${name} (${response.status}).`);
+  return new File([await response.blob()],name,{type});
+}
+
+function initialize(){
+  const viewport=$('viewport');
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x000000);
+
+  const camera=new THREE.PerspectiveCamera(42,1,.001,1000);
+  camera.up.set(0,0,1);
+  camera.position.set(2.2,-2.2,1.8);
+
+  const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  renderer.outputColorSpace=THREE.SRGBColorSpace;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.shadowMap.enabled=true;
+  viewport.appendChild(renderer.domElement);
+
+  const orbit=new OrbitControls(camera,renderer.domElement);
+  orbit.enableDamping=true;
+  orbit.target.set(0,0,.7);
+
+  scene.add(new THREE.HemisphereLight(0xffffff,0x000000,1.8));
+  const dl=new THREE.DirectionalLight(0xffffff,3);
+  dl.position.set(3,-3,5);
+  scene.add(dl);
+
+  const floor=new THREE.Mesh(
+    new THREE.CircleGeometry(4,96),
+    new THREE.MeshStandardMaterial({color:0x000000,roughness:1})
+  );
+  floor.position.z=-.003;
+  scene.add(floor);
+
+  const grid=new THREE.GridHelper(4,40,0x666666,0x2b2b2b);grid.material.transparent=true;grid.material.opacity=.55;
+  grid.rotation.x=Math.PI/2;
+  scene.add(grid);
+  scene.add(makeThemeFrame(.28));
+
+  const loader=new STLLoader();
+  const colladaLoader=new ColladaLoader();
+
+  const state={
+    urdfText:'',
+    robot:null,
+    visualFiles:new Map(),
+    geometryCache:new Map(),
+
+    startGhostRoot:new THREE.Group(),
+    robotRoot:new THREE.Group(),
+    workspaceRoot:new THREE.Group(),
+    poseFrameRoot:new THREE.Group(),
+    currentEEFrame:new THREE.Group(),
+
+    linkNodes:new Map(),
+    motionNodes:new Map(),
+    movable:[],
+    q:[],
+    eeLink:null,
+
+    workspacePoses:[],
+    jointPath:[],
+
+    workspaceLine:null,
+    executedLine:null,
+    executedPoints:[],
+
+    sampleIndex:0,
+    playing:false,
+    lastStepTime:0
+  };
+
+  scene.add(
+    state.startGhostRoot,
+    state.robotRoot,
+    state.workspaceRoot,
+    state.poseFrameRoot,
+    state.currentEEFrame
+  );
+
+  const BLUE=0x3f83ff;
+  const RED=0xe30613;
+
+  function nums(s,d=[]){
+    return s?s.trim().split(/\s+/).map(Number):[...d];
+  }
+  function basename(p){
+    return String(p||'').replace(/\\/g,'/').split('/').pop().toLowerCase();
+  }
+  function originOf(n){
+    const o=n?.querySelector(':scope > origin');
+    return{
+      xyz:nums(o?.getAttribute('xyz'),[0,0,0]),
+      rpy:nums(o?.getAttribute('rpy'),[0,0,0])
+    };
+  }
+  function originMatrix(o){
+    const[x,y,z]=o.xyz,[r,p,yaw]=o.rpy;
+    return new THREE.Matrix4()
+      .makeTranslation(x,y,z)
+      .multiply(new THREE.Matrix4().makeRotationZ(yaw))
+      .multiply(new THREE.Matrix4().makeRotationY(p))
+      .multiply(new THREE.Matrix4().makeRotationX(r));
+  }
+  function setStatic(obj,o){
+    obj.matrixAutoUpdate=false;
+    obj.matrix.copy(originMatrix(o));
+  }
+
+  function parseURDF(text){
+    const doc=new DOMParser().parseFromString(text,'application/xml');
+    if(doc.querySelector('parsererror'))throw new Error('Invalid URDF XML');
+    const robot=doc.querySelector('robot');
+    if(!robot)throw new Error('No robot element');
+
+    const materialTable=new Map();
+    robot.querySelectorAll(':scope > material').forEach(m=>{
+      const rgba=m.querySelector(':scope > color')?.getAttribute('rgba');
+      if(rgba&&m.getAttribute('name'))materialTable.set(m.getAttribute('name'),nums(rgba));
+    });
+
+    const links=new Map();
+    robot.querySelectorAll(':scope > link').forEach(linkNode=>{
+      const name=linkNode.getAttribute('name');
+      const visuals=[...linkNode.querySelectorAll(':scope > visual')].map(v=>{
+        const mesh=v.querySelector(':scope > geometry > mesh');
+        if(!mesh)return null;
+
+        let color=null;
+        const mat=v.querySelector(':scope > material');
+        if(mat){
+          const inline=mat.querySelector(':scope > color')?.getAttribute('rgba');
+          if(inline)color=nums(inline);
+          else if(materialTable.has(mat.getAttribute('name')))
+            color=materialTable.get(mat.getAttribute('name'));
+        }
+
+        return{
+          filename:mesh.getAttribute('filename'),
+          scale:nums(mesh.getAttribute('scale'),[1,1,1]),
+          origin:originOf(v),
+          color
+        };
+      }).filter(Boolean);
+      links.set(name,{name,visuals});
+    });
+
+    const joints=[];
+    robot.querySelectorAll(':scope > joint').forEach(j=>{
+      const type=j.getAttribute('type')||'fixed';
+      const lim=j.querySelector(':scope > limit');
+      let lower=Number(lim?.getAttribute('lower'));
+      let upper=Number(lim?.getAttribute('upper'));
+
+      if(type==='continuous'){lower=-Math.PI;upper=Math.PI;}
+      if(!Number.isFinite(lower))lower=type==='prismatic'?-1:-Math.PI;
+      if(!Number.isFinite(upper))upper=type==='prismatic'?1:Math.PI;
+
+      joints.push({
+        name:j.getAttribute('name'),
+        type,
+        parent:j.querySelector(':scope > parent')?.getAttribute('link'),
+        child:j.querySelector(':scope > child')?.getAttribute('link'),
+        origin:originOf(j),
+        axis:nums(j.querySelector(':scope > axis')?.getAttribute('xyz'),[1,0,0]),
+        lower,upper
+      });
+    });
+
+    const children=new Set(joints.map(j=>j.child));
+    const root=[...links.keys()].find(n=>!children.has(n));
+    const outgoing=new Map();
+
+    joints.forEach(j=>{
+      if(!outgoing.has(j.parent))outgoing.set(j.parent,[]);
+      outgoing.get(j.parent).push(j);
+    });
+
+    const depth=new Map([[root,0]]);
+    function walk(link){
+      for(const j of outgoing.get(link)||[]){
+        depth.set(j.child,(depth.get(link)||0)+1);
+        walk(j.child);
+      }
+    }
+    walk(root);
+
+    const leaves=[...links.keys()]
+      .filter(n=>!outgoing.has(n))
+      .sort((a,b)=>(depth.get(b)||0)-(depth.get(a)||0));
+
+    return{
+      name:robot.getAttribute('name')||'robot',
+      links,joints,root,outgoing,depth,leaves
+    };
+  }
+
+  function flattenCollada(text){
+    const root=colladaLoader.parse(text,'').scene;
+    root.updateMatrixWorld(true);
+    const parts=[];
+    root.traverse(object=>{
+      if(!object.isMesh||!object.geometry?.getAttribute('position'))return;
+      let part=object.geometry.clone();
+      part.applyMatrix4(object.matrixWorld);
+      for(const name of Object.keys(part.attributes))if(name!=='position')part.deleteAttribute(name);
+      part.morphAttributes={};
+      part.clearGroups();
+      if(part.index)part=part.toNonIndexed();
+      parts.push(part);
+    });
+    if(!parts.length)throw new Error('DAE file contains no mesh geometry.');
+    const geometry=parts.length===1?parts[0]:mergeGeometries(parts,false);
+    if(!geometry)throw new Error('Unable to combine the mesh geometry in the DAE file.');
+    geometry.computeVertexNormals();
+    geometry.computeBoundingSphere();
+    return geometry;
+  }
+
+  async function geometry(spec){
+    const key=basename(spec.filename);
+    if(state.geometryCache.has(key))return state.geometryCache.get(key);
+
+    const file=state.visualFiles.get(key);
+    if(!file)return null;
+
+    const g=/\.dae$/i.test(file.name||key)
+      ?flattenCollada(await file.text())
+      :loader.parse(await file.arrayBuffer());
+    if(!g.getAttribute('normal'))g.computeVertexNormals();
+    state.geometryCache.set(key,g);
+    return g;
+  }
+
+  function robotMaterial(rgba){
+    const c=rgba||[.72,.72,.75,1];
+    const a=Number.isFinite(c[3])?c[3]:1;
+    return new THREE.MeshPhysicalMaterial({
+      color:new THREE.Color(c[0],c[1],c[2]),
+      transparent:a<.999,opacity:a,depthWrite:a>=.999,
+      roughness:.28,metalness:.12,clearcoat:.15,side:THREE.DoubleSide
+    });
+  }
+
+  function applyJoint(node,j,value){
+    node.position.set(0,0,0);
+    node.quaternion.identity();
+
+    const axis=new THREE.Vector3(...j.axis).normalize();
+
+    if(j.type==='revolute'||j.type==='continuous'){
+      node.quaternion.setFromAxisAngle(axis,value);
+    }else if(j.type==='prismatic'){
+      node.position.copy(axis.multiplyScalar(value));
+    }
+  }
+
+  function setRobotJoints(q){
+    state.movable.forEach((j,i)=>{
+      const node=state.motionNodes.get(j.name);
+      if(node)applyJoint(node,j,q[i]||0);
+    });
+    state.robotRoot.updateMatrixWorld(true);
+  }
+
+  function clearStartingGhost(){
+    state.startGhostRoot.traverse(object=>{
+      if(!object.isMesh)return;
+      const materials=Array.isArray(object.material)?object.material:[object.material];
+      materials.forEach(material=>material?.dispose());
+    });
+    state.startGhostRoot.clear();
+  }
+
+  function updateStartingGhost(){
+    clearStartingGhost();
+    if(!state.robotRoot.children.length)return;
+
+    const activeQ=[...state.q];
+    const startingQ=state.jointPath.length
+      ?state.jointPath[0]
+      :state.movable.map(()=>0);
+
+    setRobotJoints(startingQ);
+    const ghost=state.robotRoot.clone(true);
+    setRobotJoints(activeQ);
+
+    ghost.traverse(object=>{
+      if(!object.isMesh)return;
+
+      const makeGhostMaterial=source=>{
+        const material=source.clone();
+        material.transparent=true;
+        material.opacity=.22;
+        material.depthWrite=false;
+        if(material.color)material.color.lerp(new THREE.Color(0xb7c9ff),.55);
+        return material;
+      };
+
+      object.material=Array.isArray(object.material)
+        ?object.material.map(makeGhostMaterial)
+        :makeGhostMaterial(object.material);
+      object.renderOrder=-1;
+    });
+
+    state.startGhostRoot.add(ghost);
+    state.startGhostRoot.visible=$('showStartingGhost').checked;
+  }
+
+  async function buildRobot(){
+    if(!state.robot)return;
+
+    state.robotRoot.clear();
+    const links=new Map();
+    const motions=new Map();
+
+    for(const l of state.robot.links.values())links.set(l.name,new THREE.Group());
+
+    function attach(name,parent){
+      const node=links.get(name);
+      parent.add(node);
+
+      for(const j of state.robot.outgoing.get(name)||[]){
+        const jf=new THREE.Group();
+        setStatic(jf,j.origin);
+        node.add(jf);
+
+        const motion=new THREE.Group();
+        jf.add(motion);
+        motions.set(j.name,motion);
+
+        const idx=state.movable.findIndex(x=>x.name===j.name);
+        const q=idx>=0?(state.q[idx]||0):0;
+        applyJoint(motion,j,q);
+
+        attach(j.child,motion);
+      }
+    }
+    attach(state.robot.root,state.robotRoot);
+
+    for(const l of state.robot.links.values()){
+      for(const spec of l.visuals){
+        const g=await geometry(spec);
+        if(!g)continue;
+
+        const vf=new THREE.Group();
+        setStatic(vf,spec.origin);
+        links.get(l.name).add(vf);
+
+        const mesh=new THREE.Mesh(g,robotMaterial(spec.color));
+        mesh.scale.set(...spec.scale);
+        vf.add(mesh);
+      }
+    }
+
+    state.linkNodes=links;
+    state.motionNodes=motions;
+    state.robotRoot.updateMatrixWorld(true);
+    updateStartingGhost();
+  }
+
+  function applyQ(q){
+    state.q=[...q];
+    setRobotJoints(state.q);
+    updateCurrentEE();
+  }
+
+  function poseOf(link){
+    const n=state.linkNodes.get(link);
+    if(!n)return null;
+
+    n.updateWorldMatrix(true,false);
+    const p=new THREE.Vector3();
+    const q=new THREE.Quaternion();
+    const s=new THREE.Vector3();
+    n.matrixWorld.decompose(p,q,s);
+
+    return{position:p,quaternion:q,matrix:n.matrixWorld.clone()};
+  }
+
+  function updateCurrentEE(){
+    if(!state.eeLink||!state.linkNodes.size)return;
+
+    const pose=poseOf(state.eeLink);
+    if(!pose)return;
+
+    state.currentEEFrame.position.copy(pose.position);
+    state.currentEEFrame.quaternion.copy(pose.quaternion);
+
+    $('fkPosition').textContent=
+      `(${pose.position.x.toFixed(4)}, ${pose.position.y.toFixed(4)}, ${pose.position.z.toFixed(4)}) m`;
+
+    $('fkQuaternion').textContent=
+      `(${pose.quaternion.w.toFixed(5)}, ${pose.quaternion.x.toFixed(5)}, ${pose.quaternion.y.toFixed(5)}, ${pose.quaternion.z.toFixed(5)})`;
+
+    if($('showExecutedTrace').checked&&state.playing){
+      const last=state.executedPoints.at(-1);
+      if(!last||last.distanceToSquared(pose.position)>1e-12){
+        state.executedPoints.push(pose.position.clone());
+        redrawExecutedTrace();
+      }
+    }
+  }
+
+  function cleanCsvLines(text){
+    return text
+      .split(/\r?\n/)
+      .map(s=>s.trim())
+      .filter(Boolean)
+      .filter(s=>!s.startsWith('#'));
+  }
+
+  function splitCsv(line){
+    return line.split(/[,\t;]+/).map(s=>s.trim());
+  }
+
+  function isNumericRow(tokens,n){
+    return tokens.length===n&&tokens.every(v=>Number.isFinite(Number(v)));
+  }
+
+  function parseWorkspaceCsv(text){
+    const lines=cleanCsvLines(text);
+    if(!lines.length)throw new Error('Workspace CSV is empty.');
+
+    let start=0;
+    let tokens=splitCsv(lines[0]);
+
+    if(!isNumericRow(tokens,7)){
+      const names=tokens.map(s=>s.toLowerCase().replace(/\s+/g,''));
+      const expected=['x','y','z','qw','qx','qy','qz'];
+      if(expected.every(x=>names.includes(x))){
+        start=1;
+      }else{
+        throw new Error('Workspace CSV must have 7 numeric columns or header x,y,z,qw,qx,qy,qz.');
+      }
+    }
+
+    const poses=[];
+    for(let i=start;i<lines.length;i++){
+      const t=splitCsv(lines[i]);
+      if(!isNumericRow(t,7))throw new Error(`Workspace CSV: invalid row ${i+1}.`);
+
+      const [x,y,z,qw,qx,qy,qz]=t.map(Number);
+      const q=new THREE.Quaternion(qx,qy,qz,qw);
+
+      if(q.lengthSq()<1e-16)throw new Error(`Workspace CSV: zero quaternion at row ${i+1}.`);
+      q.normalize();
+
+      poses.push({
+        position:new THREE.Vector3(x,y,z),
+        quaternion:q
+      });
+    }
+
+    if(!poses.length)throw new Error('No workspace poses found.');
+    return poses;
+  }
+
+  function parseJointCsv(text){
+    const lines=cleanCsvLines(text);
+    if(!lines.length)throw new Error('Joint CSV is empty.');
+
+    let start=0;
+    if(!isNumericRow(splitCsv(lines[0]),7))start=1;
+
+    const path=[];
+    for(let i=start;i<lines.length;i++){
+      const t=splitCsv(lines[i]);
+      if(!isNumericRow(t,7))throw new Error(`Joint CSV: row ${i+1} must contain exactly 7 numeric values.`);
+      path.push(t.map(Number));
+    }
+
+    if(!path.length)throw new Error('No joint configurations found.');
+    return path;
+  }
+
+  function makeThemeFrame(scale){
+    return new THREE.AxesHelper(scale);
+  }
+
+  function redrawWorkspacePath(){
+    if(state.workspaceLine){
+      state.workspaceRoot.remove(state.workspaceLine);
+      state.workspaceLine.geometry.dispose();
+      state.workspaceLine.material.dispose();
+      state.workspaceLine=null;
+    }
+
+    if(!state.workspacePoses.length)return;
+
+    const g=new THREE.BufferGeometry().setFromPoints(
+      state.workspacePoses.map(p=>p.position)
+    );
+
+    const m=new THREE.LineBasicMaterial({color:BLUE,transparent:true,opacity:.95});
+    state.workspaceLine=new THREE.Line(g,m);
+    state.workspaceLine.visible=$('showWorkspacePath').checked;
+    state.workspaceRoot.add(state.workspaceLine);
+
+    rebuildPoseFrames();
+  }
+
+  function rebuildPoseFrames(){
+    state.poseFrameRoot.clear();
+    if(!state.workspacePoses.length)return;
+
+    const interval=Math.max(1,Math.floor(Number($('frameInterval').value)||20));
+    const indices=[];
+
+    for(let i=0;i<state.workspacePoses.length;i+=interval)indices.push(i);
+
+    const finalIndex=state.workspacePoses.length-1;
+    if(indices.at(-1)!==finalIndex)indices.push(finalIndex);
+
+    for(const i of indices){
+      const p=state.workspacePoses[i];
+
+      const frame=new THREE.Group();
+      frame.position.copy(p.position);
+      frame.quaternion.copy(p.quaternion);
+
+      frame.add(makeThemeFrame(.09));
+
+      state.poseFrameRoot.add(frame);
+    }
+
+    state.poseFrameRoot.visible=$('showPoseFrames').checked;
+  }
+
+  function redrawExecutedTrace(){
+    if(state.executedLine){
+      scene.remove(state.executedLine);
+      state.executedLine.geometry.dispose();
+      state.executedLine.material.dispose();
+      state.executedLine=null;
+    }
+
+    if(!state.executedPoints.length)return;
+
+    const g=new THREE.BufferGeometry().setFromPoints(state.executedPoints);
+    const m=new THREE.LineBasicMaterial({color:RED,transparent:true,opacity:.95});
+    state.executedLine=new THREE.Line(g,m);
+    state.executedLine.visible=$('showExecutedTrace').checked;
+    scene.add(state.executedLine);
+  }
+
+  function clearExecutedTrace(){
+    state.executedPoints=[];
+    redrawExecutedTrace();
+  }
+
+  function setSample(index,appendTrace=false){
+    if(!state.jointPath.length)return;
+
+    index=Math.max(0,Math.min(state.jointPath.length-1,index));
+    state.sampleIndex=index;
+
+    const wasPlaying=state.playing;
+    if(appendTrace&&!state.playing)state.playing=true;
+    applyQ(state.jointPath[index]);
+    if(appendTrace&&!wasPlaying)state.playing=false;
+
+    $('scrubber').value=String(index);
+    $('currentSample').textContent=String(index+1);
+    $('scrubText').textContent=`${index+1} / ${state.jointPath.length}`;
+  }
+
+  function resetAnimation(){
+    state.playing=false;
+    state.lastStepTime=0;
+    $('playState').textContent='Stopped';
+    clearExecutedTrace();
+
+    if(state.jointPath.length){
+      setSample(0,false);
+      updateStartingGhost();
+
+      const pose=poseOf(state.eeLink);
+      if(pose){
+        state.executedPoints=[pose.position.clone()];
+        redrawExecutedTrace();
+      }
+    }
+  }
+
+  function play(){
+    if(!state.jointPath.length){
+      $('status').textContent='Load the joint trajectory first.';
+      return;
+    }
+
+    if(state.sampleIndex>=state.jointPath.length-1){
+      clearExecutedTrace();
+      state.sampleIndex=0;
+      setSample(0,false);
+      const pose=poseOf(state.eeLink);
+      if(pose)state.executedPoints=[pose.position.clone()];
+      redrawExecutedTrace();
+    }
+
+    state.playing=true;
+    state.lastStepTime=0;
+    $('playState').textContent='Playing';
+  }
+
+  function pause(){
+    state.playing=false;
+    state.lastStepTime=0;
+    $('playState').textContent='Paused';
+  }
+
+  function stop(){
+    resetAnimation();
+  }
+
+  async function prepareRobot(){
+    if(!state.urdfText)return;
+
+    try{
+      state.robot=parseURDF(state.urdfText);
+      state.movable=state.robot.joints.filter(j=>['revolute','continuous','prismatic'].includes(j.type));
+
+      if(state.movable.length!==7){
+        $('status').textContent=
+          `Robot has ${state.movable.length} movable joints. This module expects a 7-DOF robot.`;
+      }
+
+      state.q=state.movable.map(()=>0);
+      state.eeLink=state.robot.leaves[0]||[...state.robot.links.keys()].at(-1);
+
+      $('eeLink').innerHTML='';
+      const ordered=[...state.robot.links.keys()]
+        .sort((a,b)=>(state.robot.depth.get(a)||0)-(state.robot.depth.get(b)||0));
+
+      for(const name of ordered){
+        const o=document.createElement('option');
+        o.value=name;o.textContent=name;
+        $('eeLink').appendChild(o);
+      }
+      $('eeLink').value=state.eeLink;
+
+      await buildRobot();
+
+      state.currentEEFrame.clear();
+      state.currentEEFrame.add(makeThemeFrame(.12));
+      state.currentEEFrame.visible=$('showCurrentEE').checked;
+
+      updateCurrentEE();
+      fitCamera();
+
+      $('status').textContent=
+        `${state.robot.name} loaded · ${state.movable.length} movable joints`;
+    }catch(e){
+      $('status').textContent=e.message;
+    }
+  }
+
+  function fitCamera(){
+    const box=new THREE.Box3();
+
+    if(state.robotRoot.children.length)box.expandByObject(state.robotRoot);
+    if(state.startGhostRoot.children.length)box.expandByObject(state.startGhostRoot);
+    if(state.workspaceRoot.children.length)box.expandByObject(state.workspaceRoot);
+    if(state.poseFrameRoot.children.length)box.expandByObject(state.poseFrameRoot);
+    if(state.executedLine)box.expandByObject(state.executedLine);
+
+    if(box.isEmpty())return;
+
+    const sp=box.getBoundingSphere(new THREE.Sphere());
+    const r=Math.max(sp.radius,.3);
+    const d=r/Math.sin(THREE.MathUtils.degToRad(camera.fov)/2)*1.25;
+
+    camera.position.copy(sp.center).add(
+      new THREE.Vector3(1.2,-1.3,.85).normalize().multiplyScalar(d)
+    );
+    orbit.target.copy(sp.center);
+    orbit.update();
+  }
+
+  $('urdfInput').addEventListener('change',async e=>{
+    const f=e.target.files?.[0];
+    if(!f)return;
+    state.urdfText=await f.text();
+    await prepareRobot();
+  });
+
+  $('visualInput').addEventListener('change',async e=>{
+    state.visualFiles.clear();
+    [...e.target.files].forEach(f=>state.visualFiles.set(f.name.toLowerCase(),f));
+    state.geometryCache.clear();
+    if(state.robot)await prepareRobot();
+  });
+
+  $('collisionInput').addEventListener('change',()=>{});
+
+  $('workspaceCsv').addEventListener('change',async e=>{
+    const f=e.target.files?.[0];
+    if(!f)return;
+
+    try{
+      state.workspacePoses=parseWorkspaceCsv(await f.text());
+      $('workspaceCount').textContent=String(state.workspacePoses.length);
+      $('workspaceStatus').textContent=
+        `${state.workspacePoses.length} workspace poses loaded.`;
+      redrawWorkspacePath();
+      fitCamera();
+    }catch(err){
+      state.workspacePoses=[];
+      $('workspaceCount').textContent='0';
+      $('workspaceStatus').textContent=err.message;
+      redrawWorkspacePath();
+    }
+  });
+
+  $('jointCsv').addEventListener('change',async e=>{
+    const f=e.target.files?.[0];
+    if(!f)return;
+
+    try{
+      state.jointPath=parseJointCsv(await f.text());
+      $('jointCount').textContent=String(state.jointPath.length);
+      $('jointStatus').textContent=
+        `${state.jointPath.length} joint configurations loaded.`;
+
+      $('scrubber').disabled=false;
+      $('scrubber').min='0';
+      $('scrubber').max=String(state.jointPath.length-1);
+      $('scrubber').value='0';
+
+      resetAnimation();
+    }catch(err){
+      state.jointPath=[];
+      $('jointCount').textContent='0';
+      $('jointStatus').textContent=err.message;
+      $('scrubber').disabled=true;
+      clearExecutedTrace();
+      updateStartingGhost();
+    }
+  });
+
+  $('eeLink').addEventListener('change',e=>{
+    state.eeLink=e.target.value;
+    clearExecutedTrace();
+    updateCurrentEE();
+    if(state.jointPath.length)resetAnimation();
+  });
+
+  $('frameInterval').addEventListener('change',rebuildPoseFrames);
+
+  $('showStartingGhost').addEventListener('change',e=>{
+    state.startGhostRoot.visible=e.target.checked;
+  });
+
+  $('showWorkspacePath').addEventListener('change',e=>{
+    if(state.workspaceLine)state.workspaceLine.visible=e.target.checked;
+  });
+
+  $('showPoseFrames').addEventListener('change',e=>{
+    state.poseFrameRoot.visible=e.target.checked;
+  });
+
+  $('showExecutedTrace').addEventListener('change',e=>{
+    if(state.executedLine)state.executedLine.visible=e.target.checked;
+  });
+
+  $('showCurrentEE').addEventListener('change',e=>{
+    state.currentEEFrame.visible=e.target.checked;
+  });
+
+  $('clearTrace').addEventListener('click',clearExecutedTrace);
+  $('fitBtn').addEventListener('click',fitCamera);
+  $('playBtn').addEventListener('click',play);
+  $('pauseBtn').addEventListener('click',pause);
+  $('stopBtn').addEventListener('click',stop);
+
+  $('scrubber').addEventListener('input',e=>{
+    pause();
+    setSample(Number(e.target.value),false);
+  });
+
+  async function loadDefaultAssets(){
+    try{
+      const [stlFiles,urdfResponse,workspaceResponse,jointResponse]=await Promise.all([
+        Promise.all(DEFAULT_STL_NAMES.map(name=>
+          fetchDefaultFile(`${DEFAULT_DATA_ROOT}/visual/${name}`,name,'model/stl')
+        )),
+        fetch(`${DEFAULT_DATA_ROOT}/urdf/${DEFAULT_URDF_NAME}`),
+        fetch(`${DEFAULT_DATA_ROOT}/mod5/${DEFAULT_WORKSPACE_PATH_NAME}`),
+        fetch(`${DEFAULT_DATA_ROOT}/mod5/${DEFAULT_JOINT_PATH_NAME}`)
+      ]);
+      for(const [response,name] of [
+        [urdfResponse,DEFAULT_URDF_NAME],
+        [workspaceResponse,DEFAULT_WORKSPACE_PATH_NAME],
+        [jointResponse,DEFAULT_JOINT_PATH_NAME]
+      ]){
+        if(!response.ok)throw new Error(`Unable to load ${name} (${response.status}).`);
+      }
+
+      state.visualFiles.clear();
+      stlFiles.forEach(file=>state.visualFiles.set(file.name.toLowerCase(),file));
+      state.geometryCache.clear();
+      state.urdfText=await urdfResponse.text();
+      await prepareRobot();
+
+      state.workspacePoses=parseWorkspaceCsv(await workspaceResponse.text());
+      $('workspaceCount').textContent=String(state.workspacePoses.length);
+      $('workspaceStatus').textContent=
+        `${state.workspacePoses.length} bundled workspace poses loaded.`;
+      redrawWorkspacePath();
+
+      state.jointPath=parseJointCsv(await jointResponse.text());
+      $('jointCount').textContent=String(state.jointPath.length);
+      $('jointStatus').textContent=
+        `${state.jointPath.length} bundled joint configurations loaded.`;
+      $('scrubber').disabled=false;
+      $('scrubber').min='0';
+      $('scrubber').max=String(state.jointPath.length-1);
+      $('scrubber').value='0';
+      resetAnimation();
+      fitCamera();
+      $('status').textContent=
+        `${state.robot.name} and both bundled 500-sample paths loaded`;
+    }catch(err){
+      $('status').textContent=`Default asset load failed: ${err.message}`;
+    }
+  }
+
+  function resize(){
+    const w=viewport.clientWidth,h=viewport.clientHeight;
+    renderer.setSize(w,h,false);
+    camera.aspect=w/Math.max(h,1);
+    camera.updateProjectionMatrix();
+  }
+
+  new ResizeObserver(resize).observe(viewport);
+
+  function animate(time){
+    requestAnimationFrame(animate);
+
+    if(state.playing&&state.jointPath.length){
+      const dt=Math.max(.001,Number($('sampleDt').value)||.05);
+      const speed=Math.max(.01,Number($('speed').value)||1);
+      const intervalMs=1000*dt/speed;
+
+      if(!state.lastStepTime)state.lastStepTime=time;
+
+      while(
+        state.playing &&
+        time-state.lastStepTime>=intervalMs
+      ){
+        state.lastStepTime+=intervalMs;
+
+        const next=state.sampleIndex+1;
+        if(next>=state.jointPath.length){
+          state.playing=false;
+          $('playState').textContent='Finished';
+          break;
+        }
+
+        setSample(next,true);
+      }
+    }
+
+    orbit.update();
+    renderer.render(scene,camera);
+  }
+
+  resize();
+  animate();
+  loadDefaultAssets();
+}
+initialize();
+</script>
+</body>
+</html>
