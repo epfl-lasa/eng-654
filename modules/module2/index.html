@@ -212,7 +212,7 @@ import { ColladaLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/exampl
 import { mergeGeometries } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/utils/BufferGeometryUtils.js/+esm';
 
 const $=id=>document.getElementById(id);
-const DEFAULT_DATA_ROOT='../../assets/data';
+const DEFAULT_DATA_ROOT=new URL('../../assets/data/',import.meta.url);
 const DEFAULT_URDF_NAME='iiwa7_free_joints.urdf';
 const DEFAULT_STL_NAMES=Array.from({length:8},(_,i)=>`link_${i}.stl`);
 
@@ -313,11 +313,11 @@ function init(){
  async function loadDefaultAssets(){
   try{
    const files=await Promise.all(DEFAULT_STL_NAMES.map(name=>
-    fetchDefaultFile(`${DEFAULT_DATA_ROOT}/visual/${name}`,name,'model/stl')
+    fetchDefaultFile(new URL(`visual/${name}`,DEFAULT_DATA_ROOT),name,'model/stl')
    ));
    state.files.clear();files.forEach(file=>state.files.set(file.name.toLowerCase(),file));
    state.cache.clear();
-   const response=await fetch(`${DEFAULT_DATA_ROOT}/urdf/${DEFAULT_URDF_NAME}`);
+   const response=await fetch(new URL(`urdf/${DEFAULT_URDF_NAME}`,DEFAULT_DATA_ROOT));
    if(!response.ok)throw new Error(`Unable to load ${DEFAULT_URDF_NAME} (${response.status}).`);
    state.urdfText=await response.text();
    await prep();

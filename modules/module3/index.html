@@ -210,7 +210,7 @@ import { ColladaLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/exampl
 import { mergeGeometries } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/utils/BufferGeometryUtils.js/+esm';
 
 const $=id=>document.getElementById(id);
-const DEFAULT_DATA_ROOT='../../assets/data';
+const DEFAULT_DATA_ROOT=new URL('../../assets/data/',import.meta.url);
 const DEFAULT_URDF_NAME='iiwa7_free_joints.urdf';
 const DEFAULT_IK_NAME='iiwa7_IK_q3_030deg.csv';
 const DEFAULT_STL_NAMES=Array.from({length:8},(_,i)=>`link_${i}.stl`);
@@ -289,10 +289,10 @@ function init(){
   try{
    const [files,urdfResponse,ikResponse]=await Promise.all([
     Promise.all(DEFAULT_STL_NAMES.map(name=>
-     fetchDefaultFile(`${DEFAULT_DATA_ROOT}/visual/${name}`,name,'model/stl')
+     fetchDefaultFile(new URL(`visual/${name}`,DEFAULT_DATA_ROOT),name,'model/stl')
     )),
-    fetch(`${DEFAULT_DATA_ROOT}/urdf/${DEFAULT_URDF_NAME}`),
-    fetch(`${DEFAULT_DATA_ROOT}/mod3/${DEFAULT_IK_NAME}`)
+    fetch(new URL(`urdf/${DEFAULT_URDF_NAME}`,DEFAULT_DATA_ROOT)),
+    fetch(new URL(`mod3/${DEFAULT_IK_NAME}`,DEFAULT_DATA_ROOT))
    ]);
    if(!urdfResponse.ok)throw new Error(`Unable to load ${DEFAULT_URDF_NAME} (${urdfResponse.status}).`);
    if(!ikResponse.ok)throw new Error(`Unable to load ${DEFAULT_IK_NAME} (${ikResponse.status}).`);

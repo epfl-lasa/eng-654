@@ -280,7 +280,7 @@ const DEFAULT_Q = [
   1.580355551154
 ];
 const DEFAULT_TARGET_POSITION=[0.2,0.0,0.8];
-const DEFAULT_DATA_ROOT='../../assets/data';
+const DEFAULT_DATA_ROOT=new URL('../../assets/data/',import.meta.url);
 const DEFAULT_URDF_NAME='iiwa7_free_joints.urdf';
 const DEFAULT_IK_NAME='iiwa7_IK_q3_030deg.csv';
 const DEFAULT_STL_NAMES=Array.from({length:8},(_,i)=>`link_${i}.stl`);
@@ -1413,10 +1413,10 @@ function initialize() {
     try{
       const [stlFiles,ikResponse,urdfResponse]=await Promise.all([
         Promise.all(DEFAULT_STL_NAMES.map(name=>
-          fetchDefaultFile(`${DEFAULT_DATA_ROOT}/visual/${name}`,name,'model/stl')
+          fetchDefaultFile(new URL(`visual/${name}`,DEFAULT_DATA_ROOT),name,'model/stl')
         )),
-        fetch(`${DEFAULT_DATA_ROOT}/mod4/${DEFAULT_IK_NAME}`),
-        fetch(`${DEFAULT_DATA_ROOT}/urdf/${DEFAULT_URDF_NAME}`)
+        fetch(new URL(`mod4/${DEFAULT_IK_NAME}`,DEFAULT_DATA_ROOT)),
+        fetch(new URL(`urdf/${DEFAULT_URDF_NAME}`,DEFAULT_DATA_ROOT))
       ]);
       if(!ikResponse.ok)throw new Error(`Unable to load ${DEFAULT_IK_NAME} (${ikResponse.status}).`);
       if(!urdfResponse.ok)throw new Error(`Unable to load ${DEFAULT_URDF_NAME} (${urdfResponse.status}).`);

@@ -264,7 +264,7 @@ import { ColladaLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/exampl
 import { mergeGeometries } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/utils/BufferGeometryUtils.js/+esm';
 
 const $=id=>document.getElementById(id);
-const DEFAULT_DATA_ROOT='../../assets/data';
+const DEFAULT_DATA_ROOT=new URL('../../assets/data/',import.meta.url);
 const DEFAULT_URDF_NAME='iiwa7_free_joints.urdf';
 const DEFAULT_JOINT_PATH_NAME='kuka_iiwa7_rectangle_joint_path_500.csv';
 const DEFAULT_WORKSPACE_PATH_NAME='kuka_iiwa7_rectangle_workspace_path_500_quaternion.csv';
@@ -1058,11 +1058,11 @@ function initialize(){
     try{
       const [stlFiles,urdfResponse,workspaceResponse,jointResponse]=await Promise.all([
         Promise.all(DEFAULT_STL_NAMES.map(name=>
-          fetchDefaultFile(`${DEFAULT_DATA_ROOT}/visual/${name}`,name,'model/stl')
+          fetchDefaultFile(new URL(`visual/${name}`,DEFAULT_DATA_ROOT),name,'model/stl')
         )),
-        fetch(`${DEFAULT_DATA_ROOT}/urdf/${DEFAULT_URDF_NAME}`),
-        fetch(`${DEFAULT_DATA_ROOT}/mod5/${DEFAULT_WORKSPACE_PATH_NAME}`),
-        fetch(`${DEFAULT_DATA_ROOT}/mod5/${DEFAULT_JOINT_PATH_NAME}`)
+        fetch(new URL(`urdf/${DEFAULT_URDF_NAME}`,DEFAULT_DATA_ROOT)),
+        fetch(new URL(`mod5/${DEFAULT_WORKSPACE_PATH_NAME}`,DEFAULT_DATA_ROOT)),
+        fetch(new URL(`mod5/${DEFAULT_JOINT_PATH_NAME}`,DEFAULT_DATA_ROOT))
       ]);
       for(const [response,name] of [
         [urdfResponse,DEFAULT_URDF_NAME],
