@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
-import { parseStlGeometry } from './frameDHPlayground.js?v=20260814-3';
+import { createSceneControlPanel, createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
+import { parseStlGeometry } from './frameDHPlayground.js';
 
 const DEG = Math.PI / 180;
 const MODEL_ROOT = new URL('../../assets/models/custom_3R/', import.meta.url);
@@ -260,6 +260,7 @@ function createDemo(container) {
   key.position.set(5, 8, 7);
   scene.add(key);
   const world = createZUpWorld(scene);
+  world.userData.sceneControls = createSceneControlPanel(stage, world, { labels: false });
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = .08;
@@ -299,9 +300,10 @@ function createDemo(container) {
   let last = performance.now();
   function animate(time) {
     if (!alive) return;
-    const dt = Math.min((time - last) / 1000, .05);
+    const dt = Math.max(0, Math.min((time - last) / 1000, .05));
     last = time;
     update(time / 1000, dt);
+    kit.syncLabels?.();
     controls.update();
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
@@ -460,8 +462,8 @@ async function buildUvRotation(kit) {
   const center = robotModel.axisPoints[1].clone();
   addRingInPlane(kit.world, center, Math.sqrt(ikExample.planarNormSquared), new THREE.Vector3(0, 1, 0), 0x3f6ea8);
   addVector(kit.world, center, new THREE.Vector3(ikExample.ux, 0, -ikExample.uy), 0x777777, '[F₁,−F₂]');
-  addVector(kit.world, center, new THREE.Vector3(ikExample.U, 0, -ikExample.V), 0xff0000, '[E,zₑ]');
-  kit.note.textContent = `θ₂ = ${fixed(TARGET_Q_DEG[1], 0)}° rotates [F₁,−F₂] into [E,zₑ]; both lengths remain ${fixed(Math.sqrt(ikExample.planarNormSquared), 4)} m.`;
+  addVector(kit.world, center, new THREE.Vector3(ikExample.U, 0, -ikExample.V), 0xff0000, '[E,zₘ]');
+  kit.note.textContent = `θ₂ = ${fixed(TARGET_Q_DEG[1], 0)}° rotates [F₁,−F₂] into [E,zₘ]; both lengths remain ${fixed(Math.sqrt(ikExample.planarNormSquared), 4)} m.`;
   return () => robot.update(ikExample.targetQ);
 }
 
@@ -486,8 +488,8 @@ async function buildUvConcept(kit) {
   addLabel(kit.world, center.clone().addScaledVector(jointAxis, 1.55), 'joint 2 axis');
   addRingInPlane(kit.world, center, Math.sqrt(ikExample.planarNormSquared), jointAxis, 0x3f6ea8);
   addVector(kit.world, center, new THREE.Vector3(ikExample.ux, 0, -ikExample.uy), 0x777777, '[F₁,−F₂]');
-  addVector(kit.world, center, new THREE.Vector3(ikExample.U, 0, -ikExample.V), 0xff0000, '[E,zₑ]');
-  kit.note.textContent = `Viewed in the home joint-2 frame, θ₂ = ${TARGET_Q_DEG[1]}° is the oriented rotation from [F₁,−F₂] to [E,zₑ].`;
+  addVector(kit.world, center, new THREE.Vector3(ikExample.U, 0, -ikExample.V), 0xff0000, '[E,zₘ]');
+  kit.note.textContent = `Viewed in the home joint-2 frame, θ₂ = ${TARGET_Q_DEG[1]}° is the oriented rotation from [F₁,−F₂] to [E,zₘ].`;
   return () => {
     homeRobot.update([0, 0, 0]);
     rotatedRobot.update(rotatedQ);
@@ -520,7 +522,7 @@ async function buildRadialInvariant(kit) {
   addVector(kit.world, center, new THREE.Vector3(ikExample.eePosition.x, ikExample.eePosition.y, 0), 0x3f6ea8, 'ρ');
   kit.world.add(tube(joint1Point.clone().add(new THREE.Vector3(0, 0, -1)), center.clone().add(new THREE.Vector3(0, 0, 1)), .025, 0x111111, .8));
   addLabel(kit.world, joint1Point.clone().add(new THREE.Vector3(.08, .08, .15)), 'joint 1');
-  addLabel(kit.world, center.clone().add(new THREE.Vector3(.08, .08, .15)), '(0,0,z_e)');
+  addLabel(kit.world, center.clone().add(new THREE.Vector3(.08, .08, .15)), '(0, 0, zₘ)');
   kit.note.textContent = 'The black joint-1 axis is x = y = 0. The circle radius is ρ; the algebraic invariant is R = ρ² + z̄².';
   return () => robot.update(ikExample.targetQ);
 }
@@ -560,8 +562,8 @@ async function buildBackprop(kit, joint) {
   if (joint === 2) {
     const center = robotModel.axisPoints[1];
     addVector(kit.world, center, v([ikExample.ux, 0, -ikExample.uy]), 0x777777, `atan2(−F₂,F₁) = ${fixed(ikExample.angleU, 3)}°`);
-    addVector(kit.world, center, v([ikExample.U, 0, -ikExample.V]), 0xff0000, `atan2(zₑ,E) = ${fixed(ikExample.angleUV, 3)}°`);
-    kit.note.textContent = `θ₂ = atan2(zₑ,E) − atan2(−F₂,F₁) = ${fixed(TARGET_Q_DEG[1], 3)}°.`;
+    addVector(kit.world, center, v([ikExample.U, 0, -ikExample.V]), 0xff0000, `atan2(zₘ, E) = ${fixed(ikExample.angleUV, 3)}°`);
+    kit.note.textContent = `θ₂ = atan2(zₘ, E) − atan2(−F₂, F₁) = ${fixed(TARGET_Q_DEG[1], 3)}°.`;
   } else {
     const center = v([0, 0, robotModel.dh.d1]);
     addVector(kit.world, center, v([ikExample.vx, ikExample.uz, 0]), 0x777777, `atan2(C,a₁+E) = ${fixed(ikExample.preAzimuth, 3)}°`);
@@ -645,16 +647,24 @@ async function createUrdfVariantRobot(world, filename) {
   const colors = [0x333638, 0x0d7d80, 0xb8b8b8, 0x0d7d80];
   const group = new THREE.Group();
   world.add(group);
+  world.userData.sceneControls?.registerStlRoot(group);
   await Promise.all(visuals.map(async (item, index) => {
     const geometry = await loadVariantGeometry(item.file);
+    const sceneOpacity = world.userData.courseStlOpacityFactor ?? 1;
     const holder = new THREE.Group();
     holder.matrixAutoUpdate = false;
     holder.matrix.copy(homeLinks[index]).multiply(item.origin);
     const material = new THREE.MeshStandardMaterial({
       color: colors[index], roughness: .62, metalness: .06,
-      transparent: true, opacity: 1, depthWrite: false
+      transparent: sceneOpacity < 1, opacity: sceneOpacity, depthWrite: sceneOpacity >= .95,
+      side: THREE.DoubleSide
     });
-    holder.add(new THREE.Mesh(geometry.clone(), material));
+    material.userData.ikVariantBaseOpacity = 1;
+    material.userData.ikVariantBaseTransparent = false;
+    material.userData.ikVariantBaseDepthWrite = true;
+    const mesh = new THREE.Mesh(geometry.clone(), material);
+    mesh.userData.isCourseStl = true;
+    holder.add(mesh);
     group.add(holder);
   }));
 
@@ -679,14 +689,27 @@ function loadVariantGeometry(filename) {
 }
 
 function setVariantOpacity(group, opacity) {
-  group.visible = opacity > .005;
+  const variantOpacity = Math.max(0, Math.min(1, opacity));
+  const stlOpacity = group.parent?.userData.courseStlOpacityFactor ?? 1;
+  group.visible = variantOpacity > .005;
   group.traverse((object) => {
     if (!object.material) return;
     const materials = Array.isArray(object.material) ? object.material : [object.material];
     materials.forEach((material) => {
-      material.transparent = true;
-      material.opacity = opacity;
-      material.depthWrite = false;
+      if (material.userData.ikVariantBaseOpacity == null) {
+        material.userData.ikVariantBaseOpacity = material.opacity;
+        material.userData.ikVariantBaseTransparent = material.transparent;
+        material.userData.ikVariantBaseDepthWrite = material.depthWrite;
+      }
+      const sceneFactor = object.userData.isCourseStl ? stlOpacity : 1;
+      const displayOpacity = Math.max(0, Math.min(1,
+        material.userData.ikVariantBaseOpacity * variantOpacity * sceneFactor));
+      material.transparent = material.userData.ikVariantBaseTransparent || displayOpacity < .999;
+      material.opacity = displayOpacity;
+      material.depthWrite = displayOpacity >= .95
+        ? material.userData.ikVariantBaseDepthWrite
+        : false;
+      material.needsUpdate = true;
     });
   });
 }
@@ -782,6 +805,8 @@ async function buildPk3Ik(kit) {
   const distanceSphere = addWireSphere(kit.world, c, delta, 0xff0000);
   addLabel(kit.world, c.clone().add(new THREE.Vector3(-.25, -.25, .22)), 'c = (0,0,1)', 0x3f6ea8);
   const axis3Label = addLabel(kit.world, axis3Point.clone().add(new THREE.Vector3(.15, .12, 1.45)), 'joint-3 axis');
+  axis3Label.userData.ikLabelAuthoredVisible = false;
+  axis3Label.visible = false;
   const targetMarker = sphere(.12, 0x18865e);
   targetMarker.position.copy(targetPoint);
   kit.world.add(targetMarker);
@@ -804,6 +829,8 @@ async function buildPk3Ik(kit) {
   const toolMarker = sphere(.105, 0xd79b00);
   kit.world.add(toolMarker);
   const toolLabel = addLabel(kit.world, model.homeTool.clone().add(new THREE.Vector3(.16, .12, .3)), 'p(θ₃)', 0xd79b00);
+  toolLabel.userData.ikLabelAuthoredVisible = false;
+  toolLabel.visible = false;
   let lastStage = '';
   let startTime;
   return (time) => {
@@ -826,13 +853,13 @@ async function buildPk3Ik(kit) {
     distanceSphere.scale.setScalar(Math.max(.001, sphereProgress));
     robot.group.visible = phase >= 3;
     axis3Line.visible = phase >= 3;
-    axis3Label.visible = phase >= 3;
+    axis3Label.userData.ikLabelAuthoredVisible = phase >= 3;
     orbit.visible = rotating;
     candidateGroup.visible = rotating;
     toolMarker.visible = phase >= 3;
-    toolLabel.visible = phase >= 3;
+    toolLabel.userData.ikLabelAuthoredVisible = phase >= 3;
     targetMarker.visible = phase < 3 || phase >= 10;
-    targetLabel.visible = phase < 3;
+    targetLabel.userData.ikLabelAuthoredVisible = phase < 3;
     deltaDimension.visible = phase < 3;
     robot.update([0, 0, theta3]);
     toolMarker.position.copy(model.homeTool).applyMatrix4(expRevolute(model.axes[2], axis3Point, theta3));
@@ -1532,20 +1559,25 @@ async function createZeroRobot(world, q = [0, 0, 0], options = {}) {
   const group = new THREE.Group();
   const visuals = [];
   world.add(group);
+  world.userData.sceneControls?.registerStlRoot(group);
   await Promise.all(model.meshSpecs.map(async (spec) => {
     const geometry = await loadVariantGeometry(spec.file);
+    const sceneOpacity = world.userData.courseStlOpacityFactor ?? 1;
     const holder = new THREE.Group();
     holder.matrixAutoUpdate = false;
-    const opacity = options.opacity ?? 1;
+    const opacity = (options.opacity ?? 1) * sceneOpacity;
     const color = options.colors?.[spec.prefix] ?? spec.color;
-    holder.add(new THREE.Mesh(geometry.clone(), new THREE.MeshStandardMaterial({
+    const mesh = new THREE.Mesh(geometry.clone(), new THREE.MeshStandardMaterial({
       color,
       roughness: .62,
       metalness: .06,
       transparent: opacity < 1,
       opacity,
-      depthWrite: opacity > .85
-    })));
+      depthWrite: opacity > .85,
+      side: THREE.DoubleSide
+    }));
+    mesh.userData.isCourseStl = true;
+    holder.add(mesh);
     group.add(holder);
     visuals.push({
       holder,
@@ -1568,16 +1600,19 @@ async function createRobot(world, q = [0, 0, 0], options = {}) {
   const geometries = await loadGeometries();
   const group = new THREE.Group();
   world.add(group);
+  world.userData.sceneControls?.registerStlRoot(group);
+  const sceneOpacity = world.userData.courseStlOpacityFactor ?? 1;
   const visuals = [];
   model.meshSpecs.forEach((spec, i) => {
     const holder = new THREE.Group();
     holder.matrixAutoUpdate = false;
     const color = options.colors?.[i] ?? spec.color;
-    const opacity = options.opacity ?? 1;
+    const opacity = (options.opacity ?? 1) * sceneOpacity;
     const mesh = new THREE.Mesh(geometries[i].clone(), new THREE.MeshStandardMaterial({
       color, roughness: .62, metalness: .06, transparent: opacity < 1,
-      opacity, depthWrite: opacity > .85
+      opacity, depthWrite: opacity > .85, side: THREE.DoubleSide
     }));
+    mesh.userData.isCourseStl = true;
     holder.add(mesh);
     group.add(holder);
     visuals.push({ holder, prefix: spec.prefix, home: model.homeLinks[i].clone().multiply(model.visualOrigins[i]) });
@@ -1689,11 +1724,14 @@ function addDimensionLabelControls(kit, dimensions) {
     select.appendChild(option);
   });
   const update = () => {
-    setAllLabelsVisible(kit.world, select.value === 'all');
+    setAllLabelsAuthoredVisible(kit.world, select.value === 'all');
     if (select.value !== 'all' && select.value !== 'none') {
       const selected = dimensions.find((group) => group.userData.dimensionKey === select.value);
-      if (selected?.userData.dimensionLabel) selected.userData.dimensionLabel.visible = true;
+      if (selected?.userData.dimensionLabel) {
+        selected.userData.dimensionLabel.userData.ikLabelAuthoredVisible = true;
+      }
     }
+    syncIkLabelVisibility(kit.world);
   };
   select.addEventListener('change', update);
   kit.cleaners.push(() => select.removeEventListener('change', update));
@@ -1711,7 +1749,10 @@ function addLabelVisibilityControl(kit) {
   const text = document.createElement('span');
   text.textContent = 'Labels';
   label.append(checkbox, text);
-  const update = () => setAllLabelsVisible(kit.world, checkbox.checked);
+  const update = () => {
+    kit.world.userData.courseLabelsVisible = checkbox.checked;
+    syncIkLabelVisibility(kit.world);
+  };
   checkbox.addEventListener('change', update);
   kit.cleaners.push(() => checkbox.removeEventListener('change', update));
   kit.controlHost.append(label);
@@ -1766,9 +1807,18 @@ function addConicSlider(kit, text, min, max, step, initial, onInput) {
   kit.controlHost.append(label);
 }
 
-function setAllLabelsVisible(world, visible) {
+function setAllLabelsAuthoredVisible(world, visible) {
   world.traverse((object) => {
-    if (object.userData.isIkLabel) object.visible = visible;
+    if (object.userData.isIkLabel) object.userData.ikLabelAuthoredVisible = visible;
+  });
+}
+
+function syncIkLabelVisibility(world) {
+  const globallyVisible = world.userData.courseLabelsVisible !== false;
+  world.traverse((object) => {
+    if (object.userData.isIkLabel) {
+      object.visible = globallyVisible && object.userData.ikLabelAuthoredVisible !== false;
+    }
   });
 }
 
@@ -1904,6 +1954,7 @@ function addLabel(parent, position, text, color = 0x111111) {
   sprite.scale.set(canvas.width / 115, canvas.height / 115, 1);
   sprite.renderOrder = 20;
   sprite.userData.isIkLabel = true;
+  sprite.userData.ikLabelAuthoredVisible = true;
   parent.add(sprite);
   return sprite;
 }

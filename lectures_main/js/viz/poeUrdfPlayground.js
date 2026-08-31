@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createBoldAxes, createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
-import { parseStlGeometry } from './frameDHPlayground.js?v=20260814-3';
+import { createBoldAxes, createSceneControlPanel, createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
+import { parseStlGeometry } from './frameDHPlayground.js';
 
 const DEG = Math.PI / 180;
 const EPS = 1e-8;
@@ -44,13 +44,14 @@ function sceneKit(stage, cameraPosition = [4.5, 3.2, 4.2]) {
   const light = new THREE.DirectionalLight(0xffffff, 2.2);
   light.position.set(4, 6, 5); scene.add(light);
   const world = createZUpWorld(scene); world.add(grid(7, 0.5));
+  const sceneControls = createSceneControlPanel(stage, world);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true; controls.dampingFactor = 0.08; controls.target.set(0.8, 0.4, 0.5); controls.update();
   const resize = () => resizeRendererToContainer(renderer, camera, stage);
   const observer = new ResizeObserver(resize); observer.observe(stage); resize();
-  function animate() { controls.update(); renderer.render(scene, camera); requestAnimationFrame(animate); }
+  function animate() { sceneControls.syncLabels(); controls.update(); renderer.render(scene, camera); requestAnimationFrame(animate); }
   requestAnimationFrame(animate);
-  return { camera, renderer, world, controls };
+  return { camera, renderer, world, controls, sceneControls };
 }
 
 function grid(size, step) {
@@ -282,6 +283,8 @@ async function createCustom3RPoeDemo(container) {
   robot.name = 'custom_3R-current';
   homeGhost.name = 'custom_3R-home-ghost';
   kit.world.add(homeGhost, robot);
+  kit.sceneControls.registerStlRoot(robot);
+  kit.sceneControls.registerStlRoot(homeGhost);
   let robotVisuals = [], tracePoints = [], trace = line([], 0x111111, .65);
   kit.world.add(trace);
   function prefixMatrix(count) {
@@ -323,7 +326,7 @@ async function createCustom3RPoeDemo(container) {
 
   let previousTime = performance.now();
   function smoothMotion(time) {
-    const dt = Math.min((time - previousTime) / 1000, .05);
+    const dt = Math.max(0, Math.min((time - previousTime) / 1000, .05));
     previousTime = time;
     const blend = 1 - Math.exp(-12 * dt);
     let moving = false, active = -1, largestError = 0;
@@ -366,18 +369,28 @@ async function createCustom3RPoeDemo(container) {
   }));
   loaded.forEach(({ spec, index, geometry }) => {
     const homeMatrix = homeLinks[index].clone().multiply(visualOrigins[index]);
+    const sceneOpacity = kit.world.userData.courseStlOpacityFactor ?? 1;
     const currentGroup = new THREE.Group();
     currentGroup.matrixAutoUpdate = false;
-    currentGroup.add(new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: spec.color, roughness: .62, metalness: .06 })));
+    const currentMesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
+      color: spec.color, roughness: .62, metalness: .06,
+      transparent: sceneOpacity < 1, opacity: sceneOpacity, depthWrite: sceneOpacity >= .95,
+      side: THREE.DoubleSide
+    }));
+    currentMesh.userData.isCourseStl = true;
+    currentGroup.add(currentMesh);
     robot.add(currentGroup);
     robotVisuals.push({ group: currentGroup, prefixCount: spec.prefixCount, homeMatrix });
     if (index > 0) {
       const ghostGroup = new THREE.Group();
       ghostGroup.matrixAutoUpdate = false;
       ghostGroup.matrix.copy(homeMatrix);
-      ghostGroup.add(new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
-        color: spec.color, roughness: .7, transparent: true, opacity: .5, depthWrite: false
-      })));
+      const ghostMesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
+        color: spec.color, roughness: .7, transparent: true, opacity: .5 * sceneOpacity, depthWrite: false,
+        side: THREE.DoubleSide
+      }));
+      ghostMesh.userData.isCourseStl = true;
+      ghostGroup.add(ghostMesh);
       homeGhost.add(ghostGroup);
     }
   });

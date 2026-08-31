@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
-import { parseStlGeometry } from './frameDHPlayground.js?v=20260814-3';
+import { createSceneControlPanel, createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
+import { parseStlGeometry } from './frameDHPlayground.js';
 
 const DEG = Math.PI / 180;
 const MODEL_ROOT = new URL('../../assets/models/custom_6R/', import.meta.url);
@@ -133,6 +133,7 @@ function createDemo(container) {
   light.position.set(5, 8, 9);
   scene.add(light);
   const world = createZUpWorld(scene);
+  world.userData.sceneControls = createSceneControlPanel(stage, world, { labels: false });
   world.userData.labelSprites = [];
   world.userData.labelsVisible = true;
   const grid = new THREE.GridHelper(12, 24, 0xcccccc, 0xe8e8e8);
@@ -169,7 +170,7 @@ function createDemo(container) {
   resize();
   let last = performance.now();
   const animate = (time) => {
-    const dt = Math.min(.05, (time - last) / 1000);
+    const dt = Math.max(0, Math.min(.05, (time - last) / 1000));
     last = time;
     update(time / 1000, dt);
     controls.update();
@@ -335,16 +336,20 @@ async function createRobot(world, q, options = {}) {
   const geometries = await loadGeometries();
   const group = new THREE.Group();
   world.add(group);
+  world.userData.sceneControls?.registerStlRoot(group);
+  const sceneOpacity = world.userData.courseStlOpacityFactor ?? 1;
   const visuals = model.meshSpecs.map((spec, index) => {
     const holder = new THREE.Group();
     holder.matrixAutoUpdate = false;
     const color = options.color ?? spec.color;
-    const opacity = options.opacity ?? 1;
+    const opacity = (options.opacity ?? 1) * sceneOpacity;
     const material = new THREE.MeshStandardMaterial({
       color, roughness: .62, metalness: .05, transparent: opacity < 1,
       opacity, depthWrite: opacity > .8
     });
-    holder.add(new THREE.Mesh(geometries[index].clone(), material));
+    const mesh = new THREE.Mesh(geometries[index].clone(), material);
+    mesh.userData.isCourseStl = true;
+    holder.add(mesh);
     group.add(holder);
     return { holder, material, prefix: spec.prefix, home: model.homeLinks[spec.prefix].clone().multiply(spec.origin) };
   });
@@ -354,9 +359,10 @@ async function createRobot(world, q, options = {}) {
   });
   update(q);
   const setOpacity = (opacity) => visuals.forEach(({ material }) => {
-    material.transparent = opacity < 1;
-    material.opacity = opacity;
-    material.depthWrite = opacity > .8;
+    const displayOpacity = opacity * (world.userData.courseStlOpacityFactor ?? 1);
+    material.transparent = displayOpacity < 1;
+    material.opacity = displayOpacity;
+    material.depthWrite = displayOpacity > .8;
     material.needsUpdate = true;
   });
   return { group, update, setOpacity };

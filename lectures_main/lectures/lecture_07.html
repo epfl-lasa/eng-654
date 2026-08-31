@@ -25,7 +25,7 @@
       <p class="eyebrow">ENG-654 · Lecture 07</p>
       <h1 class="course-title">Workspace Path Planning</h1>
       <p class="subtitle">Lifting a desired Cartesian curve onto inverse-kinematic solution sheets</p>
-      <p class="lecture-promise">Running models: PUMA 560 and the cuspidal <code>custom_3R_new.urdf</code>.</p>
+      <p class="lecture-promise">From a workspace curve to a branch-aware joint-space lift, using PUMA and idealized cuspidal 3R case studies.</p>
     </div>
   </section>
 
@@ -43,19 +43,19 @@
   <section class="slide interactive-slide l7-slide">
     <p class="slide-kicker">PUMA 560 example</p>
     <h2 class="slide-title">Follow one closed wrist-center path in the workspace</h2>
-    <p class="slide-subtitle">The tool orientation and wrist posture are held fixed conceptually; the first three joints lift the displayed Cartesian loop.</p>
-    <div class="demo-prompt"><strong>Try it:</strong> play the path, orbit the model, and watch the desired and achieved wrist points.</div>
+    <p class="slide-subtitle">This demonstration constrains only wrist-center position. Joints \(q_4,q_5,q_6\) remain fixed at their seed values while \(q_1,q_2,q_3\) lift the loop.</p>
+    <div class="demo-prompt"><strong>Observe:</strong> compare the desired and achieved wrist points while the numerical continuation follows the loop.</div>
     <div class="layout-full l7-lab" data-path-lab="puma-path"></div>
   </section>
 
   <section class="slide l7-slide">
     <p class="slide-kicker">Numerical lift</p>
-    <h2 class="slide-title">The Jacobian converts Cartesian error into a local joint correction</h2>
+    <h2 class="slide-title">This PUMA demo inverts a square position Jacobian away from singularity</h2>
     <div class="layout-two-column">
       <div class="l7-equation-stack">
-        <div>\[\dot{\mathbf x}=J(\mathbf q)\dot{\mathbf q}\]</div>
-        <div>\[\Delta\mathbf q=J^{\#}(\mathbf q_k)\bigl(\mathbf x_d(s_{k+1})-f(\mathbf q_k)\bigr)\]</div>
-        <div>\[J^{\#}=J^T(JJ^T+\lambda^2I)^{-1}\]</div>
+        <div>\[\dot{\mathbf p}_w=J_p(\mathbf q_{1:3})\dot{\mathbf q}_{1:3}\]</div>
+        <div>\[\Delta\mathbf q_{1:3}=J_p(\mathbf q_k)^{-1}\bigl(\mathbf p_{w,d}(s_{k+1})-\mathbf p_w(\mathbf q_k)\bigr)\]</div>
+        <div>\[|\det J_p|&lt;\varepsilon\quad\Longrightarrow\quad\text{stop this continuation}\]</div>
       </div>
       <div class="derivation-stack reveal-children">
         <div class="derivation-row"><span class="tag">1</span><p>Start from a seed \(\mathbf q_0\).</p></div>
@@ -75,25 +75,25 @@
 
   <section class="slide l7-slide">
     <p class="slide-kicker">Numerical safeguards</p>
-    <h2 class="slide-title">Small steps and damping help—but do not create global knowledge</h2>
+    <h2 class="slide-title">A determinant cutoff and small steps protect this local continuation</h2>
     <div class="l7-three reveal-children">
       <div class="l7-card"><h3>Step size</h3><p>Large Cartesian steps invalidate the local linear model and can jump to another basin.</p></div>
-      <div class="l7-card red"><h3>Near singularity</h3><p>Small singular values amplify joint velocity. Damping limits the amplification but introduces tracking error.</p></div>
+      <div class="l7-card red"><h3>Near singularity</h3><p>The implemented direct inverse stops when \(|\det J_p|\) falls below a cutoff. A damped least-squares solver would be a different method, trading amplification for task error.</p></div>
       <div class="l7-card green"><h3>Continuation</h3><p>Warm-starting preserves a nearby solution while that local branch remains regular.</p></div>
     </div>
     <div class="l7-equation-banner">\[\|\dot{\mathbf q}\|\ \text{can grow while}\ \|\dot{\mathbf x}\|\ \text{stays modest as}\ \sigma_{\min}(J)\to0.\]</div>
   </section>
 
   <section class="slide interactive-slide l7-slide">
-    <p class="slide-kicker">Analytical lift</p>
-    <h2 class="slide-title">Enumerate the PUMA IKs, classify them, then request a branch</h2>
-    <p class="slide-subtitle">For the wrist-partitioned PUMA, shoulder, elbow, and wrist signs give every regular solution a global SEW label.</p>
+    <p class="slide-kicker">Labelled numerical lift</p>
+    <h2 class="slide-title">Continue several PUMA seed families and retain their SEW labels</h2>
+    <p class="slide-subtitle">This panel numerically continues wrist-center position from labelled seeds while keeping \(q_4,q_5,q_6\) fixed; it does not evaluate analytical IK formulas.</p>
     <div class="layout-full l7-lab" data-path-lab="puma-analytical"></div>
   </section>
 
   <section class="slide l7-slide">
-    <p class="slide-kicker">What “analytical” changes</p>
-    <h2 class="slide-title">The branch label is an input—not an accident of convergence</h2>
+    <p class="slide-kicker">What a true analytical solver adds</p>
+    <h2 class="slide-title">Analytical IK enumerates full-pose roots before a branch is selected</h2>
     <div class="l7-branch-cube">
       <div class="head">Shoulder</div><div class="head">Elbow</div><div class="head">Wrist</div><div class="head">IK label</div>
       <div>right \((S+)\)</div><div>up \((E+)\)</div><div>nonflip \((W+)\)</div><div class="branch">S+ E+ W+</div>
@@ -101,44 +101,44 @@
       <div>left \((S-)\)</div><div>up \((E+)\)</div><div>flip \((W-)\)</div><div class="branch">S− E+ W−</div>
       <div>left \((S-)\)</div><div>down \((E-)\)</div><div>nonflip \((W+)\)</div><div class="branch">S− E− W+</div>
     </div>
-    <div class="l7-takeaway">Given \(\mathbf x_d(s)\), robot parameters, and a valid SEW label, an analytical evaluator returns the corresponding joint sample without needing an initial guess.</div>
+    <div class="l7-takeaway">For each desired full pose, a true PUMA analytical solver evaluates all admissible shoulder–elbow–wrist formulas, rejects nonreal roots, and returns each existing labelled solution without a numerical seed. Root formulas alone still do not certify path connectivity, joint limits, or collision freedom.</div>
   </section>
 
   <section class="slide l7-slide">
     <p class="slide-kicker">Local versus global</p>
-    <h2 class="slide-title">The two methods answer different planning questions</h2>
+    <h2 class="slide-title">Enumeration gives global candidates; continuation gives local tracking</h2>
     <table class="l7-compare">
       <thead><tr><th></th><th>Jacobian / numerical</th><th>Analytical branch evaluation</th></tr></thead>
       <tbody>
-        <tr><th>Information used</th><td>Local derivative at the current \(\mathbf q\)</td><td>Complete inverse structure for the robot geometry</td></tr>
-        <tr><th>Initialization</th><td>A seed configuration</td><td>A branch label</td></tr>
-        <tr><th>Output</th><td>One nearby solution, if convergence succeeds</td><td>The requested real solution, if that branch exists</td></tr>
+        <tr><th>Information used</th><td>Local derivative at the current \(\mathbf q\)</td><td>Closed-form inverse structure for the modeled geometry</td></tr>
+        <tr><th>Initialization</th><td>A seed configuration</td><td>Desired pose and robot parameters; labels organize the returned roots</td></tr>
+        <tr><th>Output</th><td>One nearby solution, if convergence succeeds</td><td>All evaluated real roots, then a selected branch</td></tr>
         <tr><th>Singularity signal</th><td>Conditioning degrades during iteration</td><td>Branch discriminant or separator vanishes</td></tr>
-        <tr><th>Scope</th><td class="local">local</td><td class="global">global</td></tr>
+        <tr><th>Scope</th><td class="local">local tracking</td><td class="global">global root enumeration, not global path certification</td></tr>
       </tbody>
     </table>
   </section>
 
   <section class="slide l7-slide">
-    <p class="slide-kicker">Determinism</p>
-    <h2 class="slide-title">A numerical answer is seed-dependent; an analytical branch is fully specified</h2>
+    <p class="slide-kicker">Reproducible selection</p>
+    <h2 class="slide-title">A numerical seed selects locally; analytical enumeration exposes branch conditions</h2>
     <div class="l7-seed-flow">
-      <div><span>seed A</span><b>Newton / DLS</b><em>IK sheet 1</em></div>
+      <div><span>seed A</span><b>local iteration</b><em>nearby IK sheet</em></div>
       <div><span>same \(\mathbf x_d\)</span><b>+ branch S−E+W−</b><em>one specified IK</em></div>
-      <div><span>seed B</span><b>Newton / DLS</b><em>IK sheet 6</em></div>
+      <div><span>seed B</span><b>local iteration</b><em>another IK sheet</em></div>
     </div>
-    <div class="l7-takeaway"><strong>Important:</strong> analytical does not mean “always feasible.” It means the selection rule is explicit and reproducible wherever the chosen branch exists.</div>
+    <div class="l7-takeaway"><strong>Caveat:</strong> analytical does not mean “always feasible” or “globally connected.” It makes root enumeration explicit; a planner must still continue and validate the selected lift.</div>
   </section>
 
   <section class="slide l7-slide">
     <p class="slide-kicker">Now change the topology</p>
-    <h2 class="slide-title">For a cuspidal robot, one aspect can contain multiple IK solutions</h2>
+    <h2 class="slide-title">Use an idealized D–H atlas to expose cuspidal path topology</h2>
     <div class="layout-60-40">
       <div class="l7-model-stage" data-path-model="custom-intro"></div>
       <div class="l7-stack">
-        <div class="l7-card"><h3>Model</h3><p><code>custom_3R_new.urdf</code></p></div>
+        <div class="l7-card"><h3>Two coordinated views</h3><p>Plots use an idealized D–H model; the course URDF and STL viewer illustrates posture only.</p></div>
         <div class="l7-card red"><h3>Workspace event</h3><p>A square loop is placed around a cusp and may cross nearby critical-value curves.</p></div>
-        <div class="l7-card green"><h3>Planning consequence</h3><p>Different lifts of the exact same loop can close, terminate, or change IK solution without becoming singular.</p></div>
+        <div class="l7-card green"><h3>Planning consequence</h3><p>Within the idealized atlas, different lifts of the same loop can close, terminate, or change IK solution without becoming singular.</p></div>
       </div>
     </div>
   </section>
@@ -146,8 +146,8 @@
   <section class="slide interactive-slide l7-slide">
     <p class="slide-kicker">Master path editor</p>
     <h2 class="slide-title">Place one square loop—every following slide reuses it exactly</h2>
-    <p class="slide-subtitle">Translate, stretch, and rotate the loop in the \((\rho,z)\) workspace slice. The red curves are singular critical values; × marks the selected cusp.</p>
-    <div class="demo-prompt"><strong>Workflow:</strong> edit the path, then press <em>Finalize shared path</em>. Regular, infeasible, and nonsingular slides all read this saved geometry.</div>
+    <p class="slide-subtitle">Translate, stretch, and rotate the loop in the idealized D–H \((\rho,z)\) slice. The red curves are critical values; × marks the selected cusp.</p>
+    <div class="demo-prompt"><strong>Workflow:</strong> finalize one shared path. The regular, branch-infeasible, and nonsingular-change panels then compare lifts of that same atlas curve.</div>
     <div class="layout-full l7-lab" data-path-lab="square-master"></div>
   </section>
 
@@ -156,7 +156,7 @@
     <h2 class="slide-title">Path feasibility is a property of the selected solution sheet</h2>
     <div class="l7-three">
       <div class="l7-card green"><h3>Regular</h3><p>The selected joint path remains nonsingular and closes.</p><div class="l7-mini-loop closed">workspace ↻<br>joint space ↻</div></div>
-      <div class="l7-card red"><h3>Infeasible</h3><p>The selected lift reaches a fold where its IK pair coalesces.</p><div class="l7-mini-loop blocked">workspace ↻<br>joint path ✕</div></div>
+      <div class="l7-card red"><h3>Branch-infeasible</h3><p>The selected lift reaches a fold where its IK pair coalesces, even if another branch could remain feasible.</p><div class="l7-mini-loop blocked">workspace ↻<br>joint path ✕</div></div>
       <div class="l7-card"><h3>Nonsingular change</h3><p>The lift stays regular but returns to a different IK of the starting point.</p><div class="l7-mini-loop open">workspace ↻<br>joint path →</div></div>
     </div>
     <div class="l7-takeaway">The Cartesian command alone does not identify which of these joint-space outcomes the robot will follow.</div>
@@ -165,19 +165,19 @@
   <section class="slide interactive-slide l7-slide">
     <p class="slide-kicker">Path type 1 · regular</p>
     <h2 class="slide-title">A closed workspace loop lifts to a closed joint-space loop</h2>
-    <p class="slide-subtitle">The continuation returns to the starting IK and maintains nonzero determinant throughout the traversal.</p>
+    <p class="slide-subtitle">The continuation returns near the starting IK and has nonzero determinant at every sampled point; refine the sampling before treating the lift as validated.</p>
     <div class="layout-full l7-lab" data-path-lab="custom-regular"></div>
   </section>
 
   <section class="slide interactive-slide l7-slide">
-    <p class="slide-kicker">Path type 2A · infeasible</p>
+    <p class="slide-kicker">Path type 2A · branch-infeasible</p>
     <h2 class="slide-title">The first lift reaches a fold and loses its real continuation</h2>
     <p class="slide-subtitle">The workspace command continues, but this IK branch merges with another solution at \(\det J_p=0\).</p>
     <div class="layout-full l7-lab" data-path-lab="custom-infeasible-a"></div>
   </section>
 
   <section class="slide interactive-slide l7-slide">
-    <p class="slide-kicker">Path type 2B · infeasible</p>
+    <p class="slide-kicker">Path type 2B · branch-infeasible</p>
     <h2 class="slide-title">The companion IK reaches the same fold from the other sheet</h2>
     <p class="slide-subtitle">Same square, different lift: the two inverse solutions coalesce as a pair when the critical-value curve is reached.</p>
     <div class="layout-full l7-lab" data-path-lab="custom-infeasible-b"></div>
@@ -193,7 +193,7 @@
   <section class="slide interactive-slide l7-slide">
     <p class="slide-kicker">Non-repeatability</p>
     <h2 class="slide-title">The second lap starts from the new configuration—not the original one</h2>
-    <p class="slide-subtitle">Play lap 1, then request the same square again. The second attempt starts from the newly reached IK and can terminate at a fold instead of reproducing the first trajectory.</p>
+    <p class="slide-subtitle">Play lap 1, then run the same square again. The second traversal starts from the newly reached IK and can terminate at a fold instead of reproducing the first trajectory.</p>
     <div class="layout-full l7-lab" data-path-lab="custom-two-laps"></div>
   </section>
 
@@ -206,11 +206,11 @@
       <div class="derivation-row"><span class="tag">3</span><p>Track branch identity, singularity distance, joint limits, and collisions.</p></div>
       <div class="derivation-row"><span class="tag">4</span><p>For closed task loops, test joint-space closure and repeatability explicitly.</p></div>
     </div>
-    <div class="l7-takeaway"><strong>Lecture 07 conclusion:</strong> local Jacobian continuation answers “where do I move next?”; global IK structure answers “which lift am I on, and where can it end?”</div>
+    <div class="l7-takeaway"><strong>Hybrid conclusion:</strong> analytical enumeration supplies the global candidate set; numerical continuation tracks a chosen lift locally; explicit limit, singularity, closure, and collision checks decide whether it is a valid robot trajectory. Lecture 08 adds redundancy and searches over a family of such lifts.</div>
   </section>
 
 </main>
 <script src="../js/deck/nav-runtime.js"></script>
-<script type="module" src="../js/main.js?v=20260819-60"></script>
+<script type="module" src="../js/main.js?v=20260831-1"></script>
 </body>
 </html>

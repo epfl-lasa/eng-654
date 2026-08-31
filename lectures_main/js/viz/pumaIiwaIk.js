@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
-import { parseStlGeometry } from './frameDHPlayground.js?v=20260814-3';
+import { createSceneControlPanel, createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
+import { parseStlGeometry } from './frameDHPlayground.js';
 
 const DEG = Math.PI / 180;
 const REVISION = new URL(import.meta.url).searchParams.get('v') || 'dev';
@@ -115,6 +115,7 @@ function createDemo(container) {
   light.position.set(4, 6, 8);
   scene.add(light);
   const world = createZUpWorld(scene);
+  world.userData.sceneControls = createSceneControlPanel(stage, world, { labels: false });
   world.userData.labelSprites = [];
   world.userData.labelsVisible = true;
   const grid = new THREE.GridHelper(2.8, 28, 0xcccccc, 0xe8e8e8);
@@ -269,18 +270,22 @@ async function createRobot(world, model, q, options = {}) {
   const geometries = await loadGeometries(model);
   const group = new THREE.Group();
   world.add(group);
+  world.userData.sceneControls?.registerStlRoot(group);
+  const sceneOpacity = world.userData.courseStlOpacityFactor ?? 1;
   const visuals = model.visuals.map((spec, index) => {
     const holder = new THREE.Group();
     holder.matrixAutoUpdate = false;
-    const opacity = options.opacity ?? 1;
-    holder.add(new THREE.Mesh(geometries[index], new THREE.MeshStandardMaterial({
+    const opacity = (options.opacity ?? 1) * sceneOpacity;
+    const mesh = new THREE.Mesh(geometries[index], new THREE.MeshStandardMaterial({
       color: options.color ?? spec.color,
       roughness: .62,
       metalness: .04,
       transparent: opacity < 1,
       opacity,
       depthWrite: opacity > .8
-    })));
+    }));
+    mesh.userData.isCourseStl = true;
+    holder.add(mesh);
     group.add(holder);
     return { holder, prefix: spec.prefix, home: model.homeLinks[spec.prefix].clone().multiply(spec.origin) };
   });
@@ -289,7 +294,7 @@ async function createRobot(world, model, q, options = {}) {
     item.holder.matrixWorldNeedsUpdate = true;
   });
   update(q);
-  return { update };
+  return { group, update };
 }
 
 function loadGeometries(model) {

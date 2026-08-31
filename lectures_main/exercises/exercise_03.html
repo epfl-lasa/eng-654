@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Exercise 03 · Jacobian, Singularities, and IK Distribution | ENG-654</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/layouts.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/reveal.css">
+  <link rel="stylesheet" href="../css/navigation.css">
+  <link rel="stylesheet" href="../css/viz.css">
+  <link rel="stylesheet" href="../css/exercises.css">
+  <script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']],displayMath:[['\\[','\\]']]}};</script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="mode-deck narrative-lecture exercise-deck exercise-03">
+<main id="deck" class="deck">
+
+  <section class="slide title-slide exercise-slide">
+    <div class="title-slide-content">
+      <p class="eyebrow">ENG-654 · Exercise 03</p>
+      <h1 class="course-title">From Joint Screws to IK Distribution</h1>
+      <p class="subtitle">Derive the custom 6R geometric Jacobian at its wrist point, factor its singularities, and connect the zero set to changes in inverse-kinematic branches.</p>
+      <div class="exercise-tags"><span>geometric Jacobian</span><span>wrist point</span><span>determinant</span><span>singularity curves</span></div>
+      <p class="exercise-promise">The determinant is not the endpoint. Your explanation must connect columns, rank loss, critical-value curves, and the number and connectivity of IK solutions.</p>
+    </div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">Learning objective</p>
+    <h2 class="slide-title">Build a Jacobian whose every column has a geometric meaning</h2>
+    <div class="ex-objective">
+      <div class="ex-question">
+        <strong>What motion does joint \(i\) create at the wrist point when \(\dot q_i=1\)?</strong>
+        <p>Answer in one common base frame, stack the six twists, and locate every configuration where those motions become linearly dependent.</p>
+        <p><a class="ex-file" href="../assets/models/custom_6R/custom_6R_new.urdf">assets/models/custom_6R/custom_6R_new.urdf</a></p>
+      </div>
+      <div class="ex-steps reveal-children">
+        <div class="ex-step"><span>1</span><p>Compute each current axis direction \(z_i\) and one point \(o_i\) on it.</p></div>
+        <div class="ex-step"><span>2</span><p>Write the six revolute-joint screw columns at \(p_w\).</p></div>
+        <div class="ex-step"><span>3</span><p>Assemble \(J_w\), derive \(\det J_w\), and verify it numerically.</p></div>
+        <div class="ex-step"><span>4</span><p>Map the singular set and compare it with IK-solution counts.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">Fix the coordinate convention</p>
+    <h2 class="slide-title">Transform every axis and origin into the base frame</h2>
+    <div class="ex-grid-2">
+      <div class="ex-equation red">
+        \[
+        o_i={}^0p_{J_i},\qquad
+        z_i={}^0R_{J_i}\hat a_i,\qquad
+        p_w={}^0p_w
+        \]
+      </div>
+      <div class="ex-card black">
+        <h3>For each joint \(i\)</h3>
+        <ul>
+          <li>Compose the chain only up to the joint frame.</li>
+          <li>Transform the local URDF axis \(\hat a_i\) as a direction, not a point.</li>
+          <li>Use any point on the physical axis for \(o_i\).</li>
+          <li>Evaluate \(p_w\), \(o_i\), and \(z_i\) at the same configuration.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="ex-caveat">A link origin need not lie on its joint axis. A joint-frame origin does. Mixing local and base coordinates can produce plausible-looking columns that are physically meaningless.</div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">Construct the six screws</p>
+    <h2 class="slide-title">One cross product supplies the translational block</h2>
+    <div class="ex-grid-2">
+      <div class="ex-equation red">
+        \[
+        J_{w,i}(q)=
+        \begin{bmatrix}
+        z_i(q)\times\bigl(p_w(q)-o_i(q)\bigr)\\[2mm]
+        z_i(q)
+        \end{bmatrix},\qquad
+        J_w=\begin{bmatrix}J_{w,1}&\cdots&J_{w,6}\end{bmatrix}
+        \]
+      </div>
+      <div class="ex-card green">
+        <h3>Interpret before simplifying</h3>
+        <p>The upper three entries are wrist-point velocity per unit joint rate. The lower three entries are angular velocity per unit joint rate.</p>
+        <p>We use the convention \([v^\top\;\omega^\top]^\top\). State explicitly if your software stacks the blocks differently.</p>
+      </div>
+    </div>
+    <div class="ex-takeaway">Validate at least one column with a central finite difference of the wrist position and one column with a small-angle rotation residual.</div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">Exploit the spherical wrist</p>
+    <h2 class="slide-title">The last three joints do not translate their common intersection</h2>
+    <p class="ex-subtitle">For \(i=4,5,6\), the wrist point lies on axis \(i\). Therefore \(p_w-o_i\) is parallel to \(z_i\), and its cross product with \(z_i\) vanishes.</p>
+    <div class="ex-grid-2">
+      <div class="ex-equation red">
+        \[
+        J_w=
+        \begin{bmatrix}
+        J_{A,v}&0_{3\times3}\\
+        J_{A,\omega}&J_{W,\omega}
+        \end{bmatrix}
+        \]
+      </div>
+      <div class="ex-card black">
+        <h3>Two mechanisms of rank loss</h3>
+        <p><strong>Arm singularity:</strong> joints 1–3 cannot move the wrist point in three independent directions.</p>
+        <p><strong>Wrist singularity:</strong> the three wrist axes cannot create three independent angular velocities.</p>
+      </div>
+    </div>
+    <div class="ex-takeaway">This zero block belongs to a Jacobian evaluated at the wrist point. Moving the operational point to the tool generally makes the wrist columns’ translational entries nonzero.</div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">Determinant and rank</p>
+    <h2 class="slide-title">Factorization reveals which module becomes singular</h2>
+    <div class="ex-grid-2">
+      <div class="ex-equation red">
+        \[
+        \det J_w(q)=\det J_{A,v}(q_1,q_2,q_3)\;\det J_{W,\omega}(q_4,q_5,q_6)
+        \]
+      </div>
+      <div class="ex-steps reveal-children">
+        <div class="ex-step"><span>1</span><p>Write the complete symbolic or structured \(6\times6\) matrix before taking its determinant.</p></div>
+        <div class="ex-step"><span>2</span><p>Factor the result and associate each factor with a column dependency.</p></div>
+        <div class="ex-step"><span>3</span><p>Confirm zeros by rank or singular values, not only by floating-point determinant.</p></div>
+      </div>
+    </div>
+    <div class="ex-caveat"><strong>A determinant is available only because this task Jacobian is square.</strong> Its value has length scaling—here proportional to \(\mathrm{m}^3\)—so numerical thresholds change with units and with any translation/rotation row weighting. For non-square Jacobians, test rank or singular values.</div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">Use the course simulation as an instrument</p>
+    <h2 class="slide-title">Move from screws to singular curves to IK counts</h2>
+    <div class="ex-flow reveal-children">
+      <div><b>Inspect</b><span>Display \(o_i,z_i\), lever arms, and the six screw columns at a regular pose.</span></div>
+      <div><b>Verify</b><span>Compare your matrix and determinant with the simulation readout.</span></div>
+      <div><b>Map</b><span>Sweep a stated joint-space slice and plot the zero contours of each factor.</span></div>
+      <div class="current"><b>Interpret</b><span>Map critical configurations forward and count IK roots in neighbouring workspace regions.</span></div>
+    </div>
+    <div class="ex-grid-2" style="flex:0 0 auto;margin-top:.55rem">
+      <div class="ex-card red"><h3>Reduced position view</h3><p>\(J_{A,v}\in\mathbb R^{3\times3}\) explains wrist-position critical curves and arm-root multiplicity.</p></div>
+      <div class="ex-card green"><h3>Full pose view</h3><p>\(J_w\in\mathbb R^{6\times6}\) additionally includes wrist orientation singularities and flip-branch coalescence.</p></div>
+    </div>
+    <div class="ex-caveat">A two-dimensional plot is only a slice of the full singularity set. Joint limits and collisions can remove or disconnect configurations without making the kinematic determinant zero.</div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">Submission checklist</p>
+    <h2 class="slide-title">Support every singular curve with algebra and geometry</h2>
+    <div class="ex-grid-2">
+      <div class="ex-checklist reveal-children">
+        <div class="ex-check"><span>✓</span><p>Table of all \(o_i(q)\) and \(z_i(q)\) in base coordinates.</p></div>
+        <div class="ex-check"><span>✓</span><p>Six labelled screw columns and the assembled \(6\times6\) wrist-point Jacobian.</p></div>
+        <div class="ex-check"><span>✓</span><p>Factored determinant plus finite-difference/rank validation at regular and singular poses.</p></div>
+        <div class="ex-check"><span>✓</span><p>Joint-space zero contours, mapped critical curves, and IK-count observations.</p></div>
+      </div>
+      <div class="ex-question">
+        <strong>Final explanation</strong>
+        <p>Choose one arm singularity and one wrist singularity. For each, identify the dependent columns, the lost task-space motion, and the IK branches that merge or become indeterminate.</p>
+      </div>
+    </div>
+    <div class="ex-deliverable"><strong>Deliverables:</strong> derivation, matrix, determinant/factors, validation code, simulation evidence, singularity plots, and IK-distribution interpretation.</div>
+  </section>
+
+</main>
+<script src="../js/deck/nav-runtime.js"></script>
+</body>
+</html>

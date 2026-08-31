@@ -1,6 +1,6 @@
-# ENG-654 HTML Lecture Template
+# ENG-654 Lecture and Exercise Decks
 
-This repository is a reusable HTML/CSS/JS lecture-deck template for **Kinematics-Grounded Motion Planning for Robots**.
+This repository contains the lecture and exercise decks for **Kinematics-Grounded Motion Planning for Robots**. The eight lectures form one sequence: robot modelling → inverse kinematics → singularities and global IK structure → branch-aware and redundant motion planning.
 
 ## Run locally
 
@@ -17,6 +17,7 @@ Do not open the lecture files with `file://` when using JavaScript modules or Th
 
 ```text
 lectures/                  eight lecture documents
+exercises/                 four assignment briefing decks
 css/                       separated style layers
 js/deck/                   slide navigation, reveal logic, scroll/deck modes
 js/viz/                    importable visualization modules
@@ -36,8 +37,10 @@ docs/                      authoring notes and uploaded lecture plan
 - 2D SVG convention: mathematics is **y-up**; SVG drawing uses `svgY(y) = -y`.
 - 3D Three.js convention: robotics world is **z-up**. The root group is rotated by `Rx(-Math.PI/2)` in `js/viz/threeUtils.js`.
 - Step reveals: add `.reveal-children` or `data-reveal="children"` to a flex/grid container.
-- Toggle modes: press `T` or the navbar button to switch between deck side-scroll and infinite scroll.
+- Toggle modes: press `T` to switch between deck side-scroll and infinite scroll.
 - Fullscreen: press `F`.
+- 3D labels: use the **Labels** control inside each Three.js scene.
+- STL visibility: use the **STL opacity** slider; geometric annotations remain visible while the mesh fades.
 
 ## Three.js note
 
@@ -83,7 +86,7 @@ Navigation is handled by `js/deck/nav-runtime.js`, a plain non-module script. Th
 - Home / End: first / last slide
 - T: toggle deck mode and scroll mode
 - F: fullscreen
-- Bottom bar buttons: previous, next, scroll/deck toggle, fullscreen
+- Bottom bar buttons: previous and next
 
 
 

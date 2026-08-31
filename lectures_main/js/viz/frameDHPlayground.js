@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createBoldAxes, createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
+import { createBoldAxes, createSceneControlPanel, createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
 
 const DEG = Math.PI / 180;
 const RAD = 180 / Math.PI;
@@ -61,6 +61,7 @@ function createScene(stage, options = {}) {
 
   const robotWorld = createZUpWorld(scene);
   robotWorld.add(createGroundGrid(5.5, 0.5));
+  const sceneControls = createSceneControlPanel(stage, robotWorld, { labels: options.labels !== false });
 
   if (options.worldFrame !== false) {
     const worldAxes = createBoldAxes(0.75);
@@ -83,6 +84,7 @@ function createScene(stage, options = {}) {
   let disposed = false;
   function animate() {
     if (disposed) return;
+    sceneControls.syncLabels();
     controls.update();
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
@@ -94,6 +96,7 @@ function createScene(stage, options = {}) {
     camera,
     renderer,
     robotWorld,
+    sceneControls,
     controls,
     dispose() {
       disposed = true;
@@ -117,6 +120,38 @@ function createGroundGrid(size = 5, step = 0.5) {
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
   const material = new THREE.LineBasicMaterial({ color: 0xd7d7d7, transparent: true, opacity: 0.72 });
   return new THREE.LineSegments(geometry, material);
+}
+
+function taggedStlMeshes(root) {
+  const meshes = [];
+  root?.traverse?.((object) => {
+    if (object.isMesh && object.userData.isCourseStl) meshes.push(object);
+  });
+  return meshes;
+}
+
+function setTaggedStlOpacity(root, opacity) {
+  taggedStlMeshes(root).forEach((object) => {
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    materials.filter(Boolean).forEach((material) => {
+      const displayOpacity = Math.max(0, Math.min(1, opacity));
+      material.transparent = displayOpacity < 1;
+      material.opacity = displayOpacity;
+      material.depthWrite = displayOpacity >= 0.95;
+      material.needsUpdate = true;
+    });
+  });
+}
+
+function syncStlOpacityControl(root, input) {
+  const available = taggedStlMeshes(root).length > 0;
+  input.disabled = !available;
+  const control = input.closest('label');
+  if (control) {
+    control.hidden = !available;
+    control.style.display = available ? '' : 'none';
+  }
+  return available;
 }
 
 function createTextSprite(text, scale = 0.25, options = {}) {
@@ -273,11 +308,13 @@ function setFrameVisualSelected(visual, selected) {
   visual.marker.material.color.setHex(selected ? 0xff0000 : 0x222222);
   const oldLabel = visual.label;
   const labelPosition = oldLabel.position.clone();
+  const labelVisible = oldLabel.visible;
   visual.group.remove(oldLabel);
   oldLabel.material.map?.dispose();
   oldLabel.material.dispose();
   visual.label = createTextSprite(visual.group.userData.frameName, 0.2, { accent: selected });
   visual.label.position.copy(labelPosition);
+  visual.label.visible = labelVisible;
   visual.group.add(visual.label);
 }
 
@@ -467,6 +504,11 @@ async function createSerialFrameDemo(container) {
     </div>
   `;
 
+  const pendingOpacity = container.querySelector('[data-puma-opacity]');
+  pendingOpacity.disabled = true;
+  pendingOpacity.closest('label').hidden = true;
+  pendingOpacity.closest('label').style.display = 'none';
+
   const stage = container.querySelector('.puma-frame-stage');
   const sceneKit = createScene(stage, { camera: [2.6, 2.2, 2.0], worldFrame: false });
   const { robotWorld, camera, controls } = sceneKit;
@@ -484,8 +526,9 @@ async function createSerialFrameDemo(container) {
     const linkMatrix = linkMatrices.get(linkName);
     if (!linkMatrix) continue;
     for (const visual of link.visuals) {
+      const isStl = visual.geometry.type === 'mesh';
       let geometry;
-      if (visual.geometry.type === 'mesh') {
+      if (isStl) {
         const meshName = normalizeMeshPath(visual.geometry.filename).split('/').at(-1);
         const meshResponse = await fetch(new URL(meshName, modelRoot));
         if (!meshResponse.ok) throw new Error('Could not load bundled mesh ' + meshName + '.');
@@ -498,15 +541,18 @@ async function createSerialFrameDemo(container) {
       const visualGroup = new THREE.Group();
       visualGroup.matrixAutoUpdate = false;
       visualGroup.matrix.multiplyMatrices(linkMatrix, visual.origin);
+      const currentStlOpacity = Number(pendingOpacity.value) / 100;
       const material = new THREE.MeshStandardMaterial({
         color: visual.color,
         roughness: 0.62,
         metalness: 0.08,
-        transparent: true,
-        opacity: 0.82,
-        depthWrite: true
+        transparent: isStl && currentStlOpacity < 1,
+        opacity: isStl ? currentStlOpacity : 1,
+        depthWrite: !isStl || currentStlOpacity >= 0.95,
+        side: isStl ? THREE.DoubleSide : THREE.FrontSide
       });
       const mesh = new THREE.Mesh(geometry, material);
+      mesh.userData.isCourseStl = isStl;
       if (visual.geometry.scale) mesh.scale.fromArray(visual.geometry.scale);
       visualGroup.add(mesh);
       robotMeshes.add(visualGroup);
@@ -619,16 +665,7 @@ async function createSerialFrameDemo(container) {
     robotMeshes.visible = meshesToggle.checked;
     const alpha = Number(opacity.value) / 100;
     opacityOutput.textContent = opacity.value + '%';
-    robotMeshes.traverse((object) => {
-      if (!object.isMesh) return;
-      const materials = Array.isArray(object.material) ? object.material : [object.material];
-      materials.forEach((material) => {
-        material.transparent = alpha < 1;
-        material.opacity = alpha;
-        material.depthWrite = alpha >= 0.95;
-        material.needsUpdate = true;
-      });
-    });
+    if (syncStlOpacityControl(robotMeshes, opacity)) setTaggedStlOpacity(robotMeshes, alpha);
   }
 
   function applyFrameVisibility() {
@@ -703,7 +740,7 @@ function createDHPlayground(container) {
             </label>
           </div>
           <label class="dh-opacity-control">
-            <span>Mesh opacity</span>
+            <span>STL opacity</span>
             <input type="range" data-robot-opacity min="0" max="1" step="0.05" value="0.65">
             <output data-robot-opacity-output>65%</output>
           </label>
@@ -766,7 +803,7 @@ function createDHPlayground(container) {
   `;
 
   const stage = container.querySelector('.dh-stage');
-  const sceneKit = createScene(stage, { camera: [5.8, 3.4, 5.4] });
+  const sceneKit = createScene(stage, { camera: [5.8, 3.4, 5.4], labels: false });
   const { robotWorld, renderer, camera, controls } = sceneKit;
 
   const state = {
@@ -822,29 +859,25 @@ function createDHPlayground(container) {
     });
     state.bundledRobotModel = null;
     state.bundledRobotVisuals = [];
+    syncStlOpacityControl(state.robotRoot, els.robotOpacity);
   }
 
   function applyRobotDisplay() {
     state.robotRoot.visible = state.robotMeshesVisible;
-    state.robotRoot.traverse((object) => {
-      if (!object.isMesh || !object.material) return;
-      const materials = Array.isArray(object.material) ? object.material : [object.material];
-      materials.forEach((material) => {
-        material.transparent = state.robotOpacity < 1;
-        material.opacity = state.robotOpacity;
-        material.depthWrite = state.robotOpacity >= 0.95;
-        material.needsUpdate = true;
-      });
-    });
+    if (syncStlOpacityControl(state.robotRoot, els.robotOpacity)) {
+      setTaggedStlOpacity(state.robotRoot, state.robotOpacity);
+    }
   }
 
-  function robotMaterial(color = 0x8c8c8c) {
+  function robotMaterial(color = 0x8c8c8c, isStl = false) {
     return new THREE.MeshStandardMaterial({
       color,
       roughness: 0.62,
       metalness: 0.08,
-      transparent: state.robotOpacity < 1,
-      opacity: state.robotOpacity
+      transparent: isStl && state.robotOpacity < 1,
+      opacity: isStl ? state.robotOpacity : 1,
+      depthWrite: !isStl || state.robotOpacity >= 0.95,
+      side: isStl ? THREE.DoubleSide : THREE.FrontSide
     });
   }
 
@@ -964,8 +997,9 @@ function createDHPlayground(container) {
       const frame = state.frames.get('urdf:' + linkName);
       if (!frame) continue;
       for (const visual of link.visuals) {
+        const isStl = visual.geometry.type === 'mesh';
         let geometry;
-        if (visual.geometry.type === 'mesh') {
+        if (isStl) {
           const meshFile = findMeshFile(visual.geometry.filename, meshFiles);
           if (!meshFile) {
             missingMeshes += 1;
@@ -980,7 +1014,8 @@ function createDHPlayground(container) {
         const group = new THREE.Group();
         group.matrixAutoUpdate = false;
         group.matrix.multiplyMatrices(frame.robotMatrix, visual.origin);
-        const mesh = new THREE.Mesh(geometry, robotMaterial(visual.color));
+        const mesh = new THREE.Mesh(geometry, robotMaterial(visual.color, isStl));
+        mesh.userData.isCourseStl = isStl;
         if (visual.geometry.scale) mesh.scale.fromArray(visual.geometry.scale);
         group.add(mesh);
         state.robotRoot.add(group);
@@ -1014,8 +1049,9 @@ function createDHPlayground(container) {
       const linkMatrix = linkMatrices.get(linkName);
       if (!linkMatrix) continue;
       for (const visual of link.visuals) {
+        const isStl = visual.geometry.type === 'mesh';
         let geometry;
-        if (visual.geometry.type === 'mesh') {
+        if (isStl) {
           const meshName = normalizeMeshPath(visual.geometry.filename).split('/').at(-1);
           const meshResponse = await fetch(new URL(meshName, modelRoot));
           if (!meshResponse.ok) throw new Error('Could not load bundled mesh ' + meshName + '.');
@@ -1028,7 +1064,8 @@ function createDHPlayground(container) {
         const group = new THREE.Group();
         group.matrixAutoUpdate = false;
         group.matrix.multiplyMatrices(linkMatrix, visual.origin);
-        const mesh = new THREE.Mesh(geometry, robotMaterial(visual.color));
+        const mesh = new THREE.Mesh(geometry, robotMaterial(visual.color, isStl));
+        mesh.userData.isCourseStl = isStl;
         if (visual.geometry.scale) mesh.scale.fromArray(visual.geometry.scale);
         group.add(mesh);
         state.robotRoot.add(group);
@@ -1391,6 +1428,7 @@ function createDHPlayground(container) {
       els.robotStatus.textContent = 'Import failed: ' + error.message;
       note('Robot import failed. Reset custom_3R to restore the default model.');
     } finally {
+      applyRobotDisplay();
       els.robotFiles.disabled = false;
       els.robotFiles.value = '';
     }
@@ -1710,7 +1748,7 @@ function createCustom3RDHDemo(container) {
   container.classList.add('custom3r-dh-demo');
   container.innerHTML = `
     <div class="custom3r-stage">
-      <p class="custom3r-stage-note">custom_3R · exact kinematic match to the uploaded URDF chain · z-up</p>
+      <p class="custom3r-stage-note">custom_3R · exact kinematic match to the course URDF chain · z-up</p>
     </div>
     <div class="custom3r-panel">
       <div class="custom3r-card">

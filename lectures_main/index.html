@@ -3,31 +3,49 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ENG-654 Lecture Template</title>
+  <title>ENG-654 · Kinematics-Grounded Motion Planning</title>
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/layouts.css">
   <link rel="stylesheet" href="css/components.css">
   <style>
     body { padding: clamp(2rem, 5vw, 6rem); }
-    .lecture-list { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; margin-top:2rem; }
-    .lecture-list a { display:block; text-decoration:none; color:var(--black); border-top:4px solid var(--epfl-red); padding:1rem; background:var(--soft); min-height:8rem; }
-    .lecture-list a:hover { outline:2px solid var(--epfl-red); }
+    body { max-width: 1500px; margin-inline: auto; }
+    .course-map { max-width: 72ch; margin: 1.2rem 0 0; line-height: 1.55; }
+    .section-heading { margin: 3rem 0 .4rem; font-size: clamp(1.7rem, 2.5vw, 2.8rem); }
+    .section-intro { margin: 0; color: var(--muted); }
+    .lecture-list { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; margin-top:1.2rem; }
+    .lecture-list a { display:block; text-decoration:none; color:var(--black); border:1px solid var(--line); border-top:4px solid var(--epfl-red); padding:1rem; background:var(--soft); min-height:8rem; line-height:1.45; }
+    .lecture-list a:hover, .lecture-list a:focus-visible { outline:2px solid var(--epfl-red); outline-offset:2px; }
+    .exercise-list a { border-top-color: var(--black); min-height:7rem; }
+    .card-step { display:block; margin-bottom:.35rem; color:var(--epfl-red); font-size:.72em; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
   </style>
 </head>
 <body>
   <p class="eyebrow">ENG-654</p>
   <h1 class="course-title">Kinematics-Grounded Motion Planning for Robots</h1>
-  <p class="subtitle">Reusable HTML/CSS/JS presentation template for the eight course lectures.</p>
+  <p class="subtitle">From reading a robot model to planning a globally informed motion.</p>
+  <p class="course-map">The course follows one question: how can a workspace path become a valid joint-space motion? We first make the mechanism readable, then invert its kinematics, locate singularities, understand how inverse solutions connect, and finally use that global structure in motion planning.</p>
 
+  <h2 class="section-heading">Lectures</h2>
+  <p class="section-intro">Eight connected chapters; each supplies one prerequisite for the next.</p>
   <div class="lecture-list">
-    <a href="lectures/lecture_01.html"><strong>Lecture 1</strong><br>Introduction, Frames, Transformations, and DH Modelling</a>
-    <a href="lectures/lecture_02.html"><strong>Lecture 2</strong><br>Product of Exponentials and Reading URDF Models</a>
-    <a href="lectures/lecture_03.html"><strong>Lecture 3</strong><br>Analytical IK of a Representative 3R Robot</a>
-    <a href="lectures/lecture_04.html"><strong>Lecture 4</strong><br>Wrist-Partitioned 6R and 7R IK</a>
-    <a href="lectures/lecture_05.html"><strong>Lecture 5</strong><br>Jacobian-Based Singularity Analysis of 3R Robots</a>
-    <a href="lectures/lecture_06.html"><strong>Lecture 6</strong><br>IKS Distribution, Aspects, and Cuspidal Properties</a>
-    <a href="lectures/lecture_07.html"><strong>Lecture 7</strong><br>Joint-Space and Workspace Planning</a>
-    <a href="lectures/lecture_08.html"><strong>Lecture 8</strong><br>Motion Planning for Cuspidal and Redundant Robots</a>
+    <a href="lectures/lecture_01.html"><span class="card-step">Model the mechanism</span><strong>Lecture 1</strong><br>Frames, transformations, and D–H modelling</a>
+    <a href="lectures/lecture_02.html"><span class="card-step">Read and compute</span><strong>Lecture 2</strong><br>URDF, screw motion, and product of exponentials</a>
+    <a href="lectures/lecture_03.html"><span class="card-step">Invert position</span><strong>Lecture 3</strong><br>Analytical inverse kinematics of 3R robots</a>
+    <a href="lectures/lecture_04.html"><span class="card-step">Invert a complete pose</span><strong>Lecture 4</strong><br>Wrist-partitioned 6R and redundant 7R IK</a>
+    <a href="lectures/lecture_05.html"><span class="card-step">Locate rank loss</span><strong>Lecture 5</strong><br>Jacobian-based singularity analysis</a>
+    <a href="lectures/lecture_06.html"><span class="card-step">Connect the solutions</span><strong>Lecture 6</strong><br>IK-solution distribution, aspects, and cuspidality</a>
+    <a href="lectures/lecture_07.html"><span class="card-step">Lift a path</span><strong>Lecture 7</strong><br>Workspace paths and joint-space continuation</a>
+    <a href="lectures/lecture_08.html"><span class="card-step">Plan with redundancy</span><strong>Lecture 8</strong><br>Global feasibility for redundant robot motion</a>
+  </div>
+
+  <h2 class="section-heading">Exercises</h2>
+  <p class="section-intro">The assignments turn each conceptual layer into evidence you can inspect and defend.</p>
+  <div class="lecture-list exercise-list">
+    <a href="exercises/exercise_01.html"><span class="card-step">Model</span><strong>Exercise 1</strong><br>KUKA iiwa 7: URDF, D–H frames, mesh registration, and forward kinematics</a>
+    <a href="exercises/exercise_02.html"><span class="card-step">Invert</span><strong>Exercise 2</strong><br>Analytical IK for a custom wrist-partitioned 6R robot</a>
+    <a href="exercises/exercise_03.html"><span class="card-step">Diagnose</span><strong>Exercise 3</strong><br>Geometric Jacobian, determinant, singular curves, and IK distribution</a>
+    <a href="exercises/exercise_04.html"><span class="card-step">Plan</span><strong>Exercise 4</strong><br>KUKA iiwa 7 branch feasibility over path samples and redundant angles</a>
   </div>
 </body>
 </html>

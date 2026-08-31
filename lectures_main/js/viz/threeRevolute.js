@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createBoldAxes, createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
+import { createBoldAxes, createSceneControlPanel, createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
 
 export function initThreeRevoluteDemos() {
   document.querySelectorAll('[data-three-revolute]').forEach(container => {
@@ -32,8 +32,14 @@ function createThreeRevoluteDemo(container) {
   scene.add(directional);
 
   const robotWorld = createZUpWorld(scene);
+  const displayControls = createSceneControlPanel(container, robotWorld);
   const axes = createBoldAxes(1.4);
   robotWorld.add(axes);
+  robotWorld.add(
+    axisLabel('x', [1.55, 0, 0], '#c62828'),
+    axisLabel('y', [0, 1.55, 0], '#20813f'),
+    axisLabel('z', [0, 0, 1.55], '#1d5fc0')
+  );
 
   const revoluteJoint = new THREE.Group();
   robotWorld.add(revoluteJoint);
@@ -64,10 +70,32 @@ function createThreeRevoluteDemo(container) {
     const t = time / 1000;
     const q = 0.8 * Math.sin(t);
     revoluteJoint.rotation.z = q; // z-up robotics convention.
+    displayControls.syncLabels();
     controls.update?.();
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
   }
 
   requestAnimationFrame(animate);
+}
+
+function axisLabel(text, position, color) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 48;
+  const context = canvas.getContext('2d');
+  context.fillStyle = 'rgba(255,255,255,.9)';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = color;
+  context.font = '700 30px Arial';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(text, canvas.width / 2, canvas.height / 2);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false }));
+  sprite.position.fromArray(position);
+  sprite.scale.set(.32, .24, 1);
+  sprite.userData.isCourseLabel = true;
+  return sprite;
 }

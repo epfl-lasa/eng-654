@@ -21,9 +21,9 @@
 
   <section class="slide title-slide">
     <div class="title-slide-content">
-      <p class="eyebrow">ENG-654 · Continuation of Lecture 03</p>
+      <p class="eyebrow">ENG-654 · Lecture 04</p>
       <h1 class="course-title">Inverse Kinematics of Wrist-Partitioned 6R Robots</h1>
-      <p class="subtitle">Solve position with the arm, orientation with the wrist, and recover all eight branches</p>
+      <p class="subtitle">Solve position with the arm, orientation with the wrist, and enumerate up to eight pose solutions</p>
       <p class="lecture-promise">Running example: <code>custom_6R_new.urdf</code>. Transfer example: the PUMA 560.</p>
     </div>
   </section>
@@ -31,16 +31,16 @@
   <section class="slide">
     <p class="slide-kicker">The central idea</p>
     <h2 class="slide-title">Why a spherical wrist simplifies inverse kinematics</h2>
-    <p class="slide-subtitle">The common intersection of axes 4–6 is the partition point $O_w$.</p>
+    <p class="slide-subtitle">For a regular reachable target, the common intersection of axes 4–6 is the partition point $O_w$ and organizes a finite solution tree.</p>
     <div class="solution-count">
-      <div><strong>4</strong>arm solutions<br><span class="small-text">place $O_w$</span></div>
-      <div><strong>× 2</strong>wrist flips<br><span class="small-text">match $R_d$</span></div>
-      <div><strong>= 8</strong>complete IKs<br><span class="small-text">match $T_d$</span></div>
+      <div><strong>≤ 4</strong>arm solutions<br><span class="small-text">place $O_w$</span></div>
+      <div><strong>× ≤ 2</strong>wrist flips<br><span class="small-text">match $R_d$</span></div>
+      <div><strong>≤ 8</strong>pose solutions<br><span class="small-text">match $T_d$</span></div>
     </div>
     <div class="equation boxed-result">
       \[T_0^6(\mathbf q)=\underbrace{T_0^3(q_1,q_2,q_3)}_{\text{arm}}\underbrace{T_3^6(q_4,q_5,q_6)}_{\text{spherical wrist}}\]
     </div>
-    <div class="ik-takeaway">The position solve is the 3R IK from Lecture 03; the new work is extracting and solving the residual wrist rotation.</div>
+    <div class="ik-takeaway">The position solve reuses Lecture 03. Eight is a regular-case upper count: unreachable targets have none, tangent branches merge, wrist singularities create a continuous angle ambiguity, and limits or collisions remove otherwise mathematical solutions.</div>
   </section>
 
   <section class="slide">
@@ -53,7 +53,7 @@
           <div><strong>1</strong><br>$z$</div><div><strong>2</strong><br>$y$</div><div><strong>3</strong><br>$z$</div>
           <div><strong>4</strong><br>$x$</div><div><strong>5</strong><br>$z$</div><div><strong>6</strong><br>$x$</div>
         </div>
-        <div class="ik-callout"><strong>Operational frame:</strong> we use <code>link_6</code>. The legacy URDF <code>tool0</code> is attached to link 3, so it cannot represent the 6R tool pose.</div>
+        <div class="ik-callout"><strong>Operational frame:</strong> use <code>link_6</code>. The separate <code>tool0</code> branch is attached to link 3 and therefore is not the endpoint of this six-joint pose task.</div>
       </div>
       <div data-custom6r-ik data-mode="playground"></div>
     </div>
@@ -124,7 +124,7 @@
         <p>The constant terminal rotation maps the D–H frame to the URDF <code>link_6</code> orientation without moving its origin.</p>
       </div>
     </div>
-    <div class="ik-takeaway">The corrected D–H product agrees with the URDF product-of-exponentials model for arbitrary joint vectors.</div>
+    <div class="ik-takeaway">The derived D–H product agrees with the URDF product-of-exponentials model for arbitrary joint vectors.</div>
   </section>
 
   <section class="slide">
@@ -146,7 +146,7 @@
   <section class="slide">
     <p class="slide-kicker">What the solver must reproduce</p>
     <h2 class="slide-title">Inverse kinematics must recover the entire pose</h2>
-    <p class="slide-subtitle">Every IK branch must reproduce all sixteen entries, not only the translation.</p>
+    <p class="slide-subtitle">Every accepted IK branch must reproduce the complete homogeneous transform, not only its translation; the pose itself has six independent constraints.</p>
     <div class="equation boxed-result">
       \[T_d=\begin{bmatrix}
       .782996& .589593& .198234&5.112668\\
@@ -158,7 +158,7 @@
     <div class="condition-list">
       <div><strong>$R_d$</strong><span>desired tool orientation</span></div>
       <div><strong>$p_d$</strong><span>desired <code>link_6</code> origin</span></div>
-      <div><strong>check</strong><span>$\det R_d=1$, $R_d^TR_d=I$</span></div>
+      <div><strong>check</strong><span>$\det R_d=1$, $R_d^\top R_d=I$</span></div>
     </div>
   </section>
 
@@ -201,7 +201,8 @@
       <div class="method-bridge">→</div>
       <article class="method-card"><span class="method-number">03</span><h3>Branches</h3><p>Retain every real $(q_1,q_2,q_3)$.</p></article>
     </div>
-    <div class="equation compact boxed-result">\[p_w=T_0^3(q_1,q_2,q_3)\begin{bmatrix}5.5&1.25&1.75&1\end{bmatrix}^{T}_{\!\text{home}}\]</div>
+    <div class="equation compact boxed-result">\[\begin{bmatrix}\mathbf p_w\\1\end{bmatrix}=g_{\rm arm}(q_1,q_2,q_3)\begin{bmatrix}\mathbf p_{w,0}\\1\end{bmatrix},\qquad \mathbf p_{w,0}=\begin{bmatrix}5.5\\1.25\\1.75\end{bmatrix}\mathrm m\]</div>
+    <div class="ik-callout">Here $g_{\rm arm}$ is the spatial product-of-exponentials displacement from the home configuration. It is distinct from the standard-D–H frame pose $T_0^3$.</div>
   </section>
 
   <section class="slide">
@@ -228,7 +229,7 @@
           <div><strong>position</strong><span>$p_w$ fixes every triad origin</span></div>
           <div><strong>orientation</strong><span>$R_0^3$ fixes the remaining wrist rotation</span></div>
         </div>
-        <div class="equation compact">\[R_3^6=(R_0^3)^TR_d\]</div>
+        <div class="equation compact">\[R_3^6=(R_0^3)^\top R_d\]</div>
       </div>
       <div data-custom6r-ik data-mode="arm-branches"></div>
     </div>
@@ -237,10 +238,10 @@
   <section class="slide">
     <p class="slide-kicker">Isolating the wrist motion</p>
     <h2 class="slide-title">Each arm branch leaves a different rotation for the wrist</h2>
-    <div class="equation boxed-result">\[\boxed{M_k=R_{3,k}^{6}=(R_{0,k}^{3})^TR_d}\]</div>
+    <div class="equation boxed-result">\[\boxed{M_k=R_{3,k}^{6}=(R_{0,k}^{3})^\top R_d}\]</div>
     <div class="derivation-stack">
       <div class="derivation-row"><span class="tag">1</span><p>Evaluate $R_{0,k}^{3}$ using arm row $k$.</p></div>
-      <div class="derivation-row"><span class="tag">2</span><p>Premultiply $R_d$ by $(R_{0,k}^{3})^T$.</p></div>
+      <div class="derivation-row"><span class="tag">2</span><p>Premultiply $R_d$ by $(R_{0,k}^{3})^\top$.</p></div>
       <div class="derivation-row"><span class="tag">3</span><p>Decompose $M_k$ using the wrist’s $x-z-x$ sequence.</p></div>
     </div>
   </section>
@@ -277,7 +278,7 @@
       </div>
       <div>
         <div class="equation compact">\[(q_4,q_5,q_6)\leftrightarrow(q_4+\pi,-q_5,q_6+\pi)\]</div>
-        <div class="ik-callout"><strong>Singularity:</strong> if $s_5=0$, $q_4$ and $q_6$ are not individually identifiable.</div>
+        <div class="ik-callout"><strong>Singularity:</strong> if $s_5=0$, the two discrete flips collapse into a continuum. For $q_5=0$, only $q_4+q_6$ is identifiable; for $q_5=\pi$, only $q_4-q_6$ is identifiable.</div>
       </div>
     </div>
   </section>
@@ -294,9 +295,9 @@
 
   <section class="slide">
     <p class="slide-kicker">The complete solution tree</p>
-    <h2 class="slide-title">Four arm branches and two wrist flips produce eight IKs</h2>
+    <h2 class="slide-title">This regular target produces eight pose solutions</h2>
     <table class="branch-table ik6-table" aria-label="Eight custom 6R IK solutions">
-      <thead><tr><th>IK</th><th>$q_1$</th><th>$q_2$</th><th>$q_3$</th><th>$q_4$</th><th>$q_5$</th><th>$q_6$</th></tr></thead>
+      <thead><tr><th>solution</th><th>$q_1$ [°]</th><th>$q_2$ [°]</th><th>$q_3$ [°]</th><th>$q_4$ [°]</th><th>$q_5$ [°]</th><th>$q_6$ [°]</th></tr></thead>
       <tbody>
         <tr><td>1</td><td>17.108</td><td>6.318</td><td>−73.729</td><td>−23.207</td><td>82.925</td><td>118.503</td></tr>
         <tr><td>2</td><td>17.108</td><td>6.318</td><td>−73.729</td><td>156.793</td><td>−82.925</td><td>−61.497</td></tr>
@@ -313,7 +314,7 @@
 
   <section class="slide">
     <p class="slide-kicker">Verifying every branch</p>
-    <h2 class="slide-title">Eight joint configurations realize one end-effector pose</h2>
+    <h2 class="slide-title">Eight joint configurations realize this one end-effector pose</h2>
     <div class="layout-30-70">
       <div class="condition-list">
         <div><strong>IK 1–2</strong><span>arm A1, two wrist flips</span></div>
@@ -332,7 +333,7 @@
       <div class="derivation-stack">
         <div class="derivation-row"><span class="tag">1</span><p>Compute $p_w=p_d-d_6R_de_x$.</p></div>
         <div class="derivation-row"><span class="tag">2</span><p>Solve all 3R arm branches for $p_w$.</p></div>
-        <div class="derivation-row"><span class="tag">3</span><p>For each branch, compute $M=(R_0^3)^TR_d$.</p></div>
+        <div class="derivation-row"><span class="tag">3</span><p>For each branch, compute $M=(R_0^3)^\top R_d$.</p></div>
         <div class="derivation-row"><span class="tag">4</span><p>Extract both $x-z-x$ wrist flips.</p></div>
         <div class="derivation-row"><span class="tag">5</span><p>Enforce limits and verify $T_0^6=T_d$.</p></div>
       </div>
@@ -343,7 +344,7 @@
   <section class="slide">
     <p class="slide-kicker">A second spherical-wrist robot</p>
     <h2 class="slide-title">The PUMA 560 exposes the same position–orientation partition</h2>
-    <p class="slide-subtitle">Explore the uploaded STL model and watch the common wrist center.</p>
+    <p class="slide-subtitle">Explore the course STL model and track the common wrist center.</p>
     <div class="layout-30-70">
       <div>
         <div class="condition-list">
@@ -351,7 +352,7 @@
           <div><strong>wrist</strong><span>axes 4–6 intersect at $O_w$</span></div>
           <div><strong>tool</strong><span><code>link7</code>, the child of joint 6</span></div>
         </div>
-        <div class="ik-callout"><strong>URDF repair:</strong> the optional fixed joint names a nonexistent <code>link_7</code>; the valid six-joint chain ends at <code>link7</code>.</div>
+        <div class="ik-callout"><strong>Model scope:</strong> the optional fixed-joint record names an absent <code>link_7</code>. The valid six-revolute-joint chain used here ends at <code>link7</code>.</div>
       </div>
       <div data-serial-ik="puma-explore"></div>
     </div>
@@ -409,7 +410,7 @@
         <tr><td>P4</td><td>170.431°</td><td>−97.266°</td><td>45.000°</td><td>left shoulder · elbow 1</td></tr>
       </tbody>
     </table>
-    <div class="equation compact">\[R_{3,k}^{6}=(R_{0,k}^{3})^TR_d,\qquad k=1,\ldots,4\]</div>
+    <div class="equation compact">\[R_{3,k}^{6}=(R_{0,k}^{3})^\top R_d,\qquad k=1,\ldots,4\]</div>
   </section>
 
   <section class="slide">
@@ -417,7 +418,7 @@
     <h2 class="slide-title">Each PUMA arm branch admits two spherical-wrist flips</h2>
     <p class="slide-subtitle">The final axes form a $z$–$y$–$z$-type wrist under the URDF sign conventions.</p>
     <table class="branch-table ik6-table" aria-label="Eight PUMA inverse kinematics solutions">
-      <thead><tr><th>IK</th><th>$q_1$</th><th>$q_2$</th><th>$q_3$</th><th>$q_4$</th><th>$q_5$</th><th>$q_6$</th></tr></thead>
+      <thead><tr><th>solution</th><th>$q_1$ [°]</th><th>$q_2$ [°]</th><th>$q_3$ [°]</th><th>$q_4$ [°]</th><th>$q_5$ [°]</th><th>$q_6$ [°]</th></tr></thead>
       <tbody>
         <tr><td>1</td><td>30.000</td><td>−35.000</td><td>45.000</td><td>−140.000</td><td>50.000</td><td>−120.000</td></tr>
         <tr><td>2</td><td>30.000</td><td>−35.000</td><td>45.000</td><td>40.000</td><td>−50.000</td><td>60.000</td></tr>
@@ -429,7 +430,7 @@
         <tr><td>8</td><td>170.431</td><td>−97.266</td><td>45.000</td><td>148.461</td><td>−6.549</td><td>96.795</td></tr>
       </tbody>
     </table>
-    <div class="ik-takeaway">These are all mathematical branches modulo $360°$. The uploaded URDF limits retain only IK 2 for this target.</div>
+    <div class="ik-takeaway">These are all mathematical branches modulo $360^\circ$. The URDF joint limits retain only solution 2 for this target.</div>
   </section>
 
   <section class="slide">
@@ -455,13 +456,13 @@
       <div><strong>− 6</strong>pose constraints</div>
       <div><strong>= 1</strong>redundancy parameter</div>
     </div>
-    <div class="equation boxed-result">\[T_0^7(q_1,\ldots,q_7)=T_d\quad\Longrightarrow\quad \dim\mathcal S\approx1\]</div>
-    <div class="ik-takeaway">Instead of isolated IK points, a regular redundant robot has continuous self-motion curves in joint space.</div>
+    <div class="equation boxed-result">\[\operatorname{rank}J(\mathbf q^*)=6\quad\Longrightarrow\quad \dim_{\mathbf q^*}\mathcal S(T_d)=7-6=1\]</div>
+    <div class="ik-takeaway">Locally around a regular solution, the redundant IK set is a one-dimensional self-motion curve. At rank loss, its local dimension or branch structure can change.</div>
   </section>
 
   <section class="slide">
     <p class="slide-kicker">Choosing a redundancy coordinate</p>
-    <h2 class="slide-title">Fixing $q_3$ turns the iiwa into an instantaneous 6R problem</h2>
+    <h2 class="slide-title">Fixing $q_3$ defines a parameterized 6R IK subproblem</h2>
     <div class="layout-two-column">
       <div>
         <div class="equation compact boxed-result">\[q_3=\lambda\]</div>
@@ -500,13 +501,13 @@
         <span>$q_3=\lambda$</span><strong>→</strong><span>$\bar\alpha_2=\lambda$</span>
       </div>
       <article class="dh-table-card">
-        <h3>Instantaneous member · 6R</h3>
+        <h3>Parameterized member · 6R</h3>
         <p class="table-caption">Six revolute coordinates; geometry is indexed by $\lambda$.</p>
         <table class="dh-mini-table" aria-label="Equivalent DH table for the reduced 6R robot">
           <thead><tr><th>$j$</th><th>iiwa axis</th><th>$\bar\theta_j$</th><th>$\bar d_j$</th><th>$\bar a_j$</th><th>$\bar\alpha_j$</th></tr></thead>
           <tbody>
             <tr><td>1</td><td>1</td><td>$q_1$</td><td>$\bar d_1$</td><td>$\bar a_1$</td><td>$\bar\alpha_1$</td></tr>
-            <tr class="dh-result-row"><td>2</td><td>2</td><td>$q_2$</td><td>$\bar d_2$</td><td>$\bar a_2$</td><td>$\boxed{q_3=\lambda}$</td></tr>
+            <tr class="dh-result-row"><td>2</td><td>2</td><td>$q_2$</td><td>$\bar d_2$</td><td>$\bar a_2$</td><td>$\boxed{\bar\alpha_2=q_3=\lambda}$</td></tr>
             <tr><td>3</td><td>4</td><td>$q_4$</td><td>$\bar d_3$</td><td>$\bar a_3$</td><td>$\bar\alpha_3$</td></tr>
             <tr><td>4</td><td>5</td><td>$q_5$</td><td>$\bar d_4$</td><td>$\bar a_4$</td><td>$\bar\alpha_4$</td></tr>
             <tr><td>5</td><td>6</td><td>$q_6$</td><td>$\bar d_5$</td><td>$\bar a_5$</td><td>$\bar\alpha_5$</td></tr>
@@ -515,15 +516,15 @@
         </table>
       </article>
     </div>
-    <div class="ik-takeaway">With the reduced-frame convention, locking joint 3 removes $q_3$ from the coordinate vector and places its chosen value in the geometry: $\bar\alpha_2=q_3$.</div>
+    <div class="ik-takeaway">With the displayed reduced-frame convention, locking joint 3 removes $q_3$ from the coordinate vector and places its chosen value in the geometry: $\bar\alpha_2=\lambda$. A different frame convention may add a fixed angular offset.</div>
   </section>
 
   <section class="slide">
-    <p class="slide-kicker">A family of instantaneous robots</p>
-    <h2 class="slide-title">The 7R iiwa is a union of 6R robots with different twist parameters</h2>
+    <p class="slide-kicker">A family of parameterized subproblems</p>
+    <h2 class="slide-title">The 7R IK set is assembled from 6R solution sets indexed by $q_3$</h2>
     <div class="layout-30-70">
       <div>
-        <div class="equation compact boxed-result">\[\mathcal R_{7R}=\bigcup_{\lambda\in[-360^\circ,360^\circ]}\mathcal R_{6R}(\bar\alpha_2=\lambda)\]</div>
+        <div class="equation compact boxed-result">\[\mathcal S_{7R}(T_d)=\bigcup_{\lambda\in I}\mathcal S_{6R}(T_d;\,q_3=\lambda)\]</div>
         <div class="condition-list">
           <div><strong>choose</strong><span>$q_3=\lambda$</span></div>
           <div><strong>freeze</strong><span>joint 3 becomes geometry</span></div>
@@ -533,7 +534,7 @@
       </div>
       <div data-serial-ik="iiwa-union"></div>
     </div>
-    <div class="ik-takeaway">The translucent postures are different 6R members. Their D–H tables differ in $\bar\alpha_2$, yet all reproduce the same $T_d$.</div>
+    <div class="ik-takeaway">The translucent postures sample parameter values along a feasible solution branch. Their reduced D–H tables differ in $\bar\alpha_2$, yet all reproduce the same $T_d$.</div>
   </section>
 
   <section class="slide">
@@ -543,14 +544,14 @@
       <div>
         <div class="equation compact boxed-result">\[q_d=(20,-35,30,50,-40,45,60)^\circ\]</div>
         <div class="condition-list">
-          <div><strong>free parameter</strong><span>$q_3\in[-180°,180°]$ in the displayed cycle</span></div>
+          <div><strong>free parameter</strong><span>$q_3\in[-180^\circ,180^\circ]$ in the displayed cycle</span></div>
           <div><strong>dependent joints</strong><span>$q_1,q_2,q_4,q_5,q_6,q_7$</span></div>
           <div><strong>invariant</strong><span>the complete $T_d$, not only $p_d$</span></div>
         </div>
       </div>
       <div data-serial-ik="iiwa-family"></div>
     </div>
-    <div class="ik-takeaway">The visualization uses <code>iiwa7_free_joints.urdf</code>, whose seven revolute joints each have a $[-360°,360°]$ range.</div>
+    <div class="ik-takeaway">The visualization follows one numerically continued, forward-kinematics-verified branch; it is not an exhaustive enumeration of every connected component. The model gives each revolute joint a $[-360^\circ,360^\circ]$ range.</div>
   </section>
 
   <section class="slide">
@@ -558,7 +559,7 @@
     <h2 class="slide-title">The redundancy parameter is free only inside feasible intervals</h2>
     <div class="derivation-stack">
       <div class="derivation-row"><span class="tag">1</span><p>Choose $q_3=\lambda$ within its mechanical range.</p></div>
-      <div class="derivation-row"><span class="tag">2</span><p>Solve the resulting instantaneous 6R IK and retain every real branch.</p></div>
+      <div class="derivation-row"><span class="tag">2</span><p>Solve the resulting parameterized 6R IK subproblem and retain every real branch.</p></div>
       <div class="derivation-row"><span class="tag">3</span><p>Continue each branch as $\lambda$ varies; this traces a self-motion curve.</p></div>
       <div class="derivation-row"><span class="tag">4</span><p>Stop or change branch at workspace boundaries, singularities, collisions, or joint limits.</p></div>
     </div>
@@ -572,14 +573,15 @@
       <div class="derivation-row"><span class="tag">1</span><p>A spherical wrist separates a 6R pose problem into arm position and wrist orientation.</p></div>
       <div class="derivation-row"><span class="tag">2</span><p>The custom robot and PUMA use the same logic with different axis geometry and tool directions.</p></div>
       <div class="derivation-row"><span class="tag">3</span><p>Four arm branches and two wrist flips can create eight mathematical 6R solutions.</p></div>
-      <div class="derivation-row"><span class="tag">4</span><p>For a 7R iiwa, fixing one redundancy parameter exposes a family of instantaneous 6R solves.</p></div>
+      <div class="derivation-row"><span class="tag">4</span><p>For a 7R iiwa, fixing one redundancy parameter exposes a family of parameterized 6R solves.</p></div>
       <div class="derivation-row"><span class="tag">5</span><p>Joint limits, singularities, and collisions determine which mathematical branches are usable.</p></div>
     </div>
+    <div class="ik-takeaway"><strong>Bridge to Lecture 05:</strong> branch counts and local continuation change where the Jacobian loses rank; singularities explain where the inverse ceases to behave regularly.</div>
     <p class="source-note">Reference: J. J. Craig, <em>Introduction to Robotics: Mechanics and Control</em>, manipulator kinematics and inverse kinematics chapters.</p>
   </section>
 
 </main>
 <script src="../js/deck/nav-runtime.js"></script>
-<script type="module" src="../js/main.js?v=20260818-35"></script>
+<script type="module" src="../js/main.js?v=20260831-1"></script>
 </body>
 </html>

@@ -24,18 +24,18 @@
     <div class="title-slide-content">
       <p class="eyebrow">ENG-654 · Lecture 05</p>
       <h1 class="course-title">Robot Singularities</h1>
-      <p class="subtitle">Jacobian columns, rank loss, and singularity geometry in the uploaded 3R and 6R robots</p>
+      <p class="subtitle">Jacobian columns, rank loss, and the geometry that organizes inverse-kinematic branches</p>
       <p class="lecture-promise">Running examples: <code>custom_3R_new.urdf</code> for position kinematics and <code>custom_6R_new.urdf</code> for full-pose singularities.</p>
     </div>
   </section>
 
   <section class="slide l5-slide">
-    <p class="slide-kicker">The question that drives the lecture</p>
-    <h2 class="slide-title">Which joint rates create a desired end-effector velocity?</h2>
-    <p class="slide-subtitle">Forward kinematics tells us where the robot is. Its differential tells us how the robot can move from there.</p>
+    <p class="slide-kicker">Bridge from Lecture 04</p>
+    <h2 class="slide-title">Where can inverse-kinematic branches merge or cease to continue?</h2>
+    <p class="slide-subtitle">Lecture 04 enumerated multiple pose solutions. The differential of forward kinematics reveals where those local inverse branches stop behaving regularly.</p>
     <div class="layout-two-column">
       <div class="layout-center">
-        <p class="l5-question">If a Cartesian velocity is prescribed, what must the joints do?</p>
+        <p class="l5-question">Which joint rates create a prescribed Cartesian velocity?</p>
       </div>
       <div class="layout-center">
         <div class="l5-box red l5-big-equation">\[\dot{\mathbf p}=J(\mathbf q)\dot{\mathbf q}\]</div>
@@ -45,12 +45,12 @@
   </section>
 
   <section class="slide l5-slide">
-    <p class="slide-kicker">Act I · Read the uploaded 3R model</p><h2 class="slide-title"><code>custom_3R_new.urdf</code> defines the complete position task</h2>
+    <p class="slide-kicker">Act I · Read the course 3R model</p><h2 class="slide-title"><code>custom_3R_new.urdf</code> defines the complete position task</h2>
     <div class="layout-40-60">
       <div class="l5-card red"><h3>Selected chain</h3><p><code>base_link</code> → <code>link_1</code> → <code>link_2</code> → <code>link_3_d3</code> → <code>tool0</code></p><p>The first three joints are revolute; the final transform to <code>tool0</code> is fixed.</p></div>
       <table class="l5-table"><thead><tr><th>joint</th><th>origin in parent [m]</th><th>local axis</th></tr></thead><tbody><tr><td>1</td><td>\((0,0,0.5)\)</td><td>\((0,0,1)\)</td></tr><tr><td>2</td><td>\((1,0,0.5)\)</td><td>\((0,1,0)\)</td></tr><tr><td>3</td><td>\((2,1.25,0)\)</td><td>\((0,0,1)\)</td></tr><tr><td>tool</td><td>\((1.5,0,0.75)\)</td><td>fixed</td></tr></tbody></table>
     </div>
-    <div class="l5-takeaway">Every value on this slide is read from the uploaded URDF; no substitute robot geometry is introduced.</div>
+    <div class="l5-takeaway">Every value in Act I is read from the course URDF; no substitute robot geometry is introduced in this model-specific construction.</div>
   </section>
 
   <section class="slide l5-slide">
@@ -77,42 +77,42 @@
 
   <section class="slide interactive-slide l5-slide">
     <p class="slide-kicker">Act I · Annotate the three columns</p><h2 class="slide-title">Read each axis, lever arm, and velocity directly on the robot</h2>
-    <p class="slide-subtitle">The uploaded STL links follow <code>custom_3R_new.urdf</code>. Every \(\mathbf z_k\), \(\mathbf r_k=\mathbf p-\mathbf p_k\), and \(\mathbf J_{p,k}=\mathbf z_k\times\mathbf r_k\) can be controlled independently.</p>
+    <p class="slide-subtitle">The course STL links follow <code>custom_3R_new.urdf</code>. Every \(\mathbf z_k\), \(\mathbf r_k=\mathbf p-\mathbf p_k\), and \(\mathbf J_{p,k}=\mathbf z_k\times\mathbf r_k\) can be controlled independently.</p>
     <div class="demo-prompt"><strong>Try it:</strong> activate one axis, its position vector, and its Jacobian column. Check the cross-product direction, then repeat for the other joints.</div>
     <div class="layout-full" data-singularity-lab="three-r"></div>
   </section>
 
   <section class="slide l5-slide">
     <p class="slide-kicker">Act I · Define singularity</p><h2 class="slide-title">The custom 3R robot is singular when its three velocity columns lose independence</h2>
-    <div class="layout-center"><div><div class="l5-box red l5-big-equation">\[\boxed{\operatorname{rank}J_p&lt;3\iff\det J_p=0}\]</div><div class="l5-three reveal-children" style="margin-top:1rem"><div class="l5-card"><h3>Motion lost</h3><p>At least one Cartesian velocity direction cannot be produced.</p></div><div class="l5-card yellow"><h3>Columns depend</h3><p>One joint-generated velocity lies in the span of the others.</p></div><div class="l5-card green"><h3>Local inverse fails</h3><p>Finite tool velocity can demand unbounded joint rates.</p></div></div></div></div>
+    <div class="layout-center"><div><div class="l5-box red l5-big-equation">\[J_p\in\mathbb R^{3\times3}:\qquad \boxed{\operatorname{rank}J_p&lt;3\iff\det J_p=0}\]</div><div class="l5-three reveal-children" style="margin-top:1rem"><div class="l5-card"><h3>Motion lost</h3><p>At the singularity, at least one Cartesian velocity direction cannot be produced.</p></div><div class="l5-card yellow"><h3>Solutions lose uniqueness</h3><p>Dependent columns create a joint-rate null direction.</p></div><div class="l5-card green"><h3>Near-singular amplification</h3><p>Approaching rank loss can require very large joint rates for a finite tool velocity.</p></div></div></div></div>
   </section>
 
   <section class="slide l5-slide">
-    <p class="slide-kicker">Act II · Generate the symbolic determinants</p><h2 class="slide-title">Changing \(a_1\) changes the singularity factors</h2>
-    <p class="slide-subtitle">Standard D–H with \(d=(d_1,1,0)\), \(\alpha=(\pi/2,\pi/2,\alpha_3)\), and \(c_i=\cos q_i\), \(s_i=\sin q_i\).</p>
+    <p class="slide-kicker">Act II · Idealized symbolic comparison</p><h2 class="slide-title">A separate 3R family isolates the effect of the first-axis offset</h2>
+    <p class="slide-subtitle">For this pedagogical family only, standard D–H uses \(d=(d_1,1,0)\), \(\alpha=(\pi/2,\pi/2,\alpha_3)\), and \(c_i=\cos q_i\), \(s_i=\sin q_i\). These are not the exact parameters of <code>custom_3R_new.urdf</code>.</p>
     <div class="l5-columns">
       <div class="l5-card red"><h3>Offset axes: \(a=(1,2,1.5)\)</h3><div class="equation micro" data-symbolic-dh="threeROffset"></div><p>The additional \(-s_3\) term couples the two singularity factors.</p></div>
       <div class="l5-card"><h3>Intersecting first axes: \(a=(0,2,1.5)\)</h3><div class="equation micro" data-symbolic-dh="threeRIntersecting"></div><p>Now \(c_2=0\) is an explicit singularity family.</p></div>
     </div>
-    <div class="l5-takeaway">Both expressions are independent of \(q_1\), \(d_1\), and \(\alpha_3\); the code verifies them against direct symbolic D–H Jacobians.</div>
+    <div class="l5-takeaway">Within this idealized family, both expressions are independent of \(q_1\), \(d_1\), and \(\alpha_3\). Do not transfer these zero sets to the course URDF without substituting and differentiating its actual geometry.</div>
   </section>
 
   <section class="slide l5-slide">
     <p class="slide-kicker">Act II · Think in configuration space</p><h2 class="slide-title">A spatial robot has a singularity set, not one bad posture</h2>
-    <div class="layout-center"><div><div class="l5-big-equation">\[\mathcal S=\{\mathbf q\in\mathcal C:D(q_2,q_3)=0\}\]</div><p class="lead">For every \(q_1\), the same curves in the \((q_2,q_3)\) torus lift into singular surfaces in \(\mathcal C\).</p></div></div>
+    <div class="layout-center"><div><div class="l5-big-equation">\[\mathcal S=\{\mathbf q\in\mathcal C:D(q_2,q_3)=0\}\]</div><p class="lead">With full periodic revolute coordinates, the \((q_2,q_3)\) domain is a torus and the same curves lift across \(q_1\). Mechanical joint limits clip that torus to a bounded feasible domain.</p></div></div>
   </section>
 
   <section class="slide interactive-slide l5-slide">
-    <p class="slide-kicker">Act II · Map the zero set</p><h2 class="slide-title">The determinant contour partitions \((q_2,q_3)\)</h2>
-    <p class="slide-subtitle">Switch between \(a_1=1\) and \(a_1=0\) to see how the two code-generated determinant factors change the singularity locus.</p>
+    <p class="slide-kicker">Act II · Map the idealized zero set</p><h2 class="slide-title">The symbolic determinant contour partitions \((q_2,q_3)\)</h2>
+    <p class="slide-subtitle">Switch between \(a_1=1\) and \(a_1=0\) inside the idealized family to see how the offset changes its singularity locus.</p>
     <div class="demo-prompt"><strong>Try it:</strong> select the intersecting-axis case and locate the new \(\cos q_2=0\) singularity lines.</div>
     <div class="layout-full" data-singularity-lab="map-3r"></div>
   </section>
 
   <section class="slide l5-slide">
-    <p class="slide-kicker">Transition · From the uploaded 3R to the uploaded 6R</p><h2 class="slide-title">The same column construction scales from position to pose</h2>
+    <p class="slide-kicker">Transition · Return to the exact course URDFs</p><h2 class="slide-title">The same column construction scales from position to pose</h2>
     <div class="l5-columns reveal-children"><div class="l5-card green"><h3><code>custom_3R_new.urdf</code></h3><p>Three revolute joints map to the three-dimensional velocity of <code>tool0</code>.</p><p>Task Jacobian: \(J_p\in\mathbb R^{3\times3}\).</p></div><div class="l5-card red"><h3><code>custom_6R_new.urdf</code></h3><p>Six revolute joints map to the twist of <code>link_6</code>.</p><p>Geometric Jacobian: \(J\in\mathbb R^{6\times6}\).</p></div></div>
-    <div class="l5-takeaway">Only the uploaded model changes; the axis and lever-arm rule stays the same.</div>
+    <div class="l5-takeaway">The model and task dimension change; the axis and lever-arm rule remains the same. From this point onward, geometric quantities again come from the exact course URDFs.</div>
   </section>
 
   <section class="slide l5-slide">
@@ -133,24 +133,24 @@
 
   <section class="slide l5-slide">
     <p class="slide-kicker">Act III · Verify on the custom 3R</p><h2 class="slide-title">Analytic and geometric position Jacobians coincide</h2>
-    <div class="layout-center"><div><div class="l5-big-equation">\[\underbrace{\frac{\partial\mathbf p}{\partial\mathbf q}}_{J_{\rm analytic}}=\underbrace{[\,\mathbf z_1\!\times(\mathbf p-\mathbf p_1)\;\mathbf z_2\!\times(\mathbf p-\mathbf p_2)\;\mathbf z_3\!\times(\mathbf p-\mathbf p_3)\,]}_{J_{\rm geometric,v}}\]</div><p class="l5-takeaway">The module checks this against central finite differences at random configurations and reports failures in the console.</p></div></div>
+    <div class="layout-center"><div><div class="l5-big-equation">\[\underbrace{\frac{\partial\mathbf p}{\partial\mathbf q}}_{J_{\rm analytic}}=\underbrace{[\,\mathbf z_1\!\times(\mathbf p-\mathbf p_1)\;\mathbf z_2\!\times(\mathbf p-\mathbf p_2)\;\mathbf z_3\!\times(\mathbf p-\mathbf p_3)\,]}_{J_{\rm geometric,v}}\]</div><p class="l5-takeaway">Central finite differences provide an independent numerical check of the geometric columns at regular test configurations.</p></div></div>
   </section>
 
   <section class="slide l5-slide">
     <p class="slide-kicker">Transition · Move from position to pose</p><h2 class="slide-title">A 6R chain maps six joint rates to one twist</h2>
-    <div class="layout-two-column"><div class="l5-big-equation">\[\begin{bmatrix}\mathbf v_6\\\boldsymbol\omega_6\end{bmatrix}=J(\mathbf q)\dot{\mathbf q},\qquad J\in\mathbb R^{6\times6}\]</div><div class="l5-card red"><h3>Uploaded axis sequence</h3><p>Local axes: \(z,y,z,x,z,x\)</p><p>Operational point: the <code>link_6</code> origin</p><p>All six joints are revolute.</p></div></div><div class="l5-takeaway">The legacy <code>tool0</code> branches from link 3, so the 6R pose task correctly ends at <code>link_6</code>.</div>
+    <div class="layout-two-column"><div class="l5-big-equation">\[\begin{bmatrix}\mathbf v_6\\\boldsymbol\omega_6\end{bmatrix}=J(\mathbf q)\dot{\mathbf q},\qquad J\in\mathbb R^{6\times6}\]</div><div class="l5-card red"><h3>Course-model axis sequence</h3><p>Local axes: \(z,y,z,x,z,x\)</p><p>Operational point: the <code>link_6</code> origin</p><p>All six joints are revolute.</p></div></div><div class="l5-takeaway">The separate <code>tool0</code> branch ends at link 3; the full six-joint pose task therefore uses <code>link_6</code>.</div>
   </section>
 
   <section class="slide l5-slide">
-    <p class="slide-kicker">Act III · Read the uploaded 6R model</p><h2 class="slide-title">Build six columns at the <code>link_6</code> origin</h2>
+    <p class="slide-kicker">Act III · Read the course 6R model</p><h2 class="slide-title">Build six columns at the <code>link_6</code> origin</h2>
     <div class="equation">\[J_k=\begin{bmatrix}{}^0\mathbf z_k\times({}^0\mathbf p_6-{}^0\mathbf p_k)\\{}^0\mathbf z_k\end{bmatrix}\]</div><div class="l5-chain"><span>1</span><span>2</span><span>3</span><b>→</b><span>4</span><span>5</span><span>6</span></div><p class="l5-takeaway">All six physical columns are simple; their base-frame trigonometric components are not.</p>
   </section>
 
   <section class="slide l5-slide">
-    <p class="slide-kicker">Act III · Use the uploaded wrist geometry</p><h2 class="slide-title">Axes 4, 5, and 6 intersect at one wrist center</h2>
+    <p class="slide-kicker">Act III · Use the course wrist geometry</p><h2 class="slide-title">Axes 4, 5, and 6 intersect at one wrist center</h2>
     <p class="slide-subtitle">In <code>custom_6R_new.urdf</code>, the joint-5 origin lies on the joint-4 and joint-6 axis lines.</p>
     <div class="layout-two-column"><div class="l5-box red l5-big-equation">\[O_w=\text{origin of joint 5}\]</div><div class="l5-card"><h3>Why this matters</h3><p>Reduce every twist at \(O_w\).</p><p>Wrist columns 4 to 6 then have zero linear part.</p><p>The Jacobian becomes block triangular.</p></div></div>
-    <div class="l5-takeaway">This arm and wrist split follows from the uploaded axis lines, not from a generic 6R assumption.</div>
+    <div class="l5-takeaway">This arm and wrist split follows from the course model’s axis lines, not from a generic 6R assumption.</div>
   </section>
 
   <section class="slide l5-slide">
@@ -160,9 +160,9 @@
   </section>
 
   <section class="slide l5-slide">
-    <p class="slide-kicker">Act III · Classify the uploaded 6R singularities</p><h2 class="slide-title">Arm and wrist rank losses have different physical meanings</h2>
+    <p class="slide-kicker">Act III · Classify the course 6R singularities</p><h2 class="slide-title">Arm and wrist rank losses have different physical meanings</h2>
     <div class="l5-three reveal-children"><div class="l5-card red"><h3>Arm</h3><p>\(D_{\rm arm}=0\)</p><p>Translation of \(O_w\) loses a direction.</p></div><div class="l5-card yellow"><h3>Wrist</h3><p>\(q_5=0\) or \(\pi\)</p><p>Axes 4 and 6 generate the same angular direction.</p></div><div class="l5-card green"><h3>Combined</h3><p>Both factors vanish.</p><p>Position and orientation capabilities are lost together.</p></div></div>
-    <div class="l5-takeaway">Joint 1 and joint 6 rotate the geometry or tool about existing axes; neither appears in the determinant factors.</div>
+    <div class="l5-takeaway">For this spherical-wrist factorization, the determinant is independent of \(q_1\), \(q_4\), and \(q_6\); only \(q_2,q_3,q_5\) determine its zero set.</div>
   </section>
 
   <section class="slide l5-slide">
@@ -177,9 +177,10 @@
   </section>
 
   <section class="slide l5-slide">
-    <p class="slide-kicker">Act IV · Impose the requested symbolic D–H family</p><h2 class="slide-title">Keep the geometry symbolic around a spherical wrist</h2>
+    <p class="slide-kicker">Act IV · Generic symbolic comparison</p><h2 class="slide-title">A separate spherical-wrist family exposes the determinant structure</h2>
+    <p class="slide-subtitle">The following D–H family is a pedagogical symbolic model, not the parameter table of <code>custom_6R_new.urdf</code>. It isolates the block structure shared by wrist-partitioned robots.</p>
     <div class="layout-two-column"><table class="l5-table"><thead><tr><th>parameter</th><th>rows 1 to 6</th></tr></thead><tbody><tr><td>\(a_i\)</td><td>\((a_1,a_2,a_3,0,0,a_6)\)</td></tr><tr><td>\(d_i\)</td><td>\((d_1,0,0,d_4,0,d_6)\)</td></tr><tr><td>\(\alpha_i\)</td><td>\((\pi/2,\alpha_2,\pi/2,\pi/2,\pi/2,0)\)</td></tr><tr><td>\(\theta_i\)</td><td>\((q_1,q_2,q_3,q_4,q_5,q_6)\)</td></tr></tbody></table><div class="l5-card red"><h3>Preferential choice</h3><p>Representation frame: \(F_3\)</p><p>Reference point: \(O_5\), the wrist point</p><div class="equation">\[{}^3J_5\]</div></div></div>
-    <div class="l5-takeaway">The derivation keeps \(a_1,a_2,a_3,a_6,d_1,d_4,d_6,\alpha_2\), and every \(q_i\) symbolic. Parameters beyond \(O_5\) disappear naturally when the screws are reduced there.</div>
+    <div class="l5-takeaway">Within this generic family, \(a_1,a_2,a_3,a_6,d_1,d_4,d_6,\alpha_2\), and every \(q_i\) remain symbolic. Parameters beyond \(O_5\) disappear when the screws are reduced there; exact course-robot factors must still be generated from its own geometry.</div>
   </section>
 
   <section class="slide l5-slide">
@@ -210,8 +211,8 @@
   </section>
 
   <section class="slide interactive-slide l5-slide">
-    <p class="slide-kicker">Act IV · Observe the preferential representation</p><h2 class="slide-title">Choose \((i,j,k)\), then inspect the screw and both determinants</h2>
-    <p class="slide-subtitle">The uploaded 6R STL links follow <code>custom_6R_new.urdf</code>. Live arm and wrist factors identify the cause of rank loss.</p>
+    <p class="slide-kicker">Act IV · Return to the exact course 6R model</p><h2 class="slide-title">Choose \((i,j,k)\), then inspect the screw and both determinants</h2>
+    <p class="slide-subtitle">The course 6R STL links follow <code>custom_6R_new.urdf</code>. Live arm and wrist factors identify the cause of rank loss.</p>
     <div class="demo-prompt"><strong>Try it:</strong> select the regular, arm-singular, and wrist-singular cases. Then change the representation and confirm that the singularity classification stays fixed.</div>
     <div class="layout-full" data-singularity-lab="six-r"></div>
   </section>
@@ -223,7 +224,7 @@
 
   <section class="slide l5-slide">
     <p class="slide-kicker">Act IV · Keep the definitions separate</p><h2 class="slide-title">Analytic orientation rates are not angular velocity</h2>
-    <div class="l5-columns"><div class="l5-card"><h3>Analytic</h3><p>For \(\mathbf x=[\mathbf p;\boldsymbol\phi]\):</p><p>\(\dot{\mathbf x}=J_A(\mathbf q)\dot{\mathbf q}\)</p></div><div class="l5-card red"><h3>Geometric</h3><p>For a twist:</p><p>\([\mathbf v;\boldsymbol\omega]=J_G(\mathbf q)\dot{\mathbf q}\)</p></div></div><div class="equation">\[J_A=T(\boldsymbol\phi)J_G\]</div><div class="l5-takeaway">For the custom 3R Cartesian position task, the translational blocks coincide exactly.</div>
+    <div class="l5-columns"><div class="l5-card"><h3>Analytic</h3><p>For \(\mathbf x=[\mathbf p;\boldsymbol\phi]\):</p><p>\(\dot{\mathbf x}=J_A(\mathbf q)\dot{\mathbf q}\)</p></div><div class="l5-card red"><h3>Geometric</h3><p>For a twist:</p><p>\([\mathbf v;\boldsymbol\omega]=J_G(\mathbf q)\dot{\mathbf q}\)</p></div></div><div class="equation">\[J_A=T(\boldsymbol\phi)J_G\]</div><div class="l5-takeaway">Rank equivalence requires the orientation-rate map \(T(\boldsymbol\phi)\) to be nonsingular. An Euler-angle chart singularity can make \(J_A\) singular even when the robot’s geometric Jacobian is regular. For the 3R Cartesian position task, the translational blocks coincide exactly.</div>
   </section>
 
   <section class="slide l5-slide">
@@ -232,8 +233,8 @@
   </section>
 
   <section class="slide l5-slide">
-    <p class="slide-kicker">Act V · Validate before trusting</p><h2 class="slide-title">Four routes should agree at random configurations</h2>
-    <div class="l5-three reveal-children"><div class="l5-card"><h3>Finite difference</h3><p>\(J_{:,k}\approx[\mathbf p(q+\epsilon e_k)-\mathbf p(q-\epsilon e_k)]/(2\epsilon)\)</p></div><div class="l5-card green"><h3>Geometric</h3><p>Axis–lever-arm cross products generated from URDF.</p></div><div class="l5-card red"><h3>Representation</h3><p>Ordinary and preferential Jacobians preserve rank and determinant zero sets.</p></div></div><div class="l5-takeaway">If \(J\in\mathbb R^{6\times n}\) is non-square, stop saying “determinant”: use rank, \(\sigma_{\min}\), or a square task Jacobian.</div>
+    <p class="slide-kicker">Act V · Validate before trusting</p><h2 class="slide-title">Three consistency checks should agree at regular configurations</h2>
+    <div class="l5-three reveal-children"><div class="l5-card"><h3>Finite difference</h3><p>\((J_p)_{:,k}\approx[\mathbf p(q+\epsilon e_k)-\mathbf p(q-\epsilon e_k)]/(2\epsilon)\)</p></div><div class="l5-card green"><h3>Geometric</h3><p>Axis–lever-arm cross products generated from URDF.</p></div><div class="l5-card red"><h3>Representation</h3><p>Ordinary and preferential Jacobians preserve rank and determinant zero sets.</p></div></div><div class="l5-takeaway">If \(J\in\mathbb R^{6\times n}\) is non-square, stop saying “determinant”: use rank, \(\sigma_{\min}\), or a square task Jacobian.</div>
   </section>
 
   <section class="slide l5-slide">
@@ -242,12 +243,21 @@
   </section>
 
   <section class="slide l5-slide">
+    <p class="slide-kicker">Motion-planning consequence</p><h2 class="slide-title">Near-singular paths amplify joint motion before rank is lost</h2>
+    <div class="layout-two-column">
+      <div class="l5-box red l5-big-equation">\[\sigma_{\min}(J)&gt;0:\qquad \|J^\dagger\|_2=\frac{1}{\sigma_{\min}(J)}\]</div>
+      <div class="l5-card"><h3>Conditioning matters</h3><p>As \(\sigma_{\min}\to0\), some task-velocity directions demand rapidly growing joint rates.</p><p>At \(\sigma_{\min}=0\), the Jacobian loses rank and exact local inversion fails.</p></div>
+    </div>
+    <div class="l5-three reveal-children"><div class="l5-card"><h3>Path placement</h3><p>A translated or rotated workspace path can move closer to—or farther from—a singular locus.</p></div><div class="l5-card yellow"><h3>Branch continuation</h3><p>Branches may meet, terminate, or require a coordinated switch at rank loss.</p></div><div class="l5-card green"><h3>Planning metric</h3><p>Monitor rank and \(\sigma_{\min}\), then enforce joint-rate, limit, and collision margins.</p></div></div>
+  </section>
+
+  <section class="slide l5-slide">
     <p class="slide-kicker">Bridge to Lecture 06</p><h2 class="slide-title">Singular loci organize inverse-kinematic branches</h2>
-    <div class="layout-center"><div><p class="lead">Singularities are not merely isolated bad configurations. Their loci partition configuration space and determine how IK branches can connect.</p><div class="l5-box red l5-big-equation">\[\boxed{\text{What happens to IK branches on either side of a singularity surface?}}\]</div><p class="subtitle" style="text-align:center">Next: IKS Distribution, Aspects, and Cuspidal Properties</p></div></div>
+    <div class="layout-center"><div><p class="lead">Singular loci form boundaries and meeting sets for inverse-kinematic branches; joint limits and collisions further clip the feasible regions. A global planner must understand this structure, not only run a local numerical inverse.</p><div class="l5-box red l5-big-equation">\[\boxed{\text{Which IK branches occupy each connected region of configuration space?}}\]</div><p class="subtitle" style="text-align:center">Next: IK-solution distribution, aspects, and cuspidal properties</p></div></div>
   </section>
 
 </main>
 <script src="../js/deck/nav-runtime.js"></script>
-<script type="module" src="../js/main.js?v=20260819-40"></script>
+<script type="module" src="../js/main.js?v=20260831-1"></script>
 </body>
 </html>

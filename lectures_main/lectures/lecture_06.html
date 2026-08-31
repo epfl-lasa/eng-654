@@ -26,13 +26,13 @@
       <p class="eyebrow">ENG-654 · Lecture 06</p>
       <h1 class="course-title">Cuspidality</h1>
       <p class="subtitle">How inverse-kinematic solutions are connected across joint space</p>
-      <p class="lecture-promise">Running models: the two uploaded custom 3R robots, the custom 6R robot, the PUMA 560, and the FANUC CRX-10iA/L.</p>
+      <p class="lecture-promise">From singularity curves to IK-solution distribution, aspects, and cuspidality—with 3R, wrist-partitioned 6R, PUMA, and FANUC examples.</p>
     </div>
   </section>
 
   <section class="slide l6-slide">
     <p class="slide-kicker">Where the previous lectures leave us</p>
-    <h2 class="slide-title">We can find IK solutions and detect singularities</h2>
+    <h2 class="slide-title">Singularities organize the global distribution of IK solutions</h2>
     <div class="l6-story-flow reveal-children">
       <div><b>IK</b><span>Which configurations produce one pose?</span></div><i>→</i>
       <div><b>Jacobian</b><span>Where does local mobility drop?</span></div><i>→</i>
@@ -45,7 +45,7 @@
     <p class="slide-kicker">Begin with the smallest example</p>
     <h2 class="slide-title">A 2R robot separates its two IK branches with singular lines</h2>
     <p class="slide-subtitle">The determinant depends only on the relative elbow angle. Move the target or either joint and compare the two maps.</p>
-    <div class="demo-prompt"><strong>Try it:</strong> drag in either plot. Watch elbow-up and elbow-down meet only at the workspace boundary.</div>
+    <div class="demo-prompt"><strong>Explore:</strong> drag in either plot and observe that elbow-up and elbow-down meet only at a singular workspace boundary.</div>
     <div class="layout-full" data-cusp-lab="two-r"></div>
   </section>
 
@@ -53,11 +53,11 @@
     <p class="slide-kicker">Name the regions</p>
     <h2 class="slide-title">Aspects are maximal connected singularity-free regions</h2>
     <div class="layout-two-column">
-      <div class="layout-center"><div class="l6-big-equation">\[\mathcal A_i\text{ is a connected component of }\mathcal C\setminus\mathcal S,\qquad \mathcal S=\{\mathbf q:\det J(\mathbf q)=0\}.\]</div></div>
+      <div class="layout-center"><div><div class="l6-big-equation">\[\mathcal A_i\text{ is a connected component of }\mathcal C\setminus\mathcal S,\qquad \mathcal S=\{\mathbf q:\operatorname{rank}J(\mathbf q)&lt;r_{\max}\}.\]</div><p>For a square, generically full-rank Jacobian this reduces to \(\det J=0\). For rectangular Jacobians, use rank or singular values instead.</p></div></div>
       <div class="l6-stack reveal-children">
         <div class="l6-card red"><h3>Inside one aspect</h3><p>Every pair of configurations can be joined by at least one singularity-free joint path.</p></div>
         <div class="l6-card"><h3>Across aspects</h3><p>Every connecting joint path intersects the singularity set.</p></div>
-        <div class="l6-card green"><h3>Important distinction</h3><p>The sign of \(\det J\) is useful, but disconnected regions can share the same sign.</p></div>
+        <div class="l6-card green"><h3>Feasible components</h3><p>The sign of \(\det J\) is only a diagnostic. Joint limits and collisions can further split one mathematical aspect into disconnected feasible regions.</p></div>
       </div>
     </div>
   </section>
@@ -73,30 +73,30 @@
   </section>
 
   <section class="slide l6-slide">
-    <p class="slide-kicker">Reduce the 3R picture</p>
-    <h2 class="slide-title">The determinant and cylindrical coordinates both eliminate \(q_1\)</h2>
+    <p class="slide-kicker">Idealized 3R reduction</p>
+    <h2 class="slide-title">The atlas determinant and cylindrical coordinates both eliminate \(q_1\)</h2>
     <div class="layout-two-column">
-      <div class="l6-card red"><h3>Position determinant</h3><div class="l6-big-equation">\[\det J_p=\frac34(3c_3+4)\left[c_2(c_3-2s_3)-s_3\right]\]</div><p>The expression contains \(q_2\) and \(q_3\), but not \(q_1\). A zero in the square plot therefore represents a complete circle of singular configurations parameterized by \(q_1\).</p></div>
+      <div class="l6-card red"><h3>Offset-atlas determinant</h3><div class="l6-big-equation">\[\det J_p=\frac34(3c_3+4)\left[c_2(c_3-2s_3)-s_3\right]\]</div><p>For the idealized offset D–H preset used in the atlas, the expression contains \(q_2\) and \(q_3\), but not \(q_1\). A plotted zero therefore represents a circle of singular configurations parameterized by \(q_1\).</p></div>
       <div class="l6-card green"><h3>Meridian reduction</h3><div class="l6-big-equation">\[\begin{bmatrix}x\\y\end{bmatrix}=R(q_1)\begin{bmatrix}u(q_2,q_3)\\v(q_2,q_3)\end{bmatrix}\]</div><div class="l6-big-equation">\[\rho^2=x^2+y^2=u^2+v^2,\qquad z=w(q_2,q_3)\]</div><p>The rotation \(R(q_1)\) disappears from \(\rho\). We may set \(y=0\), use \(x=\rho\), and study the \((\rho,z)\) slice without losing singularity information.</p></div>
     </div>
-    <div class="l6-takeaway">Joint-space singular curves live in \((q_2,q_3)\); their forward-kinematic images are critical curves in \((\rho,z)\).</div>
+    <div class="l6-takeaway">For this axisymmetric teaching model, joint-space singular curves live in \((q_2,q_3)\); their forward-kinematic images are critical curves in \((\rho,z)\).</div>
   </section>
 
   <section class="slide l6-slide">
-    <p class="slide-kicker">Compare the uploaded 3R pair</p>
-    <h2 class="slide-title">One shoulder offset changes the global IK structure</h2>
+    <p class="slide-kicker">Course URDF pair</p>
+    <h2 class="slide-title">Compare the exact course models before studying an idealized atlas</h2>
     <div class="l6-model-pair">
-      <article><div data-cusp-model="3r-zero" data-hide-badge></div><h3><code>custom_3R_new_0.urdf</code></h3><p>\(a_1=0\) · noncuspidal</p></article>
-      <article><div data-cusp-model="3r-offset" data-hide-badge></div><h3><code>custom_3R_new.urdf</code></h3><p>\(a_1=1\) · cuspidal</p></article>
+      <article><div data-cusp-model="3r-zero" data-hide-badge></div><h3><code>custom_3R_new_0.urdf</code></h3><p>intersecting-axis course example · noncuspidal</p></article>
+      <article><div data-cusp-model="3r-offset" data-hide-badge></div><h3><code>custom_3R_new.urdf</code></h3><p>offset-axis course example · cuspidal</p></article>
     </div>
-    <div class="l6-takeaway">Both renderings load their own uploaded STL link set. The offset model uses <code>link_1.stl</code>; the zero-offset model uses <code>link_1_0.stl</code>.</div>
+    <div class="l6-takeaway">These viewers load the exact URDF kinematics and their visual meshes. The next atlas uses separate idealized D–H presets to isolate the effect of \(a_1\); its metric geometry must not be inferred from these renderings.</div>
   </section>
 
   <section class="slide interactive-slide l6-slide">
     <p class="slide-kicker">Interactive atlas</p>
-    <h2 class="slide-title">Change the geometry, then click a workspace point</h2>
-    <p class="slide-subtitle">The left plot shows \(D(q_2,q_3)=0\). The right plot maps those singular configurations to critical values in the \((\rho,z)\) slice.</p>
-    <div class="demo-prompt"><strong>Try it:</strong> switch between the two uploaded presets, click between critical curves, and inspect every IK solution in joint space.</div>
+    <h2 class="slide-title">Use idealized D–H presets to connect singular curves and IK counts</h2>
+    <p class="slide-subtitle">The left plot shows \(D(q_2,q_3)=0\); the right maps those configurations to critical values in \((\rho,z)\). These presets are analytical teaching models, not the exact URDFs shown previously.</p>
+    <div class="demo-prompt"><strong>Explore:</strong> switch the zero-offset and offset D–H presets, select workspace regions between critical curves, and compare their regular IK counts.</div>
     <div class="layout-full" data-cusp-lab="atlas-3r"></div>
   </section>
 
@@ -114,21 +114,21 @@
   <section class="slide interactive-slide l6-slide">
     <p class="slide-kicker">Nonsingular change of solution</p>
     <h2 class="slide-title">Build a joint path and watch its closed workspace loop</h2>
-    <p class="slide-subtitle">This laboratory uses <code>custom_3R_new.urdf</code> and its STL meshes. A faded robot preserves the starting configuration.</p>
-    <div class="demo-prompt"><strong>Try it:</strong> click a workspace point, select two IKs in the same aspect, build the path, then play it. A direct segment is used when safe; otherwise the planner stays inside the aspect.</div>
+    <p class="slide-subtitle">This laboratory uses the exact <code>custom_3R_new.urdf</code> kinematics and its visual meshes. A faded robot marks the starting configuration.</p>
+    <div class="demo-prompt"><strong>Explore:</strong> select a workspace point and two IKs in the same computed aspect, build a path, and verify that the determinant remains nonzero along the sampled motion.</div>
     <div class="layout-full" data-cusp-lab="nscs-3r"></div>
   </section>
 
   <section class="slide l6-slide">
-    <p class="slide-kicker">What the animation proves</p>
-    <h2 class="slide-title">The configuration changes branch, yet the loop never touches a singularity</h2>
+    <p class="slide-kicker">Interpret the sampled path</p>
+    <h2 class="slide-title">A validated nonsingular path demonstrates a change of IK solution</h2>
     <div class="l6-story-flow reveal-children">
       <div><b>Start</b><span>Choose one regular IK solution.</span></div><i>→</i>
       <div><b>Move</b><span>Follow a path contained in one aspect.</span></div><i>→</i>
       <div><b>Return</b><span>The tool returns to the same workspace point at another IK.</span></div>
     </div>
     <div class="l6-big-equation">\[\det J_p(\gamma(s))\ne0\quad\forall s\in[0,1],\qquad f(\gamma(0))=f(\gamma(1)).\]</div>
-    <div class="l6-takeaway">The ghost and final robot coincide at the tool, not in joint configuration. That is a nonsingular change of solution.</div>
+    <div class="l6-takeaway">The ghost and final robot coincide at the tool, not in joint configuration. The sampled animation supports a nonsingular change of solution; a formal guarantee also requires a continuous lower bound away from rank loss along the whole path.</div>
   </section>
 
   <section class="slide l6-slide">
@@ -136,21 +136,21 @@
     <h2 class="slide-title">A cusp is a triple root of the inverse-kinematic polynomial</h2>
     <div class="layout-two-column">
       <div class="derivation-stack reveal-children">
-        <div class="derivation-row"><span class="tag">1</span><p>Use \(t=\tan(q_3/2)\) to eliminate trigonometric terms and obtain \(P(t;\rho,z)=0\).</p></div>
-        <div class="derivation-row"><span class="tag">2</span><p>Locate repeated roots with \(P=0\) and \(P'=0\). These are critical values.</p></div>
+        <div class="derivation-row"><span class="tag">1</span><p>Use \(t=\tan(q_3/2)\) to eliminate trigonometric terms and obtain \(P(t;\rho,z)=0\). Treat \(q_3=\pi\), represented by \(t=\infty\), in a second chart.</p></div>
+        <div class="derivation-row"><span class="tag">2</span><p>Locate repeated-root candidates with \(P=0\) and \(P'=0\); their \((\rho,z)\) projections are candidate critical values.</p></div>
         <div class="derivation-row"><span class="tag">3</span><p>Impose \(P''=0\). A root of multiplicity at least three is a cusp candidate.</p></div>
-        <div class="derivation-row"><span class="tag">4</span><p>Reject higher degeneracy and nonreal configurations by checking \(P'''\ne0\), real \(t\), and the original kinematics.</p></div>
+        <div class="derivation-row"><span class="tag">4</span><p>Reject higher degeneracy, nonreal configurations, and roots introduced by cleared denominators: check \(P'''\ne0\) and substitute every candidate into the original kinematics.</p></div>
       </div>
       <div class="l6-card red layout-center"><div class="l6-big-equation">\[\boxed{P(t)=0,\qquad \frac{\partial P}{\partial t}=0,\qquad \frac{\partial^2P}{\partial t^2}=0}\]</div></div>
     </div>
   </section>
 
   <section class="slide l6-slide">
-    <p class="slide-kicker">A coordinate-free numerical test</p>
-    <h2 class="slide-title">The singular curve has a tangent that collapses under the workspace map</h2>
+    <p class="slide-kicker">Reduced-coordinate differential test</p>
+    <h2 class="slide-title">At a regular point of the singular curve, its tangent collapses under the reduced workspace map</h2>
     <div class="layout-60-40">
-      <div class="layout-center"><div><div class="l6-big-equation">\[g(q_2,q_3)=\begin{bmatrix}\rho\\z\end{bmatrix},\quad D=\det J_p,\quad \boldsymbol\tau=\begin{bmatrix}D_{q_3}\\-D_{q_2}\end{bmatrix}\]</div><div class="l6-big-equation">\[\boxed{D=0,\qquad J_g\boldsymbol\tau=\mathbf0}\]</div><p>Solve numerically, map each candidate through forward kinematics, then confirm the triple-root conditions.</p></div></div>
-      <div class="l6-card red"><h3>Offset 3R result</h3><p>For \(a=(1,2,1.5)\), \(d=(1,1,0)\), and \(\alpha=(\pi/2,\pi/2,0)\):</p><table class="l6-cusp-table"><thead><tr><th>\(q_2\)</th><th>\(q_3\)</th><th>\(\rho\)</th><th>\(z\)</th></tr></thead><tbody><tr><td>−129.783°</td><td>66.385°</td><td>2.4656</td><td>−0.9987</td></tr><tr><td>−78.596°</td><td>−171.935°</td><td>1.3555</td><td>0.4953</td></tr><tr><td>78.596°</td><td>−171.935°</td><td>1.3555</td><td>1.5047</td></tr><tr><td>129.783°</td><td>66.385°</td><td>2.4656</td><td>2.9987</td></tr></tbody></table></div>
+      <div class="layout-center"><div><div class="l6-big-equation">\[g(q_2,q_3)=\begin{bmatrix}\rho\\z\end{bmatrix},\quad D=\det J_p,\quad \boldsymbol\tau=\begin{bmatrix}D_{q_3}\\-D_{q_2}\end{bmatrix}\]</div><div class="l6-big-equation">\[\boxed{D=0,\qquad \nabla D\ne\mathbf0,\qquad J_g\boldsymbol\tau=\mathbf0}\]</div><p>This is a test in the chosen \((q_2,q_3)\) reduction, not a coordinate-free formula. Confirm every numerical candidate with the triple-root conditions.</p></div></div>
+      <div class="l6-card red"><h3>Offset-atlas result</h3><p>For \(a=(1,2,1.5)\), \(d=(1,1,0)\), and \(\alpha=(\pi/2,\pi/2,0)\):</p><table class="l6-cusp-table"><thead><tr><th>\(q_2\)</th><th>\(q_3\)</th><th>\(\rho\)</th><th>\(z\)</th></tr></thead><tbody><tr><td>−129.783°</td><td>66.385°</td><td>2.4656</td><td>−0.9987</td></tr><tr><td>−78.596°</td><td>−171.935°</td><td>1.3555</td><td>0.4953</td></tr><tr><td>78.596°</td><td>−171.935°</td><td>1.3555</td><td>1.5047</td></tr><tr><td>129.783°</td><td>66.385°</td><td>2.4656</td><td>2.9987</td></tr></tbody></table></div>
     </div>
     <div class="l6-takeaway">The polynomial test identifies multiplicity; the tangent test explains the geometry visible in the atlas.</div>
   </section>
@@ -164,25 +164,25 @@
 
   <section class="slide l6-slide">
     <p class="slide-kicker">Module-level conclusion</p>
-    <h2 class="slide-title">A spherical wrist is noncuspidal</h2>
+    <h2 class="slide-title">The spherical-wrist module is noncuspidal</h2>
     <div class="layout-two-column">
       <div class="l6-card"><h3>Two wrist solutions</h3><div class="l6-big-equation">\[(q_4,q_5,q_6)\quad\text{and}\quad(q_4+\pi,-q_5,q_6+\pi)\]</div></div>
       <div class="l6-card red"><h3>The separator</h3><p>Any continuous change between the flips changes the sign of \(\sin q_5\). It must therefore cross \(q_5=0\) or \(q_5=\pi\), where axes 4 and 6 align.</p></div>
     </div>
-    <div class="l6-takeaway">For a wrist-partitioned 6R robot, cuspidality is inherited from the positional 3R subchain.</div>
+    <div class="l6-takeaway">This conclusion applies to the wrist module. For an ideal wrist-partitioned 6R chain, whole-robot cuspidality is then governed by the positional 3R subchain, subject to the assumed decoupling and unconstrained configuration space.</div>
   </section>
 
   <section class="slide interactive-slide l6-slide">
     <p class="slide-kicker">Cuspidal 6R example</p>
     <h2 class="slide-title"><code>custom_6R_new.urdf</code> inherits its cuspidality from joints 1 to 3</h2>
-    <p class="slide-subtitle">Orientation is fixed and the operational point is the wrist center. A click requests \(O_w=(x,y,z)=(\rho,0,z)\), solves the full pose IK, and exposes every recovered branch in all three views.</p>
+    <p class="slide-subtitle">Orientation is fixed and the operational point is the wrist center. Select \((\rho,z)\) to solve \(O_w=(\rho,0,z)\), then compare the recovered numerical IK candidates in all three views.</p>
     <div class="layout-full" data-cusp-lab="custom-6r"></div>
   </section>
 
   <section class="slide interactive-slide l6-slide">
     <p class="slide-kicker">Noncuspidal positional subchain</p>
     <h2 class="slide-title">Explore the PUMA wrist-center singularities before classifying its IKs</h2>
-    <p class="slide-subtitle">The tool z-axis is fixed vertically downward and the operational point is the wrist center. Click \((\rho,z)\) to request \(O_w=(\rho,0,z)\), then toggle the complete IK solutions in all three views.</p>
+    <p class="slide-subtitle">The tool z-axis is fixed vertically downward and the operational point is the wrist center. Select \((\rho,z)\) to solve \(O_w=(\rho,0,z)\), then compare the recovered numerical IK candidates in all three views.</p>
     <div class="layout-full" data-cusp-lab="puma-6r"></div>
   </section>
 
@@ -191,7 +191,7 @@
     <h2 class="slide-title">The PUMA 560 has three binary singularity separators</h2>
     <div class="layout-40-60">
       <div data-serial-ik="puma-solutions"></div>
-      <div><div class="l6-big-equation">\[\det J=K\,f_S(\mathbf q)\,f_E(\mathbf q)\,f_W(\mathbf q)\]</div><div class="l6-factor-row"><span class="s">shoulder</span><span class="e">elbow</span><span class="w">wrist</span></div><p>Crossing a factor changes one binary posture label. Staying nonsingular preserves all three labels.</p></div>
+      <div><div class="l6-big-equation">\[\det J=K\,f_S(\mathbf q)\,f_E(\mathbf q)\,f_W(\mathbf q)\]</div><div class="l6-factor-row"><span class="s">shoulder</span><span class="e">elbow</span><span class="w">wrist</span></div><p>Here \(S\) records the shoulder side, \(E\) the elbow posture, and \(W\) the wrist flip. Crossing the corresponding separator changes that sign; a nonsingular path preserves it.</p></div>
     </div>
     <div class="l6-takeaway">This three-factor structure supports a global shoulder, elbow, wrist classification for the eight regular IK solutions.</div>
   </section>
@@ -203,7 +203,7 @@
       <thead><tr><th>IK</th><th>\(q_1\)</th><th>\(q_2\)</th><th>\(q_3\)</th><th>\(q_4\)</th><th>\(q_5\)</th><th>\(q_6\)</th></tr></thead>
       <tbody><tr><td>1</td><td>30.000</td><td>−35.000</td><td>45.000</td><td>−140.000</td><td>50.000</td><td>−120.000</td></tr><tr><td>2</td><td>30.000</td><td>−35.000</td><td>45.000</td><td>40.000</td><td>−50.000</td><td>60.000</td></tr><tr><td>3</td><td>30.000</td><td>−77.351</td><td>129.617</td><td>−90.226</td><td>29.499</td><td>178.601</td></tr><tr><td>4</td><td>30.000</td><td>−77.351</td><td>129.617</td><td>89.774</td><td>−29.499</td><td>−1.399</td></tr><tr><td>5</td><td>170.431</td><td>−139.617</td><td>129.617</td><td>−4.609</td><td>47.947</td><td>−111.487</td></tr><tr><td>6</td><td>170.431</td><td>−139.617</td><td>129.617</td><td>175.391</td><td>−47.947</td><td>68.513</td></tr><tr><td>7</td><td>170.431</td><td>−97.266</td><td>45.000</td><td>−31.539</td><td>6.549</td><td>−83.205</td></tr><tr><td>8</td><td>170.431</td><td>−97.266</td><td>45.000</td><td>148.461</td><td>−6.549</td><td>96.795</td></tr></tbody>
     </table>
-    <div class="l6-takeaway">All values are in degrees. Every row reproduces the same target pose before the uploaded URDF joint limits are applied.</div>
+    <div class="l6-takeaway">All values are in degrees. Every row reproduces the same target pose in the stated model before joint-limit and collision feasibility are tested.</div>
   </section>
 
   <section class="slide l6-slide">
@@ -216,7 +216,7 @@
       <div>5</div><div>−</div><div>+</div><div>+</div><div>6</div><div>−</div><div>+</div><div>−</div>
       <div>7</div><div>−</div><div>−</div><div>+</div><div>8</div><div>−</div><div>−</div><div>−</div>
     </div>
-    <div class="l6-takeaway">Three independent binary choices produce \(2^3=8\) labels. No two regular solutions share a label, so no nonsingular change of solution is possible.</div>
+    <div class="l6-takeaway">For this factorized PUMA model, three independent binary separators produce \(2^3=8\) labels. The separator argument—not the labels alone—establishes that changing any posture sign requires a singular crossing.</div>
   </section>
 
   <section class="slide l6-slide">
@@ -231,8 +231,8 @@
 
   <section class="slide l6-slide">
     <p class="slide-kicker">A harder industrial geometry</p>
-    <h2 class="slide-title">The FANUC CRX-10iA/L exposes sixteen IK solutions</h2>
-    <p class="slide-subtitle">The selector reads the uploaded sixteen-solution CSV. Its standard D-H angles are mapped to the uploaded CRX URDF convention, and every row reproduces one fixed target pose.</p>
+    <h2 class="slide-title">One FANUC target provides sixteen regular IK candidates</h2>
+    <p class="slide-subtitle">The supplied solution set is mapped from its standard D–H angle convention into the course CRX model. Matching one fixed target demonstrates the solution count; it does not prove how those solutions connect.</p>
     <div class="layout-full" data-cusp-lab="fanuc-16"></div>
   </section>
 
@@ -242,7 +242,7 @@
     <div class="l6-story-flow reveal-children">
       <div><b>Enumerate</b><span>Find all IKs for the start and goal poses.</span></div><i>→</i>
       <div><b>Connect</b><span>Track solution sheets while monitoring singularity distance.</span></div><i>→</i>
-      <div><b>Plan</b><span>Search within the true aspect structure and joint limits.</span></div>
+      <div><b>Plan</b><span>Search within feasible components after limits and collision constraints.</span></div>
     </div>
     <div class="l6-takeaway">For coupled 6R geometries, reliable planning needs continuation or an explicit configuration-space roadmap.</div>
   </section>
@@ -254,13 +254,13 @@
       <div class="derivation-row"><span class="tag">1</span><p>Singularities partition joint space into aspects.</p></div>
       <div class="derivation-row"><span class="tag">2</span><p>A cuspidal robot has distinct IK solutions of one pose inside the same aspect.</p></div>
       <div class="derivation-row"><span class="tag">3</span><p>For the wrist-partitioned custom 6R robot, the positional 3R subchain decides cuspidality.</p></div>
-      <div class="derivation-row"><span class="tag">4</span><p>The PUMA admits an eight-branch SEW classification; the sixteen-solution FANUC example does not.</p></div>
+      <div class="derivation-row"><span class="tag">4</span><p>The PUMA’s factorized separators support SEW labels; a sixteen-root FANUC pose is evidence of a richer inverse distribution, not a connectivity proof.</p></div>
     </div>
-    <div class="l6-takeaway"><strong>Planning question:</strong> not only “which IK reaches the pose?” but “which IK lies in the component my robot can safely reach?”</div>
+    <div class="l6-takeaway"><strong>Bridge to Lecture 07:</strong> not only “which IK reaches the pose?” but “which IK lies in the component my robot can safely reach?” We now lift complete workspace paths through those components.</div>
   </section>
 
 </main>
 <script src="../js/deck/nav-runtime.js"></script>
-<script type="module" src="../js/main.js?v=20260819-60"></script>
+<script type="module" src="../js/main.js?v=20260831-1"></script>
 </body>
 </html>
