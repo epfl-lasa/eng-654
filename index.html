@@ -20,7 +20,8 @@
             <a href="#instructors">Instructors</a>
             <a href="#content">Content</a>
             <a href="#lectures">Lectures</a>
-            <a href="#simulations">Simulations</a>
+            <a href="#exercises">Exercises</a>
+            <a href="faqs.html">FAQs</a>
             <a href="#resources">Resources</a>
         </nav>
     </header>
@@ -189,8 +190,9 @@
                 <div>
                     <h2>Eight lectures, from foundations to planning</h2>
                     <p class="section-note">
-                        Follow the complete course sequence through interactive lecture decks covering robot models,
-                        analytical kinematics, singularities, and motion planning.
+                        The lecture series develops the theoretical foundations required to model robot kinematics,
+                        derive and analyse inverse-kinematic solutions, characterise singularities, and formulate
+                        kinematically feasible motion-planning problems.
                     </p>
                     <a class="lecture-index-link" href="lectures_main/">
                         Browse the lecture library →
@@ -202,6 +204,7 @@
                 <a class="module-card" href="lectures_main/lectures/lecture_01.html">
                     <span class="module-number">01</span>
                     <div>
+                        <p class="module-schedule"><time datetime="2026-09-14T08:15">14 September · 08h15–09h00</time></p>
                         <h3>Frames, transformations &amp; DH modelling</h3>
                         <p>Build the coordinate-frame and transformation foundations used to model serial robots.</p>
                     </div>
@@ -211,6 +214,7 @@
                 <a class="module-card" href="lectures_main/lectures/lecture_02.html">
                     <span class="module-number">02</span>
                     <div>
+                        <p class="module-schedule"><time datetime="2026-09-14T09:15">14 September · 09h15–10h00</time></p>
                         <h3>Product of exponentials &amp; URDF</h3>
                         <p>Connect screw-based kinematic models with the structure of practical URDF robot models.</p>
                     </div>
@@ -220,6 +224,7 @@
                 <a class="module-card" href="lectures_main/lectures/lecture_03.html">
                     <span class="module-number">03</span>
                     <div>
+                        <p class="module-schedule"><time datetime="2026-09-14T14:15">14 September · 14h15–15h00</time></p>
                         <h3>Analytical IK of a 3R robot</h3>
                         <p>Derive and interpret the multiple inverse-kinematic solutions of a representative robot.</p>
                     </div>
@@ -229,6 +234,7 @@
                 <a class="module-card" href="lectures_main/lectures/lecture_04.html">
                     <span class="module-number">04</span>
                     <div>
+                        <p class="module-schedule"><time datetime="2026-09-14T15:15">14 September · 15h15–16h00</time></p>
                         <h3>Wrist-partitioned 6R &amp; 7R IK</h3>
                         <p>Extend analytical inverse kinematics to industrial and redundant manipulators.</p>
                     </div>
@@ -238,6 +244,7 @@
                 <a class="module-card" href="lectures_main/lectures/lecture_05.html">
                     <span class="module-number">05</span>
                     <div>
+                        <p class="module-schedule"><time datetime="2026-09-16T08:15">16 September · 08h15–09h00</time></p>
                         <h3>Jacobian-based singularity analysis</h3>
                         <p>Use Jacobians to identify, classify, and understand singular configurations.</p>
                     </div>
@@ -247,6 +254,7 @@
                 <a class="module-card" href="lectures_main/lectures/lecture_06.html">
                     <span class="module-number">06</span>
                     <div>
+                        <p class="module-schedule"><time datetime="2026-09-16T09:15">16 September · 09h15–10h00</time></p>
                         <h3>IKS distribution &amp; cuspidality</h3>
                         <p>Explore aspects, inverse-kinematic solution distributions, and cuspidal properties.</p>
                     </div>
@@ -256,6 +264,7 @@
                 <a class="module-card" href="lectures_main/lectures/lecture_07.html">
                     <span class="module-number">07</span>
                     <div>
+                        <p class="module-schedule"><time datetime="2026-09-16T14:15">16 September · 14h15–15h00</time></p>
                         <h3>Joint-space &amp; workspace planning</h3>
                         <p>Compare planning representations and develop trajectories under kinematic constraints.</p>
                     </div>
@@ -265,6 +274,7 @@
                 <a class="module-card" href="lectures_main/lectures/lecture_08.html">
                     <span class="module-number">08</span>
                     <div>
+                        <p class="module-schedule"><time datetime="2026-09-16T15:15">16 September · 15h15–16h00</time></p>
                         <h3>Planning for complex robots</h3>
                         <p>Plan motion for cuspidal and redundant robots while accounting for their geometry.</p>
                     </div>
@@ -274,15 +284,15 @@
         </section>
 
 
-        <section class="simulation-band" id="simulations">
+        <section class="simulation-band" id="exercises">
             <div class="section-heading">
-                <p class="eyebrow">Interactive Laboratory</p>
+                <p class="eyebrow">Exercises</p>
                 <div>
-                    <h2>Five modules, one robot kinematics workflow</h2>
+                    <h2>Five exercises, one robot kinematics workflow</h2>
                     <p class="section-note">
-                        The simulation modules follow the progression of the course: first read and inspect a robot,
-                        then command it, compare inverse-kinematic solutions, explore redundancy, and finally execute
-                        complete motion-planning trajectories.
+                        The exercises develop practical proficiency in robot-model inspection, forward and inverse
+                        kinematics, redundancy analysis, and the execution and evaluation of kinematically feasible
+                        motion-planning trajectories.
                     </p>
                 </div>
             </div>
@@ -291,6 +301,7 @@
                 <a class="module-card" href="modules/module1/">
                     <span class="module-number">01</span>
                     <div>
+                        <p class="module-schedule"><time datetime="2026-09-14T10:15">14 September · 10h15–12h00</time></p>
                         <h3>Robot visualization</h3>
                         <p>
                             Load a URDF and its geometry, inspect the robot structure, and visualize link, joint,
@@ -298,12 +309,13 @@
                             model before doing any kinematic computation.
                         </p>
                     </div>
-                    <span class="module-action">Open module →</span>
+                    <span class="module-action">Open exercise →</span>
                 </a>
 
                 <a class="module-card" href="modules/module2/">
                     <span class="module-number">02</span>
                     <div>
+                        <p class="module-schedule"><time datetime="2026-09-14T10:15">14 September · 10h15–12h00</time></p>
                         <h3>Joint commands &amp; forward kinematics</h3>
                         <p>
                             Command the robot through sliders, CSV trajectories, or the Python WebSocket interface,
@@ -311,12 +323,13 @@
                             to forward kinematics and robot motion.
                         </p>
                     </div>
-                    <span class="module-action">Open module →</span>
+                    <span class="module-action">Open exercise →</span>
                 </a>
 
                 <a class="module-card" href="modules/module3/">
                     <span class="module-number">03</span>
                     <div>
+                        <p class="module-schedule"><time datetime="2026-09-14T16:15">14 September · 16h15–18h00</time></p>
                         <h3>Inverse kinematics</h3>
                         <p>
                             Prescribe an end-effector pose and compare multiple inverse-kinematic configurations of
@@ -324,12 +337,13 @@
                             of inverse kinematics visible rather than merely numerical.
                         </p>
                     </div>
-                    <span class="module-action">Open module →</span>
+                    <span class="module-action">Open exercise →</span>
                 </a>
 
                 <a class="module-card" href="modules/module4/">
                     <span class="module-number">04</span>
                     <div>
+                        <p class="module-schedule"><time datetime="2026-09-16T10:15">16 September · 10h15–12h00</time></p>
                         <h3>Redundancy &amp; self-motion</h3>
                         <p>
                             Capture a fixed end-effector pose and vary the redundancy parameter while the remaining
@@ -337,12 +351,13 @@
                             obstacle with live clearance make null-space motion tangible.
                         </p>
                     </div>
-                    <span class="module-action">Open module →</span>
+                    <span class="module-action">Open exercise →</span>
                 </a>
 
                 <a class="module-card" href="modules/module5/">
                     <span class="module-number">05</span>
                     <div>
+                        <p class="module-schedule"><time datetime="2026-09-16T16:15">16 September · 16h15–18h00</time></p>
                         <h3>Motion planning &amp; execution</h3>
                         <p>
                             Load a desired workspace pose path and a seven-joint trajectory, then animate the robot
@@ -350,7 +365,7 @@
                             by the joint motion.
                         </p>
                     </div>
-                    <span class="module-action">Open module →</span>
+                    <span class="module-action">Open exercise →</span>
                 </a>
             </div>
         </section>

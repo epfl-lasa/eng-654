@@ -562,7 +562,7 @@ dd {
     .nav-links {
         width: 100%;
         display: grid;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         justify-content: stretch;
         overflow-x: visible;
     }
@@ -609,7 +609,181 @@ dd {
 
 
 /* -------------------------------------------------------------------------- */
-/* Interactive simulation modules                                             */
+/* Frequently asked questions                                                 */
+/* -------------------------------------------------------------------------- */
+
+.faq-hero {
+    min-height: 34rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: clamp(3rem, 7vw, 7rem) clamp(1rem, 4vw, 4rem);
+    border-bottom: 1px solid var(--white);
+    background: var(--black);
+    color: var(--white);
+}
+
+.faq-hero h1 {
+    max-width: 12ch;
+}
+
+.faq-hero > p:last-child {
+    max-width: 48rem;
+    margin: 2rem 0 0;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: clamp(1.05rem, 1.5vw, 1.28rem);
+    line-height: 1.62;
+}
+
+.faq-section,
+.faq-contact {
+    padding: clamp(3rem, 7vw, 7rem) clamp(1rem, 4vw, 4rem);
+    border-bottom: 1px solid var(--black);
+}
+
+.faq-section-dark {
+    border-color: var(--white);
+    background: var(--black);
+    color: var(--white);
+}
+
+.faq-section-dark .section-note {
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.faq-list {
+    max-width: 76rem;
+    margin-left: auto;
+    border-top: 1px solid currentColor;
+}
+
+.faq-item {
+    border-bottom: 1px solid currentColor;
+}
+
+.faq-item summary {
+    position: relative;
+    padding: 1.5rem 3.5rem 1.5rem 0;
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--font-heading);
+    font-size: clamp(1.15rem, 2vw, 1.7rem);
+    font-weight: 900;
+    line-height: 1.15;
+}
+
+.faq-item summary::-webkit-details-marker {
+    display: none;
+}
+
+.faq-item summary::after {
+    content: "+";
+    position: absolute;
+    top: 50%;
+    right: 0.5rem;
+    color: var(--red);
+    font-family: var(--font-secondary);
+    font-size: 1.8rem;
+    font-weight: 500;
+    transform: translateY(-50%);
+}
+
+.faq-item[open] summary::after {
+    content: "−";
+}
+
+.faq-answer {
+    max-width: 62rem;
+    padding: 0 3.5rem 1.6rem 0;
+}
+
+.faq-answer p {
+    margin: 0;
+    color: rgba(0, 0, 0, 0.68);
+    font-size: 1.04rem;
+    line-height: 1.66;
+}
+
+.faq-section-dark .faq-answer p {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.schedule-table-wrap {
+    overflow-x: auto;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+.schedule-table {
+    width: 100%;
+    min-width: 34rem;
+    border-collapse: collapse;
+    color: var(--white);
+    text-align: left;
+}
+
+.schedule-table th,
+.schedule-table td {
+    padding: 0.85rem 1rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.schedule-table th:last-child,
+.schedule-table td:last-child {
+    border-right: 0;
+}
+
+.schedule-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.schedule-table th {
+    color: var(--red);
+    font-family: var(--font-secondary);
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.schedule-table td:first-child {
+    font-weight: 700;
+}
+
+.faq-contact {
+    border-color: var(--white);
+    background: var(--black);
+    color: var(--white);
+}
+
+.faq-contact h2 {
+    max-width: 14ch;
+}
+
+.faq-contact > p:not(.eyebrow) {
+    max-width: 42rem;
+    margin-bottom: 1.5rem;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+@media (max-width: 700px) {
+    .faq-page .nav-links {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .faq-hero {
+        min-height: 28rem;
+    }
+
+    .faq-answer {
+        padding-right: 0;
+    }
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* Lectures and interactive exercises                                         */
 /* -------------------------------------------------------------------------- */
 
 .simulation-band {
@@ -620,7 +794,7 @@ dd {
 }
 
 .simulation-band .section-note {
-    max-width: 54rem;
+    max-width: none;
     color: rgba(255, 255, 255, 0.68);
     line-height: 1.66;
 }
@@ -656,7 +830,7 @@ dd {
     min-height: 24rem;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 2rem;
     padding: clamp(1rem, 2vw, 1.6rem);
     color: var(--white);
@@ -690,6 +864,18 @@ dd {
     line-height: 1;
 }
 
+.module-card .module-schedule {
+    margin-bottom: 0.8rem;
+    color: var(--white);
+    font-family: var(--font-secondary);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.3;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
 .module-card p {
     margin: 0;
     color: rgba(255, 255, 255, 0.68);
@@ -702,6 +888,7 @@ dd {
 }
 
 .module-action {
+    margin-top: auto;
     padding-top: 1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.52);
     font-family: var(--font-secondary);
