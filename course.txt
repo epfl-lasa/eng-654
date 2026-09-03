@@ -1,0 +1,30 @@
+Also make another page called FAQs
+
+Here add certain Questions that students may ask and their answers?
+
+The details on the course is:
+1. It is a 4 credit course with 56 hours of contact hours
+2. The lectures will be of 32 hours split into 4 days
+3. The 24 hours will be a project done in group of 2
+4. The lectures will be split in 2, serial robots and parallel robots
+5. The Part I will be taught on 14th and 16th September
+6. the Part 2 will be taught on 22nd and 23rd September
+7. The timings of the course are: 
+Lecture 01: 08h15 to 09h00, 14 September
+Lecture 02: 09h15 to 10h00, 14 September
+Exercise 01 and 02: 10h15 to 12h00, 14 September
+Lecture 03: 14h15 to 15h00, 14 September
+Lecture 04: 15h15 to 16h00, 14 September
+Exercise 03: 16h15 to 18h00, 14 September
+Lecture 05: 08h15 to 09h00, 16 September
+Lecture 06: 09h15 to 10h00, 16 September
+Exercise 04: 10h15 to 12h00, 16 September
+Lecture 07: 14h15 to 15h00, 16 September
+Lecture 08: 15h15 to 16h00, 16 September
+Exercise 05: 16h15 to 18h00, 16 September
+
+8. The timings for the second week will be similar but exact details will be updated soon
+9. Contact durgesh.salunkhe@epfl.ch regarding any course details or queries
+10. It will be helpful if students bring their laptops with them.
+11. The exercises do not require any commercial software
+
