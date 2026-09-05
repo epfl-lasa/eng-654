@@ -1,0 +1,127 @@
+% Compile from this directory with: pdflatex project_18.tex (twice).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,urlcolor=epflred,linkcolor=epflred,
+  pdftitle={ENG-654 Project 18: Local versus Global Joint-Limit Avoidance on iiwa 7}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+\urlstyle{tt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 18}
+
+{\LARGE\bfseries Local versus Global Joint-Limit Avoidance on iiwa 7\par}
+
+\textbf{Format:} Group of two students; simulation-based project.\\
+\textbf{Course foundations:} Lecture 8; Exercise 4.
+
+\section*{Motivation}
+Null-space motion can improve a local joint-centering objective while
+missing a feasible route elsewhere in the redundant IK set. Comparing that
+local strategy with a global feasibility chart helps distinguish algorithmic
+limitations from actual restrictions imposed by the robot and the task.
+
+\section*{Task}
+\textbf{Overall objectives.} Compare local null-space joint centering with planning through a
+classified iiwa 7 IK chart, and explain success or failure through feasible
+self-motion intervals and their connections along the path.
+
+\begin{itemize}
+  \item \textbf{Establish one common problem.} Validate the iiwa model, limits,
+and complete pose path. Use one short path segment that approaches a joint
+limit and two admissible initial configurations, ensuring both methods are
+compared from the same initial configuration in each trial.
+
+  \item \textbf{Implement local joint centering.} Use the geometric Jacobian with
+a documented scaling and a projected gradient for
+$h(q)=\tfrac12\sum_i((q_i-q_{i,c})/r_i)^2$.
+Integrate small steps, correct the full-pose error, and recheck limits.
+Explain why quadratic centering is a preference, not a hard limit barrier.
+
+  \item \textbf{Build the global comparison chart.} Enumerate the supplied
+fixed-$q_3$ IK families on path-sample versus redundant-angle axes. Preserve
+branch labels, plot feasible intervals and failure reasons, and distinguish
+full-Jacobian rank loss from reduced-chart degeneracy.
+
+  \item \textbf{Plan under the same constraints.} Select a chart corridor from the
+same starting configuration, using joint centering and joint travel as
+documented costs. Validate intermediate transitions and apply the same
+pose, limit, and regularity tolerances used for the local method.
+
+  \item \textbf{Diagnose the difference.} Overlay both trajectories on the
+classification charts. Compare completion, minimum limit margin, travel,
+and pose error for the two initial states. Repeat the local method with
+one smaller integration step to distinguish discretization error from
+failure to discover another feasible corridor.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+Use one path segment, two initial configurations, and two local step
+sizes. Start with about 120 path samples and 120 redundancy angles and
+refine decisive intervals. Reuse the course IK and the chart construction
+from Exercise 4; a complete global optimizer is unnecessary. Equal results
+are acceptable when the explanation is supported by the feasibility maps.
+
+For every chart, keep pose validity, joint limits,
+full-Jacobian regularity, and reduced-chart regularity as separate diagnostics.
+The rectangular $6\times7$ Jacobian has no determinant. A feasible pixel is
+not a validated edge: re-solve intermediate prescribed poses and check joint
+continuity within limits. If collision checking is unavailable, state that
+feasibility is kinematic only; a clearance proxy is not a full collision test.
+
+\section*{Expected outcome}
+Understand the difference between instantaneous null-space freedom
+and global feasible connectivity. Deliver classified redundancy charts with
+trajectory overlays, matched comparisons, and an explanation of whether
+observed limitations arise from the strategy, numerical steps, or constraints.
+
+Submit reproducible code, model parameters and test data, the required plots,
+a concise 5--6-page report, and a short simulation demonstration. Explain
+both successful cases and failures; conclusions must follow the numerical
+and geometric evidence rather than an expected outcome.
+
+\section*{Resources}
+The KUKA LBR iiwa 7 URDF is
+\path{lectures_main/assets/models/iiwa7/iiwa7.urdf}; STL meshes are in that
+directory. The accompanying \path{iiwa7_free_joints.urdf} is a mathematical
+continuation model; apply physical limits separately. The course analytical
+IK model will be supplied; reuse it rather than deriving a general 7R solver.
+
+The course pose path is
+\path{lectures_main/assets/data/path/kuka_iiwa7_rectangle_workspace_path_500_quaternion.csv}.
+Its quaternion columns are \texttt{qw,qx,qy,qz}; normalize them and make their
+signs consistent before interpolation. The reference table
+\path{lectures_main/assets/data/null/iiwa7_IK_q3_030deg.csv}
+checks fixed-$q_3$ solutions only; it does not replace evaluation at other angles.
+Use the null-space derivation and feasibility-map demonstrations in Lecture 8.
+Choose a short segment or documented placement of the course path; a suitable
+joint-limit example can be supplied to keep scenario construction bounded.
+
+Use the lecture website to verify D--H parameters, visualize IKs and
+singularities, and simulate paths. All listed paths are relative to the
+repository root. Start the website following \path{lectures_main/README.md}.
+
+\section*{Workload and collaboration}
+Budget approximately 60 hours per student (120 person-hours per pair)
+for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
+Deduct any lectures or exercises included in those credits. Allocate roughly
+20 team-hours to model validation, 50 to the core work, 30 to experiments,
+and 20 to reporting. Reuse the specified IK and simulations. Share validation
+and interpretation even if modelling and implementation are divided between
+students. Hardware execution is outside scope.
+
+\end{document}

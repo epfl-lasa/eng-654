@@ -1,0 +1,127 @@
+% Compile from this directory with: pdflatex project_4.tex (twice).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,urlcolor=epflred,linkcolor=epflred,
+  pdftitle={ENG-654 Project 4: Joint Limits and IK Distribution in Orthogonal 3R Robots}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+\urlstyle{tt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 4}
+
+{\LARGE\bfseries Joint Limits and IK Distribution\\in Orthogonal 3R Robots\par}
+
+\textbf{Format:} Group of two students; simulation-based project.\\
+\textbf{Course foundations:} Lectures 3, 5--7; Exercises 1 and 3.
+
+\section*{Motivation}
+The mathematical workspace can overstate what a robot can execute. Joint
+limits remove some postures and can disconnect a region that was connected
+before those limits were imposed. Two target positions may each be reachable
+yet inaccessible from the same initial configuration without violating a limit
+or encountering a singularity.
+
+\section*{Task}
+\textbf{Overall objectives.} Compare how joint limits reshape the IK distribution and feasible
+configuration components of selected cuspidal and noncuspidal orthogonal 3R
+geometries.
+
+\begin{itemize}
+  \item \textbf{Establish two reference geometries.} Use the noncuspidal and cuspidal
+idealized Lecture 6 presets: $a=(a_1,2,1.5)$ with $a_1=0$ and $1$ respectively,
+$d=(1,1,0)$, and $\alpha=(\pi/2,\pi/2,0)$. Validate forward kinematics and the
+position Jacobian, and keep these models distinct from the exact custom URDF.
+
+  \item \textbf{Build the unconstrained maps.} Plot $\det J_p$ and its zero contours in
+the $(q_2,q_3)$ plane. Map the singular curves into $(\rho,z)$ and identify
+the two- and four-IK regions. Overlay the IK configurations of several targets
+and record which sampled singularity-free component contains each solution.
+
+  \item \textbf{Apply controlled limit boxes.} Compare the periodic unconstrained case
+with $q_2,q_3\in[-150^\circ,150^\circ]$ and with
+$q_2\in[-90^\circ,120^\circ]$, $q_3\in[-120^\circ,90^\circ]$.
+Keep $q_1$ unrestricted so that the meridian reduction remains meaningful.
+These are experimental limits, not manufacturer specifications.
+
+  \item \textbf{Classify feasible inverse solutions.} Retain the original mathematical
+IK count and separately count limit-admissible IKs, which may be one or three
+as well as two or four. Recompute sampled configuration components after
+clipping by limits. Do not connect opposite plot boundaries when that would
+cross a physical joint limit.
+
+  \item \textbf{Explain global accessibility.} For two diagnostic target pairs, compare
+pointwise reachability with accessibility from a selected initial component.
+Display component-labelled workspace coverage and validate one candidate
+connection where available. Refine ambiguous bottlenecks and explain the
+limitations of sampled connectivity claims.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+Study two geometries and the three stated limit settings, giving six
+comparable cases. Use the same workspace domain and color conventions for all
+cases. Report a counterexample to equating pointwise reachability with path
+accessibility if one is found; a carefully explained negative search is acceptable.
+Collision modeling is outside the core experiment.
+
+Use the position Jacobian $J_p$ for the 3R task.
+Confirm that the meridian reduction is valid for the selected model and
+operational point. Count distinct real IKs modulo periodicity, then filter
+joint limits separately. Identify two-/four-IK regions where present and
+explain any absent count rather than forcing both types into every map. Show both determinant values and the zero contour,
+and distinguish sampled connectivity from a proof. Refine the decisive
+region instead of claiming completeness from a coarse grid.
+
+\section*{Expected outcome}
+Distinguish mathematical IK multiplicity, limit-admissible solutions, and
+accessibility within one feasible component. Deliver reduced determinant plots,
+two-/four-IK reference maps, constrained IK-count maps, and a comparison of
+component-dependent workspace coverage.
+
+Submit reproducible code, model parameters and test data, the required plots,
+a concise 5--6-page report, and a short simulation demonstration. Explain
+both successful cases and failures; conclusions must follow the numerical
+and geometric evidence rather than an expected outcome.
+
+\section*{Resources}
+The idealized D--H atlas in Lecture 6 is a separate mathematical
+family, implemented in \path{lectures_main/js/viz/cuspidalityLecture.js}.
+Its dimensions and conventions must not be inferred from the custom\_3R STL
+renderings. Use the standard-D--H convention stated in the lectures.
+
+The exact custom\_3R is an orthogonal 3R robot with non-intersecting
+consecutive joint axes. Its URDF is
+\path{lectures_main/assets/models/custom_3R/custom_3R_new.urdf}; STL meshes are
+in the same directory. Use the lecture website to inspect axes and frames,
+verify D--H parameters, plot IKs, and animate configurations.
+Use the Lecture 3 IK method and Lecture 6 component visualizations; the exact
+custom model illustrates geometry while the stated presets define the analysis.
+
+Use the lecture website to verify D--H parameters, visualize IKs and
+singularities, and simulate paths. All listed paths are relative to the
+repository root. Start the website following \path{lectures_main/README.md}.
+
+\section*{Workload and collaboration}
+Budget approximately 60 hours per student (120 person-hours per pair)
+for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
+Deduct any lectures or exercises included in those credits. Allocate roughly
+20 team-hours to model validation, 50 to the core work, 30 to experiments,
+and 20 to reporting. Reuse the specified IK and simulations. Share validation
+and interpretation even if modelling and implementation are divided between
+students. Hardware execution is outside scope.
+
+\end{document}

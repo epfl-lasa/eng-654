@@ -1,0 +1,124 @@
+% Compile from this directory with: pdflatex project_16.tex (twice).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,urlcolor=epflred,linkcolor=epflred,
+  pdftitle={ENG-654 Project 16: Orientation-Dependent Connectivity on custom\_6R}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+\urlstyle{tt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 16}
+
+{\LARGE\bfseries Orientation-Dependent Connectivity on custom\_6R\par}
+
+\textbf{Format:} Group of two students; simulation-based project.\\
+\textbf{Course foundations:} Lectures 4--7; Exercises 2--3.
+
+\section*{Motivation}
+The visible spatial trace of a tool does not fully describe its task.
+For the same wrist-center curve, different orientation schedules can create
+different wrist singularities and feasible joint-space continuations. This
+project studies that dependence while holding the positioning problem fixed.
+
+\section*{Task}
+\textbf{Overall objectives.} Compare a small set of orientation schedules on one custom\_6R
+wrist-center curve and explain how they alter the feasible continuations of
+its arm and wrist IK solutions.
+
+\begin{itemize}
+  \item \textbf{Validate the robot and the chosen curve.} Use the exact
+custom\_6R model, with the custom\_3R positioning arm and spherical wrist.
+Check the D--H/URDF correspondence and fixed tool transform. Choose one
+short closed wrist-center curve from a supplied feasible-path example.
+
+  \item \textbf{Map the common arm problem.} Plot the positioning determinant and
+zero contours in $(q_2,q_3)$ and map the two-/four-arm-IK workspace regions.
+Enumerate the initial arm IKs and continue the arm candidates over the
+curve. Overlay these trajectories so that all orientation experiments share
+one clearly documented positioning baseline.
+
+  \item \textbf{Define three orientation schedules.} Compare a constant tool
+orientation, that orientation composed with one fixed offset rotation, and
+a smooth periodic orientation variation. For example use
+$R(s)=R_0\exp(\beta\sin(2\pi s)\widehat{u})$ with fixed unit axis $u$.
+Record the angle and derive tool position consistently from the wrist center.
+
+  \item \textbf{Lift and classify the full-pose candidates.} Complete each
+continued arm candidate with the wrist solutions and track each starting
+flip separately. Compare full-pose residuals, wrist/arm regularity, joint
+limits, and endpoint configuration. Do not interpret an orientation change
+as permission to jump between unrelated IKs.
+
+  \item \textbf{Explain changes in connectivity.} Build a compact chart of path
+progress versus candidate identity for each schedule, marking feasible
+segments and failure reasons. Compare where a complete arm continuation
+loses a full-pose lift. Refine one boundary and explain it using the
+corresponding wrist singularity factor or active joint limit.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+Use one wrist-center curve, three orientation schedules, and all
+recovered regular initial candidates (up to eight). Begin with approximately
+150 samples. The course arm/wrist IK and a reference curve are available for
+reuse. Investigate the prescribed schedules; optimizing over arbitrary
+orientation functions is outside scope.
+
+Check both translation and orientation residuals
+for every claimed full-pose IK. Document angle periodicity and limits,
+Jacobian conventions, and any scaling used for singular values. State all
+fixed coordinates in reduced plots; a two-dimensional slice does not show
+the entire 6R singular set. Refine decisive transitions, and distinguish
+sampled evidence from a continuous-path guarantee. Collision freedom is
+not implied by these kinematic checks.
+
+\section*{Expected outcome}
+Explain why the same positioning task can have different full-pose
+feasibility depending on orientation. Deliver the common arm maps, three
+explicit pose schedules, candidate feasibility charts, and a comparison of
+the global joint-space continuations.
+
+Submit reproducible code, model parameters and test data, the required plots,
+a concise 5--6-page report, and a short simulation demonstration. Explain
+both successful cases and failures; conclusions must follow the numerical
+and geometric evidence rather than an expected outcome.
+
+\section*{Resources}
+The custom\_6R consists of the custom\_3R positioning arm plus a
+spherical wrist. The arm is orthogonal with non-intersecting consecutive axes.
+Its URDF is \path{lectures_main/assets/models/custom_6R/custom_6R_new.urdf};
+the corresponding STL meshes are in that directory. Inspect wrist-axis
+concurrency and base/tool transforms using the lecture website.
+Use Lectures 4--6 for the custom arm and wrist structure, and Lecture 7 for
+continuation. The supplied reference curve must be interpreted in the exact
+custom\_6R wrist-center frame. Existing position-only visualizations must be
+complemented with full-pose validation.
+
+Use the lecture website to verify D--H parameters, visualize IKs and
+singularities, and simulate paths. All listed paths are relative to the
+repository root. Start the website following \path{lectures_main/README.md}.
+
+\section*{Workload and collaboration}
+Budget approximately 60 hours per student (120 person-hours per pair)
+for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
+Deduct any lectures or exercises included in those credits. Allocate roughly
+20 team-hours to model validation, 50 to the core work, 30 to experiments,
+and 20 to reporting. Reuse the specified IK and simulations. Share validation
+and interpretation even if modelling and implementation are divided between
+students. Hardware execution is outside scope.
+
+\end{document}

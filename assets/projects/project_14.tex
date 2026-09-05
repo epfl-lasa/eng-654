@@ -1,0 +1,124 @@
+% Compile from this directory with: pdflatex project_14.tex (twice).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,urlcolor=epflred,linkcolor=epflred,
+  pdftitle={ENG-654 Project 14: Contour Placement for PUMA 560}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+\urlstyle{tt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 14}
+
+{\LARGE\bfseries Contour Placement for PUMA 560\par}
+
+\textbf{Format:} Group of two students; simulation-based project.\\
+\textbf{Course foundations:} Lectures 4--7; Exercises 2--3.
+
+\section*{Motivation}
+A contour may be geometrically small and entirely reachable yet fail
+from every admissible initial posture at a particular placement. Translating
+or rotating the task changes the IK trajectories and their margins. This
+project connects task placement to the global branch structure of a specific
+noncuspidal industrial robot.
+
+\section*{Task}
+\textbf{Overall objectives.} Map where a fixed full-pose contour can be executed by PUMA 560, identify
+which initial shoulder--elbow--wrist classes survive, and explain feasibility
+boundaries through singularities and joint limits.
+
+\begin{itemize}
+  \item \textbf{Validate the PUMA full-pose model.} Reuse the course D--H model,
+analytical IK, and signed shoulder--elbow--wrist classification. Verify
+forward pose closure and document joint limits and base/tool transforms.
+Keep all mathematical branches distinct before physical filtering.
+
+  \item \textbf{Define a contour and placement family.} Specify one closed contour
+with a smooth or explicitly segmented orientation schedule. Place the complete
+pose sequence using $T'_k=T_\Delta T_k$, including orientation. Explore two
+translation coordinates on a small grid and compare two fixed orientations
+of the whole contour.
+
+  \item \textbf{Continue every admissible initial class.} For each placement,
+enumerate initial IKs and lift the full-pose path from every valid one.
+Track class identity, position/orientation residuals, joint limits, and arm
+and wrist regularity. Never repair a failed branch by jumping to another
+configuration at the next sample.
+
+  \item \textbf{Produce branch-specific placement maps.} For each initial class,
+plot complete-path feasibility against the two placement coordinates.
+Distinguish unreachable poses, branch termination, joint-limit violations,
+and singularity-margin failures. Compare surviving trajectories by joint
+travel and minimum margins.
+
+  \item \textbf{Explain the boundaries geometrically.} Select two neighboring
+placements with different outcomes. Plot the PUMA arm determinant in
+$(q_2,q_3)$, overlay the wrist-center IK trajectory, and relate its workspace
+image to arm IK-count regions. Diagnose wrist failures using the full
+Jacobian rather than the reduced position plot alone.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+Use one contour, a $5\times5$ translation grid, and two fixed placement
+rotations; locally refine only one boundary. Begin with about 150 samples per
+contour. Choose a justified characteristic length for the mixed pose Jacobian
+and use the same thresholds throughout. This is kinematic placement analysis;
+cycle-time optimization and collision-checker development are not required.
+
+Check both translation and orientation residuals
+for every claimed full-pose IK. Document angle periodicity and limits,
+Jacobian conventions, and any scaling used for singular values. State all
+fixed coordinates in reduced plots; a two-dimensional slice does not show
+the entire 6R singular set. Refine decisive transitions, and distinguish
+sampled evidence from a continuous-path guarantee. Collision freedom is
+not implied by these kinematic checks.
+
+\section*{Expected outcome}
+Understand how task placement changes the feasible global IK choices
+for PUMA. Deliver the contour and placement transforms, eight class-labelled
+feasibility maps per placement orientation, and two detailed explanations
+connecting placement boundaries to joint-space and workspace structure.
+
+Submit reproducible code, model parameters and test data, the required plots,
+a concise 5--6-page report, and a short simulation demonstration. Explain
+both successful cases and failures; conclusions must follow the numerical
+and geometric evidence rather than an expected outcome.
+
+\section*{Resources}
+The PUMA 560 URDF is
+\path{lectures_main/assets/models/puma/puma560_robot.urdf}; its STL meshes are
+in the same directory. The lecture website provides axis/frame inspection,
+IK visualization, and path demonstrations. Confirm joint offsets and the
+selected terminal frame when importing the model.
+Reuse Lectures 4 and 6 for full-pose IK/classification and Lecture 7 for
+continuation. Its existing PUMA path demo constrains wrist-center position
+only; extend or complement it with the provided full-pose IK for this project.
+
+Use the lecture website to verify D--H parameters, visualize IKs and
+singularities, and simulate paths. All listed paths are relative to the
+repository root. Start the website following \path{lectures_main/README.md}.
+
+\section*{Workload and collaboration}
+Budget approximately 60 hours per student (120 person-hours per pair)
+for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
+Deduct any lectures or exercises included in those credits. Allocate roughly
+20 team-hours to model validation, 50 to the core work, 30 to experiments,
+and 20 to reporting. Reuse the specified IK and simulations. Share validation
+and interpretation even if modelling and implementation are divided between
+students. Hardware execution is outside scope.
+
+\end{document}

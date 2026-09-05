@@ -1,0 +1,124 @@
+% Compile from this directory with: pdflatex project_19.tex (twice).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,urlcolor=epflred,linkcolor=epflred,
+  pdftitle={ENG-654 Project 19: Apparent Barriers in iiwa 7 Redundancy Charts}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+\urlstyle{tt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 19}
+
+{\LARGE\bfseries Apparent Barriers in iiwa 7 Redundancy Charts\par}
+
+\textbf{Format:} Group of two students; simulation-based project.\\
+\textbf{Course foundations:} Lecture 8; Exercise 4.
+
+\section*{Motivation}
+Fixing a redundant joint converts a 7R IK problem into a square
+subproblem, but that subproblem can become singular while the full robot
+remains regular. A planner may then report an apparent barrier caused by
+its chosen coordinate. A local change of coordinate can reveal whether
+the underlying robot motion continues.
+
+\section*{Task}
+\textbf{Overall objectives.} Analyze a supplied iiwa path with a fixed-$q_3$ chart failure and
+determine whether a second redundancy coordinate can continue the same
+full-pose IK family without violating robot constraints.
+
+\begin{itemize}
+  \item \textbf{Reproduce the supplied case.} Use the instructor-provided short
+pose path, initial IK, and suspected chart-fold interval. Validate the
+iiwa URDF/D--H model and reproduce the failure of fixed-$q_3$ continuation
+with documented residuals, limits, and solver tolerances.
+
+  \item \textbf{Separate the two regularity questions.} Compare
+$\sigma_{\min}(J)$ for the scaled full $6\times7$ Jacobian with
+$\det\bar J_3$, where $\bar J_3$ removes column 3. Explain how a
+singular reduced matrix can reflect tangency of the self-motion family
+to the chosen coordinate rather than rank loss of the full robot.
+
+  \item \textbf{Construct a second local chart.} Select one alternative joint
+$q_j$ for which the corresponding six-column Jacobian is well conditioned
+near the supplied interval. Hold $q_j$ fixed in a local numerical corrector
+and continue the same recovered configuration family. Use only this one
+alternative chart and a bounded overlap region.
+
+  \item \textbf{Classify and reconcile the charts.} Generate path-sample versus
+redundant-angle panels for $q_3$ and for $q_j$. Preserve the supplied
+fixed-$q_3$ labels and assign traceable local continuation identities in
+the second chart. Match overlapping solutions by full joint configuration
+and pose closure, not by equal labels or determinant signs alone.
+
+  \item \textbf{Validate the crossing or obstruction.} Attempt one trajectory
+using the chart overlap and compare with the original method. Check
+intermediate poses, full-Jacobian regularity, limits, and continuity.
+Mark which chart barrier was removed and which failures persist; failure
+of two charts alone does not prove robot infeasibility.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+The instructor will supply the path, starting solution, and a known
+candidate fold interval. Limit the study to two coordinates, one overlap,
+and one local chart transition, with roughly 80 path samples and 100 angle
+samples per chart initially. Reuse the fixed-$q_3$ analytical IK; a local
+numerical corrector is sufficient for the alternative coordinate.
+
+For every chart, keep pose validity, joint limits,
+full-Jacobian regularity, and reduced-chart regularity as separate diagnostics.
+The rectangular $6\times7$ Jacobian has no determinant. A feasible pixel is
+not a validated edge: re-solve intermediate prescribed poses and check joint
+continuity within limits. If collision checking is unavailable, state that
+feasibility is kinematic only; a clearance proxy is not a full collision test.
+
+\section*{Expected outcome}
+Understand coordinate-induced IK ambiguity and distinguish it from
+a physical singularity or constraint. Deliver two classified feasibility
+charts, overlap matches, full/reduced regularity plots, and a validated
+continuation or an explicit account of the unresolved obstruction.
+
+Submit reproducible code, model parameters and test data, the required plots,
+a concise 5--6-page report, and a short simulation demonstration. Explain
+both successful cases and failures; conclusions must follow the numerical
+and geometric evidence rather than an expected outcome.
+
+\section*{Resources}
+The KUKA LBR iiwa 7 URDF is
+\path{lectures_main/assets/models/iiwa7/iiwa7.urdf}; STL meshes are in that
+directory. The accompanying \path{iiwa7_free_joints.urdf} is a mathematical
+continuation model; apply physical limits separately. The course analytical
+IK model will be supplied; reuse it rather than deriving a general 7R solver.
+Lecture 8 explains fixed-redundancy slices, self-motion charts, and reduced
+versus full Jacobians. The special path and fold seed will be supplied
+separately; the reference path CSV alone is not guaranteed to contain the
+required event.
+
+Use the lecture website to verify D--H parameters, visualize IKs and
+singularities, and simulate paths. All listed paths are relative to the
+repository root. Start the website following \path{lectures_main/README.md}.
+
+\section*{Workload and collaboration}
+Budget approximately 60 hours per student (120 person-hours per pair)
+for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
+Deduct any lectures or exercises included in those credits. Allocate roughly
+20 team-hours to model validation, 50 to the core work, 30 to experiments,
+and 20 to reporting. Reuse the specified IK and simulations. Share validation
+and interpretation even if modelling and implementation are divided between
+students. Hardware execution is outside scope.
+
+\end{document}

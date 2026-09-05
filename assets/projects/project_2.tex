@@ -1,0 +1,127 @@
+% Compile from this directory with: pdflatex project_2.tex (twice).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,urlcolor=epflred,linkcolor=epflred,
+  pdftitle={ENG-654 Project 2: Geometry and Cuspidality in Orthogonal 3R Robots}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+\urlstyle{tt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 2}
+
+{\LARGE\bfseries Geometry and Cuspidality in Orthogonal 3R Robots\par}
+
+\textbf{Format:} Group of two students; simulation-based project.\\
+\textbf{Course foundations:} Lectures 1--3, 5--6; Exercises 1 and 3.
+
+\section*{Motivation}
+Two robots with the same number of joints can have very different global
+inverse kinematics. A change in an axis offset can alter singularity curves,
+the distribution of inverse-kinematic solutions, and the possibility of changing
+posture without becoming singular. This project connects geometric design
+choices to the joint-space and workspace maps needed for motion planning.
+
+\section*{Task}
+\textbf{Overall objectives.} Analyze a bounded family of orthogonal 3R position manipulators and explain
+how its geometry controls singularities, two-/four-IK regions, and evidence of
+cuspidal or noncuspidal behavior.
+
+\begin{itemize}
+  \item \textbf{Define and validate the family.} Use the Lecture 6 idealized family
+$a=(a_1,2,1.5)$, $d=(1,1,0)$, $\alpha=(\pi/2,\pi/2,0)$, with
+$a_1\in\{0,0.5,1\}$. State units and derive forward position kinematics.
+Check representative configurations against the atlas. The zero-offset endpoint
+is a limiting geometry of this family, not the exact custom\_3R robot.
+
+  \item \textbf{Construct reduced singularity plots.} Derive the position Jacobian
+$J_p$ and check it by finite differences. Establish why $\det J_p$ is independent
+of $q_1$. Plot its value and zero contours over $(q_2,q_3)\in[-\pi,\pi)^2$;
+identify sampled connected regions without equating equal determinant signs
+with connectivity.
+
+  \item \textbf{Map the inverse distribution.} Map the singular curves to
+$(\rho,z)$, where $\rho=\sqrt{x^2+y^2}$. Evaluate the supplied 3R IK method on
+a workspace grid and distinguish zero, two, and four distinct real solutions.
+Overlay the IK points of selected targets on the joint-space plot, including
+targets on opposite sides of a critical curve.
+
+  \item \textbf{Investigate posture connectivity.} For each geometry, select one target
+with multiple regular IKs and examine whether two lie in the same computed
+singularity-free component. Seek one nonsingular connecting path where supported
+by the map. Explain what constitutes evidence of cuspidality and why failure
+to find a path does not prove noncuspidality.
+
+  \item \textbf{Compare geometry, not plot appearance.} Summarize changes in IK counts,
+critical curves, and component membership. Refine the grids near a narrow region
+or suspected cusp. Use the lecture's analytical results to support any definitive
+classification and separate those results from sampled observations.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+Use exactly three geometries and at least three diagnostic workspace targets
+per geometry. Begin with approximately $150\times150$ joint and workspace grids
+and refine one region of interest. Treat joint angles as periodic for the
+unconstrained analysis. A complete symbolic classification of all orthogonal
+3R geometries and a new quartic solver are not required.
+
+Use the position Jacobian $J_p$ for the 3R task.
+Confirm that the meridian reduction is valid for the selected model and
+operational point. Count distinct real IKs modulo periodicity, then filter
+joint limits separately. Identify two-/four-IK regions where present and
+explain any absent count rather than forcing both types into every map. Show both determinant values and the zero contour,
+and distinguish sampled connectivity from a proof. Refine the decisive
+region instead of claiming completeness from a coarse grid.
+
+\section*{Expected outcome}
+Explain how D--H geometry changes global IK structure. Deliver three paired
+joint/workspace maps, an IK-count comparison, and one detailed connectivity
+example or a justified explanation of why the selected pair is separated.
+
+Submit reproducible code, model parameters and test data, the required plots,
+a concise 5--6-page report, and a short simulation demonstration. Explain
+both successful cases and failures; conclusions must follow the numerical
+and geometric evidence rather than an expected outcome.
+
+\section*{Resources}
+The idealized D--H atlas in Lecture 6 is a separate mathematical
+family, implemented in \path{lectures_main/js/viz/cuspidalityLecture.js}.
+Its dimensions and conventions must not be inferred from the custom\_3R STL
+renderings. Use the standard-D--H convention stated in the lectures.
+
+The exact custom\_3R is an orthogonal 3R robot with non-intersecting
+consecutive joint axes. Its URDF is
+\path{lectures_main/assets/models/custom_3R/custom_3R_new.urdf}; STL meshes are
+in the same directory. Use the lecture website to inspect axes and frames,
+verify D--H parameters, plot IKs, and animate configurations. The custom model is a geometric reference;
+perform the parameter study with the stated idealized equations. Reuse the
+Lecture 3 analytical IK method and Lecture 6 atlas.
+
+Use the lecture website to verify D--H parameters, visualize IKs and
+singularities, and simulate paths. All listed paths are relative to the
+repository root. Start the website following \path{lectures_main/README.md}.
+
+\section*{Workload and collaboration}
+Budget approximately 60 hours per student (120 person-hours per pair)
+for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
+Deduct any lectures or exercises included in those credits. Allocate roughly
+20 team-hours to model validation, 50 to the core work, 30 to experiments,
+and 20 to reporting. Reuse the specified IK and simulations. Share validation
+and interpretation even if modelling and implementation are divided between
+students. Hardware execution is outside scope.
+
+\end{document}

@@ -1,0 +1,131 @@
+% Compile from this directory with: pdflatex project_17.tex (twice).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,urlcolor=epflred,linkcolor=epflred,
+  pdftitle={ENG-654 Project 17: Global IK-Map Planning for KUKA iiwa 7}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+\urlstyle{tt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 17}
+
+{\LARGE\bfseries Global IK-Map Planning for KUKA iiwa 7\par}
+
+\textbf{Format:} Group of two students; simulation-based project.\\
+\textbf{Course foundations:} Lectures 4 and 8; Exercise 4.
+
+\section*{Motivation}
+Choosing a redundant angle independently at every pose can produce
+apparently feasible configurations that do not connect into a trajectory.
+A global view of path progress and redundancy exposes which IK families
+survive and whether a constant posture parameter must be replaced by a
+varying schedule.
+
+\section*{Task}
+\textbf{Overall objectives.} Build classified IK feasibility charts for one iiwa 7 full-pose path,
+then compare constant-$q_3$ choices with a continuous varying-$q_3$ schedule
+through validated feasible connections.
+
+\begin{itemize}
+  \item \textbf{Validate the path and model.} Inspect the URDF, D--H conventions,
+physical limits, and tool frame. Read the supplied pose CSV and check
+quaternion normalization, component order, and pose continuity. Reuse the
+course analytical IK and verify its outputs by full forward kinematics.
+
+  \item \textbf{Enumerate and classify the chart.} Let $\lambda=q_3$ and evaluate
+each pose sample over a sorted redundancy grid. Retain the supplied analytical
+labels for up to eight fixed-angle candidates, including missing-solution
+slots. Explain that labels in a fixed-angle slice are not by themselves
+proof of global component membership.
+
+  \item \textbf{Apply explicit feasibility checks.} Record position/orientation
+residuals, joint-limit margins, full-Jacobian regularity, and reduced-chart
+regularity. Produce separate path-sample versus redundant-angle panels for
+each label with failure reasons. Plot the smallest singular value of the
+scaled $6\times7$ Jacobian separately from the square reduced determinant.
+
+  \item \textbf{Compare constant and varying schedules.} Test each sampled
+constant-$\lambda$ row for complete-path continuation. Build a layered graph
+or dynamic program over neighboring feasible candidates to minimize joint
+travel. An edge is accepted only after intermediate poses are re-solved and
+checked; proximity in the image is not sufficient.
+
+  \item \textbf{Validate the selected trajectory.} Re-solve the final schedule on
+a denser path grid and compare its completion, travel, and minimum margins
+with the best constant-angle candidate. Preserve actual joint continuity
+within physical limits. Report any topology or connection that remains
+unresolved at the chosen resolution.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+Use one course pose path and reuse the Exercise 4 enumeration if
+available. Its reference grid has 175 negative and 175 positive redundancy
+angles, excluding zero, with bounds documented from the assignment model.
+For development, a smaller grid is acceptable; perform the final comparison
+on the reference grid or justify an adaptive equivalent. Limit refinement
+to one critical corridor. Planning across chart folds is outside this
+project's core scope.
+
+For every chart, keep pose validity, joint limits,
+full-Jacobian regularity, and reduced-chart regularity as separate diagnostics.
+The rectangular $6\times7$ Jacobian has no determinant. A feasible pixel is
+not a validated edge: re-solve intermediate prescribed poses and check joint
+continuity within limits. If collision checking is unavailable, state that
+feasibility is kinematic only; a clearance proxy is not a full collision test.
+
+\section*{Expected outcome}
+Understand the iiwa model, fixed-angle IK classification, and how
+feasibility varies over path progress and redundancy. Deliver branch-labelled
+charts, a validated schedule where found, and a quantitative explanation of
+the difference between constant and varying redundancy.
+
+Submit reproducible code, model parameters and test data, the required plots,
+a concise 5--6-page report, and a short simulation demonstration. Explain
+both successful cases and failures; conclusions must follow the numerical
+and geometric evidence rather than an expected outcome.
+
+\section*{Resources}
+The KUKA LBR iiwa 7 URDF is
+\path{lectures_main/assets/models/iiwa7/iiwa7.urdf}; STL meshes are in that
+directory. The accompanying \path{iiwa7_free_joints.urdf} is a mathematical
+continuation model; apply physical limits separately. The course analytical
+IK model will be supplied; reuse it rather than deriving a general 7R solver.
+
+The course pose path is
+\path{lectures_main/assets/data/path/kuka_iiwa7_rectangle_workspace_path_500_quaternion.csv}.
+Its quaternion columns are \texttt{qw,qx,qy,qz}; normalize them and make their
+signs consistent before interpolation. The reference table
+\path{lectures_main/assets/data/null/iiwa7_IK_q3_030deg.csv}
+checks fixed-$q_3$ solutions only; it does not replace evaluation at other angles.
+Reuse Lecture 8 simulations and Exercise 4 data for connection validation
+and schedule selection.
+
+Use the lecture website to verify D--H parameters, visualize IKs and
+singularities, and simulate paths. All listed paths are relative to the
+repository root. Start the website following \path{lectures_main/README.md}.
+
+\section*{Workload and collaboration}
+Budget approximately 60 hours per student (120 person-hours per pair)
+for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
+Deduct any lectures or exercises included in those credits. Allocate roughly
+20 team-hours to model validation, 50 to the core work, 30 to experiments,
+and 20 to reporting. Reuse the specified IK and simulations. Share validation
+and interpretation even if modelling and implementation are divided between
+students. Hardware execution is outside scope.
+
+\end{document}

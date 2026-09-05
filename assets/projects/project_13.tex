@@ -1,0 +1,124 @@
+% Compile from this directory with: pdflatex project_13.tex (twice).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,urlcolor=epflred,linkcolor=epflred,
+  pdftitle={ENG-654 Project 13: Repeated Contour Execution on custom\_3R}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+\urlstyle{tt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 13}
+
+{\LARGE\bfseries Repeated Contour Execution on custom\_3R\par}
+
+\textbf{Format:} Group of two students; simulation-based project.\\
+\textbf{Course foundations:} Lectures 3, 5--7; Exercise 3.
+
+\section*{Motivation}
+A closed workspace path need not return a cuspidal robot to its starting
+posture. The next traversal then begins from a different IK and may behave
+differently. Repeatability is therefore a property of the lifted joint motion,
+not simply the visible closure of a Cartesian contour.
+
+\section*{Task}
+\textbf{Overall objectives.} Track repeated position contours on the exact custom\_3R robot and explain
+joint-space closure, posture changes, and failed continuation using reduced
+singularity maps and the workspace IK distribution.
+
+\begin{itemize}
+  \item \textbf{Prepare the model and maps.} Validate the exact orthogonal,
+non-intersecting-axis custom\_3R kinematics. Plot $\det J_p$ and its zeros in
+$(q_2,q_3)$, map the corresponding critical curves into $(\rho,z)$, and identify
+the two-/four-IK workspace regions with representative IK overlays.
+
+  \item \textbf{Choose two closed position curves.} Use an instructor-supplied
+curve exhibiting nontrivial continuation and one nearby comparison curve.
+Alternatively construct candidates with the Lecture 6 exact-model lab.
+Verify closure in three-dimensional Cartesian coordinates; the Lecture 7
+idealized square must be revalidated before transferring it to this robot.
+
+  \item \textbf{Lift successive laps.} Enumerate the starting IKs and continue
+each admissible one for up to three laps. Start every new lap at the actual
+configuration reached by the previous lap, without resetting the seed.
+Track solutions by continuity and stop or refine when a regular continuation
+can no longer be recovered.
+
+  \item \textbf{Classify the observed outcomes.} Distinguish joint-space closure,
+return to a different IK of the same target, and termination. At each lap
+boundary, match the reached configuration to the starting-pose IK set modulo
+joint periodicity, and display the observed mapping. Do not assume every
+curve defines a permutation if some lifts terminate.
+
+  \item \textbf{Explain events globally.} Overlay all lifted paths on the reduced
+singularity map and relate events to crossings of workspace critical curves
+and changes in IK count. A critical-value crossing does not force every
+possible lift to be singular; evaluate the Jacobian of the selected lift.
+Refine the decisive intervals.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+Use two loops, up to four initial mathematical arm IKs, and at most
+three laps per initial solution. Separate joint-limit feasibility from
+unconstrained topology. Reuse the analytical IK and continuation tools;
+discovering a new cusp or proving a general repeatability theorem is outside
+scope. A predicted outcome that fails numerical validation must be reported
+rather than imposed.
+
+Use the position Jacobian $J_p$ for the 3R task.
+Confirm that the meridian reduction is valid for the selected model and
+operational point. Count distinct real IKs modulo periodicity, then filter
+joint limits separately. Identify two-/four-IK regions where present and
+explain any absent count rather than forcing both types into every map. Show both determinant values and the zero contour,
+and distinguish sampled connectivity from a proof. Refine the decisive
+region instead of claiming completeness from a coarse grid.
+
+\section*{Expected outcome}
+Understand why repeated Cartesian motions can have different joint-space
+outcomes. Deliver lap-by-lap configuration records, IK endpoint associations,
+determinant and workspace-count plots, and an explanation of every observed
+closure, posture change, or termination.
+
+Submit reproducible code, model parameters and test data, the required plots,
+a concise 5--6-page report, and a short simulation demonstration. Explain
+both successful cases and failures; conclusions must follow the numerical
+and geometric evidence rather than an expected outcome.
+
+\section*{Resources}
+The exact custom\_3R is an orthogonal 3R robot with non-intersecting
+consecutive joint axes. Its URDF is
+\path{lectures_main/assets/models/custom_3R/custom_3R_new.urdf}; STL meshes are
+in the same directory. Use the lecture website to inspect axes and frames,
+verify D--H parameters, plot IKs, and animate configurations.
+Lecture 7 provides the repeated-loop concept, while Lecture 6 contains an
+exact custom\_3R motion example. Two suitable starting curves or seed data
+will be supplied if the existing demonstration cannot be exported directly.
+
+Use the lecture website to verify D--H parameters, visualize IKs and
+singularities, and simulate paths. All listed paths are relative to the
+repository root. Start the website following \path{lectures_main/README.md}.
+
+\section*{Workload and collaboration}
+Budget approximately 60 hours per student (120 person-hours per pair)
+for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
+Deduct any lectures or exercises included in those credits. Allocate roughly
+20 team-hours to model validation, 50 to the core work, 30 to experiments,
+and 20 to reporting. Reuse the specified IK and simulations. Share validation
+and interpretation even if modelling and implementation are divided between
+students. Hardware execution is outside scope.
+
+\end{document}

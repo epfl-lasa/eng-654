@@ -1,0 +1,130 @@
+% Compile from this directory with: pdflatex project_6.tex (twice).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,urlcolor=epflred,linkcolor=epflred,
+  pdftitle={ENG-654 Project 6: Offset-Wrist IK through the FANUC CRX Case Study}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+\urlstyle{tt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 6}
+
+{\LARGE\bfseries Offset-Wrist IK through the FANUC CRX Case Study\par}
+
+\textbf{Format:} Group of two students; simulation-based project.\\
+\textbf{Course foundations:} Lectures 2--6; Exercises 1 and 3.
+
+\section*{Motivation}
+The FANUC CRX provides a concrete example of an offset-wrist 6R robot
+whose inverse kinematics cannot be treated as the PUMA arm--spherical-wrist
+decomposition. Studying a richer solution set reveals why IK enumeration and
+global connectivity must be examined separately before planning a motion.
+
+\section*{Task}
+\textbf{Overall objectives.} Use the supplied CRX-10iA/L IK model to study solution multiplicity,
+singularities, and selected connections between IK solutions. Federico Thomas
+and Josep M. Porta have developed the robot's closure-polynomial formulation;
+the numerical IK implementation will be provided, so the project focuses on
+interpreting its solutions.
+
+\begin{itemize}
+  \item \textbf{Validate the CRX model.} Inspect the supplied URDF/STL geometry and
+document the D--H model, joint signs and offsets, and base/tool frames used by
+the IK implementation. Compare forward kinematics from both representations.
+Explain geometrically why a spherical-wrist decomposition is unavailable.
+
+  \item \textbf{Understand the polynomial formulation.} Read the CRX case in
+\emph{The inverse kinematics of lobster arms}. Describe the distance variable,
+closure polynomial, and recovery of joint configurations. Distinguish an
+explicit polynomial formulation from a formula for its roots in radicals;
+re-deriving the full polynomial is not required.
+
+  \item \textbf{Inspect and validate solution multiplicity.} Reproduce the supplied
+sixteen-solution reference case after checking the angle convention. Verify
+position and orientation closure for every solution, deduplicate periodic
+equivalents, and report joint-limit admissibility separately. Compare two
+nearby target poses using the supplied solver.
+
+  \item \textbf{Visualize singularities and IK locations.} Evaluate $\det J$ on two
+selected two-joint slices, stating all fixed joint values; choose a
+$(q_2,q_3)$ slice for at least one plot. A projected IK whose other joints differ
+does not belong to that slice: distinguish projections from on-slice points.
+Supplement the plots with full-Jacobian singular values at every IK.
+
+  \item \textbf{Investigate one connectivity question.} Use an instructor-supplied
+candidate joint path between two IKs of a common pose. Check endpoint pose
+agreement, full-Jacobian regularity, and the closed workspace image of the
+path. Explain why the existence of sixteen solutions or equal determinant
+signs alone does not establish their connectivity or cuspidality.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+Use one reference target, two small pose perturbations, two joint-space
+slices, and one supplied candidate path. The IK model and candidate path will
+be provided. Numerical polynomial solution, full-pose checks, and interpretation
+are required; deriving the general 6R IK polynomial or searching the entire
+six-dimensional configuration space is outside scope. State the scaling used
+for the mixed linear/angular Jacobian.
+
+Check both translation and orientation residuals
+for every claimed full-pose IK. Document angle periodicity and limits,
+Jacobian conventions, and any scaling used for singular values. State all
+fixed coordinates in reduced plots; a two-dimensional slice does not show
+the entire 6R singular set. Refine decisive transitions, and distinguish
+sampled evidence from a continuous-path guarantee. Collision freedom is
+not implied by these kinematic checks.
+
+\section*{Expected outcome}
+Understand CRX geometry, the role of closure polynomials, the richer IK
+distribution, and the distinction between solution count and connectivity.
+Deliver a validated IK table, singularity slices, and an evidence-based analysis
+of the candidate path and its workspace image.
+
+Submit reproducible code, model parameters and test data, the required plots,
+a concise 5--6-page report, and a short simulation demonstration. Explain
+both successful cases and failures; conclusions must follow the numerical
+and geometric evidence rather than an expected outcome.
+
+\section*{Resources}
+The course CRX model is
+\path{lectures_main/assets/models/fanuc_crx10ia_support/crx10ial.urdf},
+with STL meshes in the same directory. Lecture 6 visualizes the reference data
+in \path{lectures_main/assets/data/ik16_solutions.csv}; its angles must be
+converted to the URDF convention as documented by the course visualization.
+The general CRX IK model will be supplied separately.
+
+
+Suggested reading: Federico Thomas and Josep M. Porta,
+\href{https://upcommons.upc.edu/entities/publication/d0c7ff76-7876-4c39-904d-503b8179ac33}{\emph{The inverse kinematics of lobster arms}},
+Mechanism and Machine Theory 196 (2024), 105630. The paper develops a
+distance-based closure-polynomial formulation, including the CRX-10iA/L case.
+
+Use the lecture website to verify D--H parameters, visualize IKs and
+singularities, and simulate paths. All listed paths are relative to the
+repository root. Start the website following \path{lectures_main/README.md}.
+
+\section*{Workload and collaboration}
+Budget approximately 60 hours per student (120 person-hours per pair)
+for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
+Deduct any lectures or exercises included in those credits. Allocate roughly
+20 team-hours to model validation, 50 to the core work, 30 to experiments,
+and 20 to reporting. Reuse the specified IK and simulations. Share validation
+and interpretation even if modelling and implementation are divided between
+students. Hardware execution is outside scope.
+
+\end{document}

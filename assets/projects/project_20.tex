@@ -1,0 +1,128 @@
+% Compile from this directory with: pdflatex project_20.tex (twice).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,urlcolor=epflred,linkcolor=epflred,
+  pdftitle={ENG-654 Project 20: Repeatable Closed-Path Motion on iiwa 7}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+\urlstyle{tt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 20}
+
+{\LARGE\bfseries Repeatable Closed-Path Motion on iiwa 7\par}
+
+\textbf{Format:} Group of two students; simulation-based project.\\
+\textbf{Course foundations:} Lectures 7--8; Exercise 4.
+
+\section*{Motivation}
+A redundant robot can return its tool to the starting pose while
+ending in a different posture. Repeating the same task can then accumulate
+joint drift or encounter new constraints. Repeatable motion requires
+closing the joint trajectory as well as the workspace loop.
+
+\section*{Task}
+\textbf{Overall objectives.} Use classified iiwa IK feasibility charts to seek a redundancy
+schedule that closes in both full-pose workspace and joint space, and
+compare it with local continuation of the same closed task.
+
+\begin{itemize}
+  \item \textbf{Prepare an explicitly closed pose loop.} Use the course rectangle
+or a short derived loop and verify both translational and rotational
+closure. Add a correctly interpolated closing segment if needed; do not
+assume the first and last CSV rows are identical. Validate the model,
+tool transform, limits, and one admissible initial configuration.
+
+  \item \textbf{Measure a local baseline.} Track the loop with the same
+pseudoinverse/null-space policy on every lap. Continue from the actual
+final configuration for up to three laps and record endpoint joint
+displacement, pose error, and feasibility. A closed tool pose alone does
+not establish joint-space repeatability.
+
+  \item \textbf{Generate and classify the global chart.} Evaluate fixed-$q_3$
+IK families over one full loop. Plot path sample versus redundancy angle,
+with branch labels and failure masks. Inspect the first and last columns
+as IK sets of the same pose, including their configuration correspondence.
+
+  \item \textbf{Enforce joint-space closure.} Use a layered search with the
+initial configuration fixed and require the last configuration to match
+it within a declared tolerance and consistent permitted angle
+representatives. Validate the closing edge. Returning to the same
+redundancy angle or branch label alone is insufficient.
+
+  \item \textbf{Compare repeated execution.} Refine the selected schedule and
+validate all transitions, including the seam between laps. Compare the
+local and closed schedules by endpoint joint error, travel, minimum
+limit margin, and full-Jacobian regularity. Show both trajectories on
+the feasibility chart and explain any accumulated posture drift.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+Use one closed pose loop, one shared starting configuration, and
+at most three validation laps. Begin with about 150 pose samples and
+120 redundancy angles. Search only within the selected sampled families;
+if no closing schedule is found, report the search limits rather than
+claiming global impossibility. Timing optimization is not required.
+
+For every chart, keep pose validity, joint limits,
+full-Jacobian regularity, and reduced-chart regularity as separate diagnostics.
+The rectangular $6\times7$ Jacobian has no determinant. A feasible pixel is
+not a validated edge: re-solve intermediate prescribed poses and check joint
+continuity within limits. If collision checking is unavailable, state that
+feasibility is kinematic only; a clearance proxy is not a full collision test.
+
+\section*{Expected outcome}
+Understand the distinction between tool-pose closure and repeatable
+robot motion. Deliver a classified redundancy chart with endpoint IK
+matches, a comparison of local and closure-constrained schedules, and
+lap-by-lap evidence of joint closure or drift.
+
+Submit reproducible code, model parameters and test data, the required plots,
+a concise 5--6-page report, and a short simulation demonstration. Explain
+both successful cases and failures; conclusions must follow the numerical
+and geometric evidence rather than an expected outcome.
+
+\section*{Resources}
+The KUKA LBR iiwa 7 URDF is
+\path{lectures_main/assets/models/iiwa7/iiwa7.urdf}; STL meshes are in that
+directory. The accompanying \path{iiwa7_free_joints.urdf} is a mathematical
+continuation model; apply physical limits separately. The course analytical
+IK model will be supplied; reuse it rather than deriving a general 7R solver.
+
+The course pose path is
+\path{lectures_main/assets/data/path/kuka_iiwa7_rectangle_workspace_path_500_quaternion.csv}.
+Its quaternion columns are \texttt{qw,qx,qy,qz}; normalize them and make their
+signs consistent before interpolation. The reference table
+\path{lectures_main/assets/data/null/iiwa7_IK_q3_030deg.csv}
+checks fixed-$q_3$ solutions only; it does not replace evaluation at other angles.
+Use Lecture 7 for the distinction between workspace and joint-space loops,
+and Lecture 8/Exercise 4 for redundant IK maps and feasible corridor search.
+
+Use the lecture website to verify D--H parameters, visualize IKs and
+singularities, and simulate paths. All listed paths are relative to the
+repository root. Start the website following \path{lectures_main/README.md}.
+
+\section*{Workload and collaboration}
+Budget approximately 60 hours per student (120 person-hours per pair)
+for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
+Deduct any lectures or exercises included in those credits. Allocate roughly
+20 team-hours to model validation, 50 to the core work, 30 to experiments,
+and 20 to reporting. Reuse the specified IK and simulations. Share validation
+and interpretation even if modelling and implementation are divided between
+students. Hardware execution is outside scope.
+
+\end{document}

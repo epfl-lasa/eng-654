@@ -1,0 +1,125 @@
+% Compile from this directory with: pdflatex project_8.tex (twice).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,urlcolor=epflred,linkcolor=epflred,
+  pdftitle={ENG-654 Project 8: Redundancy and Feasible IK Families in 7R Robots}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+\urlstyle{tt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 8}
+
+{\LARGE\bfseries Redundancy and Feasible IK Families in 7R Robots\par}
+
+\textbf{Format:} Group of two students; simulation-based project.\\
+\textbf{Course foundations:} Lectures 4 and 8; Exercises 1 and 4.
+
+\section*{Motivation}
+For a redundant robot, a fixed tool pose can be realized by a continuous
+family of postures. A selected redundant angle provides a useful way to inspect
+that family, but joint limits and singularities restrict it. Understanding
+those restrictions is necessary before choosing a redundancy schedule along
+a workspace path.
+
+\section*{Task}
+\textbf{Overall objectives.} Analyze a small family of spherical-shoulder/elbow/wrist 7R manipulators
+and explain how geometry changes fixed-pose IK families, their classification,
+and feasibility over a short path.
+
+\begin{itemize}
+  \item \textbf{Define a bounded geometric family.} Use iiwa-like geometry as a
+reference and vary only the upper-arm to forearm length ratio over three
+instructor-supplied parameter sets with the same total arm length. The
+parameterized FK/IK implementation will be provided. Verify the reference
+against its URDF and describe the synthetic variants using their actual
+kinematic frames rather than unchanged meshes.
+
+  \item \textbf{Inspect fixed-pose self-motion.} At two selected full poses, sample
+$\lambda=q_3$ and evaluate all returned IK candidates. Plot joint values versus
+$\lambda$, check full-pose closure, and identify intervals removed by limits
+or loss of regularity. Explain the locally one-dimensional nature of the
+regular fixed-pose solution set.
+
+  \item \textbf{Classify the recovered families.} Preserve the supplied analytical
+branch labels, document their geometric meaning where available, and track
+their continuation across neighboring samples. Distinguish a label within a
+fixed-angle slice from a connected component of the complete self-motion set.
+Do not use solver array order as identity.
+
+  \item \textbf{Generate comparative feasibility charts.} For one common short pose
+path, plot path sample horizontally and redundancy angle vertically, using a
+separate panel for each labelled candidate family. Distinguish absent IK,
+pose error, joint-limit violation, full-Jacobian rank loss, and reduced-chart
+failure. Compare the three geometries on identical axes.
+
+  \item \textbf{Interpret feasible connections.} Extract one candidate corridor or
+explain the sampled obstruction for each geometry. Re-solve intermediate poses
+before accepting neighboring chart cells as connected. Compare feasible-angle
+width and minimum joint-limit/regularity margins, and explain what the chosen
+chart can miss.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+Use three geometries, two fixed poses, and one short path, initially with
+about 100 pose samples and 120 redundancy angles. Refine one apparent boundary
+or connection. This is a geometric family study, not a full trajectory-optimization
+project. The provided solver must support all three parameter sets; do not
+apply an unmodified iiwa-specific solver to a changed geometry.
+
+For every chart, keep pose validity, joint limits,
+full-Jacobian regularity, and reduced-chart regularity as separate diagnostics.
+The rectangular $6\times7$ Jacobian has no determinant. A feasible pixel is
+not a validated edge: re-solve intermediate prescribed poses and check joint
+continuity within limits. If collision checking is unavailable, state that
+feasibility is kinematic only; a clearance proxy is not a full collision test.
+
+\section*{Expected outcome}
+Understand the URDF reference, the parameterized D--H geometry, redundant
+IK families, and the relation between classification and feasibility. Deliver
+self-motion plots and branch-labelled path-sample versus redundant-angle charts
+that explain how the selected geometric change affects feasible connections.
+
+Submit reproducible code, model parameters and test data, the required plots,
+a concise 5--6-page report, and a short simulation demonstration. Explain
+both successful cases and failures; conclusions must follow the numerical
+and geometric evidence rather than an expected outcome.
+
+\section*{Resources}
+The KUKA LBR iiwa 7 URDF is
+\path{lectures_main/assets/models/iiwa7/iiwa7.urdf}; STL meshes are in that
+directory. The accompanying \path{iiwa7_free_joints.urdf} is a mathematical
+continuation model; apply physical limits separately. The course analytical
+IK model will be supplied; reuse it rather than deriving a general 7R solver.
+The three family parameter sets and compatible parameterized IK will be supplied
+separately. Use Lecture 8 and Exercise 4 for chart construction; the course
+reference data can check the original iiwa member only.
+
+Use the lecture website to verify D--H parameters, visualize IKs and
+singularities, and simulate paths. All listed paths are relative to the
+repository root. Start the website following \path{lectures_main/README.md}.
+
+\section*{Workload and collaboration}
+Budget approximately 60 hours per student (120 person-hours per pair)
+for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
+Deduct any lectures or exercises included in those credits. Allocate roughly
+20 team-hours to model validation, 50 to the core work, 30 to experiments,
+and 20 to reporting. Reuse the specified IK and simulations. Share validation
+and interpretation even if modelling and implementation are divided between
+students. Hardware execution is outside scope.
+
+\end{document}

@@ -1,0 +1,125 @@
+% Compile from this directory with: pdflatex project_10.tex (twice).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,urlcolor=epflred,linkcolor=epflred,
+  pdftitle={ENG-654 Project 10: Branch-Dependent Planning with the PUMA Positioning Arm}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+\urlstyle{tt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 10}
+
+{\LARGE\bfseries Branch-Dependent Planning with the PUMA Positioning Arm\par}
+
+\textbf{Format:} Group of two students; simulation-based project.\\
+\textbf{Course foundations:} Lectures 3--7; Exercise 3.
+
+\section*{Motivation}
+A wrist-center position may be reached by several shoulder/elbow postures.
+Those alternatives can have different continuations along the same Cartesian
+curve. Restricting PUMA to its three-joint positioning task makes the global
+singularity structure visible while retaining the planning question: which
+initial solution can follow the complete path?
+
+\section*{Task}
+\textbf{Overall objectives.} Treat PUMA's first three joints as a noncuspidal 3R wrist-center positioning
+robot and explain path feasibility through reduced singularity maps and the
+distribution of its IK solutions.
+
+\begin{itemize}
+  \item \textbf{Extract the position task.} Identify the wrist center from the PUMA
+axis geometry and derive its position as a function of $q_1,q_2,q_3$.
+Validate the D--H and URDF-based descriptions. The wrist joints are irrelevant
+to this point's position; do not replace the wrist center with the tool tip.
+
+  \item \textbf{Build the global reference maps.} Derive $J_p$ and plot $\det J_p$
+and its zero contours in $(q_2,q_3)$. Map the singular curves into $(\rho,z)$
+and count distinct arm IKs. Identify two-/four-IK regions where present and
+explain if this specific geometry lacks one of those regions.
+
+  \item \textbf{Select and classify initial solutions.} Choose one regular loop and
+two translated or scaled variants approaching different arm singularities.
+Enumerate the initial arm IKs and identify their shoulder/elbow categories.
+Overlay them on the reduced plot and record mathematical versus
+joint-limit-admissible configurations.
+
+  \item \textbf{Continue every admissible branch.} Follow each workspace curve from
+each valid initial arm configuration. Use warm-started continuation and
+analytical enumeration as a cross-check. Refine the step size near critical
+events; preserve branch identity instead of replacing a failed solution with
+an unrelated IK at the next sample.
+
+  \item \textbf{Explain completion and failure.} Compare completion fraction,
+joint travel, joint-limit margin, and the smallest singular value of $J_p$.
+Relate each failed lift to its configuration-space separator and workspace
+critical curve. A workspace point can have another regular IK even when the
+selected continuation fails.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+Use one PUMA positioning model and three position curves, with about
+200 samples per curve before local refinement. Keep orientation outside the
+task and use the same joint limits and tolerances for every comparison.
+Explore mathematical branch structure first, then report limit filtering.
+The goal is an explanation of branch-dependent feasibility, not a new general
+path-search algorithm.
+
+Use the position Jacobian $J_p$ for the 3R task.
+Confirm that the meridian reduction is valid for the selected model and
+operational point. Count distinct real IKs modulo periodicity, then filter
+joint limits separately. Identify two-/four-IK regions where present and
+explain any absent count rather than forcing both types into every map. Show both determinant values and the zero contour,
+and distinguish sampled connectivity from a proof. Refine the decisive
+region instead of claiming completeness from a coarse grid.
+
+\section*{Expected outcome}
+Understand the PUMA arm's D--H model, noncuspidal branch separation, and
+the difference between workspace reachability and a feasible lift. Deliver
+reduced determinant maps with overlaid IKs and trajectories, workspace IK-count
+maps, and a branch-by-branch path comparison.
+
+Submit reproducible code, model parameters and test data, the required plots,
+a concise 5--6-page report, and a short simulation demonstration. Explain
+both successful cases and failures; conclusions must follow the numerical
+and geometric evidence rather than an expected outcome.
+
+\section*{Resources}
+The PUMA 560 URDF is
+\path{lectures_main/assets/models/puma/puma560_robot.urdf}; its STL meshes are
+in the same directory. The lecture website provides axis/frame inspection,
+IK visualization, and path demonstrations. Confirm joint offsets and the
+selected terminal frame when importing the model.
+The Lecture 7 PUMA demonstration already follows wrist-center position with
+fixed wrist joints and is directly relevant to this project. Reuse its
+continuation and visualization as a starting point, checking the analytical
+arm IK against Lectures 3--4.
+
+Use the lecture website to verify D--H parameters, visualize IKs and
+singularities, and simulate paths. All listed paths are relative to the
+repository root. Start the website following \path{lectures_main/README.md}.
+
+\section*{Workload and collaboration}
+Budget approximately 60 hours per student (120 person-hours per pair)
+for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
+Deduct any lectures or exercises included in those credits. Allocate roughly
+20 team-hours to model validation, 50 to the core work, 30 to experiments,
+and 20 to reporting. Reuse the specified IK and simulations. Share validation
+and interpretation even if modelling and implementation are divided between
+students. Hardware execution is outside scope.
+
+\end{document}

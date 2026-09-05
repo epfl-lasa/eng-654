@@ -1,0 +1,131 @@
+% Compile from this directory with: pdflatex project_7.tex (twice).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,urlcolor=epflred,linkcolor=epflred,
+  pdftitle={ENG-654 Project 7: Signed IK Classification of PUMA 560 and UR5}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+\urlstyle{tt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 7}
+
+{\LARGE\bfseries Signed IK Classification of PUMA 560 and UR5\par}
+
+\textbf{Format:} Group of two students; simulation-based project.\\
+\textbf{Course foundations:} Lectures 2, 4--6; Exercises 2--3.
+
+\section*{Motivation}
+A useful IK label describes a geometric configuration and the singular
+boundary separating it from alternatives. PUMA 560 and UR5 offer two different
+6R architectures for testing this idea. Comparing them shows how determinant
+factorization can support an interpretable classification without assuming
+that identical joint numbers imply identical geometry.
+
+\section*{Task}
+\textbf{Overall objectives.} Compare the PUMA and UR5 architectures, derive and interpret the three
+factors of the UR5 Jacobian determinant, associate regular IK solutions with
+signed categories, and deduce whether UR5 is cuspidal or noncuspidal.
+
+\begin{itemize}
+  \item \textbf{Compare the two kinematic models.} Inspect the URDFs, STL geometry,
+axis arrangements, and D--H conventions. Identify the PUMA spherical wrist and
+the different UR5 wrist/parallel-axis structure. Validate both forward models
+and document joint offsets, base frames, and tool frames.
+
+  \item \textbf{Derive and check the UR5 determinant.} Construct the full geometric
+Jacobian and factor its determinant into three configuration-dependent
+components, ignoring nonzero constant factors. Verify the factorization
+numerically against direct Jacobian evaluation and interpret each zero set
+geometrically.
+
+  \item \textbf{Assign signed categories.} Use the provided IK routines to obtain
+eight regular mathematical solutions at a suitable target for each robot.
+Assign $(\operatorname{sgn}f_1,\operatorname{sgn}f_2,\operatorname{sgn}f_3)$
+to every UR5 solution and compare with PUMA's shoulder--elbow--wrist labels.
+Check the one-to-one association at additional regular targets and separate
+joint-limit filtering from mathematical classification.
+
+  \item \textbf{Visualize the separators.} Plot UR5 determinant factors on selected
+$(q_2,q_3)$ slices at explicitly fixed $q_4,q_5$ and other joint values.
+Relate these slices to full six-dimensional configurations without treating
+projected off-slice IKs as on-slice points. For the PUMA arm, also map reduced
+singularities and the two-/four-arm-IK workspace distribution.
+
+  \item \textbf{Deduce cuspidality from structure.} Explain why changing a factor
+sign along a continuous path requires a zero crossing. Combine this fact with
+the complete regular IK classification to infer UR5's cuspidality status;
+factor count or determinant sign alone is not a sufficient argument. Test
+small approaches to each separator and report ambiguous near-zero labels.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+Study two architectures, three regular targets per robot, and one short
+approach to each UR5 singularity type. The UR5 URDF, STL meshes, and IK
+implementation will be provided. Reuse the PUMA IK baseline; focus new derivation
+on the UR5 Jacobian and classification rather than implementing another general
+IK solver. Allow geometric sign conventions to differ between models.
+
+Check both translation and orientation residuals
+for every claimed full-pose IK. Document angle periodicity and limits,
+Jacobian conventions, and any scaling used for singular values. State all
+fixed coordinates in reduced plots; a two-dimensional slice does not show
+the entire 6R singular set. Refine decisive transitions, and distinguish
+sampled evidence from a continuous-path guarantee. Collision freedom is
+not implied by these kinematic checks.
+
+\section*{Expected outcome}
+Explain both robot geometries and show how each UR5 IK fits into a signed
+category of three determinant factors. Deliver the verified factorization,
+illustrated classification tables, singularity plots, and a justified deduction
+of whether UR5 is cuspidal or noncuspidal.
+
+Submit reproducible code, model parameters and test data, the required plots,
+a concise 5--6-page report, and a short simulation demonstration. Explain
+both successful cases and failures; conclusions must follow the numerical
+and geometric evidence rather than an expected outcome.
+
+\section*{Resources}
+The PUMA 560 URDF is
+\path{lectures_main/assets/models/puma/puma560_robot.urdf}; its STL meshes are
+in the same directory. The lecture website provides axis/frame inspection,
+IK visualization, and path demonstrations. Confirm joint offsets and the
+selected terminal frame when importing the model.
+UR5 resources will be supplied separately; use the provided version consistently
+instead of substituting another UR-series robot or dimensional variant.
+
+
+Supporting reading:
+\href{https://salunkhedurgesh.com/projects/main/resources/papers/ijrr24_salunkhe.pdf}{\emph{Kinematic issues in 6R cuspidal robots}},
+especially the discussion of determinant factors and UR-type architectures.
+Explain the argument in your own model conventions rather than copying a
+factorization without checking it.
+
+Use the lecture website to verify D--H parameters, visualize IKs and
+singularities, and simulate paths. All listed paths are relative to the
+repository root. Start the website following \path{lectures_main/README.md}.
+
+\section*{Workload and collaboration}
+Budget approximately 60 hours per student (120 person-hours per pair)
+for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
+Deduct any lectures or exercises included in those credits. Allocate roughly
+20 team-hours to model validation, 50 to the core work, 30 to experiments,
+and 20 to reporting. Reuse the specified IK and simulations. Share validation
+and interpretation even if modelling and implementation are divided between
+students. Hardware execution is outside scope.
+
+\end{document}

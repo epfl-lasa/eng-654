@@ -1,0 +1,126 @@
+% Compile from this directory with: pdflatex project_12.tex (twice).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,urlcolor=epflred,linkcolor=epflred,
+  pdftitle={ENG-654 Project 12: Nonsingular Posture Change on custom\_3R}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+\urlstyle{tt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 12}
+
+{\LARGE\bfseries Nonsingular Posture Change on custom\_3R\par}
+
+\textbf{Format:} Group of two students; simulation-based project.\\
+\textbf{Course foundations:} Lectures 3, 5--7; Exercise 3.
+
+\section*{Motivation}
+For a cuspidal robot, two distinct configurations can reach the same
+workspace position while belonging to one singularity-free configuration
+region. A nonsingular connecting joint path then produces a closed tool path.
+This explains why posture labels and endpoint positions alone are insufficient
+to understand global motion planning.
+
+\section*{Task}
+\textbf{Overall objectives.} Use the exact custom\_3R model to construct and validate a candidate
+nonsingular connection between two distinct IK solutions of one position,
+and interpret both its joint-space path and its closed workspace image.
+
+\begin{itemize}
+  \item \textbf{Validate the exact model.} Read the URDF and establish its D--H
+parameters, angle offsets, and selected operational point. Compare forward
+kinematics and Jacobians with the course implementation. The exact robot is
+orthogonal with non-intersecting consecutive axes; do not substitute the
+idealized atlas dimensions.
+
+  \item \textbf{Locate the IKs on reduced maps.} Plot $\det J_p$ and its zero set
+in $(q_2,q_3)$, then map the critical curves and two-/four-IK regions in
+$(\rho,z)$. Select a regular target and overlay all its distinct IKs. Identify
+two candidate configurations in the same computed singularity-free component;
+equal determinant signs alone are insufficient.
+
+  \item \textbf{Construct the joint-space connection.} Use the Lecture 6
+nonsingular-change demonstration to obtain a starting candidate, then construct
+or adjust a piecewise-smooth path in the reduced component. Specify a continuous
+$q_1$ interpolation connecting the full endpoint IKs. Recover and display the
+complete three-joint trajectory.
+
+  \item \textbf{Validate the workspace loop.} Compute the forward image of every
+joint sample and check that the endpoint positions agree while endpoint
+configurations are distinct modulo $2\pi$. Display both the three-dimensional
+workspace loop and its meridian projection. Do not infer full Cartesian
+closure from agreement in $(\rho,z)$ alone.
+
+  \item \textbf{Test regularity and robustness.} Monitor $\det J_p$, the smallest
+singular value, and optional joint-limit violations. Refine near the smallest
+margin and compare the original path with one small path perturbation.
+Separate strong sampled evidence from a continuous mathematical guarantee;
+use an analytical bound only if readily available.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+Study one target, one selected IK pair, and two candidate paths (the
+original and one variation). The lecture's existing connection is an allowed
+seed, but validation must use the exact model. The primary cuspidality study
+uses periodic unconstrained joints; report separately whether the same path
+respects the URDF limits. No obstacle model or general cusp-search algorithm
+is required.
+
+Use the position Jacobian $J_p$ for the 3R task.
+Confirm that the meridian reduction is valid for the selected model and
+operational point. Count distinct real IKs modulo periodicity, then filter
+joint limits separately. Identify two-/four-IK regions where present and
+explain any absent count rather than forcing both types into every map. Show both determinant values and the zero contour,
+and distinguish sampled connectivity from a proof. Refine the decisive
+region instead of claiming completeness from a coarse grid.
+
+\section*{Expected outcome}
+Explain cuspidality through a concrete nonsingular posture change, including
+the relationship between reduced singularities, multiple IKs, and a closed
+workspace image. Deliver the selected IK pair, reproducible joint paths,
+paired plots, and a regularity/closure validation report.
+
+Submit reproducible code, model parameters and test data, the required plots,
+a concise 5--6-page report, and a short simulation demonstration. Explain
+both successful cases and failures; conclusions must follow the numerical
+and geometric evidence rather than an expected outcome.
+
+\section*{Resources}
+The exact custom\_3R is an orthogonal 3R robot with non-intersecting
+consecutive joint axes. Its URDF is
+\path{lectures_main/assets/models/custom_3R/custom_3R_new.urdf}; STL meshes are
+in the same directory. Use the lecture website to inspect axes and frames,
+verify D--H parameters, plot IKs, and animate configurations.
+Use the exact-model nonsingular-change lab in Lecture 6 and the Lecture 3 IK
+method. The idealized atlas can explain concepts but must not supply metric
+results for this exact-URDF experiment.
+
+Use the lecture website to verify D--H parameters, visualize IKs and
+singularities, and simulate paths. All listed paths are relative to the
+repository root. Start the website following \path{lectures_main/README.md}.
+
+\section*{Workload and collaboration}
+Budget approximately 60 hours per student (120 person-hours per pair)
+for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
+Deduct any lectures or exercises included in those credits. Allocate roughly
+20 team-hours to model validation, 50 to the core work, 30 to experiments,
+and 20 to reporting. Reuse the specified IK and simulations. Share validation
+and interpretation even if modelling and implementation are divided between
+students. Hardware execution is outside scope.
+
+\end{document}

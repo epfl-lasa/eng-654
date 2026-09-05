@@ -1,0 +1,128 @@
+% Compile from this directory with: pdflatex project_5.tex (twice).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,urlcolor=epflred,linkcolor=epflred,
+  pdftitle={ENG-654 Project 5: From Positioning-Arm Geometry to 6R Cuspidality}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+\urlstyle{tt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 5}
+
+{\LARGE\bfseries From Positioning-Arm Geometry to 6R Cuspidality\par}
+
+\textbf{Format:} Group of two students; simulation-based project.\\
+\textbf{Course foundations:} Lectures 3--6; Exercises 2--3.
+
+\section*{Motivation}
+Attaching a spherical wrist turns a position manipulator into a full-pose
+robot, but it does not erase the positioning arm's global structure. A useful
+classification must explain both the arm's possible posture changes and the
+wrist's orientation singularities. This project studies the relationship rather
+than assuming that every wrist-partitioned robot behaves like PUMA.
+
+\section*{Task}
+\textbf{Overall objectives.} Analyze a selected family of wrist-partitioned 6R robots formed from
+noncuspidal and cuspidal 3R arms, and relate full-pose IK multiplicity and
+connectivity to the two kinematic modules.
+
+\begin{itemize}
+  \item \textbf{Specify and validate the family.} Use the two Lecture 6 idealized 3R
+arm presets and attach the same ideal spherical wrist with an explicit fixed
+tool transform. Define the wrist rotation convention and verify its axis
+concurrency. Use custom\_6R as the supplied concrete example of custom\_3R
+plus wrist, not as a metric substitute for the idealized presets.
+
+  \item \textbf{Factor the Jacobian geometrically.} Express the geometric Jacobian at
+the wrist center in a common frame and show the block structure giving
+$\det J=\det J_{A,v}\det J_{W,\omega}$. Interpret arm and wrist rank loss;
+confirm that changing the point at which the twist is expressed preserves rank.
+
+  \item \textbf{Map the positioning-arm structure.} Plot $\det J_{A,v}$ and its zeros
+in $(q_2,q_3)$, overlay arm IKs, and map the two-/four-arm-IK regions in
+$(\rho,z)$. For fixed regular tool orientations, count the resulting full-pose
+solutions and explain when each arm solution admits two wrist flips.
+
+  \item \textbf{Test the inheritance of connectivity.} Use one supplied candidate
+nonsingular arm connection for the cuspidal member and solve the wrist along
+it while maintaining a selected orientation. Monitor both Jacobian factors.
+Explain why a failed fixed-orientation lift does not by itself refute
+cuspidality of the unrestricted full-pose robot.
+
+  \item \textbf{Compare structural conclusions.} Relate singular separators and IK
+counts for both members. Distinguish global classification of the ideal
+unconstrained robot from the feasibility of a particular orientation-constrained
+path. Repeat one target test after changing the fixed tool offset, explaining
+the required pose transformation.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+Limit the study to two arm geometries, one common spherical-wrist
+architecture, three regular targets per member, and one candidate connecting
+path. The instructor will provide the arm IK routine and candidate connection.
+Derive the wrist solution and Jacobian factorization; a classification of all
+6R robots is not required. Apply joint limits only as a separately reported
+feasibility filter.
+
+Check both translation and orientation residuals
+for every claimed full-pose IK. Document angle periodicity and limits,
+Jacobian conventions, and any scaling used for singular values. State all
+fixed coordinates in reduced plots; a two-dimensional slice does not show
+the entire 6R singular set. Refine decisive transitions, and distinguish
+sampled evidence from a continuous-path guarantee. Collision freedom is
+not implied by these kinematic checks.
+
+\section*{Expected outcome}
+Explain how arm geometry, wrist flips, and their singularities organize
+the full-pose inverse problem. Deliver paired arm maps, full-pose IK counts,
+the factorization, and a documented comparison of the selected path's arm and
+full-robot regularity.
+
+Submit reproducible code, model parameters and test data, the required plots,
+a concise 5--6-page report, and a short simulation demonstration. Explain
+both successful cases and failures; conclusions must follow the numerical
+and geometric evidence rather than an expected outcome.
+
+\section*{Resources}
+The idealized D--H atlas in Lecture 6 is a separate mathematical
+family, implemented in \path{lectures_main/js/viz/cuspidalityLecture.js}.
+Its dimensions and conventions must not be inferred from the custom\_3R STL
+renderings. Use the standard-D--H convention stated in the lectures.
+
+The custom\_6R consists of the custom\_3R positioning arm plus a
+spherical wrist. The arm is orthogonal with non-intersecting consecutive axes.
+Its URDF is \path{lectures_main/assets/models/custom_6R/custom_6R_new.urdf};
+the corresponding STL meshes are in that directory. Inspect wrist-axis
+concurrency and base/tool transforms using the lecture website.
+Reuse Lectures 4--6 and Exercises 2--3 for wrist partitioning and Jacobian
+construction. The idealized family is defined by its D--H parameters.
+
+Use the lecture website to verify D--H parameters, visualize IKs and
+singularities, and simulate paths. All listed paths are relative to the
+repository root. Start the website following \path{lectures_main/README.md}.
+
+\section*{Workload and collaboration}
+Budget approximately 60 hours per student (120 person-hours per pair)
+for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
+Deduct any lectures or exercises included in those credits. Allocate roughly
+20 team-hours to model validation, 50 to the core work, 30 to experiments,
+and 20 to reporting. Reuse the specified IK and simulations. Share validation
+and interpretation even if modelling and implementation are divided between
+students. Hardware execution is outside scope.
+
+\end{document}
