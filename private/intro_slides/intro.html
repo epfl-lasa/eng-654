@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A twelve-slide course introduction for Aude Billard. Kinematics-Grounded Motion Planning for Robots, ENG-654.">
+  <title>ENG-654 · Course introduction</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layouts.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/intro.css">
+</head>
+<body class="intro-deck">
+<main class="deck" aria-label="Course introduction, twelve slides">
+
+  <section class="slide cover active" id="slide-1" data-title="Welcome" aria-label="Slide 1: Welcome">
+    <div class="cover-rule"></div>
+    <p class="eyebrow">École polytechnique fédérale de Lausanne (EPFL) / Course ENG-654</p>
+    <div class="cover-main">
+      <h1 class="course-title">Kinematics-Grounded<br>Motion Planning<br>for Robots</h1>
+      <img class="cover-portrait" src="assets/images/aude_profile.jpg" alt="Aude Billard" width="300" height="200">
+    </div>
+    <div class="cover-bottom"><div><strong>Aude Billard</strong><span>Course introduction</span></div><div><span>With course tutors</span><strong>Durgesh Salunkhe &amp; Arda Yigit</strong></div></div>
+    <aside class="notes">
+      <p><strong>Theme:</strong> The relationship between a robot’s mechanism and the motions it can execute.</p>
+      <p><strong>Course context:</strong> Geometry, continuous motion and the reasoning behind a feasible path. Durgesh Salunkhe and Arda Yigit connect the two parts of the course to their research.</p>
+      <p><strong>Following slide:</strong> Examples of robot motion across several tasks and settings.</p>
+    </aside>
+  </section>
+
+  <section class="slide" id="slide-2" data-title="Motion planning is everywhere" aria-label="Slide 2: Motion planning is everywhere">
+    <p class="eyebrow">Real-world motion</p>
+    <div class="video-heading">
+      <h2 class="slide-title">Motion planning is everywhere</h2>
+      <button type="button" class="play-all" id="play-all" title="Play all four videos from the beginning"><span aria-hidden="true">▶</span> Play all</button>
+    </div>
+    <div class="video-grid">
+      <figure class="media-slot" data-media="success1"><div class="media-stage"><video controls playsinline muted preload="metadata" aria-label="Robot painting"></video><div class="media-fallback"><span class="media-number">01</span><strong>Robot painting</strong><span>Industrial motion planning</span><small>Video unavailable</small></div></div><figcaption>Earlier applications of robot motion planning<span class="media-credit">Video source: <a href="https://www.youtube.com/watch?v=d4G7Ul62ibE" target="_blank" rel="noopener noreferrer">YouTube</a></span></figcaption></figure>
+      <figure class="media-slot" data-media="success2"><div class="media-stage"><video controls playsinline muted preload="metadata" aria-label="Yaskawa manipulation"></video><div class="media-fallback"><span class="media-number">02</span><strong>Yaskawa manipulation</strong><span>Environment aware motion planning</span><small>Video unavailable</small></div></div><figcaption>Environment aware motion planning</figcaption></figure>
+      <figure class="media-slot" data-media="success3"><div class="media-stage"><video controls playsinline muted preload="metadata" aria-label="Yaskawa robot moving a television"></video><div class="media-fallback"><span class="media-number">03</span><strong>Yaskawa robot moving a television</strong><span>Robot planning in action</span><small>Video unavailable</small></div></div><figcaption>Interesting applications for robot planning</figcaption></figure>
+      <figure class="media-slot" data-media="success4"><div class="media-stage"><video controls playsinline muted preload="metadata" aria-label="Humanoid motion"></video><div class="media-fallback"><span class="media-number">04</span><strong>Humanoid motion</strong><span>Recent robot applications</span><small>Video unavailable</small></div></div><figcaption>Recent use case<span class="media-credit">Video source: <a href="https://www.youtube.com/watch?v=rTej9ym9UQc" target="_blank" rel="noopener noreferrer">YouTube</a></span></figcaption></figure>
+    </div>
+    <p class="bottom-line">Every useful robot action depends on a feasible motion.</p>
+    <aside class="notes">
+      <p><strong>Playback:</strong> <em>Play all</em> starts the four clips together.</p>
+      <ul><li><strong>Top left:</strong> Spray painting; human and robot shown side by side.</li><li><strong>Top right:</strong> A Yaskawa arm carries an object through a structure with obstacles.</li><li><strong>Bottom left:</strong> Television screens mounted on robots move in coordination.</li><li><strong>Bottom right:</strong> Humanoid robots handle parcels beside a conveyor.</li></ul>
+      <p><strong>Connection:</strong> Each task involves coordinated motion of the whole robot within its surroundings.</p>
+      <p><strong>Following slide:</strong> A Jaco example in which the motion breaks down.</p>
+    </aside>
+  </section>
+
+  <section class="slide" id="slide-3" data-title="When motion fails" aria-label="Slide 3: When motion fails">
+    <p class="eyebrow">The limits of a successful demonstration</p>
+    <h2 class="slide-title">When motion fails</h2>
+    <div class="failure-layout">
+      <figure class="media-slot failure-video" data-media="failure"><div class="media-stage"><video controls playsinline preload="metadata" aria-label="Jaco motion planning failure"></video><div class="media-fallback"><span class="media-number">!</span><strong>Jaco</strong><span>Motion failure</span><small>Video unavailable</small></div></div><figcaption>Real world consequences of failed robot planning.<span class="media-credit">Video source: <a href="https://achille0.medium.com/under-the-radar-cuspidal-robots-7091eca01271" target="_blank" rel="noopener noreferrer">Achille Verheye on Medium</a></span></figcaption></figure>
+      <div class="failure-copy"><p class="large-question">Can the robot execute<br>the <em>whole path?</em></p><p>A reachable goal does not establish a feasible motion to it.</p><div class="discussion"><span>What would you check?</span><p>Joint limits and collisions<br>Lost motion directions (singularities)<br>Continuous joint motion</p></div></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Video:</strong> Jaco moves a yellow sponge around a sink. Abrupt changes occur in the arm and tool movement; the clip includes a second failure example.</p>
+      <p><strong>Context:</strong> The example raises questions about joint limits, loss of motion directions and continuity. The underlying cause is not established by the footage.</p>
+      <p><strong>Connection:</strong> A reachable destination still leaves the question of a continuous, feasible path.</p>
+      <p><strong>Following slide:</strong> The consequences of unexpected motion in spaces shared with people.</p>
+    </aside>
+  </section>
+
+  <section class="slide" id="slide-4" data-title="From industry to everyday life" aria-label="Slide 4: From industry to everyday life">
+    <p class="eyebrow">Why this matters now</p>
+    <h2 class="slide-title">From industry to everyday life</h2>
+    <div class="stakes-layout">
+      <div class="stakes-images" role="group" aria-label="Assistive and collaborative robots">
+        <figure><img class="kinova-image" src="assets/images/kinova.webp" alt="A Kinova assistive arm helping a person eat at home"><figcaption class="media-credit">Image source: <a href="https://www.kinovarobotics.com/fr/produit/jaco" target="_blank" rel="noopener noreferrer">Kinova’s Jaco page</a></figcaption></figure>
+        <figure><img src="assets/images/ur5_hri.png" alt="A person working closely with a UR5 collaborative robot"><figcaption class="media-credit">Image source: <a href="https://link.springer.com/article/10.1007/s00170-020-05363-1" target="_blank" rel="noopener noreferrer">Springer article</a></figcaption></figure>
+        <figure><img src="assets/images/abb_crb.jpeg" alt="A person guiding an ABB collaborative robot by hand"><figcaption class="media-credit">Image source: <a href="https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=10711794" target="_blank" rel="noopener noreferrer">Research article</a></figcaption></figure>
+      </div>
+      <div class="stakes-copy"><p class="lead">Robots have moved from industrial settings into everyday life.</p><p>Assistive and collaborative robots now interact directly with people.</p><p class="red-takeaway">Motion planning with guarantees is essential for safe human–robot interaction.</p></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Images:</strong> Left: assistance with eating. Centre: a person sharing a workspace with a robot arm. Right: direct guidance by hand.</p>
+      <p><strong>Context:</strong> These applications bring robot motion into close contact with people. Dependable movement is part of making that interaction useful and predictable.</p>
+      <p><strong>Following slide:</strong> What can be established about a motion before execution, and under which assumptions.</p>
+    </aside>
+  </section>
+
+  <section class="slide" id="slide-5" data-title="Global analysis and guarantees" aria-label="Slide 5: Global analysis and guarantees">
+    <p class="eyebrow">The engineering standard we will develop</p>
+    <h2 class="slide-title">Global analysis and guarantees</h2>
+    <div class="global-layout"><div class="global-principle"><p>Feasibility over<br><em>the entire motion.</em></p><span>With explicit assumptions.</span></div><ol class="flat-steps"><li><strong>The allowed robot postures</strong><span>Where do joint limits, collisions and singularities restrict motion?</span></li><li><strong>The connections between postures</strong><span>Which postures can the robot move between continuously?</span></li><li><strong>The evidence for execution</strong><span>Which constraints hold along the path, and what remains unverified?</span></li></ol></div>
+    <p class="scope-note">A guarantee is relative to the model and constraints. Checking isolated samples alone does not certify the motion between them.</p>
+    <aside class="notes">
+      <p><strong>Theme:</strong> A guarantee describes what holds along a complete path, within a stated model and set of assumptions.</p>
+      <p><strong>Scope:</strong> Allowed postures, continuous connections between them, and constraints along the route. Checks at isolated points can miss what happens between them.</p>
+      <p><strong>Context:</strong> Physical safety also depends on sensing, control and operating conditions.</p>
+      <p><strong>Following slide:</strong> Part I develops this reasoning using serial robot arms.</p>
+    </aside>
+  </section>
+
+  <section class="slide" id="slide-6" data-title="Part I · Serial robots" aria-label="Slide 6: Part I, serial robots">
+    <p class="eyebrow">Part I</p>
+    <h2 class="slide-title">Serial robots and motion planning</h2>
+    <div class="serial-layout"><ol class="curriculum"><li><b>01</b><div><strong>Understand the model</strong><span>Coordinate systems and descriptions of robot geometry</span></div></li><li><b>02</b><div><strong>Analyse the constraints</strong><span>Find joint positions that reach a target and respect motion limits</span></div></li><li><b>03</b><div><strong>Understand global properties</strong><span>Find which robot postures can connect through continuous motion</span></div></li><li><b>04</b><div><strong>Use redundancy</strong><span>Use extra joints to gain more ways to complete a task</span></div></li><li><b>05</b><div><strong>Verify the complete motion</strong><span>Check that the robot can follow the entire path within its limits</span></div></li></ol><div class="serial-outcome"><span class="eyebrow">By the end of Part I</span><p>Plan a continuous motion<br>and <em>justify its feasibility.</em></p><div class="course-examples"><span>Course examples</span><ul><li><strong>PUMA 560 robot · 6 joints</strong><span>Widely used industrial robot</span></li><li><strong>KUKA iiwa LWR robot · 7 joints</strong><span>Widely used collaborative robot</span></li><li><strong>Custom robots with 3 and 6 joints</strong><span>For in-depth analysis of robots</span></li></ul></div></div></div>
+    <aside class="notes">
+      <p><strong>Part I:</strong> The progression from a robot model to a motion plan supported by analysis.</p>
+      <ul><li><strong>PUMA 560, 6 joints:</strong> The industrial example.</li><li><strong>KUKA iiwa, 7 joints:</strong> The collaborative example; an extra joint adds choices. LWR means lightweight robot.</li><li><strong>Custom robots, 3 and 6 joints:</strong> Examples for deeper analysis of robot geometry.</li></ul>
+      <p><strong>Following slide:</strong> Durgesh’s research connects these questions to transferring skills between robots.</p>
+    </aside>
+  </section>
+
+  <section class="slide instructor-slide" id="slide-7" data-title="Durgesh Salunkhe" data-tutor="durgesh" aria-label="Slide 7: Durgesh Salunkhe">
+    <iframe id="instructor-introduction" class="instructor-frame" src="assets/tutors/instructor_intro.html" title="Durgesh Salunkhe, instructor introduction" sandbox="allow-scripts" loading="eager"></iframe>
+    <aside class="notes">
+      <p><strong>Research:</strong> How a skill learned on one robot can be used on another.</p>
+      <p><strong>Background:</strong> Durgesh is a postdoctoral researcher at EPFL, with a doctorate from Nantes and eight years in robotics. The Science Robotics work shown is <em>Demonstrate once, execute on many</em>.</p>
+      <p><strong>Course connection:</strong> How robot geometry shapes the motion needed to carry out a demonstrated skill.</p>
+      <p><strong>Following slide:</strong> Parallel robots, where several chains work together.</p>
+    </aside>
+  </section>
+
+  <section class="slide" id="slide-8" data-title="Part II · Parallel robots" aria-label="Slide 8: Part II, parallel robots">
+    <p class="eyebrow">Part II</p>
+    <h2 class="slide-title">Parallel robots: design, kinematics and interaction</h2>
+    <div class="parallel-layout"><figure class="parallel-photo"><img src="assets/images/delta_robot.jpg" alt="A Delta parallel robot with motors at the base and three chains of links supporting a moving platform"><figcaption><strong>The Delta robot</strong><br>The most famous parallel robot.<br>Design patented by<br>Professor Reymond Clavel, EPFL.</figcaption></figure><div class="parallel-copy"><table class="comparison"><thead><tr><th>Serial robots</th><th>Parallel robots</th></tr></thead><tbody><tr><td>One chain of connected joints</td><td>Several chains supporting one platform</td></tr><tr><td>Combine the motion of each joint</td><td>Solve for all connected chains together</td></tr><tr><td>Motors often move with the arm</td><td>Motors at the base can reduce moving mass</td></tr></tbody></table><div class="parallel-topics"><p><strong>Design analysis</strong><span>How geometry shapes the reachable area and performance</span></p><p><strong>Kinematics and singularities</strong><span>Possible postures and limits on motion and control</span></p><p><strong>Interaction</strong><span>How easily a person can guide the robot by hand</span></p></div></div></div>
+    <aside class="notes">
+      <p><strong>Delta robot:</strong> Reymond Clavel’s EPFL design. Several chains support one moving platform and move together. Keeping motors at the base can reduce the mass that moves.</p>
+      <p><strong>Context:</strong> The arrangement of links and joints shapes the available motions and the questions involved in modelling them.</p>
+      <p><strong>Following slide:</strong> A parallel robot demonstrating task control and direct interaction by hand.</p>
+    </aside>
+  </section>
+
+  <section class="slide" id="slide-9" data-title="Redundancy for intuitive interaction" aria-label="Slide 9: Redundancy for intuitive interaction">
+    <p class="eyebrow">Parallel robots in interaction</p>
+    <h2 class="slide-title">Redundancy for intuitive interaction</h2>
+    <div class="interaction-layout">
+      <figure class="media-slot interaction-video" data-media="interaction"><div class="media-stage"><video controls playsinline preload="metadata" aria-label="Parallel robot demonstrating task control and direct hand guidance"></video><div class="media-fallback"><strong>Parallel robot interaction</strong><span>From task mode to collaborative mode</span><small>Video unavailable</small></div></div><figcaption>Stiff control for task execution; easy hand guidance for interaction.</figcaption></figure>
+      <div class="interaction-copy"><p class="large-question">One robot.<br><em>Two modes.</em></p><p class="lead">Redundancy provides extra freedom to adapt the robot’s motion during physical interaction.</p><div class="interaction-modes"><p><strong>Handle free</strong><span>Task mode</span></p><p><strong>Handle grasped</strong><span>Collaborative mode</span></p></div><p class="red-takeaway">Intuitive human–robot interaction.</p></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Video, 48 seconds:</strong> The first 17 seconds show the platform translating and rotating, followed by a closer view of the handle.</p>
+      <p><strong>Around 24 seconds:</strong> The lower handle is grasped and the green label changes to <em>Collaborative mode</em>, with direct hand guidance. Release around 29 seconds is followed by a return to <em>Task mode</em>.</p>
+      <p><strong>Connection:</strong> Two modes in one robot: stiff task control and easy hand guidance. Extra freedom in the mechanism helps shape interaction.</p>
+      <p><strong>Following slide:</strong> The design choices behind this behaviour.</p>
+    </aside>
+  </section>
+
+  <section class="slide" id="slide-10" data-title="Part II · How to design parallel robots" aria-label="Slide 10: Part II, how to design parallel robots">
+    <p class="eyebrow">Part II</p>
+    <h2 class="slide-title">Parallel robots and their design</h2>
+    <div class="serial-layout"><ol class="curriculum"><li><b>01</b><div><strong>Parallel robot topologies</strong><span>How links and joints are connected</span></div></li><li><b>02</b><div><strong>Different types of parallel robots</strong><span>Compare designs and the motions they allow</span></div></li><li><b>03</b><div><strong>Kinematic modelling</strong><span>Relate joint movement to platform movement</span></div></li><li><b>04</b><div><strong>Singularities and their geometric understanding</strong><span>Find postures where motion or control is lost</span></div></li><li><b>05</b><div><strong>Kinematic and actuation redundancy</strong><span>Extra joints or motors that add design choices</span></div></li></ol><div class="serial-outcome"><span class="eyebrow">By the end of Part II</span><p>How to design<br><em>parallel robots.</em></p></div></div>
+    <aside class="notes">
+      <p><strong>Part II:</strong> How the choice of mechanism shapes the motions a robot can achieve.</p>
+      <p><strong>Topics:</strong> Connections between links and joints; the relationship between joint and platform motion; postures where motion or control is lost; and the possibilities offered by extra joints or motors.</p>
+      <p><strong>Following slide:</strong> Arda’s work on robot design and physical interaction.</p>
+    </aside>
+  </section>
+
+  <section class="slide instructor-slide" id="slide-11" data-title="Arda Yigit" data-tutor="arda" aria-label="Slide 11: Arda Yigit">
+    <iframe id="arda-introduction" class="instructor-frame" src="assets/tutors/arda_intro.html" title="Arda Yigit, instructor introduction" sandbox="allow-scripts" loading="eager"></iframe>
+    <aside class="notes">
+      <p><strong>Research:</strong> Arda’s work connects mechanism design, control and physical interaction, with ten years of experience in robot design and control.</p>
+      <p><strong>Background:</strong> Tenured researcher at France’s national research centre, with research experience at Laval University’s Robotics Laboratory.</p>
+      <p><strong>Course connection:</strong> The “survival kit” refers to practical tools for understanding and designing parallel robots.</p>
+      <p><strong>Following slide:</strong> The shared course objectives across serial and parallel robots.</p>
+    </aside>
+  </section>
+
+  <section class="slide closing" id="slide-12" data-title="What you will take away" aria-label="Slide 12: What you will take away">
+    <p class="eyebrow">The course objective</p>
+    <h2 class="closing-title">A motion you can<br><em>explain and verify.</em></h2>
+    <div class="closing-columns"><div><span>Understand the mechanism</span><p>Read its model and identify the constraints that govern motion.</p></div><div><span>Establish feasibility</span><p>Use global properties to reason about the complete path.</p></div><div><span>State the guarantee</span><p>Explain what has been verified and the assumptions it relies on.</p></div></div>
+    <p class="closing-invitation">Let’s begin with the robot itself.</p>
+    <aside class="notes">
+      <p><strong>Course outcome:</strong> A motion whose feasibility can be explained and supported by analysis.</p>
+      <p><strong>Shared themes:</strong> Understanding the mechanism, verifying the complete path and stating the assumptions. These apply to industrial arms, collaborative robots and custom designs.</p>
+      <p><strong>Continuation:</strong> The first teaching session develops these ideas, beginning with the robot itself.</p>
+    </aside>
+  </section>
+</main>
+<nav class="deck-nav" aria-label="Slide navigation"><button id="previous" aria-label="Previous slide" title="Previous slide (Left arrow)">‹</button><span id="counter" aria-live="polite">1 / 12</span><button id="next" aria-label="Next slide" title="Next slide (Right arrow)">›</button></nav>
+<aside id="notes-panel" hidden aria-label="Slide suggestions"><button id="notes-close" aria-label="Close slide suggestions">×</button><p class="eyebrow">Slide suggestions</p><h3 id="notes-title"></h3><div id="notes-content"></div></aside>
+<script src="js/media-config.js"></script>
+<script src="js/intro.js"></script>
+</body>
+</html>
