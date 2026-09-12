@@ -760,6 +760,14 @@ details.faq-item .faq-answer {
     font-weight: 700;
 }
 
+.schedule-description {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.95rem;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
 .faq-contact {
     border-color: var(--white);
     background: var(--black);
