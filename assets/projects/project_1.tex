@@ -1,4 +1,3 @@
-% Compile from this directory with: pdflatex project_1.tex (twice).
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -26,7 +25,8 @@
 {\LARGE\bfseries Identifying and Tracking the Eight IK Branches of the PUMA 560\par}
 
 \textbf{Format:} Group of two students; simulation-based project.\\
-\textbf{Course foundations:} Lectures 2--7 and Exercises 1--3.
+\textbf{Prerequisites:} Rigid transforms, D--H modelling, analytical and numerical
+inverse kinematics, Jacobians, singularities, and path continuation.
 
 \section*{Motivation and historical context}
 A Cartesian path specifies where a robot's tool should move, but does not uniquely
@@ -42,17 +42,18 @@ The PUMA family grew out of Victor Scheinman's electrically driven robot-arm wor
 and was developed at Unimation for industrial assembly in the late 1970s. The
 Smithsonian dates its Unimate PUMA 500 to 1978; the Computer History Museum
 describes the family's use in automobile assembly and other industrial
-tasks.\footnote{\href{https://www.si.edu/object/unimate-puma-500:nmah_1028521}{Smithsonian: Unimate PUMA 500};
-\href{https://www.computerhistory.org/timeline/ai-robotics/}{Computer History Museum: AI \& Robotics timeline}.}
+tasks.\footnote{Smithsonian: Unimate PUMA 500; Computer History Museum:
+AI \& Robotics timeline.}
 The PUMA 560 became a widely studied example of a \emph{wrist-partitioned 6R}
 manipulator: three arm joints position a wrist center, while three concurrent
 wrist axes determine orientation. This spherical-wrist geometry permits the
 full-pose IK problem to be separated into arm and wrist subproblems, yielding
-the familiar shoulder, elbow, and wrist choices.\footnote{\href{https://www.petercorke.com/RTB/r9/html/SerialLink.html}{Peter Corke, Robotics Toolbox: SerialLink, analytical spherical-wrist IK}.}
+the familiar shoulder, elbow, and wrist choices.\footnote{Peter Corke,
+Robotics Toolbox: analytical spherical-wrist inverse kinematics.}
 
 Six-axis arms remain relevant to industrial assembly and handling; current
 assembly applications include those documented by
-St\"aubli.\footnote{\href{https://www.staubli.com/global/en/robotics/applications/assembly-robot.html}{St\"aubli: robotic assembly applications}.}
+St\"aubli.\footnote{St\"aubli: robotic assembly applications.}
 The planning questions studied here also arise when a tool must follow a process
 contour with a prescribed orientation. The PUMA provides a tractable model for
 studying these questions; its eight-class structure must not be assumed to apply
@@ -74,16 +75,17 @@ initial IK class affects the ability to follow a prescribed Cartesian pose path.
   residuals. Explain why moving an STL visual origin does not change kinematics.
 
   \item \textbf{Recover and study eight IK solutions.}
-  Use a regular full-pose target admitting eight mathematical solutions, starting
-  with the Lecture 4 example. Reuse or adapt the course analytical method or your
-  validated Exercise 2 implementation. Visualize every solution and verify pose
+  Use a regular full-pose target admitting eight mathematical solutions. Obtain
+  a candidate target by applying forward kinematics to a regular configuration
+  and checking its IK count. Reuse or adapt a validated analytical
+  spherical-wrist IK implementation. Visualize every solution and verify pose
   closure. Distinguish mathematical solutions from those admitted by the chosen
   joint limits; record angle periodicity and remove equivalent duplicates.
 
   \item \textbf{Develop a geometric classifier.}
   Assign shoulder (left/right), elbow (up/down), and wrist (flip/non-flip) labels.
   Derive identification rules consistent with your D--H conventions and relate
-  them to the singularity factors in Lecture 6:
+  them to the factors of your model's Jacobian determinant:
   \[
     \det J(q)=K f_S(q)f_E(q)f_W(q),\qquad
     (S,E,W)=\bigl(\operatorname{sgn}f_S,
@@ -123,25 +125,18 @@ initial IK class affects the ability to follow a prescribed Cartesian pose path.
   is evidence, not a proof of continuous-path feasibility.
 \end{itemize}
 
-\section*{Available assets and lecture simulations}
-\textbf{The PUMA 560 URDF description and STL meshes are provided.}
-The URDF is at
-\path{lectures_main/assets/models/puma/puma560_robot.urdf};
-the corresponding STL files are in the same directory. Paths are relative to
-the repository root.
+\section*{Provided materials and implementation}
+\textbf{The PUMA 560 robot description (.urdf) and link meshes (.stl) will be
+provided to the students.}
+Use a robotics library or your own validated tools to inspect frames and axes,
+verify D--H parameters, visualize IK postures, and animate paths. Confirm joint
+offsets and base/tool transforms when importing the supplied model.
 
-Use the simulations on the lecture website to inspect frames and axes, verify
-D--H parameters, visualize IK postures, and simulate or explore paths. Lectures
-2 and 4 support modelling and IK; Lectures 5 and 6 support singularities and
-classification; Lecture 7 supports path continuation. These materials are in
-\path{lectures_main/lectures/}; exercise briefs are in
-\path{lectures_main/exercises/}.
-
-The existing Lecture 7 PUMA path demonstration constrains wrist-center position
-and holds the wrist joints at their seed values. Use it as a starting point,
-then extend or complement it with full-pose IK to study all eight classes along
-a position-and-orientation path. Visual inspection should accompany quantitative
-checks.
+Use full-pose IK to study all eight classes along a position-and-orientation
+path. A wrist-center-only solver with fixed wrist joints does not enforce
+the prescribed tool orientation; complement it with the spherical-wrist
+orientation solution if using that decomposition. Visual inspection should
+accompany quantitative checks.
 
 \section*{Expected outcome}
 Students should be able to read and interpret the robot's URDF, establish and
@@ -154,16 +149,5 @@ Submit reproducible code and test poses/paths, an illustrated classification
 table, comparison plots, a concise 5--6-page report, and a short simulation
 demonstration. Explain both successful continuations and failures. A positive
 result showing that classification always outperforms the baseline is not required.
-
-\section*{Workload and collaboration}
-For a standalone 2-ECTS project, budget approximately 60 hours per student
-(120 person-hours per pair), following EPFL's course-design convention of
-30 hours per credit.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
-If the two credits also include lectures and exercises, deduct their workload
-from this allocation. Reuse existing IK and visualization code to keep the
-scope manageable; hardware execution and collision-checker development are
-outside the core assignment. One student can lead modelling and classification,
-and the other continuation and experiments; both must contribute to validation
-and be able to explain the complete project.
 
 \end{document}

@@ -38,7 +38,7 @@ a {
     top: 0;
     z-index: 10;
     display: grid;
-    grid-template-columns: minmax(9rem, 0.6fr) minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: stretch;
     min-height: 4.5rem;
     background: var(--white);
@@ -79,6 +79,7 @@ a {
 }
 
 .nav-links a {
+    flex-shrink: 0;
     min-height: 4.5rem;
     display: inline-flex;
     align-items: center;
@@ -89,6 +90,11 @@ a {
     font-size: 0.82rem;
     font-weight: 700;
     text-transform: uppercase;
+}
+
+.nav-links .nav-schedule {
+    color: var(--white);
+    background: var(--red);
 }
 
 .nav-links a:hover {
@@ -562,7 +568,7 @@ dd {
     .nav-links {
         width: 100%;
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         justify-content: stretch;
         overflow-x: visible;
     }
@@ -609,10 +615,13 @@ dd {
 
 
 /* -------------------------------------------------------------------------- */
-/* Frequently asked questions                                                 */
+/* Course structure, evaluation, and schedule                                  */
 /* -------------------------------------------------------------------------- */
 
 #faqs,
+main > section[id],
+#faq-schedule,
+#faq-structure,
 .faq-section[id],
 .faq-contact[id] {
     scroll-margin-top: 4.5rem;
@@ -788,9 +797,12 @@ details.faq-item .faq-answer {
 
 @media (max-width: 700px) {
     #faqs,
+    main > section[id],
+    #faq-schedule,
+    #faq-structure,
     .faq-section[id],
     .faq-contact[id] {
-        scroll-margin-top: 11.25rem;
+        scroll-margin-top: 14.65rem;
     }
 
     details.faq-item .faq-answer {
@@ -841,6 +853,10 @@ details.faq-item .faq-answer {
 
 .lecture-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.parallel-lecture-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .module-card {

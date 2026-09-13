@@ -29,10 +29,19 @@ jobs:
         uses: actions/configure-pages@v6
 
       # The site is plain HTML, CSS, JavaScript, and assets; no Jekyll build is needed.
+      - name: Check release staging
+        run: python3 -B -m unittest discover -s .github/scripts -p 'test_stage_site.py'
+
+      - name: Stage site for configured Exercise 01 release
+        run: |
+          python3 -B .github/scripts/stage_site.py \
+            --source . \
+            --destination "$RUNNER_TEMP/eng654-public"
+
       - name: Upload site
         uses: actions/upload-pages-artifact@v5
         with:
-          path: .
+          path: ${{ runner.temp }}/eng654-public
 
       - name: Deploy to GitHub Pages
         id: deployment

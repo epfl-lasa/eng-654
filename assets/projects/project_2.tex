@@ -1,4 +1,3 @@
-% Compile from this directory with: pdflatex project_2.tex (twice).
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -26,7 +25,8 @@
 {\LARGE\bfseries Geometry and Cuspidality in Orthogonal 3R Robots\par}
 
 \textbf{Format:} Group of two students; simulation-based project.\\
-\textbf{Course foundations:} Lectures 1--3, 5--6; Exercises 1 and 3.
+\textbf{Prerequisites:} D--H models, position IK, Jacobians,
+singularities, and configuration-space connectivity.
 
 \section*{Motivation}
 Two robots with the same number of joints can have very different global
@@ -41,11 +41,12 @@ how its geometry controls singularities, two-/four-IK regions, and evidence of
 cuspidal or noncuspidal behavior.
 
 \begin{itemize}
-  \item \textbf{Define and validate the family.} Use the Lecture 6 idealized family
+  \item \textbf{Define and validate the family.} Use the idealized family
 $a=(a_1,2,1.5)$, $d=(1,1,0)$, $\alpha=(\pi/2,\pi/2,0)$, with
 $a_1\in\{0,0.5,1\}$. State units and derive forward position kinematics.
-Check representative configurations against the atlas. The zero-offset endpoint
-is a limiting geometry of this family, not the exact custom\_3R robot.
+Check representative configurations using an independent implementation of the
+stated transforms. The zero-offset endpoint is a limiting geometry of this
+family, not the supplied custom 3R reference robot.
 
   \item \textbf{Construct reduced singularity plots.} Derive the position Jacobian
 $J_p$ and check it by finite differences. Establish why $\det J_p$ is independent
@@ -67,8 +68,9 @@ to find a path does not prove noncuspidality.
 
   \item \textbf{Compare geometry, not plot appearance.} Summarize changes in IK counts,
 critical curves, and component membership. Refine the grids near a narrow region
-or suspected cusp. Use the lecture's analytical results to support any definitive
-classification and separate those results from sampled observations.
+or suspected cusp. Support any definitive classification with an analytical
+argument and separate it from sampled observations; a numerical study alone
+need not provide a definitive classification.
 \end{itemize}
 
 \newpage
@@ -97,31 +99,18 @@ a concise 5--6-page report, and a short simulation demonstration. Explain
 both successful cases and failures; conclusions must follow the numerical
 and geometric evidence rather than an expected outcome.
 
-\section*{Resources}
-The idealized D--H atlas in Lecture 6 is a separate mathematical
-family, implemented in \path{lectures_main/js/viz/cuspidalityLecture.js}.
-Its dimensions and conventions must not be inferred from the custom\_3R STL
-renderings. Use the standard-D--H convention stated in the lectures.
+\section*{Provided materials and implementation}
+The custom 3R robot description (.urdf) and link meshes (.stl) will be provided
+to the students, together with an analytical 3R IK implementation compatible
+with the stated parameter family. The reference robot is orthogonal with
+non-intersecting consecutive axes. It illustrates axis geometry; its dimensions
+must not be substituted for those of the idealized family.
 
-The exact custom\_3R is an orthogonal 3R robot with non-intersecting
-consecutive joint axes. Its URDF is
-\path{lectures_main/assets/models/custom_3R/custom_3R_new.urdf}; STL meshes are
-in the same directory. Use the lecture website to inspect axes and frames,
-verify D--H parameters, plot IKs, and animate configurations. The custom model is a geometric reference;
-perform the parameter study with the stated idealized equations. Reuse the
-Lecture 3 analytical IK method and Lecture 6 atlas.
-
-Use the lecture website to verify D--H parameters, visualize IKs and
-singularities, and simulate paths. All listed paths are relative to the
-repository root. Start the website following \path{lectures_main/README.md}.
-
-\section*{Workload and collaboration}
-Budget approximately 60 hours per student (120 person-hours per pair)
-for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
-Deduct any lectures or exercises included in those credits. Allocate roughly
-20 team-hours to model validation, 50 to the core work, 30 to experiments,
-and 20 to reporting. Reuse the specified IK and simulations. Share validation
-and interpretation even if modelling and implementation are divided between
-students. Hardware execution is outside scope.
+Use standard D--H transforms
+$T_{i-1,i}=R_z(q_i)T_z(d_i)T_x(a_i)R_x(\alpha_i)$, with zero joint-angle
+offsets for the idealized family. Implement the parameter study using these
+transforms and use a plotting or robotics library to inspect frames, display
+IKs and singularities, and animate the selected connection. Validate the
+supplied IK results against your forward model.
 
 \end{document}

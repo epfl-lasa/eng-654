@@ -18,8 +18,10 @@ Do not open the lecture files with `file://` when using JavaScript modules or Th
 ```text
 lectures/                  eight lecture documents
 exercises/                 four assignment briefing decks
+solutions/                 feedback slides and answer files, released in stages
 css/                       separated style layers
 js/deck/                   slide navigation, reveal logic, scroll/deck modes
+js/exercises/              student answer downloads/imports
 js/viz/                    importable visualization modules
 assets/images/             photos and raster figures
 assets/svg/                reusable SVG figures
@@ -29,6 +31,12 @@ vendor/three/              local Three.js path used by import map
 templates/                 copy-paste slide patterns
 docs/                      authoring notes and uploaded lecture plan
 ```
+
+## Exercise 01 responses
+
+Open `exercises/exercise_01.html`, complete the numeric fields and two choices, and use **Download responses** to save a JSON file. Partial answers are supported, and **Load saved responses** restores previous work. Exercise 01 includes five 4×4 forward-kinematics matrices for the same named poses available in Module 1. Module 1 starts with `kuka_iiwa7_misaligned.urdf`, whose visual origins have deliberate quarter-turn and sign errors.
+
+The instructor shares the response worksheet first, the feedback slides later, and the final answer file separately. Publishing follows the `stage` value in `exercise_01_release.json`: `exercise`, `feedback`, then `answers`. The default is `exercise`.
 
 ## Main conventions
 

@@ -1,4 +1,3 @@
-% Compile from this directory with: pdflatex project_4.tex (twice).
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -26,7 +25,8 @@
 {\LARGE\bfseries Joint Limits and IK Distribution\\in Orthogonal 3R Robots\par}
 
 \textbf{Format:} Group of two students; simulation-based project.\\
-\textbf{Course foundations:} Lectures 3, 5--7; Exercises 1 and 3.
+\textbf{Prerequisites:} D--H modelling, inverse kinematics, Jacobians,
+singularities, joint limits, and configuration-space connectivity.
 
 \section*{Motivation}
 The mathematical workspace can overstate what a robot can execute. Joint
@@ -42,7 +42,7 @@ geometries.
 
 \begin{itemize}
   \item \textbf{Establish two reference geometries.} Use the noncuspidal and cuspidal
-idealized Lecture 6 presets: $a=(a_1,2,1.5)$ with $a_1=0$ and $1$ respectively,
+idealized geometries: $a=(a_1,2,1.5)$ with $a_1=0$ and $1$ respectively,
 $d=(1,1,0)$, and $\alpha=(\pi/2,\pi/2,0)$. Validate forward kinematics and the
 position Jacobian, and keep these models distinct from the exact custom URDF.
 
@@ -97,31 +97,17 @@ a concise 5--6-page report, and a short simulation demonstration. Explain
 both successful cases and failures; conclusions must follow the numerical
 and geometric evidence rather than an expected outcome.
 
-\section*{Resources}
-The idealized D--H atlas in Lecture 6 is a separate mathematical
-family, implemented in \path{lectures_main/js/viz/cuspidalityLecture.js}.
-Its dimensions and conventions must not be inferred from the custom\_3R STL
-renderings. Use the standard-D--H convention stated in the lectures.
+\section*{Provided materials and implementation}
+The custom 3R robot description (.urdf) and link meshes (.stl) will be provided
+to the students. The reference robot is orthogonal with non-intersecting
+consecutive axes. It illustrates axis geometry; its dimensions must not be
+substituted for those of the two idealized geometries.
 
-The exact custom\_3R is an orthogonal 3R robot with non-intersecting
-consecutive joint axes. Its URDF is
-\path{lectures_main/assets/models/custom_3R/custom_3R_new.urdf}; STL meshes are
-in the same directory. Use the lecture website to inspect axes and frames,
-verify D--H parameters, plot IKs, and animate configurations.
-Use the Lecture 3 IK method and Lecture 6 component visualizations; the exact
-custom model illustrates geometry while the stated presets define the analysis.
-
-Use the lecture website to verify D--H parameters, visualize IKs and
-singularities, and simulate paths. All listed paths are relative to the
-repository root. Start the website following \path{lectures_main/README.md}.
-
-\section*{Workload and collaboration}
-Budget approximately 60 hours per student (120 person-hours per pair)
-for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
-Deduct any lectures or exercises included in those credits. Allocate roughly
-20 team-hours to model validation, 50 to the core work, 30 to experiments,
-and 20 to reporting. Reuse the specified IK and simulations. Share validation
-and interpretation even if modelling and implementation are divided between
-students. Hardware execution is outside scope.
+Use standard D--H transforms
+$T_{i-1,i}=R_z(q_i)T_z(d_i)T_x(a_i)R_x(\alpha_i)$, with zero joint-angle
+offsets for the idealized models. Reuse a validated analytical 3R IK
+implementation compatible with these parameters. Use plotting or robotics
+tools to inspect frames, display IKs and sampled components, and animate
+candidate connections; verify returned IKs with your forward model.
 
 \end{document}

@@ -1,0 +1,145 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,linkcolor=epflred,
+  pdftitle={ENG-654 Project 21: Reachable Workspace of Flexiv Enlight L with Fixed q3}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 21}
+
+{\LARGE\bfseries Reachable Workspace of Flexiv Enlight L with Fixed $q_3$\par}
+
+\textbf{Format:} Group of two students; 2 ECTS; simulation-based project.\\
+\textbf{Prerequisites:} URDF modelling, inverse kinematics, Jacobians,
+singularities, and numerical sampling.
+
+\section*{Motivation}
+Fixing the third joint of Flexiv Enlight L produces a
+\textbf{6R robot parameterized by $\lambda=q_3$}, with up to eight regular
+shoulder--elbow--wrist IK branches. Joint limits and singularity margins can
+restrict their reachable regions differently. A workspace picture without
+branch labels can hide these differences.
+
+\section*{Task}
+\textbf{Overall objective.} Compare the reachable position workspaces of all
+eight branches at several fixed $q_3$ values. Hold flange orientation fixed
+within each map: these are orientation-conditioned workspaces, not the complete
+six-dimensional pose workspace.
+
+\begin{itemize}
+  \item \textbf{Construct and validate the 6R family.} Identify the base, joint
+axes, physical limits, and flange frame in the supplied model.
+Let $u=(q_1,q_2,q_4,q_5,q_6,q_7)$ and define
+$F_\lambda(u)=F(q_1,q_2,\lambda,q_4,q_5,q_6,q_7)$.
+Keep $\lambda$ fixed within each map. Compare reduced and original URDF
+forward kinematics at 20 configurations per parameter value. Remove column 3
+from the full geometric Jacobian to obtain the $6\times6$ reduced Jacobian;
+check it by finite differences.
+
+  \item \textbf{Enumerate and identify the eight branches.} Use the geometric
+construction below to implement the positioning-arm and spherical-wrist IK.
+Use persistent three-sign labels, retain all eight slots when solutions are
+absent, and verify full-pose closure. Test three diagnostic poses and shuffled
+solver output. Near a separator, flag ambiguity or singularity instead of
+forcing a sign. A general-purpose 7R solver is not required.
+
+  \item \textbf{Build comparable workspace maps.} At $\lambda=30^\circ$, choose
+two distinct fixed flange orientations from validated configurations and
+record their numerical rotation matrices. Evaluate the IK branches on a
+common three-dimensional position grid. For each branch, distinguish absent
+real IK, excessive pose residual, joint-limit violation, and insufficient
+regularity. Produce eight aligned panels and a map counting how many
+branches are feasible at each position. Show empty branch workspaces explicitly.
+
+  \item \textbf{Measure the effect of fixing $q_3$.} Repeat the study at
+$\lambda=-30^\circ$ and $60^\circ$ for the first orientation only, using the
+same base frame, position grid, and tolerances. Compare each branch's occupied
+volume, the union of all branches, and their pairwise overlap. Explain
+differences using geometry, joint limits, and the branch-specific failure masks;
+do not assume every branch or parameter value must give a distinct workspace.
+
+  \item \textbf{Validate a decisive boundary.} Refine one boundary or narrow
+region. Check at least 20 inside/near-boundary targets independently using
+numerical IK or local continuation with $q_3$ locked. Validate any illustrated
+connection at intermediate poses, checking continuity, limits, and reduced
+regularity. Neighboring feasible voxels alone do not establish a feasible motion.
+\end{itemize}
+
+\newpage
+\section*{Specifics and scope}
+Use exactly three $q_3$ values, two orientations for the baseline and one
+shared orientation for the other two values: four workspace cases in total.
+Begin with approximately $30^3$ voxel centers per case in a documented box
+covering the model's reach. Refine one case or a selected subregion to half
+the voxel spacing. Estimate volume as the number of feasible voxels times
+voxel volume; report resolution sensitivity rather than claiming exact volume.
+Use identical grids for overlap comparisons. A convex hull must not be used
+as a substitute for the reachable set because it can fill holes and gaps.
+
+Use the joint-position limits of the supplied URDF consistently; distinguish
+them from any separate safety limits. Resolve equivalent angles modulo $2\pi$
+without discarding physically admissible representatives, and retain continuous
+representatives when checking motion. Divide the translational Jacobian rows
+by a stated characteristic length $\ell>0$ before comparing singular values. Record
+the position, orientation, and singularity tolerances and vary the regularity
+threshold in the selected refinement study.
+
+Here, the eight requested ``aspects'' are operationally identified by the
+eight fixed-$q_3$ shoulder--elbow--wrist branches. Distinguish these labels from
+connected components of the limit-feasible set; filtering can disconnect a
+branch. A singularity of the reduced $6\times6$ Jacobian need not be a
+singularity of the full $6\times7$ Jacobian, which has no determinant.
+The core study is kinematic: meshes support geometric interpretation, but
+collision-free, dynamic, and hardware feasibility are outside scope.
+
+\section*{Geometric starting point}
+The robot description (.urdf) and link meshes (.stl) will be provided to the
+students. Implement the analysis in a robotics library or your own code;
+no additional solver or starter dataset is assumed. Verify the following
+dimensions and frame conventions against the supplied model before using them.
+For the flange pose $(p,R)$, define the shoulder center $S$, wrist-center
+vector $w$, and arm lengths in metres:
+\[
+S=(0,0,0.260)^T,\qquad a=0.290,\quad b=0.280,\qquad
+w=p-0.182R e_z-S,\quad e_z=(0,0,1)^T.
+\]
+At fixed $\lambda=q_3$, the two elbow choices and two shoulder choices follow from
+\[
+\begin{aligned}
+c_4&=\frac{\|w\|^2-a^2-b^2}{2ab}, &q_4&=\pm\arccos(c_4),\\
+v&=(b\sin q_4\cos\lambda,\ b\sin q_4\sin\lambda,\ a+b\cos q_4)^T,
+&x&=\pm\sqrt{w_x^2+w_y^2-v_y^2},\\
+q_1&=\operatorname{atan2}(w_y,w_x)-\operatorname{atan2}(v_y,x),\\
+q_2&=\operatorname{atan2}(w_z,x)-\operatorname{atan2}(v_z,v_x).
+\end{aligned}
+\]
+Reject non-real cases, allowing only a declared round-off tolerance. Recover
+the two wrist flips from the residual orientation, accounting for the fixed
+URDF frame rotations. Label a regular solution by
+$(\operatorname{sgn}x,\operatorname{sgn}\sin q_4,\operatorname{sgn}\sin q_6)$.
+Check the reduced determinant's proportionality to
+$abx\sin q_4\sin q_6$ under your Jacobian convention. The shoulder separator
+is $x=0$, not simply $q_2=0$.
+
+\section*{Expected outcome}
+Deliver reproducible code, the selected parameters and orientations, a
+branch-labelled workspace atlas, volume and overlap tables, and a refinement
+and boundary-validation example. Submit a concise 5--6-page report and a short
+simulation demonstration. Explain which conclusions concern the fixed-$q_3$
+6R family and which cannot be extended to the unrestricted seven-joint robot.
+
+\end{document}

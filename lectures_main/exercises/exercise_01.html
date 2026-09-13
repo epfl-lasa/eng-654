@@ -11,163 +11,386 @@
   <link rel="stylesheet" href="../css/navigation.css">
   <link rel="stylesheet" href="../css/viz.css">
   <link rel="stylesheet" href="../css/exercises.css">
+  <link rel="stylesheet" href="../css/exercise-01-answers.css">
   <script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']],displayMath:[['\\[','\\]']]}};</script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
-<body class="mode-deck narrative-lecture exercise-deck exercise-01">
-<main id="deck" class="deck">
-
+<body class="mode-scroll narrative-lecture exercise-deck exercise-01" data-answer-mode="exercise">
+<header class="answer-toolbar" aria-label="Exercise responses">
+  <a class="answer-home" href="../">ENG-654</a>
+<strong id="answer-page-label">Exercise 01</strong>
+  <div class="answer-actions">
+    <button type="button" id="download-answers">Download responses</button>
+    <label class="answer-upload" for="upload-answers"><span id="upload-label">Load saved responses</span><input type="file" id="upload-answers" accept=".json,application/json"></label>
+  </div>
+  <p id="answer-status" class="answer-status" role="status" aria-live="polite">Use metres and radians. Download your responses before leaving.</p>
+</header>
+<noscript><p class="answer-noscript">Enable JavaScript to save and load responses.</p></noscript>
+<main id="deck" class="deck" data-default-mode="mode-scroll" data-interactive-exercise="exercise_01">
   <section class="slide title-slide exercise-slide">
     <div class="title-slide-content">
       <p class="eyebrow">ENG-654 · Exercise 01</p>
       <h1 class="course-title">From URDF to D–H</h1>
-      <p class="subtitle">Read the reference KUKA LBR iiwa 7 model, derive its kinematic table, and diagnose a deliberately altered visual bundle without changing the robot.</p>
-      <div class="exercise-tags"><span>model reading</span><span>frame assignment</span><span>mesh registration</span><span>forward kinematics</span></div>
-      <p class="exercise-promise">Your result must separate two questions: “Does the kinematic chain compute the correct pose?” and “Do the STL surfaces appear in the correct place?”</p>
+      <p class="subtitle">Repair the appearance. Reconstruct the kinematics. Calculate the tool pose.</p>
+      <div class="exercise-tags"><span>visual origins</span><span>D–H parameters</span><span>five FK matrices</span></div>
+      <p class="exercise-answer-intro" id="answer-intro">Repair the robot’s visual origins, complete the D–H table, and calculate five tool poses. Enter your results below and download the response JSON.</p>
     </div>
   </section>
-
   <section class="slide exercise-slide">
-    <p class="ex-kicker">Learning objective</p>
-    <h2 class="slide-title">Reconstruct one robot from two independent layers</h2>
-    <div class="ex-objective">
-      <div class="ex-question">
-        <strong>Can you explain every transform between <code>iiwa_link_0</code> and the tool?</strong>
-        <p>Start from the course model, choose standard-D–H frames, and show that both descriptions produce the same forward kinematics.</p>
-      </div>
-      <div class="ex-steps reveal-children">
-        <div class="ex-step"><span>1</span><p>Read parent, child, origin, and axis from each joint.</p></div>
-        <div class="ex-step"><span>2</span><p>Assign standard-D–H frames and complete seven table rows.</p></div>
-        <div class="ex-step"><span>3</span><p>Repair only the misregistered visual origins in the separately distributed altered bundle.</p></div>
-        <div class="ex-step"><span>4</span><p>Validate kinematics and appearance with separate evidence.</p></div>
-      </div>
-    </div>
-    <div class="ex-deliverable"><strong>Reference course model:</strong> <a class="ex-file" href="../assets/models/iiwa7/iiwa7.urdf">assets/models/iiwa7/iiwa7.urdf</a> · The deliberately altered URDF/STL bundle is distributed separately for the registration task.</div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Read the joint graph first</p>
-    <h2 class="slide-title">A URDF joint places and moves its child link</h2>
-    <p class="ex-subtitle">For each revolute joint, the <code>origin</code> gives the zero-configuration joint frame relative to the parent link; <code>axis</code> is expressed in that joint frame.</p>
+    <p class="ex-kicker">Start in Module 1</p>
+    <h2 class="slide-title">A robot with deliberately misplaced meshes</h2>
     <div class="ex-grid-2">
-      <div class="ex-equation red">
-        \[
-        {}^{P}T_C(q_i)=
-        \underbrace{T(x,y,z)R_z(\mathrm{yaw})R_y(\mathrm{pitch})R_x(\mathrm{roll})}_{\texttt{origin xyz, rpy}}
-        \underbrace{R_{\hat a_i}(q_i)}_{\texttt{axis xyz}}
-        \]
-      </div>
-      <div class="ex-card black">
-        <h3>Record one line per joint</h3>
-        <div class="ex-code">parent link → joint name → child link
-origin xyz="x y z" rpy="r p y"
-axis xyz="a_x a_y a_z"</div>
-        <p>Angles are radians and distances are metres. Normalize the axis before using it geometrically.</p>
-      </div>
+      <div class="ex-card red"><h3>Load and inspect</h3><p><a class="ex-file" href="../../modules/module1/" target="_blank" rel="noopener">Open Module 1</a>. It starts with the misaligned iiwa model. Inspect the home pose and an articulated pose.</p><p><a class="ex-file" href="../assets/models/iiwa7/kuka_iiwa7_misaligned.urdf" download>Download kuka_iiwa7_misaligned.urdf</a></p></div>
+      <div class="ex-card black"><h3>What to change</h3><p>Some visual origins contain quarter-turn rotations or flipped translation signs. Repair the visual <code>xyz</code> and <code>rpy</code> entries. Keep joint origins and axes unchanged.</p><p>Lengths are in metres; angles are in radians. Expressions such as <code>pi/2</code> and <code>-pi/2</code> are accepted.</p></div>
     </div>
-    <div class="ex-caveat"><strong>Do not copy URDF numbers directly into a D–H table.</strong> URDF link frames are chosen by the model author; D–H frames must satisfy a geometric axis/common-normal convention.</div>
+    <div class="ex-deliverable">Responses: 28 D–H parameters, 12 fixed-transform values, 48 visual-origin values, two choices, and five 4×4 matrices.</div>
   </section>
-
   <section class="slide exercise-slide">
-    <p class="ex-kicker">Working document</p>
-    <h2 class="slide-title">Complete one traceable D–H row for each iiwa joint</h2>
-    <p class="ex-subtitle">Set \(z_{i-1}\) along joint \(i\), choose \(x_i\) on the common normal, and use \({}^{i-1}T_i=R_z(\theta_i)T_z(d_i)T_x(a_i)R_x(\alpha_i)\) with \(\theta_i=q_i+\theta_{i,0}\). Document intersecting-axis and parallel-axis choices.</p>
-    <div class="ex-table-wrap">
-      <table class="ex-table" aria-label="Standard D-H table template for KUKA LBR iiwa 7">
-        <thead><tr><th>\(i\)</th><th>URDF joint</th><th>\(\theta_i\)</th><th>\(d_i\) [m]</th><th>\(a_i\) [m]</th><th>\(\alpha_i\)</th><th>frame evidence</th></tr></thead>
-        <tbody>
-          <tr><th>1</th><td><code>iiwa_joint_1</code></td><td>\(q_1+\square\)</td><td>\(\square\)</td><td>\(\square\)</td><td>\(\square\)</td><td>axis/common normal</td></tr>
-          <tr><th>2</th><td><code>iiwa_joint_2</code></td><td>\(q_2+\square\)</td><td>\(\square\)</td><td>\(\square\)</td><td>\(\square\)</td><td>axis/common normal</td></tr>
-          <tr><th>3</th><td><code>iiwa_joint_3</code></td><td>\(q_3+\square\)</td><td>\(\square\)</td><td>\(\square\)</td><td>\(\square\)</td><td>axis/common normal</td></tr>
-          <tr><th>4</th><td><code>iiwa_joint_4</code></td><td>\(q_4+\square\)</td><td>\(\square\)</td><td>\(\square\)</td><td>\(\square\)</td><td>axis/common normal</td></tr>
-          <tr><th>5</th><td><code>iiwa_joint_5</code></td><td>\(q_5+\square\)</td><td>\(\square\)</td><td>\(\square\)</td><td>\(\square\)</td><td>axis/common normal</td></tr>
-          <tr><th>6</th><td><code>iiwa_joint_6</code></td><td>\(q_6+\square\)</td><td>\(\square\)</td><td>\(\square\)</td><td>\(\square\)</td><td>axis/common normal</td></tr>
-          <tr><th>7</th><td><code>iiwa_joint_7</code></td><td>\(q_7+\square\)</td><td>\(\square\)</td><td>\(\square\)</td><td>\(\square\)</td><td>axis/common normal</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="ex-caveat">A different valid frame assignment can produce a different-looking table. It is acceptable only if its convention is stated and its composed transforms agree with the reference model. Report fixed world-to-base and flange-to-tool transforms separately; do not hide them in the seven D–H rows.</div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Keep geometry and appearance separate</p>
-    <h2 class="slide-title">A visual origin moves an STL surface—not a joint axis</h2>
+    <p class="ex-kicker">Read the joint graph</p>
+    <h2 class="slide-title">Use joint transforms for kinematics</h2>
     <div class="ex-grid-2">
-      <div class="ex-card red">
-        <h3>Kinematic layer</h3>
-        <p><code>&lt;joint&gt;&lt;origin&gt;</code> and <code>&lt;axis&gt;</code> define how link frames move.</p>
-        <div class="ex-equation compact">\[{}^0T_{L_i}(q)=\prod_{j\le i}{}^{L_{j-1}}T_{L_j}(q_j)\]</div>
-        <p>Changing a joint origin changes the robot model and invalidates your D–H comparison.</p>
-      </div>
-      <div class="ex-card green">
-        <h3>Visual layer</h3>
-        <p><code>&lt;visual&gt;&lt;origin&gt;</code> registers the mesh’s internal coordinates to its link frame.</p>
-        <div class="ex-equation compact">\[{}^0T_{\mathrm{mesh},i}(q)={}^0T_{L_i}(q)\,{}^{L_i}T_{V_i}\]</div>
-        <p><code>scale</code> changes mesh geometry units; it does not change link kinematics.</p>
-      </div>
+      <div class="ex-equation red">\[{}^{P}T_C(q_i)=T(x,y,z)R_z(\mathrm{yaw})R_y(\mathrm{pitch})R_x(\mathrm{roll})R_{\hat a_i}(q_i)\]</div>
+      <div class="ex-card black"><h3>Inspect each revolute joint</h3><p>Read its parent, child, origin and axis. The origin is expressed in the parent frame; the axis is expressed in the joint frame.</p><p>URDF link frames do not have to be D–H frames. Locate the joint axes before choosing the D–H frames.</p></div>
     </div>
-    <div class="ex-takeaway">A perfectly moving skeleton can carry badly registered meshes. A convincing rendering can also hide an incorrect skeleton. Test both layers.</div>
+    <div class="ex-caveat">Mesh appearance comes from <code>&lt;visual&gt;&lt;origin&gt;</code>. These offsets do not enter the joint-to-tool forward kinematics.</div>
   </section>
-
   <section class="slide exercise-slide">
-    <p class="ex-kicker">Mesh-registration task</p>
-    <h2 class="slide-title">Repair the displaced links in the altered bundle’s visual origins</h2>
-    <div class="ex-grid-2">
-      <div class="ex-card black">
-        <h3>Edit only this transform</h3>
-        <div class="ex-code">&lt;visual&gt;
-  &lt;origin xyz="x y z" rpy="r p y"/&gt;
-  &lt;geometry&gt;&lt;mesh filename="…"/&gt;&lt;/geometry&gt;
-&lt;/visual&gt;</div>
-        <p>Change one degree of freedom at a time. Record the final six values for every repaired link.</p>
-      </div>
-      <div class="ex-steps reveal-children">
-        <div class="ex-step"><span>1</span><p>Set the robot to its zero configuration and identify the first displaced mesh.</p></div>
-        <div class="ex-step"><span>2</span><p>Correct translation \(x,y,z\), then orientation \(r,p,y\).</p></div>
-        <div class="ex-step"><span>3</span><p>Move every joint through several angles; the mesh must remain attached to its link.</p></div>
-        <div class="ex-step"><span>4</span><p>Confirm that no <code>&lt;joint&gt;&lt;origin&gt;</code> or axis changed.</p></div>
-      </div>
-    </div>
-    <div class="ex-caveat">A visual edit does not update a separate collision origin. Do not modify collision geometry unless that additional task is explicitly assigned.</div>
+    <p class="ex-kicker">D–H parameters</p>
+    <h2 class="slide-title">Complete the seven joint rows</h2>
+    <p class="ex-subtitle">Use standard D–H: \({}^{i-1}T_i=R_z(q_i+\theta_{i,0})T_z(d_i)T_x(a_i)R_x(\alpha_i)\). Set \(z_{i-1}\) along joint \(i\). Enter only the constant theta offset.</p>
+    <div class="ex-table-wrap"><table class="ex-table" aria-label="Standard D-H parameters"><thead><tr><th scope="col">Joint</th><th scope="col">\(\theta_{i,0}\) [rad]</th><th scope="col">\(d_i\) [m]</th><th scope="col">\(a_i\) [m]</th><th scope="col">\(\alpha_i\) [rad]</th></tr></thead><tbody>
+      <tr><th scope="row">1</th>
+        <td><div class="answer-field"><input id="answer-dh-1-thetaOffset" data-field="dh.1.thetaOffset" aria-label="Joint 1: thetaOffset in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-1-d" data-field="dh.1.d" aria-label="Joint 1: d in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-1-a" data-field="dh.1.a" aria-label="Joint 1: a in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-1-alpha" data-field="dh.1.alpha" aria-label="Joint 1: alpha in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+      </tr>
+      <tr><th scope="row">2</th>
+        <td><div class="answer-field"><input id="answer-dh-2-thetaOffset" data-field="dh.2.thetaOffset" aria-label="Joint 2: thetaOffset in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-2-d" data-field="dh.2.d" aria-label="Joint 2: d in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-2-a" data-field="dh.2.a" aria-label="Joint 2: a in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-2-alpha" data-field="dh.2.alpha" aria-label="Joint 2: alpha in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+      </tr>
+      <tr><th scope="row">3</th>
+        <td><div class="answer-field"><input id="answer-dh-3-thetaOffset" data-field="dh.3.thetaOffset" aria-label="Joint 3: thetaOffset in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-3-d" data-field="dh.3.d" aria-label="Joint 3: d in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-3-a" data-field="dh.3.a" aria-label="Joint 3: a in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-3-alpha" data-field="dh.3.alpha" aria-label="Joint 3: alpha in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+      </tr>
+      <tr><th scope="row">4</th>
+        <td><div class="answer-field"><input id="answer-dh-4-thetaOffset" data-field="dh.4.thetaOffset" aria-label="Joint 4: thetaOffset in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-4-d" data-field="dh.4.d" aria-label="Joint 4: d in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-4-a" data-field="dh.4.a" aria-label="Joint 4: a in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-4-alpha" data-field="dh.4.alpha" aria-label="Joint 4: alpha in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+      </tr>
+      <tr><th scope="row">5</th>
+        <td><div class="answer-field"><input id="answer-dh-5-thetaOffset" data-field="dh.5.thetaOffset" aria-label="Joint 5: thetaOffset in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-5-d" data-field="dh.5.d" aria-label="Joint 5: d in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-5-a" data-field="dh.5.a" aria-label="Joint 5: a in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-5-alpha" data-field="dh.5.alpha" aria-label="Joint 5: alpha in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+      </tr>
+      <tr><th scope="row">6</th>
+        <td><div class="answer-field"><input id="answer-dh-6-thetaOffset" data-field="dh.6.thetaOffset" aria-label="Joint 6: thetaOffset in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-6-d" data-field="dh.6.d" aria-label="Joint 6: d in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-6-a" data-field="dh.6.a" aria-label="Joint 6: a in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-6-alpha" data-field="dh.6.alpha" aria-label="Joint 6: alpha in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+      </tr>
+      <tr><th scope="row">7</th>
+        <td><div class="answer-field"><input id="answer-dh-7-thetaOffset" data-field="dh.7.thetaOffset" aria-label="Joint 7: thetaOffset in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-7-d" data-field="dh.7.d" aria-label="Joint 7: d in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-7-a" data-field="dh.7.a" aria-label="Joint 7: a in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-dh-7-alpha" data-field="dh.7.alpha" aria-label="Joint 7: alpha in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+      </tr>
+    </tbody></table></div>
+    <div class="ex-caveat">Keep fixed base and tool transforms separate. Equivalent D–H frame choices are accepted when the complete chain gives the same tool poses.</div>
   </section>
-
   <section class="slide exercise-slide">
-    <p class="ex-kicker">Forward-kinematics laboratory</p>
-    <h2 class="slide-title">Use the simulation to challenge your model, not merely display it</h2>
-    <div class="ex-grid-2">
-      <div class="ex-card red">
-        <h3>Kinematic residuals</h3>
-        <div class="ex-equation compact">\[e_p=\|p_{DH}-p_{URDF}\|_2,\qquad e_R=\cos^{-1}\!\left(\frac{\operatorname{tr}(R_{DH}^{\top}R_{URDF})-1}{2}\right)\]</div>
-        <ul><li>Test home plus at least five nontrivial configurations.</li><li>Clamp the inverse-cosine argument numerically to \([-1,1]\).</li><li>Report the maximum position and orientation residuals.</li></ul>
-      </div>
-      <div class="ex-card green">
-        <h3>Visual-registration evidence</h3>
-        <ul><li>Capture the zero pose and at least two articulated poses.</li><li>Check joint housings, link boundaries, and tool attachment.</li><li>If landmarks are available, report their mesh-to-link errors separately.</li></ul>
-        <p><strong>Never use visual overlap as the FK residual.</strong></p>
-      </div>
-    </div>
-    <div class="ex-takeaway">A constant transform discrepancy suggests a frame-convention error. A configuration-dependent discrepancy usually indicates a wrong axis, sign, row order, or joint offset.</div>
+    <p class="ex-kicker">Fixed frames</p>
+    <h2 class="slide-title">Record the base and tool transforms</h2>
+    <p class="ex-subtitle">RPY means \(R_z(\mathrm{yaw})R_y(\mathrm{pitch})R_x(\mathrm{roll})\). Enter all six values, including zeros.</p><div class="ex-grid-2">
+    <div class="ex-card"><h3>world → D–H frame 0</h3><div class="answer-transform-grid">
+      <div><label for="answer-base-x">x [m]</label><div class="answer-field"><input id="answer-base-x" data-field="base.x" aria-label="world → D–H frame 0: x in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></div>
+      <div><label for="answer-base-y">y [m]</label><div class="answer-field"><input id="answer-base-y" data-field="base.y" aria-label="world → D–H frame 0: y in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></div>
+      <div><label for="answer-base-z">z [m]</label><div class="answer-field"><input id="answer-base-z" data-field="base.z" aria-label="world → D–H frame 0: z in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></div>
+      <div><label for="answer-base-roll">roll [rad]</label><div class="answer-field"><input id="answer-base-roll" data-field="base.roll" aria-label="world → D–H frame 0: roll in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></div>
+      <div><label for="answer-base-pitch">pitch [rad]</label><div class="answer-field"><input id="answer-base-pitch" data-field="base.pitch" aria-label="world → D–H frame 0: pitch in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></div>
+      <div><label for="answer-base-yaw">yaw [rad]</label><div class="answer-field"><input id="answer-base-yaw" data-field="base.yaw" aria-label="world → D–H frame 0: yaw in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></div>
+    </div></div>
+    <div class="ex-card"><h3>D–H frame 7 → iiwa_link_ee</h3><div class="answer-transform-grid">
+      <div><label for="answer-tool-x">x [m]</label><div class="answer-field"><input id="answer-tool-x" data-field="tool.x" aria-label="D–H frame 7 → iiwa_link_ee: x in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></div>
+      <div><label for="answer-tool-y">y [m]</label><div class="answer-field"><input id="answer-tool-y" data-field="tool.y" aria-label="D–H frame 7 → iiwa_link_ee: y in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></div>
+      <div><label for="answer-tool-z">z [m]</label><div class="answer-field"><input id="answer-tool-z" data-field="tool.z" aria-label="D–H frame 7 → iiwa_link_ee: z in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></div>
+      <div><label for="answer-tool-roll">roll [rad]</label><div class="answer-field"><input id="answer-tool-roll" data-field="tool.roll" aria-label="D–H frame 7 → iiwa_link_ee: roll in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></div>
+      <div><label for="answer-tool-pitch">pitch [rad]</label><div class="answer-field"><input id="answer-tool-pitch" data-field="tool.pitch" aria-label="D–H frame 7 → iiwa_link_ee: pitch in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></div>
+      <div><label for="answer-tool-yaw">yaw [rad]</label><div class="answer-field"><input id="answer-tool-yaw" data-field="tool.yaw" aria-label="D–H frame 7 → iiwa_link_ee: yaw in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></div>
+    </div></div>
+</div>
   </section>
-
   <section class="slide exercise-slide">
-    <p class="ex-kicker">Submission checklist</p>
-    <h2 class="slide-title">Submit a model another engineer can reproduce</h2>
+    <p class="ex-kicker">Two checks</p>
+    <h2 class="slide-title">Separate mesh placement from robot motion</h2>
     <div class="ex-grid-2">
-      <div class="ex-checklist reveal-children">
-        <div class="ex-check"><span>✓</span><p>Annotated parent–joint–child chain, plus separately reported fixed base and tool transforms.</p></div>
-        <div class="ex-check"><span>✓</span><p>Seven-row standard-D–H table and a diagram of your frame convention.</p></div>
-        <div class="ex-check"><span>✓</span><p>Final visual <code>xyz</code>/<code>rpy</code> values and before/after images.</p></div>
-        <div class="ex-check"><span>✓</span><p>FK comparison over multiple configurations with \(e_p\) and \(e_R\).</p></div>
-      </div>
-      <div class="ex-question">
-        <strong>Final explanation</strong>
-        <p>In two or three sentences, explain why changing an STL visual origin can fix the rendering while leaving the forward-kinematic map \(f(q)\) unchanged.</p>
-      </div>
+      <div class="ex-card"><label class="answer-label" for="answer-concept-visualChangesFK">Does changing only a visual origin change the tool’s forward kinematics?</label><div class="answer-field"><select id="answer-concept-visualChangesFK" data-field="concept.visualChangesFK" aria-label="Does changing only a visual origin change the tool’s forward kinematics?"><option value="">Choose…</option><option value="yes">Yes</option><option value="no">No</option></select></div></div>
+      <div class="ex-card"><label class="answer-label" for="answer-concept-jointChangesFK">Can changing a revolute joint origin change the tool’s forward kinematics?</label><div class="answer-field"><select id="answer-concept-jointChangesFK" data-field="concept.jointChangesFK" aria-label="Can changing a revolute joint origin change the tool’s forward kinematics?"><option value="">Choose…</option><option value="yes">Yes</option><option value="no">No</option></select></div></div>
     </div>
-    <div class="ex-deliverable"><strong>Deliverables:</strong> derivation, completed table, corrected visual-origin values, validation script/notebook, residual summary, and evidence images.</div>
+    <div class="ex-caveat">Inspect joint frames as well as meshes in Module 1. Apply each visual correction at home and at a bent pose to check the registration.</div>
   </section>
-
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">Visual registration</p>
+    <h2 class="slide-title">Record the repaired mesh transforms</h2>
+    <p class="ex-subtitle">Enter the final visual origin for each link, including unchanged links. Use the supplied mesh coordinates and record absolute values, not increments.</p>
+    <div class="ex-table-wrap"><table class="ex-table" aria-label="Repaired visual origins"><thead><tr><th scope="col">Link</th><th scope="col">x [m]</th><th scope="col">y [m]</th><th scope="col">z [m]</th><th scope="col">roll [rad]</th><th scope="col">pitch [rad]</th><th scope="col">yaw [rad]</th></tr></thead><tbody>
+      <tr><th scope="row">iiwa_link_0</th>
+        <td><div class="answer-field"><input id="answer-visual-0-x" data-field="visual.0.x" aria-label="Link 0 visual x in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-0-y" data-field="visual.0.y" aria-label="Link 0 visual y in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-0-z" data-field="visual.0.z" aria-label="Link 0 visual z in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-0-roll" data-field="visual.0.roll" aria-label="Link 0 visual roll in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-0-pitch" data-field="visual.0.pitch" aria-label="Link 0 visual pitch in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-0-yaw" data-field="visual.0.yaw" aria-label="Link 0 visual yaw in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+      </tr>
+      <tr><th scope="row">iiwa_link_1</th>
+        <td><div class="answer-field"><input id="answer-visual-1-x" data-field="visual.1.x" aria-label="Link 1 visual x in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-1-y" data-field="visual.1.y" aria-label="Link 1 visual y in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-1-z" data-field="visual.1.z" aria-label="Link 1 visual z in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-1-roll" data-field="visual.1.roll" aria-label="Link 1 visual roll in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-1-pitch" data-field="visual.1.pitch" aria-label="Link 1 visual pitch in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-1-yaw" data-field="visual.1.yaw" aria-label="Link 1 visual yaw in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+      </tr>
+      <tr><th scope="row">iiwa_link_2</th>
+        <td><div class="answer-field"><input id="answer-visual-2-x" data-field="visual.2.x" aria-label="Link 2 visual x in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-2-y" data-field="visual.2.y" aria-label="Link 2 visual y in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-2-z" data-field="visual.2.z" aria-label="Link 2 visual z in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-2-roll" data-field="visual.2.roll" aria-label="Link 2 visual roll in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-2-pitch" data-field="visual.2.pitch" aria-label="Link 2 visual pitch in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-2-yaw" data-field="visual.2.yaw" aria-label="Link 2 visual yaw in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+      </tr>
+      <tr><th scope="row">iiwa_link_3</th>
+        <td><div class="answer-field"><input id="answer-visual-3-x" data-field="visual.3.x" aria-label="Link 3 visual x in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-3-y" data-field="visual.3.y" aria-label="Link 3 visual y in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-3-z" data-field="visual.3.z" aria-label="Link 3 visual z in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-3-roll" data-field="visual.3.roll" aria-label="Link 3 visual roll in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-3-pitch" data-field="visual.3.pitch" aria-label="Link 3 visual pitch in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-3-yaw" data-field="visual.3.yaw" aria-label="Link 3 visual yaw in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+      </tr>
+      <tr><th scope="row">iiwa_link_4</th>
+        <td><div class="answer-field"><input id="answer-visual-4-x" data-field="visual.4.x" aria-label="Link 4 visual x in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-4-y" data-field="visual.4.y" aria-label="Link 4 visual y in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-4-z" data-field="visual.4.z" aria-label="Link 4 visual z in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-4-roll" data-field="visual.4.roll" aria-label="Link 4 visual roll in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-4-pitch" data-field="visual.4.pitch" aria-label="Link 4 visual pitch in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-4-yaw" data-field="visual.4.yaw" aria-label="Link 4 visual yaw in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+      </tr>
+      <tr><th scope="row">iiwa_link_5</th>
+        <td><div class="answer-field"><input id="answer-visual-5-x" data-field="visual.5.x" aria-label="Link 5 visual x in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-5-y" data-field="visual.5.y" aria-label="Link 5 visual y in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-5-z" data-field="visual.5.z" aria-label="Link 5 visual z in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-5-roll" data-field="visual.5.roll" aria-label="Link 5 visual roll in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-5-pitch" data-field="visual.5.pitch" aria-label="Link 5 visual pitch in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-5-yaw" data-field="visual.5.yaw" aria-label="Link 5 visual yaw in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+      </tr>
+      <tr><th scope="row">iiwa_link_6</th>
+        <td><div class="answer-field"><input id="answer-visual-6-x" data-field="visual.6.x" aria-label="Link 6 visual x in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-6-y" data-field="visual.6.y" aria-label="Link 6 visual y in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-6-z" data-field="visual.6.z" aria-label="Link 6 visual z in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-6-roll" data-field="visual.6.roll" aria-label="Link 6 visual roll in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-6-pitch" data-field="visual.6.pitch" aria-label="Link 6 visual pitch in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-6-yaw" data-field="visual.6.yaw" aria-label="Link 6 visual yaw in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+      </tr>
+      <tr><th scope="row">iiwa_link_7</th>
+        <td><div class="answer-field"><input id="answer-visual-7-x" data-field="visual.7.x" aria-label="Link 7 visual x in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-7-y" data-field="visual.7.y" aria-label="Link 7 visual y in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-7-z" data-field="visual.7.z" aria-label="Link 7 visual z in m" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-7-roll" data-field="visual.7.roll" aria-label="Link 7 visual roll in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-7-pitch" data-field="visual.7.pitch" aria-label="Link 7 visual pitch in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+        <td><div class="answer-field"><input id="answer-visual-7-yaw" data-field="visual.7.yaw" aria-label="Link 7 visual yaw in rad" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="rad"></div></td>
+      </tr>
+    </tbody></table></div>
+  </section>
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">Forward kinematics</p>
+    <h2 class="slide-title">Calculate five homogeneous transformation matrices</h2>
+    <div class="ex-equation">\[{}^{world}T_{ee}(q)=T_{base}\left(\prod_{i=1}^{7} A_i(q_i)\right)T_{tool}=\begin{bmatrix}R&p\\0&1\end{bmatrix}\]</div>
+    <p class="ex-subtitle">Calculate the pose of <code>iiwa_link_ee</code> in <code>world</code>. Use joint order <code>q1 … q7</code> and radians. Enter all 16 entries for each pose, including the bottom row. Translation entries are in metres; rotation entries are dimensionless. Use at least six decimal places for non-exact results (entry tolerance: 0.0001).</p>
+    <div class="ex-table-wrap"><table class="ex-table answer-pose-table" aria-label="Five FK joint configurations"><thead><tr><th scope="col">Pose</th><th scope="col">q1 [rad]</th><th scope="col">q2 [rad]</th><th scope="col">q3 [rad]</th><th scope="col">q4 [rad]</th><th scope="col">q5 [rad]</th><th scope="col">q6 [rad]</th><th scope="col">q7 [rad]</th></tr></thead><tbody>
+<tr><th scope="row">Home</th><td><code>0</code></td><td><code>0</code></td><td><code>0</code></td><td><code>0</code></td><td><code>0</code></td><td><code>0</code></td><td><code>0</code></td></tr>
+<tr><th scope="row">Bent</th><td><code>0</code></td><td><code>pi/4</code></td><td><code>0</code></td><td><code>-pi/2</code></td><td><code>0</code></td><td><code>pi/4</code></td><td><code>0</code></td></tr>
+<tr><th scope="row">Bent back</th><td><code>0</code></td><td><code>-pi/4</code></td><td><code>0</code></td><td><code>pi/2</code></td><td><code>0</code></td><td><code>-pi/4</code></td><td><code>0</code></td></tr>
+<tr><th scope="row">Side reach</th><td><code>pi/2</code></td><td><code>pi/4</code></td><td><code>0</code></td><td><code>-pi/2</code></td><td><code>0</code></td><td><code>pi/4</code></td><td><code>0</code></td></tr>
+<tr><th scope="row">Wrist turn</th><td><code>0</code></td><td><code>pi/4</code></td><td><code>0</code></td><td><code>-pi/2</code></td><td><code>0</code></td><td><code>pi/4</code></td><td><code>pi/2</code></td></tr>
+</tbody></table></div>
+<p class="ex-subtitle">The same five pose names are available in Module 1.</p>
+  </section>
+  <section class="slide exercise-slide" data-fk-pose="home" data-q-radians='[0, 0, 0, 0, 0, 0, 0]'>
+    <p class="ex-kicker">Forward kinematics · Home</p>
+    <h2 class="slide-title">Home pose</h2>
+    <p class="answer-pose-vector"><code>q = [0, 0, 0, 0, 0, 0, 0]</code> rad</p>
+    <p class="ex-subtitle">Enter \({}^{world}T_{ee}\). Rows and columns are numbered 1–4.</p>
+    <div class="answer-matrix-wrap"><table class="answer-matrix" aria-label="Home: world to tool homogeneous matrix"><thead><tr><th scope="col">Row</th><th scope="col">1</th><th scope="col">2</th><th scope="col">3</th><th scope="col">4</th></tr></thead><tbody>
+      <tr><th scope="row">1</th>
+        <td><div class="answer-field"><input id="answer-fk-home-1-1" data-field="fk.home.1.1" aria-label="Home matrix row 1, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-home-1-2" data-field="fk.home.1.2" aria-label="Home matrix row 1, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-home-1-3" data-field="fk.home.1.3" aria-label="Home matrix row 1, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-home-1-4" data-field="fk.home.1.4" aria-label="Home matrix row 1, column 4 in metres" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+      </tr>
+      <tr><th scope="row">2</th>
+        <td><div class="answer-field"><input id="answer-fk-home-2-1" data-field="fk.home.2.1" aria-label="Home matrix row 2, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-home-2-2" data-field="fk.home.2.2" aria-label="Home matrix row 2, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-home-2-3" data-field="fk.home.2.3" aria-label="Home matrix row 2, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-home-2-4" data-field="fk.home.2.4" aria-label="Home matrix row 2, column 4 in metres" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+      </tr>
+      <tr><th scope="row">3</th>
+        <td><div class="answer-field"><input id="answer-fk-home-3-1" data-field="fk.home.3.1" aria-label="Home matrix row 3, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-home-3-2" data-field="fk.home.3.2" aria-label="Home matrix row 3, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-home-3-3" data-field="fk.home.3.3" aria-label="Home matrix row 3, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-home-3-4" data-field="fk.home.3.4" aria-label="Home matrix row 3, column 4 in metres" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+      </tr>
+      <tr><th scope="row">4</th>
+        <td><div class="answer-field"><input id="answer-fk-home-4-1" data-field="fk.home.4.1" aria-label="Home matrix row 4, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-home-4-2" data-field="fk.home.4.2" aria-label="Home matrix row 4, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-home-4-3" data-field="fk.home.4.3" aria-label="Home matrix row 4, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-home-4-4" data-field="fk.home.4.4" aria-label="Home matrix row 4, column 4" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+      </tr>
+    </tbody></table></div>
+  </section>
+  <section class="slide exercise-slide" data-fk-pose="bent" data-q-radians='[0, 0.7853981633974483, 0, -1.5707963267948966, 0, 0.7853981633974483, 0]'>
+    <p class="ex-kicker">Forward kinematics · Bent</p>
+    <h2 class="slide-title">Bent pose</h2>
+    <p class="answer-pose-vector"><code>q = [0, pi/4, 0, -pi/2, 0, pi/4, 0]</code> rad</p>
+    <p class="ex-subtitle">Enter \({}^{world}T_{ee}\). Rows and columns are numbered 1–4.</p>
+    <div class="answer-matrix-wrap"><table class="answer-matrix" aria-label="Bent: world to tool homogeneous matrix"><thead><tr><th scope="col">Row</th><th scope="col">1</th><th scope="col">2</th><th scope="col">3</th><th scope="col">4</th></tr></thead><tbody>
+      <tr><th scope="row">1</th>
+        <td><div class="answer-field"><input id="answer-fk-bent-1-1" data-field="fk.bent.1.1" aria-label="Bent matrix row 1, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent-1-2" data-field="fk.bent.1.2" aria-label="Bent matrix row 1, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent-1-3" data-field="fk.bent.1.3" aria-label="Bent matrix row 1, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent-1-4" data-field="fk.bent.1.4" aria-label="Bent matrix row 1, column 4 in metres" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+      </tr>
+      <tr><th scope="row">2</th>
+        <td><div class="answer-field"><input id="answer-fk-bent-2-1" data-field="fk.bent.2.1" aria-label="Bent matrix row 2, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent-2-2" data-field="fk.bent.2.2" aria-label="Bent matrix row 2, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent-2-3" data-field="fk.bent.2.3" aria-label="Bent matrix row 2, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent-2-4" data-field="fk.bent.2.4" aria-label="Bent matrix row 2, column 4 in metres" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+      </tr>
+      <tr><th scope="row">3</th>
+        <td><div class="answer-field"><input id="answer-fk-bent-3-1" data-field="fk.bent.3.1" aria-label="Bent matrix row 3, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent-3-2" data-field="fk.bent.3.2" aria-label="Bent matrix row 3, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent-3-3" data-field="fk.bent.3.3" aria-label="Bent matrix row 3, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent-3-4" data-field="fk.bent.3.4" aria-label="Bent matrix row 3, column 4 in metres" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+      </tr>
+      <tr><th scope="row">4</th>
+        <td><div class="answer-field"><input id="answer-fk-bent-4-1" data-field="fk.bent.4.1" aria-label="Bent matrix row 4, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent-4-2" data-field="fk.bent.4.2" aria-label="Bent matrix row 4, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent-4-3" data-field="fk.bent.4.3" aria-label="Bent matrix row 4, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent-4-4" data-field="fk.bent.4.4" aria-label="Bent matrix row 4, column 4" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+      </tr>
+    </tbody></table></div>
+  </section>
+  <section class="slide exercise-slide" data-fk-pose="bent_back" data-q-radians='[0, -0.7853981633974483, 0, 1.5707963267948966, 0, -0.7853981633974483, 0]'>
+    <p class="ex-kicker">Forward kinematics · Bent back</p>
+    <h2 class="slide-title">Bent back pose</h2>
+    <p class="answer-pose-vector"><code>q = [0, -pi/4, 0, pi/2, 0, -pi/4, 0]</code> rad</p>
+    <p class="ex-subtitle">Enter \({}^{world}T_{ee}\). Rows and columns are numbered 1–4.</p>
+    <div class="answer-matrix-wrap"><table class="answer-matrix" aria-label="Bent back: world to tool homogeneous matrix"><thead><tr><th scope="col">Row</th><th scope="col">1</th><th scope="col">2</th><th scope="col">3</th><th scope="col">4</th></tr></thead><tbody>
+      <tr><th scope="row">1</th>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-1-1" data-field="fk.bent_back.1.1" aria-label="Bent back matrix row 1, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-1-2" data-field="fk.bent_back.1.2" aria-label="Bent back matrix row 1, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-1-3" data-field="fk.bent_back.1.3" aria-label="Bent back matrix row 1, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-1-4" data-field="fk.bent_back.1.4" aria-label="Bent back matrix row 1, column 4 in metres" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+      </tr>
+      <tr><th scope="row">2</th>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-2-1" data-field="fk.bent_back.2.1" aria-label="Bent back matrix row 2, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-2-2" data-field="fk.bent_back.2.2" aria-label="Bent back matrix row 2, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-2-3" data-field="fk.bent_back.2.3" aria-label="Bent back matrix row 2, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-2-4" data-field="fk.bent_back.2.4" aria-label="Bent back matrix row 2, column 4 in metres" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+      </tr>
+      <tr><th scope="row">3</th>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-3-1" data-field="fk.bent_back.3.1" aria-label="Bent back matrix row 3, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-3-2" data-field="fk.bent_back.3.2" aria-label="Bent back matrix row 3, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-3-3" data-field="fk.bent_back.3.3" aria-label="Bent back matrix row 3, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-3-4" data-field="fk.bent_back.3.4" aria-label="Bent back matrix row 3, column 4 in metres" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+      </tr>
+      <tr><th scope="row">4</th>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-4-1" data-field="fk.bent_back.4.1" aria-label="Bent back matrix row 4, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-4-2" data-field="fk.bent_back.4.2" aria-label="Bent back matrix row 4, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-4-3" data-field="fk.bent_back.4.3" aria-label="Bent back matrix row 4, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-bent_back-4-4" data-field="fk.bent_back.4.4" aria-label="Bent back matrix row 4, column 4" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+      </tr>
+    </tbody></table></div>
+  </section>
+  <section class="slide exercise-slide" data-fk-pose="side_reach" data-q-radians='[1.5707963267948966, 0.7853981633974483, 0, -1.5707963267948966, 0, 0.7853981633974483, 0]'>
+    <p class="ex-kicker">Forward kinematics · Side reach</p>
+    <h2 class="slide-title">Side reach pose</h2>
+    <p class="answer-pose-vector"><code>q = [pi/2, pi/4, 0, -pi/2, 0, pi/4, 0]</code> rad</p>
+    <p class="ex-subtitle">Enter \({}^{world}T_{ee}\). Rows and columns are numbered 1–4.</p>
+    <div class="answer-matrix-wrap"><table class="answer-matrix" aria-label="Side reach: world to tool homogeneous matrix"><thead><tr><th scope="col">Row</th><th scope="col">1</th><th scope="col">2</th><th scope="col">3</th><th scope="col">4</th></tr></thead><tbody>
+      <tr><th scope="row">1</th>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-1-1" data-field="fk.side_reach.1.1" aria-label="Side reach matrix row 1, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-1-2" data-field="fk.side_reach.1.2" aria-label="Side reach matrix row 1, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-1-3" data-field="fk.side_reach.1.3" aria-label="Side reach matrix row 1, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-1-4" data-field="fk.side_reach.1.4" aria-label="Side reach matrix row 1, column 4 in metres" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+      </tr>
+      <tr><th scope="row">2</th>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-2-1" data-field="fk.side_reach.2.1" aria-label="Side reach matrix row 2, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-2-2" data-field="fk.side_reach.2.2" aria-label="Side reach matrix row 2, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-2-3" data-field="fk.side_reach.2.3" aria-label="Side reach matrix row 2, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-2-4" data-field="fk.side_reach.2.4" aria-label="Side reach matrix row 2, column 4 in metres" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+      </tr>
+      <tr><th scope="row">3</th>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-3-1" data-field="fk.side_reach.3.1" aria-label="Side reach matrix row 3, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-3-2" data-field="fk.side_reach.3.2" aria-label="Side reach matrix row 3, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-3-3" data-field="fk.side_reach.3.3" aria-label="Side reach matrix row 3, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-3-4" data-field="fk.side_reach.3.4" aria-label="Side reach matrix row 3, column 4 in metres" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+      </tr>
+      <tr><th scope="row">4</th>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-4-1" data-field="fk.side_reach.4.1" aria-label="Side reach matrix row 4, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-4-2" data-field="fk.side_reach.4.2" aria-label="Side reach matrix row 4, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-4-3" data-field="fk.side_reach.4.3" aria-label="Side reach matrix row 4, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-side_reach-4-4" data-field="fk.side_reach.4.4" aria-label="Side reach matrix row 4, column 4" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+      </tr>
+    </tbody></table></div>
+  </section>
+  <section class="slide exercise-slide" data-fk-pose="wrist_turn" data-q-radians='[0, 0.7853981633974483, 0, -1.5707963267948966, 0, 0.7853981633974483, 1.5707963267948966]'>
+    <p class="ex-kicker">Forward kinematics · Wrist turn</p>
+    <h2 class="slide-title">Wrist turn pose</h2>
+    <p class="answer-pose-vector"><code>q = [0, pi/4, 0, -pi/2, 0, pi/4, pi/2]</code> rad</p>
+    <p class="ex-subtitle">Enter \({}^{world}T_{ee}\). Rows and columns are numbered 1–4.</p>
+    <div class="answer-matrix-wrap"><table class="answer-matrix" aria-label="Wrist turn: world to tool homogeneous matrix"><thead><tr><th scope="col">Row</th><th scope="col">1</th><th scope="col">2</th><th scope="col">3</th><th scope="col">4</th></tr></thead><tbody>
+      <tr><th scope="row">1</th>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-1-1" data-field="fk.wrist_turn.1.1" aria-label="Wrist turn matrix row 1, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-1-2" data-field="fk.wrist_turn.1.2" aria-label="Wrist turn matrix row 1, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-1-3" data-field="fk.wrist_turn.1.3" aria-label="Wrist turn matrix row 1, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-1-4" data-field="fk.wrist_turn.1.4" aria-label="Wrist turn matrix row 1, column 4 in metres" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+      </tr>
+      <tr><th scope="row">2</th>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-2-1" data-field="fk.wrist_turn.2.1" aria-label="Wrist turn matrix row 2, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-2-2" data-field="fk.wrist_turn.2.2" aria-label="Wrist turn matrix row 2, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-2-3" data-field="fk.wrist_turn.2.3" aria-label="Wrist turn matrix row 2, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-2-4" data-field="fk.wrist_turn.2.4" aria-label="Wrist turn matrix row 2, column 4 in metres" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+      </tr>
+      <tr><th scope="row">3</th>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-3-1" data-field="fk.wrist_turn.3.1" aria-label="Wrist turn matrix row 3, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-3-2" data-field="fk.wrist_turn.3.2" aria-label="Wrist turn matrix row 3, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-3-3" data-field="fk.wrist_turn.3.3" aria-label="Wrist turn matrix row 3, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-3-4" data-field="fk.wrist_turn.3.4" aria-label="Wrist turn matrix row 3, column 4 in metres" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"></div></td>
+      </tr>
+      <tr><th scope="row">4</th>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-4-1" data-field="fk.wrist_turn.4.1" aria-label="Wrist turn matrix row 4, column 1" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-4-2" data-field="fk.wrist_turn.4.2" aria-label="Wrist turn matrix row 4, column 2" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-4-3" data-field="fk.wrist_turn.4.3" aria-label="Wrist turn matrix row 4, column 3" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+        <td><div class="answer-field"><input id="answer-fk-wrist_turn-4-4" data-field="fk.wrist_turn.4.4" aria-label="Wrist turn matrix row 4, column 4" type="text" maxlength="120" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="value"></div></td>
+      </tr>
+    </tbody></table></div>
+  </section>
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">Save your work</p>
+    <h2 class="slide-title">Submit your numeric responses</h2>
+    <div class="ex-checklist">
+      <div class="ex-check"><span>1</span><p>Complete the D–H table, fixed transforms and repaired visual origins.</p></div>
+      <div class="ex-check"><span>2</span><p>Answer the two choices and enter all five 4×4 matrices.</p></div>
+      <div class="ex-check"><span>3</span><p>Download your response JSON. Keep a copy to upload when the feedback slides are shared.</p></div>
+    </div>
+  </section>
 </main>
+<script src="../js/exercises/exercise-01-answers.js"></script>
 <script src="../js/deck/nav-runtime.js"></script>
 </body>
 </html>

@@ -62,6 +62,7 @@ button:disabled{opacity:.42;cursor:not-allowed}
 
 input[type=file],
 input[type=number],
+input[type=text],
 select,
 textarea{
   width:100%;
@@ -423,8 +424,10 @@ h1.module-title{
 <div class="badge">Interactive Simulation · Module 01</div>
 <h1 class="module-title">Robot Visualization &amp; URDF Inspection</h1>
 <p class="muted">
-    Load a URDF and its visual STL files to inspect the robot structure, joint frames, joint axes,
-    and visual transforms directly in 3D. You can also edit visual or joint origins and export the modified URDF.
+    The default KUKA iiwa model has deliberately misaligned visual origins. Repair the mesh positions
+    and orientations, then inspect the five test poses. For Exercise 01, change only visual origins;
+    keep joint origins, axes, mesh scales, inertial properties, and collision geometry unchanged.
+    You can also load another URDF and its visual STL files for inspection.
   </p>
 <details class="module-collapsible compact-file-grid" open=""><summary>Files &amp; export</summary><div class="module-collapsible-body">
 <div class="card">
@@ -499,7 +502,17 @@ h1.module-title{
 <aside class="module-side-stack"><details class="module-joint-preview collapsible joint-preview-top module-collapsible" open=""><summary>Joint preview</summary><div class="module-collapsible-body">
 
 <div class="collapsible-body">
-<div class="small muted">Use these sliders to verify that the edited kinematic chain behaves as expected. Joint values are preview-only and are not written into the URDF.</div>
+<div class="small muted">Joint values are preview-only and are not written into the URDF. Use the five test poses to check that each repaired mesh stays attached to its link.</div>
+<label style="margin-top:8px">Test pose
+<select disabled="" id="posePreset">
+<option value="">Custom pose</option>
+<option value="home">Home</option>
+<option value="bent">Bent</option>
+<option value="bent_back">Bent back</option>
+<option value="side_reach">Side reach</option>
+<option value="wrist_turn">Wrist turn</option>
+</select>
+</label>
 <div id="jointControls" style="margin-top:7px"></div>
 <button disabled="" id="zeroJointsBtn" style="margin-top:8px">Zero all joints</button>
 </div>
@@ -521,17 +534,19 @@ h1.module-title{
 <div class="collapsible-body">
 <div class="small muted">Origin translation [m]</div>
 <div class="three" style="margin-top:5px">
-<label>x<input disabled="" id="tx" step="0.001" type="number"/></label>
-<label>y<input disabled="" id="ty" step="0.001" type="number"/></label>
-<label>z<input disabled="" id="tz" step="0.001" type="number"/></label>
+<label>x<input disabled="" id="tx" maxlength="80" spellcheck="false" type="text"/></label>
+<label>y<input disabled="" id="ty" maxlength="80" spellcheck="false" type="text"/></label>
+<label>z<input disabled="" id="tz" maxlength="80" spellcheck="false" type="text"/></label>
 </div>
 <div class="small muted" style="margin-top:9px">URDF roll-pitch-yaw [rad]</div>
 <div class="three" style="margin-top:5px">
-<label>r<input disabled="" id="rr" step="0.01" type="number"/></label>
-<label>p<input disabled="" id="rp" step="0.01" type="number"/></label>
-<label>y<input disabled="" id="ry" step="0.01" type="number"/></label>
+<label>r<input disabled="" id="rr" maxlength="80" spellcheck="false" type="text"/></label>
+<label>p<input disabled="" id="rp" maxlength="80" spellcheck="false" type="text"/></label>
+<label>y<input disabled="" id="ry" maxlength="80" spellcheck="false" type="text"/></label>
 </div>
+<p class="small muted">Enter numbers or multiples of pi, such as <code>-pi/2</code> or <code>3*pi/4</code>. Enter zero explicitly for a zero component.</p>
 <button disabled="" id="applyNumericBtn" style="margin-top:9px">Apply numeric transform</button>
+<div id="numericFeedback" class="small" role="status" aria-live="polite" style="margin-top:7px"></div>
 <div id="opacityPanel" style="margin-top:12px">
 <div class="small muted">Selected visual opacity</div>
 <div class="row" style="margin-top:5px">
@@ -592,9 +607,16 @@ import { ColladaLoader } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/exampl
 import { mergeGeometries } from 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/utils/BufferGeometryUtils.js/+esm';
 
 const $=id=>document.getElementById(id);
-const DEFAULT_DATA_ROOT=new URL('../../assets/data/',import.meta.url);
-const DEFAULT_URDF_NAME='iiwa7_free_joints.urdf';
+const DEFAULT_DATA_ROOT=new URL('../../lectures_main/assets/models/iiwa7/',import.meta.url);
+const DEFAULT_URDF_NAME='kuka_iiwa7_misaligned.urdf';
 const DEFAULT_STL_NAMES=Array.from({length:8},(_,i)=>`link_${i}.stl`);
+const POSE_PRESETS={
+  home:[0,0,0,0,0,0,0],
+  bent:[0,Math.PI/4,0,-Math.PI/2,0,Math.PI/4,0],
+  bent_back:[0,-Math.PI/4,0,Math.PI/2,0,-Math.PI/4,0],
+  side_reach:[Math.PI/2,Math.PI/4,0,-Math.PI/2,0,Math.PI/4,0],
+  wrist_turn:[0,Math.PI/4,0,-Math.PI/2,0,Math.PI/4,Math.PI/2]
+};
 
 async function fetchDefaultFile(url,name,type){
   const response=await fetch(url);
@@ -664,6 +686,20 @@ const state={
 scene.add(state.robotRoot);
 
 function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+function parseTransformNumber(text){
+  const source=String(text).trim().replace(/π/g,'pi').replace(/−/g,'-');
+  if(!source||source.length>80)throw new Error('Enter a number or a pi expression.');
+  const numberPattern=/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
+  let value;
+  if(numberPattern.test(source))value=Number(source);
+  else{
+    const match=source.match(/^([+-]?)\s*(?:(\d+(?:\.\d*)?|\.\d+)\s*\*\s*)?pi(?:\s*\/\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)))?$/i);
+    if(!match)throw new Error('Use a number or a pi expression such as -pi/2.');
+    value=(match[1]==='-'?-1:1)*Number(match[2]??1)*Math.PI/Number(match[3]??1);
+  }
+  if(!Number.isFinite(value))throw new Error('The value must be finite.');
+  return value;
+}
 function nums(s,d=[]){
   if(!s)return [...d];
   const a=s.trim().split(/\s+/).map(Number);
@@ -1270,6 +1306,7 @@ function rebuildJointControls(){
   const movable=state.robot.joints.filter(j=>['revolute','continuous','prismatic'].includes(j.type));
   if(!movable.length){
     root.innerHTML='<div class="small muted">No movable joints.</div>';
+    updatePosePreset();
     return;
   }
   movable.forEach(j=>{
@@ -1282,7 +1319,9 @@ function rebuildJointControls(){
     const range=document.createElement('input');
     range.type='range';
     range.min=String(j.lower);range.max=String(j.upper);
-    range.step=j.type==='prismatic'?'0.001':'0.01';
+    range.step='any';
+    range.dataset.jointName=j.name;
+    range.setAttribute('aria-label',`${j.name} ${j.type==='prismatic'?'translation in metres':'angle in radians'}`);
     range.value=String(clamp(state.jointValues.get(j.name)||0,j.lower,j.upper));
     const value=document.createElement('div');
     value.className='small muted mono';
@@ -1294,10 +1333,37 @@ function rebuildJointControls(){
       const motion=state.jointMotions.get(j.name);
       if(motion)applyJointMotion(motion,j,q);
       state.robotRoot.updateMatrixWorld(true);
+      updatePosePreset();
     });
     row.append(label,range,value);
     root.appendChild(row);
   });
+  updatePosePreset();
+}
+function updatePosePreset(){
+  const joints=Array.from({length:7},(_,i)=>state.robot?.joints.find(j=>j.name===`iiwa_joint_${i+1}`&&['revolute','continuous'].includes(j.type)));
+  const available=joints.every(Boolean);
+  $('posePreset').disabled=!available;
+  $('posePreset').value=available?Object.keys(POSE_PRESETS).find(name=>POSE_PRESETS[name].every((q,i)=>Math.abs((state.jointValues.get(joints[i].name)||0)-q)<1e-10))||'':'';
+}
+function applyPosePreset(name){
+  const pose=POSE_PRESETS[name];
+  if(!pose||!state.robot)return;
+  const joints=pose.map((_,i)=>state.robot.joints.find(j=>j.name===`iiwa_joint_${i+1}`&&['revolute','continuous'].includes(j.type)));
+  if(joints.some((j,i)=>!j||pose[i]<j.lower||pose[i]>j.upper)){
+    $('status').textContent='This test pose is outside the loaded robot joint limits.';
+    updatePosePreset();
+    return;
+  }
+  joints.forEach((j,i)=>{
+    state.jointValues.set(j.name,pose[i]);
+    const motion=state.jointMotions.get(j.name);
+    if(motion)applyJointMotion(motion,j,pose[i]);
+  });
+  state.robotRoot.updateMatrixWorld(true);
+  rebuildJointControls();
+  const label=$('posePreset').selectedOptions[0]?.textContent||name;
+  $('status').textContent=`${label} test pose · joint values are preview-only`;
 }
 function updateSummary(){
   const visuals=[...state.robot.links.values()].flatMap(l=>l.visuals);
@@ -1374,9 +1440,10 @@ function selectEditable(key){
   state.selectedKey=key||'';
   $('editableSelect').value=state.selectedKey;
   const item=selected();
+  $('numericFeedback').textContent='';
 
   const ids=['tx','ty','tz','rr','rp','ry'];
-  ids.forEach(id=>$(id).disabled=!item);
+  ids.forEach(id=>{$(id).disabled=!item;$(id).removeAttribute('aria-invalid');});
   $('applyNumericBtn').disabled=!item;
   $('resetSelectedBtn').disabled=!item;
 
@@ -1423,7 +1490,10 @@ function writeSelectedToUrdf(){
     writeOrigin(item.visual.xmlNode,item.group);
     if(item.visual.kind==='mesh'&&item.visual.meshNode&&item.mesh){
       const s=item.mesh.scale;
-      item.visual.meshNode.setAttribute('scale',`${fmt(s.x)} ${fmt(s.y)} ${fmt(s.z)}`);
+      const current=nums(item.visual.meshNode.getAttribute('scale'),[1,1,1]);
+      if(s.x!==current[0]||s.y!==current[1]||s.z!==current[2]){
+        item.visual.meshNode.setAttribute('scale',`${fmt(s.x)} ${fmt(s.y)} ${fmt(s.z)}`);
+      }
     }
   }
   refreshNumericFields();
@@ -1448,15 +1518,21 @@ function setSpace(space){
 }
 function applyNumericTransform(){
   const item=selected();if(!item)return;
-  const vals=['tx','ty','tz','rr','rp','ry'].map(id=>Number($(id).value));
-  if(!vals.every(Number.isFinite)){
-    $('xmlFeedback').textContent='Numeric transform contains an invalid value.';
+  const ids=['tx','ty','tz','rr','rp','ry'];
+  let error='';
+  const vals=ids.map(id=>{
+    try{const value=parseTransformNumber($(id).value);$(id).removeAttribute('aria-invalid');return value;}
+    catch(problem){$(id).setAttribute('aria-invalid','true');error=problem.message;return NaN;}
+  });
+  if(error){
+    $('numericFeedback').textContent=error+' No transform was changed.';
     return;
   }
   item.group.position.set(vals[0],vals[1],vals[2]);
   item.group.quaternion.copy(quaternionFromUrdfRPY(vals.slice(3)));
   writeSelectedToUrdf();
   state.robotRoot.updateMatrixWorld(true);
+  $('numericFeedback').textContent='Transform applied. Preview the test poses to check the result.';
 }
 function applyScale(){
   const item=selected();
@@ -1594,6 +1670,7 @@ $('downloadBtn').addEventListener('click',downloadUrdf);
 $('copyTextBtn').addEventListener('click',syncXmlEditor);
 $('revertXmlBtn').addEventListener('click',()=>{syncXmlEditor();$('xmlFeedback').textContent='Text restored from the current 3D model.';});
 $('applyXmlBtn').addEventListener('click',rebuildFromEditor);
+$('posePreset').addEventListener('change',e=>applyPosePreset(e.target.value));
 $('zeroJointsBtn').addEventListener('click',()=>{
   state.jointValues.clear();
   state.robot?.joints.forEach(j=>{
@@ -1607,14 +1684,14 @@ $('zeroJointsBtn').addEventListener('click',()=>{
 async function loadDefaultAssets(){
   try{
     const stlFiles=await Promise.all(DEFAULT_STL_NAMES.map(name=>
-      fetchDefaultFile(new URL(`visual/${name}`,DEFAULT_DATA_ROOT),name,'model/stl')
+      fetchDefaultFile(new URL(name,DEFAULT_DATA_ROOT),name,'model/stl')
     ));
     state.stlFiles.clear();
     stlFiles.forEach(file=>state.stlFiles.set(file.name.toLowerCase(),file));
     state.geometryCache.clear();
     $('stlStatus').textContent=`${state.stlFiles.size} bundled mesh files loaded.`;
 
-    const response=await fetch(new URL(`urdf/${DEFAULT_URDF_NAME}`,DEFAULT_DATA_ROOT));
+    const response=await fetch(new URL(DEFAULT_URDF_NAME,DEFAULT_DATA_ROOT));
     if(!response.ok)throw new Error(`Unable to load ${DEFAULT_URDF_NAME} (${response.status}).`);
     state.urdfFileName=DEFAULT_URDF_NAME;
     await loadUrdfText(await response.text(),{setOriginal:true});

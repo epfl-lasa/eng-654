@@ -1,4 +1,3 @@
-% Compile from this directory with: pdflatex project_18.tex (twice).
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -15,7 +14,6 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt}
 \setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
-\urlstyle{tt}
 
 \begin{document}
 {\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
@@ -26,7 +24,7 @@
 {\LARGE\bfseries Local versus Global Joint-Limit Avoidance on iiwa 7\par}
 
 \textbf{Format:} Group of two students; simulation-based project.\\
-\textbf{Course foundations:} Lecture 8; Exercise 4.
+\textbf{Prerequisites:} Redundant inverse kinematics, null-space projection, joint-limit avoidance, and feasibility-map planning.
 
 \section*{Motivation}
 Null-space motion can improve a local joint-centering objective while
@@ -72,8 +70,8 @@ failure to discover another feasible corridor.
 \section*{Specifics and scope}
 Use one path segment, two initial configurations, and two local step
 sizes. Start with about 120 path samples and 120 redundancy angles and
-refine decisive intervals. Reuse the course IK and the chart construction
-from Exercise 4; a complete global optimizer is unnecessary. Equal results
+refine decisive intervals. Reuse the supplied analytical IK and construct the chart by
+enumerating and validating candidates on the path--redundancy grid; a complete global optimizer is unnecessary. Equal results
 are acceptable when the explanation is supported by the feasibility maps.
 
 For every chart, keep pose validity, joint limits,
@@ -95,33 +93,26 @@ both successful cases and failures; conclusions must follow the numerical
 and geometric evidence rather than an expected outcome.
 
 \section*{Resources}
-The KUKA LBR iiwa 7 URDF is
-\path{lectures_main/assets/models/iiwa7/iiwa7.urdf}; STL meshes are in that
-directory. The accompanying \path{iiwa7_free_joints.urdf} is a mathematical
-continuation model; apply physical limits separately. The course analytical
-IK model will be supplied; reuse it rather than deriving a general 7R solver.
+The KUKA LBR iiwa 7 robot description (URDF) and visualization meshes
+(STL) will be provided to students, together with a mathematical continuation
+model with unrestricted joints and an analytical fixed-$q_3$ IK model. Reuse
+the supplied IK rather than deriving a general 7R solver. Apply the physical
+joint limits from the robot description separately when using the unrestricted
+model. Check D--H parameters, joint axes, and the fixed tool transform against
+the URDF, and validate IK outputs by independent forward kinematics.
 
-The course pose path is
-\path{lectures_main/assets/data/path/kuka_iiwa7_rectangle_workspace_path_500_quaternion.csv}.
-Its quaternion columns are \texttt{qw,qx,qy,qz}; normalize them and make their
-signs consistent before interpolation. The reference table
-\path{lectures_main/assets/data/null/iiwa7_IK_q3_030deg.csv}
-checks fixed-$q_3$ solutions only; it does not replace evaluation at other angles.
-Use the null-space derivation and feasibility-map demonstrations in Lecture 8.
-Choose a short segment or documented placement of the course path; a suitable
-joint-limit example can be supplied to keep scenario construction bounded.
+A sampled rectangular full-pose path and a reference fixed-$q_3$ IK
+table will also be provided. The pose data contain position coordinates and
+quaternion columns \texttt{qw,qx,qy,qz}; normalize the quaternions and make
+their signs consistent before interpolation. The reference IK table checks
+solutions at $q_3=30^\circ$ only; it does not replace evaluation at other angles.
+Use its configurations to check pose residuals and branch labels, applying
+physical joint limits separately.
 
-Use the lecture website to verify D--H parameters, visualize IKs and
-singularities, and simulate paths. All listed paths are relative to the
-repository root. Start the website following \path{lectures_main/README.md}.
-
-\section*{Workload and collaboration}
-Budget approximately 60 hours per student (120 person-hours per pair)
-for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
-Deduct any lectures or exercises included in those credits. Allocate roughly
-20 team-hours to model validation, 50 to the core work, 30 to experiments,
-and 20 to reporting. Reuse the specified IK and simulations. Share validation
-and interpretation even if modelling and implementation are divided between
-students. Hardware execution is outside scope.
+Implement the null-space controller and feasibility-chart comparison using
+the supplied IK and model. Choose a short segment or documented placement of
+the supplied path; a suitable joint-limit example can be supplied to keep
+scenario construction bounded. Visualize both recovered trajectories with
+the supplied meshes and use identical validation tolerances.
 
 \end{document}

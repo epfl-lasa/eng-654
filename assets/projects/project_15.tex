@@ -1,4 +1,3 @@
-% Compile from this directory with: pdflatex project_15.tex (twice).
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -15,7 +14,6 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt}
 \setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
-\urlstyle{tt}
 
 \begin{document}
 {\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
@@ -26,7 +24,7 @@
 {\LARGE\bfseries Lifting a custom\_3R Posture-Change Loop\\to custom\_6R\par}
 
 \textbf{Format:} Group of two students; simulation-based project.\\
-\textbf{Course foundations:} Lectures 3--7; Exercises 2--3.
+\textbf{Prerequisites:} 3R arm inverse kinematics, spherical-wrist decomposition, singularity analysis, and continuous path tracking.
 
 \section*{Motivation}
 A positioning arm may execute a nonsingular posture change while its
@@ -98,30 +96,17 @@ and geometric evidence rather than an expected outcome.
 \section*{Resources}
 The custom\_6R consists of the custom\_3R positioning arm plus a
 spherical wrist. The arm is orthogonal with non-intersecting consecutive axes.
-Its URDF is \path{lectures_main/assets/models/custom_6R/custom_6R_new.urdf};
-the corresponding STL meshes are in that directory. Inspect wrist-axis
-concurrency and base/tool transforms using the lecture website.
+Robot descriptions (URDF) and visualization meshes (STL) for both robots will
+be provided to students, together with analytical arm IK and a validated
+arm-loop seed. Inspect joint axes, wrist-axis concurrency, and base/tool
+transforms from the descriptions; document any transform between the 3R
+operational point and the 6R wrist center. Check physical joint limits
+separately from mathematical regularity.
 
-The exact custom\_3R is an orthogonal 3R robot with non-intersecting
-consecutive joint axes. Its URDF is
-\path{lectures_main/assets/models/custom_3R/custom_3R_new.urdf}; STL meshes are
-in the same directory. Use the lecture website to inspect axes and frames,
-verify D--H parameters, plot IKs, and animate configurations.
-The course IK methods in Lectures 3--4 and the exact-model connection in
-Lecture 6 provide the starting point. A validated arm-loop seed will be
-supplied; adapting an idealized-atlas loop without revalidation is insufficient.
-
-Use the lecture website to verify D--H parameters, visualize IKs and
-singularities, and simulate paths. All listed paths are relative to the
-repository root. Start the website following \path{lectures_main/README.md}.
-
-\section*{Workload and collaboration}
-Budget approximately 60 hours per student (120 person-hours per pair)
-for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
-Deduct any lectures or exercises included in those credits. Allocate roughly
-20 team-hours to model validation, 50 to the core work, 30 to experiments,
-and 20 to reporting. Reuse the specified IK and simulations. Share validation
-and interpretation even if modelling and implementation are divided between
-students. Hardware execution is outside scope.
+Implement the spherical-wrist completion and independent full-pose validation
+around the supplied arm IK and loop. Verify D--H forward kinematics against
+URDF transforms, check Jacobians with finite differences, and animate both
+robots using the supplied meshes. A loop from an idealized orthogonal-arm
+model requires revalidation against the exact geometry before use.
 
 \end{document}

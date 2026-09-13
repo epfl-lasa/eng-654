@@ -1,4 +1,3 @@
-% Compile from this directory with: pdflatex project_7.tex (twice).
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -26,7 +25,8 @@
 {\LARGE\bfseries Signed IK Classification of PUMA 560 and UR5\par}
 
 \textbf{Format:} Group of two students; simulation-based project.\\
-\textbf{Course foundations:} Lectures 2, 4--6; Exercises 2--3.
+\textbf{Prerequisites:} D--H modelling, analytical inverse kinematics,
+Jacobians, determinant factorization, and singularity classification.
 
 \section*{Motivation}
 A useful IK label describes a geometric configuration and the singular
@@ -76,7 +76,7 @@ small approaches to each separator and report ambiguous near-zero labels.
 \section*{Specifics and scope}
 Study two architectures, three regular targets per robot, and one short
 approach to each UR5 singularity type. The UR5 URDF, STL meshes, and IK
-implementation will be provided. Reuse the PUMA IK baseline; focus new derivation
+implementation will be provided, together with a PUMA IK baseline. Focus new derivation
 on the UR5 Jacobian and classification rather than implementing another general
 IK solver. Allow geometric sign conventions to differ between models.
 
@@ -99,33 +99,21 @@ a concise 5--6-page report, and a short simulation demonstration. Explain
 both successful cases and failures; conclusions must follow the numerical
 and geometric evidence rather than an expected outcome.
 
-\section*{Resources}
-The PUMA 560 URDF is
-\path{lectures_main/assets/models/puma/puma560_robot.urdf}; its STL meshes are
-in the same directory. The lecture website provides axis/frame inspection,
-IK visualization, and path demonstrations. Confirm joint offsets and the
-selected terminal frame when importing the model.
-UR5 resources will be supplied separately; use the provided version consistently
-instead of substituting another UR-series robot or dimensional variant.
+\section*{Provided materials and implementation}
+The PUMA 560 and UR5 robot descriptions (.urdf) and link meshes (.stl) will be
+provided to the students, together with the analytical IK routines for both
+robots. Use a robotics library or your own tools for axis/frame inspection,
+IK visualization, and singularity plots. Confirm joint offsets and the selected
+terminal frame when importing each model. Use the supplied UR5 version
+consistently instead of substituting another UR-series robot or dimensional
+variant.
 
-
-Supporting reading:
-\href{https://salunkhedurgesh.com/projects/main/resources/papers/ijrr24_salunkhe.pdf}{\emph{Kinematic issues in 6R cuspidal robots}},
+Supporting reading: \emph{Kinematic issues in 6R cuspidal robots},
 especially the discussion of determinant factors and UR-type architectures.
 Explain the argument in your own model conventions rather than copying a
 factorization without checking it.
 
-Use the lecture website to verify D--H parameters, visualize IKs and
-singularities, and simulate paths. All listed paths are relative to the
-repository root. Start the website following \path{lectures_main/README.md}.
-
-\section*{Workload and collaboration}
-Budget approximately 60 hours per student (120 person-hours per pair)
-for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
-Deduct any lectures or exercises included in those credits. Allocate roughly
-20 team-hours to model validation, 50 to the core work, 30 to experiments,
-and 20 to reporting. Reuse the specified IK and simulations. Share validation
-and interpretation even if modelling and implementation are divided between
-students. Hardware execution is outside scope.
+Validate the supplied IK outputs against your forward models and use the
+full Jacobians to check the derived factors and reduced visualizations.
 
 \end{document}

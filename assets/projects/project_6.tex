@@ -1,4 +1,3 @@
-% Compile from this directory with: pdflatex project_6.tex (twice).
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -26,7 +25,8 @@
 {\LARGE\bfseries Offset-Wrist IK through the FANUC CRX Case Study\par}
 
 \textbf{Format:} Group of two students; simulation-based project.\\
-\textbf{Course foundations:} Lectures 2--6; Exercises 1 and 3.
+\textbf{Prerequisites:} Rigid transforms, D--H modelling, numerical inverse
+kinematics, Jacobians, singularities, and polynomial root finding.
 
 \section*{Motivation}
 The FANUC CRX provides a concrete example of an offset-wrist 6R robot
@@ -100,31 +100,31 @@ a concise 5--6-page report, and a short simulation demonstration. Explain
 both successful cases and failures; conclusions must follow the numerical
 and geometric evidence rather than an expected outcome.
 
-\section*{Resources}
-The course CRX model is
-\path{lectures_main/assets/models/fanuc_crx10ia_support/crx10ial.urdf},
-with STL meshes in the same directory. Lecture 6 visualizes the reference data
-in \path{lectures_main/assets/data/ik16_solutions.csv}; its angles must be
-converted to the URDF convention as documented by the course visualization.
-The general CRX IK model will be supplied separately.
-
+\section*{Provided materials and implementation}
+The CRX-10iA/L robot description (.urdf) and link meshes (.stl) will be provided
+to the students, together with the numerical IK model, sixteen-solution
+reference data, and candidate joint path. Use the same model variant for all
+comparisons. The reference joint angles are given in degrees in a D--H
+convention. Let $\theta_i$ denote these angles converted to radians, and map
+them to the supplied URDF convention using
+\[
+\begin{aligned}
+q_i&=\operatorname{wrap}_{[-\pi,\pi)}(s_i\theta_i+b_i),\\
+s&=(1,-1,-1,1,-1,-1),\qquad b=(0,-\pi/2,0,\pi,\pi,0).
+\end{aligned}
+\]
+Check this conversion by comparing all reference forward poses. Wrapped angles
+are representatives modulo $2\pi$; check physical limits separately and keep
+joint trajectories continuous when validating the candidate path.
 
 Suggested reading: Federico Thomas and Josep M. Porta,
-\href{https://upcommons.upc.edu/entities/publication/d0c7ff76-7876-4c39-904d-503b8179ac33}{\emph{The inverse kinematics of lobster arms}},
+\emph{The inverse kinematics of lobster arms},
 Mechanism and Machine Theory 196 (2024), 105630. The paper develops a
 distance-based closure-polynomial formulation, including the CRX-10iA/L case.
 
-Use the lecture website to verify D--H parameters, visualize IKs and
-singularities, and simulate paths. All listed paths are relative to the
-repository root. Start the website following \path{lectures_main/README.md}.
-
-\section*{Workload and collaboration}
-Budget approximately 60 hours per student (120 person-hours per pair)
-for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
-Deduct any lectures or exercises included in those credits. Allocate roughly
-20 team-hours to model validation, 50 to the core work, 30 to experiments,
-and 20 to reporting. Reuse the specified IK and simulations. Share validation
-and interpretation even if modelling and implementation are divided between
-students. Hardware execution is outside scope.
+Use a robotics library or your own tools to verify D--H parameters, inspect
+axes and frames, visualize the recovered IKs and singularity slices, and
+animate the candidate path. Validate numerical results independently with
+forward kinematics and the full Jacobian.
 
 \end{document}

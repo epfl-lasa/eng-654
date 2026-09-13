@@ -1,4 +1,3 @@
-% Compile from this directory with: pdflatex project_12.tex (twice).
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -15,7 +14,6 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt}
 \setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
-\urlstyle{tt}
 
 \begin{document}
 {\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
@@ -26,7 +24,7 @@
 {\LARGE\bfseries Nonsingular Posture Change on custom\_3R\par}
 
 \textbf{Format:} Group of two students; simulation-based project.\\
-\textbf{Course foundations:} Lectures 3, 5--7; Exercise 3.
+\textbf{Prerequisites:} Forward and inverse kinematics of 3R arms, position Jacobians, singularity maps, and continuous path tracking.
 
 \section*{Motivation}
 For a cuspidal robot, two distinct configurations can reach the same
@@ -42,8 +40,8 @@ and interpret both its joint-space path and its closed workspace image.
 
 \begin{itemize}
   \item \textbf{Validate the exact model.} Read the URDF and establish its D--H
-parameters, angle offsets, and selected operational point. Compare forward
-kinematics and Jacobians with the course implementation. The exact robot is
+parameters, angle offsets, and selected operational point. Cross-check forward
+kinematics against URDF transforms and Jacobians against finite differences. The exact robot is
 orthogonal with non-intersecting consecutive axes; do not substitute the
 idealized atlas dimensions.
 
@@ -53,8 +51,8 @@ $(\rho,z)$. Select a regular target and overlay all its distinct IKs. Identify
 two candidate configurations in the same computed singularity-free component;
 equal determinant signs alone are insufficient.
 
-  \item \textbf{Construct the joint-space connection.} Use the Lecture 6
-nonsingular-change demonstration to obtain a starting candidate, then construct
+  \item \textbf{Construct the joint-space connection.} Use the supplied
+exact-model connection seed to obtain a starting candidate, then construct
 or adjust a piecewise-smooth path in the reduced component. Specify a continuous
 $q_1$ interpolation connecting the full endpoint IKs. Recover and display the
 complete three-joint trajectory.
@@ -75,7 +73,7 @@ use an analytical bound only if readily available.
 \newpage
 \section*{Specifics and scope}
 Study one target, one selected IK pair, and two candidate paths (the
-original and one variation). The lecture's existing connection is an allowed
+original and one variation). The supplied connection is an allowed
 seed, but validation must use the exact model. The primary cuspidality study
 uses periodic unconstrained joints; report separately whether the same path
 respects the URDF limits. No obstacle model or general cusp-search algorithm
@@ -102,25 +100,17 @@ and geometric evidence rather than an expected outcome.
 
 \section*{Resources}
 The exact custom\_3R is an orthogonal 3R robot with non-intersecting
-consecutive joint axes. Its URDF is
-\path{lectures_main/assets/models/custom_3R/custom_3R_new.urdf}; STL meshes are
-in the same directory. Use the lecture website to inspect axes and frames,
-verify D--H parameters, plot IKs, and animate configurations.
-Use the exact-model nonsingular-change lab in Lecture 6 and the Lecture 3 IK
-method. The idealized atlas can explain concepts but must not supply metric
-results for this exact-URDF experiment.
+consecutive joint axes. Its robot description (URDF) and visualization meshes
+(STL) will be provided to students, together with analytical arm IK and an
+exact-model nonsingular-connection seed. Check joint axes, frames, angle
+offsets, and the selected operational point when constructing the D--H model.
+Apply physical joint limits separately from the periodic mathematical model.
 
-Use the lecture website to verify D--H parameters, visualize IKs and
-singularities, and simulate paths. All listed paths are relative to the
-repository root. Start the website following \path{lectures_main/README.md}.
-
-\section*{Workload and collaboration}
-Budget approximately 60 hours per student (120 person-hours per pair)
-for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
-Deduct any lectures or exercises included in those credits. Allocate roughly
-20 team-hours to model validation, 50 to the core work, 30 to experiments,
-and 20 to reporting. Reuse the specified IK and simulations. Share validation
-and interpretation even if modelling and implementation are divided between
-students. Hardware execution is outside scope.
+Implement forward kinematics and the position Jacobian from the validated
+parameters; cross-check them against transforms composed directly from the
+URDF and a finite-difference Jacobian. Use the supplied IK and connection
+seed to build the reduced maps and candidate paths, then animate the resulting
+configurations with the supplied meshes. An idealized orthogonal-arm atlas may
+explain concepts but must not supply metric results for this exact model.
 
 \end{document}

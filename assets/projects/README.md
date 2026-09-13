@@ -1,6 +1,6 @@
 # ENG-654 project handouts
 
-Seventeen projects for groups of two. Project numbers 3, 9, and 11 were removed; the agreed numbering is retained.
+Eighteen projects for groups of two. Project numbers 3, 9, and 11 were removed; the agreed numbering is retained.
 
 Each `.tex` file is standalone. The accompanying PDFs are compiled from those sources.
 
@@ -23,6 +23,9 @@ Each `.tex` file is standalone. The accompanying PDFs are compiled from those so
 | [18](project_18.tex) | Local versus Global Joint-Limit Avoidance on iiwa 7 | [PDF](project_18.pdf) |
 | [19](project_19.tex) | Apparent Barriers in iiwa 7 Redundancy Charts | [PDF](project_19.pdf) |
 | [20](project_20.tex) | Repeatable Closed-Path Motion on iiwa 7 | [PDF](project_20.pdf) |
+| [21](project_21.tex) | Reachable Workspace of Flexiv Enlight L with Fixed q3 | [PDF](project_21.pdf) |
+
+The [project bundle](project_part1.zip) contains all eighteen PDF handouts.
 
 Compile a handout from this directory using:
 
@@ -33,4 +36,8 @@ pdflatex -interaction=nonstopmode -halt-on-error project_2.tex
 
 Use the corresponding number for another project. Two runs resolve PDF navigation links.
 
-The handouts identify additional instructor-supplied IK implementations, parameter sets, and path seeds; the project folder contains the descriptions, not those future starter packages.
+Robot URDF descriptions and STL meshes will be provided separately to students.
+Some handouts also specify supplied IK implementations, parameter sets, and path
+seeds. Each describes its materials and prerequisites without requiring links to
+lectures, repository files, or website instructions. Project 21 requires only the
+robot model and meshes and includes a geometric starting point for its fixed-q3 IK.

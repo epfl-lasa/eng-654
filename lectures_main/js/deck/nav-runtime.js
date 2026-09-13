@@ -22,9 +22,11 @@
     const slides = Array.from(deck.querySelectorAll('.slide'));
     if (!slides.length) return;
 
-    const storedMode = localStorage.getItem('eng654-mode');
+    let storedMode;
+    try { storedMode = localStorage.getItem('eng654-mode'); } catch (_) { /* Storage is optional. */ }
+    const initialMode = deck.dataset.defaultMode || storedMode;
     document.body.classList.remove('mode-deck', 'mode-scroll');
-    document.body.classList.add(storedMode === 'mode-scroll' ? 'mode-scroll' : 'mode-deck');
+    document.body.classList.add(initialMode === 'mode-scroll' ? 'mode-scroll' : 'mode-deck');
 
     let index = getStartIndex();
     const revealedSteps = new Map();
@@ -143,7 +145,7 @@
       const isScroll = document.body.classList.contains('mode-scroll');
       document.body.classList.toggle('mode-scroll', !isScroll);
       document.body.classList.toggle('mode-deck', isScroll);
-      localStorage.setItem('eng654-mode', isScroll ? 'mode-deck' : 'mode-scroll');
+      try { localStorage.setItem('eng654-mode', isScroll ? 'mode-deck' : 'mode-scroll'); } catch (_) { /* Storage is optional. */ }
       update({ jump: true });
     }
 
@@ -158,6 +160,10 @@
     function update(opts = {}) {
       slides.forEach((slide, i) => {
         slide.classList.toggle('active', i === index);
+        if (deck.dataset.interactiveExercise) {
+          slide.inert = document.body.classList.contains('mode-deck') && i !== index;
+          slide.setAttribute('aria-hidden', String(slide.inert));
+        }
         const number = slide.querySelector(':scope > .slide-number');
         if (number) number.classList.toggle('is-current', i === index);
         applyFragments(slide);
@@ -186,7 +192,7 @@
 
     document.addEventListener('keydown', function (event) {
       const tag = (event.target && event.target.tagName || '').toLowerCase();
-      if (['input', 'textarea', 'select', 'button'].includes(tag)) return;
+      if (['input', 'textarea', 'select', 'button'].includes(tag) || event.target?.isContentEditable || event.ctrlKey || event.metaKey || event.altKey) return;
 
       if (['ArrowRight', 'PageDown', ' '].includes(event.key)) {
         event.preventDefault();

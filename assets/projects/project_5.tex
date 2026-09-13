@@ -1,4 +1,3 @@
-% Compile from this directory with: pdflatex project_5.tex (twice).
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -26,7 +25,8 @@
 {\LARGE\bfseries From Positioning-Arm Geometry to 6R Cuspidality\par}
 
 \textbf{Format:} Group of two students; simulation-based project.\\
-\textbf{Course foundations:} Lectures 3--6; Exercises 2--3.
+\textbf{Prerequisites:} D--H modelling, spherical-wrist inverse kinematics,
+Jacobians, singularities, and configuration-space connectivity.
 
 \section*{Motivation}
 Attaching a spherical wrist turns a position manipulator into a full-pose
@@ -41,11 +41,14 @@ noncuspidal and cuspidal 3R arms, and relate full-pose IK multiplicity and
 connectivity to the two kinematic modules.
 
 \begin{itemize}
-  \item \textbf{Specify and validate the family.} Use the two Lecture 6 idealized 3R
-arm presets and attach the same ideal spherical wrist with an explicit fixed
+  \item \textbf{Specify and validate the family.} Use the two idealized 3R arms
+$a=(a_1,2,1.5)$, $d=(1,1,0)$, $\alpha=(\pi/2,\pi/2,0)$, with $a_1=0$
+and $a_1=1$ for the noncuspidal and cuspidal members respectively. State a
+common length unit. Attach the same ideal spherical wrist with an explicit fixed
 tool transform. Define the wrist rotation convention and verify its axis
-concurrency. Use custom\_6R as the supplied concrete example of custom\_3R
-plus wrist, not as a metric substitute for the idealized presets.
+concurrency. Use the supplied custom 6R robot as a concrete example of a
+3R positioning arm plus spherical wrist; retain the stated idealized arm
+dimensions for the parameter study.
 
   \item \textbf{Factor the Jacobian geometrically.} Express the geometric Jacobian at
 the wrist center in a common frame and show the block structure giving
@@ -98,31 +101,20 @@ a concise 5--6-page report, and a short simulation demonstration. Explain
 both successful cases and failures; conclusions must follow the numerical
 and geometric evidence rather than an expected outcome.
 
-\section*{Resources}
-The idealized D--H atlas in Lecture 6 is a separate mathematical
-family, implemented in \path{lectures_main/js/viz/cuspidalityLecture.js}.
-Its dimensions and conventions must not be inferred from the custom\_3R STL
-renderings. Use the standard-D--H convention stated in the lectures.
+\section*{Provided materials and implementation}
+The custom 6R robot description (.urdf) and link meshes (.stl) will be provided
+to the students. Its positioning arm is orthogonal with non-intersecting
+consecutive axes, followed by a spherical wrist. Inspect wrist-axis concurrency
+and base/tool transforms using a robotics library or your own visualization.
+The arm IK routine and candidate nonsingular arm connection will also be
+provided for the stated idealized geometries.
 
-The custom\_6R consists of the custom\_3R positioning arm plus a
-spherical wrist. The arm is orthogonal with non-intersecting consecutive axes.
-Its URDF is \path{lectures_main/assets/models/custom_6R/custom_6R_new.urdf};
-the corresponding STL meshes are in that directory. Inspect wrist-axis
-concurrency and base/tool transforms using the lecture website.
-Reuse Lectures 4--6 and Exercises 2--3 for wrist partitioning and Jacobian
-construction. The idealized family is defined by its D--H parameters.
-
-Use the lecture website to verify D--H parameters, visualize IKs and
-singularities, and simulate paths. All listed paths are relative to the
-repository root. Start the website following \path{lectures_main/README.md}.
-
-\section*{Workload and collaboration}
-Budget approximately 60 hours per student (120 person-hours per pair)
-for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
-Deduct any lectures or exercises included in those credits. Allocate roughly
-20 team-hours to model validation, 50 to the core work, 30 to experiments,
-and 20 to reporting. Reuse the specified IK and simulations. Share validation
-and interpretation even if modelling and implementation are divided between
-students. Hardware execution is outside scope.
+Use standard D--H transforms
+$T_{i-1,i}=R_z(q_i)T_z(d_i)T_x(a_i)R_x(\alpha_i)$, with zero joint-angle
+offsets for the idealized arms. Their dimensions must not be inferred from
+the supplied meshes. Derive the wrist orientation solution and full Jacobian
+in the same frame convention, then verify all full-pose IKs by forward
+kinematics. Use plotting tools to display singularities and animate the
+selected connection.
 
 \end{document}

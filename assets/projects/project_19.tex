@@ -1,4 +1,3 @@
-% Compile from this directory with: pdflatex project_19.tex (twice).
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -15,7 +14,6 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt}
 \setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
-\urlstyle{tt}
 
 \begin{document}
 {\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
@@ -26,7 +24,7 @@
 {\LARGE\bfseries Apparent Barriers in iiwa 7 Redundancy Charts\par}
 
 \textbf{Format:} Group of two students; simulation-based project.\\
-\textbf{Course foundations:} Lecture 8; Exercise 4.
+\textbf{Prerequisites:} Redundant inverse kinematics, self-motion coordinates, reduced and full Jacobians, and numerical continuation.
 
 \section*{Motivation}
 Fixing a redundant joint converts a 7R IK problem into a square
@@ -98,27 +96,24 @@ both successful cases and failures; conclusions must follow the numerical
 and geometric evidence rather than an expected outcome.
 
 \section*{Resources}
-The KUKA LBR iiwa 7 URDF is
-\path{lectures_main/assets/models/iiwa7/iiwa7.urdf}; STL meshes are in that
-directory. The accompanying \path{iiwa7_free_joints.urdf} is a mathematical
-continuation model; apply physical limits separately. The course analytical
-IK model will be supplied; reuse it rather than deriving a general 7R solver.
-Lecture 8 explains fixed-redundancy slices, self-motion charts, and reduced
-versus full Jacobians. The special path and fold seed will be supplied
-separately; the reference path CSV alone is not guaranteed to contain the
-required event.
+The KUKA LBR iiwa 7 robot description (URDF) and visualization meshes
+(STL) will be provided to students, together with a mathematical continuation
+model with unrestricted joints and an analytical fixed-$q_3$ IK model. Reuse
+the supplied IK rather than deriving a general 7R solver. Apply the physical
+joint limits from the robot description separately when using the unrestricted
+model. Check D--H parameters, joint axes, and the fixed tool transform against
+the URDF, and validate IK outputs by independent forward kinematics.
 
-Use the lecture website to verify D--H parameters, visualize IKs and
-singularities, and simulate paths. All listed paths are relative to the
-repository root. Start the website following \path{lectures_main/README.md}.
+The special short pose path, starting IK, and candidate chart-fold interval
+will be supplied. Use this case to initialize both continuation methods;
+an arbitrary reference path is not guaranteed to contain the required event.
+For pose data represented by quaternions, use the documented scalar-first
+columns \texttt{qw,qx,qy,qz}, normalize them, and make their signs consistent
+before interpolation.
 
-\section*{Workload and collaboration}
-Budget approximately 60 hours per student (120 person-hours per pair)
-for this 2-ECTS project, following EPFL's 30-hours-per-credit convention.\footnote{\href{https://www.epfl.ch/education/teaching/teaching-guide-2/getting-started/design-a-course_1/}{EPFL: Design a Course, workload guidance}.}
-Deduct any lectures or exercises included in those credits. Allocate roughly
-20 team-hours to model validation, 50 to the core work, 30 to experiments,
-and 20 to reporting. Reuse the specified IK and simulations. Share validation
-and interpretation even if modelling and implementation are divided between
-students. Hardware execution is outside scope.
+Implement the alternative-coordinate numerical corrector and overlap matching
+around the supplied fixed-$q_3$ IK. Compare the reduced and full Jacobians,
+check intermediate pose residuals and physical limits, and visualize the
+recovered motion with the supplied meshes.
 
 \end{document}
