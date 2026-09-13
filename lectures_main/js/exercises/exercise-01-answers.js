@@ -1,11 +1,26 @@
 (function (root) {
   'use strict';
 
+  const { parseNumber } = typeof module === 'object' && module.exports
+    ? require('./exercise-01-numbers.js') : root.Exercise01Numbers;
+  const { initialVisualOrigins } = typeof module === 'object' && module.exports
+    ? require('./exercise-01-visual-origins.js') : root.Exercise01VisualOrigins;
   const NUMERIC_KEYS = [];
+  for (let joint = 1; joint <= 7; joint += 1) {
+    for (const key of ['wx', 'wy', 'wz', 'vx', 'vy', 'vz']) NUMERIC_KEYS.push(`poe.${joint}.${key}`);
+  }
+  for (let row = 1; row <= 4; row += 1) {
+    for (let column = 1; column <= 4; column += 1) NUMERIC_KEYS.push(`poe.M.${row}.${column}`);
+  }
   for (let joint = 1; joint <= 7; joint += 1) {
     for (const key of ['thetaOffset', 'd', 'a', 'alpha']) NUMERIC_KEYS.push(`dh.${joint}.${key}`);
   }
-  for (const prefix of ['base', 'tool', ...Array.from({ length: 8 }, (_, i) => `visual.${i}`)]) {
+  for (const prefix of ['base', 'tool']) {
+    for (let row = 1; row <= 4; row += 1) {
+      for (let column = 1; column <= 4; column += 1) NUMERIC_KEYS.push(`${prefix}.${row}.${column}`);
+    }
+  }
+  for (const prefix of Array.from({ length: 8 }, (_, i) => `visual.${i}`)) {
     for (const key of ['x', 'y', 'z', 'roll', 'pitch', 'yaw']) NUMERIC_KEYS.push(`${prefix}.${key}`);
   }
   const POSE_NAMES = ['home', 'bent', 'bent_back', 'side_reach', 'wrist_turn'];
@@ -20,12 +35,36 @@
   ]);
   const FIELD_KEYS = [...NUMERIC_KEYS, 'concept.visualChangesFK', 'concept.jointChangesFK'];
   const ALLOWED_KEYS = new Set(FIELD_KEYS);
+  const LEGACY_TRANSFORM_KEYS = new Set(['base', 'tool'].flatMap(prefix =>
+    ['x', 'y', 'z', 'roll', 'pitch', 'yaw'].map(column => `${prefix}.${column}`)));
   const MAX_FILE_BYTES = 512 * 1024;
-  const DRAFT_KEY = 'eng654-exercise-01-answers-v2';
+  const DRAFT_KEY = 'eng654-exercise-01-answers-v5';
+
+  function migrateTransform(legacy, answers, prefix) {
+    if (!Object.keys(legacy).some(key => key.startsWith(`${prefix}.`))) return;
+    const entries = ['x', 'y', 'z', 'roll', 'pitch', 'yaw'].map(column => legacy[`${prefix}.${column}`] || '');
+    entries.slice(0, 3).forEach((value, index) => { answers[`${prefix}.${index + 1}.4`] = value; });
+    if (!entries.some(value => value.trim())) return;
+    [0, 0, 0, 1].forEach((value, index) => { answers[`${prefix}.4.${index + 1}`] = String(value); });
+    const angles = entries.slice(3).map(parseNumber);
+    const invalid = angles.findIndex(angle => angle.status === 'invalid');
+    if (invalid !== -1) {
+      const key = `${prefix}.${['roll', 'pitch', 'yaw'][invalid]}`;
+      throw new Error(`Cannot convert the old ${prefix} rotation: ${key} is invalid. Correct that expression in the original answer file and load it again.`);
+    }
+    if (!angles.every(angle => angle.status === 'valid')) return;
+    const [roll, pitch, yaw] = angles.map(angle => angle.value);
+    const cr = Math.cos(roll), sr = Math.sin(roll), cp = Math.cos(pitch), sp = Math.sin(pitch), cy = Math.cos(yaw), sy = Math.sin(yaw);
+    const rotation = [cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr,
+      sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr, -sp, cp * sr, cp * cr];
+    rotation.forEach((value, index) => {
+      answers[`${prefix}.${Math.floor(index / 3) + 1}.${index % 3 + 1}`] = Math.abs(value) < 1e-15 ? '0' : String(value);
+    });
+  }
 
   function validatePayload(payload) {
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('Choose an Exercise 01 answer file.');
-    if (![1, 2].includes(payload.schemaVersion) || payload.exercise !== 'exercise_01' || payload.model !== 'iiwa7') {
+    if (![1, 2, 3, 4, 5].includes(payload.schemaVersion) || payload.exercise !== 'exercise_01' || payload.model !== 'iiwa7') {
       throw new Error('This file is not a supported Exercise 01 answer file.');
     }
     if (payload.units?.length !== 'm' || payload.units?.angle !== 'rad') {
@@ -35,22 +74,44 @@
       throw new Error('The file does not contain an answer table.');
     }
     const answers = Object.fromEntries(FIELD_KEYS.map(key => [key, '']));
+    const legacyTransforms = {};
     for (const [key, value] of Object.entries(payload.answers)) {
       if (payload.schemaVersion === 1 && LEGACY_KEYS.has(key)) {
         if (typeof value !== 'string' || value.length > 6000) throw new Error(`Invalid legacy answer for ${key}.`);
         continue;
       }
-      if (!ALLOWED_KEYS.has(key)) throw new Error(`Unknown answer field: ${key.slice(0, 80)}.`);
+      const legacyTransform = payload.schemaVersion < 3 && LEGACY_TRANSFORM_KEYS.has(key);
+      const allowed = ALLOWED_KEYS.has(key) && (payload.schemaVersion >= 3 || !/^(base|tool)\./.test(key)) &&
+        (payload.schemaVersion >= 5 || !key.startsWith('poe.'));
+      if (!allowed && !legacyTransform) throw new Error(`Unknown answer field: ${key.slice(0, 80)}.`);
       if (typeof value !== 'string') throw new Error(`The answer for ${key} must be text.`);
-      if (value.length > 120) throw new Error(`The answer for ${key} is too long.`);
-      answers[key] = value;
+      const maxLength = payload.schemaVersion >= 4 && key.startsWith('visual.') ? 160 : 120;
+      if (value.length > maxLength) throw new Error(`The answer for ${key} is too long.`);
+      if (legacyTransform) legacyTransforms[key] = value;
+      else answers[key] = value;
+    }
+    if (payload.schemaVersion < 3) {
+      for (const prefix of ['base', 'tool']) migrateTransform(legacyTransforms, answers, prefix);
+    }
+    if (payload.schemaVersion < 4) {
+      initialVisualOrigins.forEach((origin, index) => {
+        ['x', 'y', 'z', 'roll', 'pitch', 'yaw'].forEach((column, component) => {
+          const key = `visual.${index}.${column}`;
+          if (!answers[key].trim() || origin[component] === 0) return;
+          const expression = `(${answers[key]}) - (${origin[component]})`;
+          const original = parseNumber(answers[key]);
+          // Preserve expressions unless the extra grouping exceeds parser limits.
+          answers[key] = original.status === 'valid' && parseNumber(expression).status !== 'valid'
+            ? String(original.value - origin[component]) : expression;
+        });
+      });
     }
     return answers;
   }
 
   function createPayload(answers) {
     const payload = {
-      schemaVersion: 2,
+      schemaVersion: 5,
       exercise: 'exercise_01',
       model: 'iiwa7',
       units: { length: 'm', angle: 'rad' },
@@ -89,6 +150,7 @@
 
     let saveTimer;
     let importSequence = 0;
+    let draftRestoreFailed = false;
     function announce(message, error = false) {
       status.textContent = message;
       status.classList.toggle('answer-status-error', error);
@@ -100,18 +162,24 @@
       for (const [key, input] of controls) input.value = answers[key] || '';
     }
     function saveDraft() {
-      if (solutionMode) return;
+      if (solutionMode || draftRestoreFailed) return;
       try { localStorage.setItem(DRAFT_KEY, JSON.stringify(createPayload(collect()))); }
       catch { announce('Browser saving is unavailable. Download your answers to keep a copy.'); }
     }
     if (!solutionMode) {
       try {
-        const draft = localStorage.getItem(DRAFT_KEY) || localStorage.getItem('eng654-exercise-01-answers-v1');
+        const draft = localStorage.getItem(DRAFT_KEY) || localStorage.getItem('eng654-exercise-01-answers-v4') ||
+          localStorage.getItem('eng654-exercise-01-answers-v3') ||
+          localStorage.getItem('eng654-exercise-01-answers-v2') ||
+          localStorage.getItem('eng654-exercise-01-answers-v1');
         if (draft) {
           populate(parsePayload(draft));
           announce('Restored your saved answers. Download a copy when you are ready.');
         }
-      } catch { announce('Saved answers could not be restored. You can load a downloaded copy.'); }
+      } catch (error) {
+        draftRestoreFailed = true;
+        announce(`Saved answers could not be restored. ${error.message} Your original saved draft was kept.`, true);
+      }
     }
 
     function downloadFile(payload, filename) {
@@ -145,6 +213,7 @@
         const answers = parsePayload(await file.text());
         if (sequence !== importSequence) return;
         populate(answers);
+        draftRestoreFailed = false;
         saveDraft();
         announce('Loaded your saved responses. You can continue editing.');
         document.dispatchEvent(new CustomEvent('exercise01:answers-loaded'));
@@ -155,6 +224,7 @@
 
     for (const input of controls.values()) {
       input.addEventListener('input', () => {
+        draftRestoreFailed = false;
         clearTimeout(saveTimer);
         saveTimer = setTimeout(saveDraft, 200);
         document.dispatchEvent(new CustomEvent('exercise01:answer-edited'));

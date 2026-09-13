@@ -34,7 +34,7 @@ docs/                      authoring notes and uploaded lecture plan
 
 ## Exercise 01 responses
 
-Open `exercises/exercise_01.html`, complete the numeric fields and two choices, and use **Download responses** to save a JSON file. Partial answers are supported, and **Load saved responses** restores previous work. Exercise 01 includes five 4×4 forward-kinematics matrices for the same named poses available in Module 1. Module 1 starts with `kuka_iiwa7_misaligned.urdf`, whose visual origins have deliberate quarter-turn and sign errors.
+Open `exercises/exercise_01.html` for the 19-slide workflow: load only the supplied URDF in the instructor-provided simulator, derive PoE and standard-D–H models, implement both, and compare their forward kinematics at five named poses. Load the STL meshes last and repair their placement through visual-origin offsets, then confirm that the tool poses are unchanged. The worksheet has 248 responses: 42 screw components, 16 PoE home-matrix entries, 28 D–H entries, 32 fixed-transform entries, 80 pose-matrix entries, 48 visual corrections, and two choices. **Download responses** saves schema version 5 JSON; **Load saved responses** restores partial work, including older files with the new PoE fields left blank. Submit both FK implementations, their derivations, the five-pose comparison report, response JSON, and repaired URDF. The poses also appear in Module 1, which starts with `kuka_iiwa7_misaligned.urdf` and its deliberate visual-origin errors.
 
 The instructor shares the response worksheet first, the feedback slides later, and the final answer file separately. Publishing follows the `stage` value in `exercise_01_release.json`: `exercise`, `feedback`, then `answers`. The default is `exercise`.
 

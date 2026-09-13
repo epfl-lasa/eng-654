@@ -116,6 +116,11 @@
 .answer-fk-result[data-result="incorrect"],
 .answer-fk-result[data-result="invalid"] { border-color: #ba2029; background: #fff0f1; }
 .answer-review-note { font-size: .92rem; line-height: 1.5; }
+.answer-comparison-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: .9rem; }
+.answer-comparison-table caption { margin-bottom: .5rem; font-weight: 700; text-align: left; }
+.answer-comparison-table th, .answer-comparison-table td { padding: .6rem; border: 1px solid #ccc; text-align: left; overflow-wrap: anywhere; }
+.answer-comparison-table [data-result="correct"] { background: #edf8ef; }
+.answer-comparison-table [data-result="incorrect"], .answer-comparison-table [data-result="invalid"] { background: #fff0f1; }
 .answer-issues { padding-left: 1.25rem; }
 .answer-issues li { margin: .45rem 0; }
 .answer-issues button { padding: .4rem; border: 0; background: none; color: #a51c22; font-size: .92rem; text-align: left; text-decoration: underline; cursor: pointer; }

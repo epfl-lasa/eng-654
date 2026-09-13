@@ -54,15 +54,15 @@
         const feedback = document.getElementById(input.id + '-feedback');
         feedback.hidden = false;
         const labels = { correct: 'Correct', incorrect: 'Check value', invalid: 'Invalid', unanswered: 'Unanswered' };
-        const chainField = /^(dh|base|tool)\./.test(key);
+        const chainResult = key.startsWith('poe.') ? result.poe : /^(dh|base|tool)\./.test(key) ? result.fk : null;
         let detail = outcome.message;
         if (outcome.status === 'correct') {
-          detail = chainField ? (result.fk.status === 'correct' ? 'FK verified.' : 'Reference match; check the full chain.') : 'Verified.';
+          detail = chainResult ? (chainResult.status === 'correct' ? 'FK verified.' : 'Reference match; check the full chain.') : 'Verified.';
         } else if (outcome.status === 'unanswered') {
           detail = '';
 
-        } else if (outcome.status === 'incorrect' && chainField) {
-          detail = result.fk.status === 'incorrect' ? 'Reference differs; FK differs.' : 'Reference differs; complete the chain to verify.';
+        } else if (outcome.status === 'incorrect' && chainResult) {
+          detail = chainResult.status === 'incorrect' ? 'Reference differs; FK differs.' : 'Reference differs; inspect the full model.';
         }
         feedback.textContent = labels[outcome.status] + (detail ? `: ${detail}` : '');
         feedback.title = outcome.message;
@@ -84,16 +84,50 @@
       const totals = document.createElement('p');
       totals.className = 'answer-result-counts';
       totals.textContent = `${counts.correct} correct · ${counts.incorrect + counts.invalid} need correction · ${counts.unanswered} unanswered`;
-      const fk = document.createElement('p');
-      fk.className = 'answer-fk-result';
-      fk.dataset.result = result.fk.status;
-      fk.textContent = result.fk.message;
-      if (Number.isFinite(result.fk.maxPositionError) && Number.isFinite(result.fk.maxRotationError)) {
-        fk.textContent += ` Maximum residuals over ${result.fk.testCount} configurations: ${result.fk.maxPositionError.toExponential(3)} m and ${result.fk.maxRotationError.toExponential(3)} rad.`;
+      summary.appendChild(totals);
+      for (const [name, outcome] of [['PoE', result.poe], ['D–H', result.fk]]) {
+        const model = document.createElement('p');
+        model.className = 'answer-fk-result';
+        model.dataset.result = outcome.status;
+        model.textContent = `${name}: ${outcome.message}`;
+        if (Number.isFinite(outcome.maxPositionError) && Number.isFinite(outcome.maxRotationError)) {
+          model.textContent += ` Maximum residuals over ${outcome.testCount} configurations: ${outcome.maxPositionError.toExponential(3)} m and ${outcome.maxRotationError.toExponential(3)} rad.`;
+        }
+        summary.appendChild(model);
       }
-      summary.append(totals, fk);
+      const table = document.createElement('table');
+      table.className = 'answer-comparison-table';
+      const caption = document.createElement('caption');
+      caption.textContent = 'Five prescribed poses: computed model FK compared with the URDF';
+      const head = document.createElement('thead');
+      const header = document.createElement('tr');
+      for (const title of ['Pose', 'PoE vs URDF', 'D–H vs URDF']) {
+        const cell = document.createElement('th');
+        cell.scope = 'col'; cell.textContent = title; header.appendChild(cell);
+      }
+      head.appendChild(header);
+      const body = document.createElement('tbody');
+      const poseNames = { home: 'Home', bent: 'Bent', bent_back: 'Bent back', side_reach: 'Side reach', wrist_turn: 'Mixed wrist turn' };
+      for (const [pose, checks] of Object.entries(result.poseChecks)) {
+        const row = document.createElement('tr');
+        const label = document.createElement('th');
+        label.scope = 'row'; label.textContent = poseNames[pose]; row.appendChild(label);
+        for (const method of ['poe', 'dh']) {
+          const cell = document.createElement('td');
+          const outcome = checks[method];
+          cell.dataset.result = outcome.status;
+          cell.textContent = { correct: 'Pass', incorrect: 'Mismatch', invalid: 'Invalid model', unanswered: 'Complete the model' }[outcome.status];
+          if (Number.isFinite(outcome.positionError) && Number.isFinite(outcome.rotationError)) {
+            cell.textContent += ` · ${outcome.positionError.toExponential(3)} m · ${outcome.rotationError.toExponential(3)} rad`;
+          }
+          row.appendChild(cell);
+        }
+        body.appendChild(row);
+      }
+      table.append(caption, head, body);
+      summary.appendChild(table);
       const limits = document.createElement('p');
-      limits.textContent = 'The D–H chain is checked across 26 configurations. Each of the five tool matrices is checked independently, with an absolute tolerance of 0.0001 per entry. Visual origins use the supplied mesh coordinates.';
+      limits.textContent = 'PoE and D–H models are checked against the original URDF at the five prescribed poses and over a 26-configuration sample. Each submitted tool matrix is checked independently with an absolute tolerance of 0.0001 per entry. Visual entries are corrections added to the supplied origins. Include the instructor-provided simulator results and before/after visual-repair comparison in your report.';
       limits.className = 'answer-review-note';
       summary.appendChild(limits);
       resultSection.hidden = false;

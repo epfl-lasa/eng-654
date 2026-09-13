@@ -1,28 +1,35 @@
-/* Exercise 01 numeric checks. Standard DH, metres, radians; no DOM dependency. */
+/* Exercise 01 numeric checks. Space PoE and standard DH, metres, radians; no DOM dependency. */
 (function (root, factory) {
     'use strict';
-    const checker = factory();
+    const numbers = typeof module === 'object' && module.exports
+        ? require('../../js/exercises/exercise-01-numbers.js') : root.Exercise01Numbers;
+    const visualOrigins = typeof module === 'object' && module.exports
+        ? require('../../js/exercises/exercise-01-visual-origins.js') : root.Exercise01VisualOrigins;
+    const checker = factory(numbers.parseNumber, visualOrigins.initialVisualOrigins);
     if (typeof module === 'object' && module.exports) module.exports = checker;
     // Browser feedback has no answer-key getter. Reference helpers are only
     // exported through CommonJS for offline fixtures and independent tests.
     if (root) root.Exercise01Checker = Object.freeze({
         evaluate: checker.evaluate, parseNumber: checker.parseNumber,
         evaluateDhForwardKinematics: checker.evaluateDhForwardKinematics,
+        evaluatePoeForwardKinematics: checker.evaluatePoeForwardKinematics,
         tolerances: checker.tolerances, poses: checker.poses
     });
-}(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (parseNumber, initialVisualOrigins) {
     'use strict';
 
     const PI = Math.PI;
     const DH_COLUMNS = ['thetaOffset', 'd', 'a', 'alpha'];
+    const SCREW_COLUMNS = ['wx', 'wy', 'wz', 'vx', 'vy', 'vz'];
     const TRANSFORM_COLUMNS = ['x', 'y', 'z', 'roll', 'pitch', 'yaw'];
-    const TOLERANCES = Object.freeze({ position: 1e-5, rotation: 1e-4, lengthCell: 1e-6, angleCell: 1e-5, matrixCell: 1e-4 });
+    const MATRIX_CELLS = Array.from({ length: 16 }, (_, i) => `${Math.floor(i / 4) + 1}.${i % 4 + 1}`);
+    const TOLERANCES = Object.freeze({ position: 1e-5, rotation: 1e-4, lengthCell: 1e-6, angleCell: 1e-5, matrixCell: 1e-4, rigidTransform: 1e-5, screwCell: 1e-6 });
     const POSES = Object.freeze({
         home: Object.freeze([0, 0, 0, 0, 0, 0, 0]),
         bent: Object.freeze([0, PI / 4, 0, -PI / 2, 0, PI / 4, 0]),
         bent_back: Object.freeze([0, -PI / 4, 0, PI / 2, 0, -PI / 4, 0]),
         side_reach: Object.freeze([PI / 2, PI / 4, 0, -PI / 2, 0, PI / 4, 0]),
-        wrist_turn: Object.freeze([0, PI / 4, 0, -PI / 2, 0, PI / 4, PI / 2])
+        wrist_turn: Object.freeze([PI / 6, PI / 4, -PI / 6, -PI / 2, PI / 6, PI / 4, PI / 2])
     });
     const CONCEPT_REFERENCE = Object.freeze({ 'concept.visualChangesFK': 'no', 'concept.jointChangesFK': 'yes' });
     const DH_REFERENCE = [
@@ -39,18 +46,29 @@
         [0, 0.21, 0, -PI / 2, PI, 0], [0, 0.0607, 0.19, PI / 2, 0, 0],
         [0, 0.081, 0.0607, -PI / 2, PI, 0]
     ];
-    const VISUAL_Z = [0, 0.0075, 0, -0.026, 0, -0.026, 0, -0.0005];
+    const CLEAN_VISUAL_ORIGINS = [0, 0.0075, 0, -0.026, 0, -0.026, 0, -0.0005].map(z => [0, 0, z, 0, 0, 0]);
     const CHAIN_KEYS = [];
     for (let i = 1; i <= 7; i += 1) DH_COLUMNS.forEach(column => CHAIN_KEYS.push(`dh.${i}.${column}`));
-    ['base', 'tool'].forEach(prefix => TRANSFORM_COLUMNS.forEach(column => CHAIN_KEYS.push(`${prefix}.${column}`)));
+    ['base', 'tool'].forEach(prefix => MATRIX_CELLS.forEach(cell => CHAIN_KEYS.push(`${prefix}.${cell}`)));
+    const POE_KEYS = [];
+    for (let i = 1; i <= 7; i += 1) SCREW_COLUMNS.forEach(column => POE_KEYS.push(`poe.${i}.${column}`));
+    MATRIX_CELLS.forEach(cell => POE_KEYS.push(`poe.M.${cell}`));
 
     function referenceAnswers() {
         const answers = {};
         DH_REFERENCE.forEach((row, index) => DH_COLUMNS.forEach((column, j) => { answers[`dh.${index + 1}.${column}`] = String(row[j]); }));
-        ['base', 'tool'].forEach(prefix => TRANSFORM_COLUMNS.forEach(column => {
-            answers[`${prefix}.${column}`] = prefix === 'tool' && column === 'z' ? '0.045' : '0';
+        ['base', 'tool'].forEach(prefix => identity().forEach((value, index) => {
+            answers[`${prefix}.${MATRIX_CELLS[index]}`] = prefix === 'tool' && index === 11 ? '0.045' : String(value);
         }));
-        VISUAL_Z.forEach((z, index) => TRANSFORM_COLUMNS.forEach(column => { answers[`visual.${index}.${column}`] = column === 'z' ? String(z) : '0'; }));
+        referenceSpaceScrews().forEach((screw, index) => SCREW_COLUMNS.forEach((column, component) => {
+            answers[`poe.${index + 1}.${column}`] = String(Math.abs(screw[component]) < 1e-12 ? 0 : screw[component]);
+        }));
+        referenceForwardKinematics(Array(7).fill(0)).forEach((value, index) => {
+            answers[`poe.M.${MATRIX_CELLS[index]}`] = String(Math.abs(value) < 1e-12 ? 0 : value);
+        });
+        CLEAN_VISUAL_ORIGINS.forEach((origin, index) => TRANSFORM_COLUMNS.forEach((column, component) => {
+            answers[`visual.${index}.${column}`] = String(origin[component] - initialVisualOrigins[index][component]);
+        }));
         Object.entries(POSES).forEach(([name, q]) => {
             referenceForwardKinematics(q).forEach((value, index) => {
                 answers[`fk.${name}.${Math.floor(index / 4) + 1}.${index % 4 + 1}`] = String(value);
@@ -58,73 +76,6 @@
         });
         Object.assign(answers, CONCEPT_REFERENCE);
         return answers;
-    }
-
-    // Recursive-descent arithmetic grammar: literals, pi, parentheses, unary
-    // signs and + - * /. Never evaluate submitted text as JavaScript.
-    function parseNumber(input) {
-        if (input === undefined || input === null || (typeof input === 'string' && input.trim() === '')) {
-            return { status: 'unanswered', value: null, message: 'Enter a value; a blank entry is not zero.' };
-        }
-        if (typeof input === 'number') {
-            return Number.isFinite(input) ? { status: 'valid', value: input, message: '' }
-                : { status: 'invalid', value: null, message: 'The value must be finite.' };
-        }
-        if (typeof input !== 'string' || input.length > 160) {
-            return { status: 'invalid', value: null, message: 'Use a numeric expression of at most 160 characters.' };
-        }
-        const source = input.replace(/π/g, 'pi').replace(/−/g, '-');
-        let position = 0;
-        let tokens = 0;
-        let depth = 0;
-        function skip() { while (/\s/.test(source.charAt(position)) && position < source.length) position += 1; }
-        function token() { tokens += 1; if (tokens > 128) throw new Error('Expression is too complex.'); }
-        function finite(value) { if (!Number.isFinite(value)) throw new Error('The expression must have a finite result.'); return value; }
-        function primary() {
-            depth += 1;
-            if (depth > 24) throw new Error('Expression nesting is too deep.');
-            skip();
-            let value;
-            const character = source.charAt(position);
-            if (character === '+' || character === '-') {
-                position += 1; token(); value = (character === '-' ? -1 : 1) * primary();
-            } else if (character === '(') {
-                position += 1; token(); value = expression(); skip();
-                if (source.charAt(position) !== ')') throw new Error('Close each parenthesis.');
-                position += 1; token();
-            } else if (source.slice(position, position + 2).toLowerCase() === 'pi') {
-                position += 2; token(); value = PI;
-            } else {
-                const match = /^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/.exec(source.slice(position));
-                if (!match) throw new Error('Use numbers, pi, parentheses and + - * / only.');
-                position += match[0].length; token(); value = Number(match[0]);
-            }
-            depth -= 1;
-            return finite(value);
-        }
-        function term() {
-            let value = primary(); skip();
-            while (source.charAt(position) === '*' || source.charAt(position) === '/') {
-                const operator = source.charAt(position); position += 1; token();
-                const right = primary(); value = finite(operator === '*' ? value * right : value / right); skip();
-            }
-            return value;
-        }
-        function expression() {
-            let value = term(); skip();
-            while (source.charAt(position) === '+' || source.charAt(position) === '-') {
-                const operator = source.charAt(position); position += 1; token();
-                const right = term(); value = finite(operator === '+' ? value + right : value - right); skip();
-            }
-            return value;
-        }
-        try {
-            const value = expression(); skip();
-            if (position !== source.length) throw new Error('Use explicit multiplication, such as 2*pi; no other text is allowed.');
-            return { status: 'valid', value, message: '' };
-        } catch (error) {
-            return { status: 'invalid', value: null, message: error.message };
-        }
     }
 
     function identity() { return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]; }
@@ -158,17 +109,112 @@
         });
         return multiply(result, transform([0, 0, 0.045, 0, 0, 0]));
     }
+    function cross(a, b) {
+        return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    }
+    function referenceSpaceScrews() {
+        let originInWorld = identity();
+        return URDF_ORIGINS.map(origin => {
+            originInWorld = multiply(originInWorld, transform(origin));
+            // All revolute axes in the supplied URDF are local +Z. Transform
+            // each axis and a point on it into world coordinates at q = 0.
+            const omega = [originInWorld[2], originInWorld[6], originInWorld[10]];
+            const point = [originInWorld[3], originInWorld[7], originInWorld[11]];
+            return omega.concat(cross(omega, point).map(value => -value));
+        });
+    }
+    function poeFromValues(values) {
+        return {
+            screws: Array.from({ length: 7 }, (_, index) => SCREW_COLUMNS.map(column => values[`poe.${index + 1}.${column}`])),
+            home: MATRIX_CELLS.map(cell => values[`poe.M.${cell}`])
+        };
+    }
+    function screwIssues(screw) {
+        const issues = [];
+        const magnitude = Math.hypot(...screw.slice(0, 3));
+        if (!Number.isFinite(magnitude) || Math.abs(magnitude - 1) > TOLERANCES.rigidTransform) {
+            issues.push({ indices: [0, 1, 2], message: 'A revolute screw must have a unit angular direction in world coordinates.' });
+        }
+        const pitch = screw[0] * screw[3] + screw[1] * screw[4] + screw[2] * screw[5];
+        if (!Number.isFinite(pitch) || Math.abs(pitch) > TOLERANCES.rigidTransform) {
+            issues.push({ indices: [3, 4, 5], message: 'A revolute screw has zero pitch: its linear part must be perpendicular to its angular direction.' });
+        }
+        return issues;
+    }
+    function screwExponential(screw, jointAngle) {
+        const magnitude = Math.hypot(...screw.slice(0, 3));
+        const omega = screw.slice(0, 3).map(value => value / magnitude);
+        const velocity = screw.slice(3).map(value => value / magnitude);
+        const angle = magnitude * jointAngle;
+        const sine = Math.sin(angle), oneMinusCosine = 2 * Math.sin(angle / 2) ** 2;
+        const skew = [0, -omega[2], omega[1], omega[2], 0, -omega[0], -omega[1], omega[0], 0];
+        const out = identity();
+        for (let row = 0; row < 3; row += 1) for (let column = 0; column < 3; column += 1) {
+            const diagonal = Number(row === column);
+            out[4 * row + column] = diagonal + sine * skew[3 * row + column]
+                + oneMinusCosine * (omega[row] * omega[column] - diagonal);
+        }
+        const firstCross = cross(omega, velocity), secondCross = cross(omega, firstCross);
+        for (let row = 0; row < 3; row += 1) {
+            out[4 * row + 3] = angle * velocity[row] + oneMinusCosine * firstCross[row]
+                + (angle - sine) * secondCross[row];
+        }
+        return out;
+    }
+    function poeForwardKinematics(chain, q) {
+        let result = identity();
+        chain.screws.forEach((screw, index) => { result = multiply(result, screwExponential(screw, q[index])); });
+        return multiply(result, chain.home);
+    }
+    function evaluatePoeForwardKinematics(answers, q) {
+        checkConfiguration(q);
+        const values = {};
+        POE_KEYS.forEach(key => {
+            const parsed = parseNumber(answers && answers[key]);
+            if (parsed.status !== 'valid') throw new Error(`A valid value is required for ${key}.`);
+            values[key] = parsed.value;
+        });
+        const chain = poeFromValues(values);
+        chain.screws.forEach((screw, index) => {
+            const issues = screwIssues(screw);
+            if (issues.length) throw new Error(`Invalid screw ${index + 1}: ${issues[0].message}`);
+        });
+        const issues = rigidTransformIssues(chain.home);
+        if (issues.length) throw new Error(`Invalid PoE home matrix: ${issues[0].message}`);
+        return poeForwardKinematics(chain, q);
+    }
     function chainFromValues(values) {
         return {
             rows: DH_REFERENCE.map((row, i) => DH_COLUMNS.map(column => values[`dh.${i + 1}.${column}`])),
-            base: TRANSFORM_COLUMNS.map(column => values[`base.${column}`]),
-            tool: TRANSFORM_COLUMNS.map(column => values[`tool.${column}`])
+            base: MATRIX_CELLS.map(cell => values[`base.${cell}`]),
+            tool: MATRIX_CELLS.map(cell => values[`tool.${cell}`])
         };
     }
+    function rigidTransformIssues(matrix) {
+        const issues = [];
+        const bottom = [12, 13, 14, 15].filter(index => Math.abs(matrix[index] - (index === 15 ? 1 : 0)) > TOLERANCES.rigidTransform);
+        if (bottom.length) issues.push({ indices: bottom, message: 'The homogeneous bottom row must be [0, 0, 0, 1].' });
+        // Rounded rotation entries need not be exact, but scaling, shear and
+        // reflections must not be accepted through the angular FK comparison.
+        let orthonormal = true;
+        for (let row = 0; row < 3; row += 1) for (let column = 0; column < 3; column += 1) {
+            let dot = 0;
+            for (let k = 0; k < 3; k += 1) dot += matrix[4 * k + row] * matrix[4 * k + column];
+            if (!Number.isFinite(dot) || Math.abs(dot - (row === column ? 1 : 0)) > TOLERANCES.rigidTransform) orthonormal = false;
+        }
+        const determinant = matrix[0] * (matrix[5] * matrix[10] - matrix[6] * matrix[9])
+            - matrix[1] * (matrix[4] * matrix[10] - matrix[6] * matrix[8])
+            + matrix[2] * (matrix[4] * matrix[9] - matrix[5] * matrix[8]);
+        if (!orthonormal || !Number.isFinite(determinant) || Math.abs(determinant - 1) > TOLERANCES.rigidTransform) {
+            issues.push({ indices: [0, 1, 2, 4, 5, 6, 8, 9, 10],
+                message: 'The rotation block must be orthonormal with determinant +1; check its entries and rounding.' });
+        }
+        return issues;
+    }
     function chainForwardKinematics(chain, q) {
-        let result = transform(chain.base);
+        let result = chain.base;
         chain.rows.forEach((row, i) => { result = multiply(result, dhTransform(row, q[i])); });
-        return multiply(result, transform(chain.tool));
+        return multiply(result, chain.tool);
     }
     function evaluateDhForwardKinematics(answers, q) {
         checkConfiguration(q);
@@ -178,7 +224,12 @@
             if (parsed.status !== 'valid') throw new Error(`A valid value is required for ${key}.`);
             values[key] = parsed.value;
         });
-        return chainForwardKinematics(chainFromValues(values), q);
+        const chain = chainFromValues(values);
+        ['base', 'tool'].forEach(prefix => {
+            const issues = rigidTransformIssues(chain[prefix]);
+            if (issues.length) throw new Error(`Invalid ${prefix} matrix: ${issues[0].message}`);
+        });
+        return chainForwardKinematics(chain, q);
     }
     function poseError(a, b) {
         if (!a.every(Number.isFinite) || !b.every(Number.isFinite)) return { position: Infinity, rotation: Infinity };
@@ -205,6 +256,8 @@
     function angleDifference(a, b) { return Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b))); }
     function isAngleKey(key) { return /\.(thetaOffset|alpha|roll|pitch|yaw)$/.test(key); }
     function matchesReference(key, value, expected) {
+        if (/^(base|tool|poe\.M)\./.test(key)) return Math.abs(value - expected) <= TOLERANCES.matrixCell;
+        if (key.startsWith('poe.')) return Math.abs(value - expected) <= TOLERANCES.screwCell;
         return isAngleKey(key) ? angleDifference(value, expected) <= TOLERANCES.angleCell : Math.abs(value - expected) <= TOLERANCES.lengthCell;
     }
 
@@ -213,21 +266,47 @@
         const reference = referenceAnswers();
         const fields = {};
         const values = {};
-        const numericKeys = Object.keys(reference).filter(key => /^(dh|base|tool|visual)\./.test(key));
+        const numericKeys = Object.keys(reference).filter(key => /^(dh|base|tool|poe|visual)\./.test(key));
         numericKeys.forEach(key => {
             const parsed = parseNumber(answers[key]);
             if (parsed.status !== 'valid') { fields[key] = { status: parsed.status, message: parsed.message }; return; }
             values[key] = parsed.value;
             const matches = matchesReference(key, parsed.value, Number(reference[key]));
+            if (key.startsWith('visual.')) {
+                fields[key] = { status: matches ? 'correct' : 'incorrect', message: matches
+                    ? 'Matches the reference correction. Complete the RPY corrections to check the repaired rotation.'
+                    : 'Check the correction: repaired component minus its initial value in the supplied URDF.' };
+                return;
+            }
+            if (key.startsWith('poe.')) {
+                fields[key] = { status: matches ? 'correct' : 'incorrect', message: matches
+                    ? 'Matches this entry in the world-space PoE model with the supplied joint signs and zero configuration.'
+                    : key.startsWith('poe.M.')
+                        ? 'Check the world-to-tool home matrix at the zero joint configuration, including the fixed tool transform.'
+                        : 'Check the normalized world-space screw at the zero configuration: angular direction first, then minus the angular direction crossed with a point on the axis.' };
+                return;
+            }
             fields[key] = { status: matches ? 'correct' : 'incorrect', message: matches
                 ? 'Matches the reference entry; complete-chain equivalence is checked separately.'
                 : 'Differs from the reference entry. Complete the chain to check another valid frame assignment.' };
         });
 
+        let invalidTransform = false;
+        ['base', 'tool'].forEach(prefix => {
+            const keys = MATRIX_CELLS.map(cell => `${prefix}.${cell}`);
+            if (!keys.every(key => Object.prototype.hasOwnProperty.call(values, key))) return;
+            rigidTransformIssues(keys.map(key => values[key])).forEach(issue => {
+                invalidTransform = true;
+                issue.indices.forEach(index => { fields[keys[index]] = { status: 'invalid', message: issue.message }; });
+            });
+        });
+
         const fk = { status: 'unanswered', maxPositionError: null, maxRotationError: null, testCount: 0,
             message: 'Complete every DH, base and tool entry to compare forward kinematics.' };
         if (CHAIN_KEYS.some(key => fields[key].status === 'invalid')) {
-            fk.status = 'invalid'; fk.message = 'Correct the invalid DH, base or tool expressions before checking forward kinematics.';
+            fk.status = 'invalid'; fk.message = invalidTransform
+                ? 'Correct the base or tool matrix so it represents a rigid homogeneous transform before checking forward kinematics.'
+                : 'Correct the invalid DH, base or tool expressions before checking forward kinematics.';
         } else if (CHAIN_KEYS.every(key => Object.prototype.hasOwnProperty.call(values, key))) {
             const chain = chainFromValues(values);
             let maxPositionError = 0;
@@ -255,26 +334,90 @@
             }
         }
 
-        // Visual origins are expressed in fixed URDF link frames. RPY triples
-        // are compared as rotations so equivalent Euler representations pass.
-        VISUAL_Z.forEach((z, index) => {
+        for (let joint = 1; joint <= 7; joint += 1) {
+            const keys = SCREW_COLUMNS.map(column => `poe.${joint}.${column}`);
+            if (!keys.every(key => Object.prototype.hasOwnProperty.call(values, key))) continue;
+            screwIssues(keys.map(key => values[key])).forEach(issue => {
+                issue.indices.forEach(index => { fields[keys[index]] = { status: 'invalid', message: issue.message }; });
+            });
+        }
+        const homeKeys = MATRIX_CELLS.map(cell => `poe.M.${cell}`);
+        if (homeKeys.every(key => Object.prototype.hasOwnProperty.call(values, key))) {
+            rigidTransformIssues(homeKeys.map(key => values[key])).forEach(issue => {
+                issue.indices.forEach(index => { fields[homeKeys[index]] = { status: 'invalid', message: issue.message }; });
+            });
+        }
+        const poe = { status: 'unanswered', maxPositionError: null, maxRotationError: null, testCount: 0,
+            message: 'Complete the seven space screws and the home matrix to compare PoE forward kinematics.' };
+        if (POE_KEYS.some(key => fields[key].status === 'invalid')) {
+            poe.status = 'invalid';
+            poe.message = 'Correct the invalid PoE expressions, revolute screws or home matrix before comparing forward kinematics.';
+        } else if (POE_KEYS.every(key => Object.prototype.hasOwnProperty.call(values, key))) {
+            const chain = poeFromValues(values);
+            let maxPositionError = 0, maxRotationError = 0;
+            testConfigurations().forEach(q => {
+                const error = poseError(referenceForwardKinematics(q), poeForwardKinematics(chain, q));
+                maxPositionError = Math.max(maxPositionError, error.position);
+                maxRotationError = Math.max(maxRotationError, error.rotation);
+                poe.testCount += 1;
+            });
+            if (!Number.isFinite(maxPositionError) || !Number.isFinite(maxRotationError)) {
+                poe.status = 'invalid';
+                poe.message = 'The entered magnitudes overflow the numeric PoE calculation.';
+            } else {
+                poe.maxPositionError = maxPositionError;
+                poe.maxRotationError = maxRotationError;
+                const referenceMatches = POE_KEYS.every(key => fields[key].status === 'correct');
+                const posesMatch = maxPositionError <= TOLERANCES.position && maxRotationError <= TOLERANCES.rotation;
+                poe.status = posesMatch && referenceMatches ? 'correct' : 'incorrect';
+                poe.message = poe.status === 'correct'
+                    ? 'The world-space screws and home matrix match the supplied URDF, and PoE agrees on 26 configurations within 0.00001 m and 0.0001 rad.'
+                    : posesMatch
+                        ? 'The sampled PoE poses agree within the FK tolerance, but a model entry differs from the required world-space screws or home matrix.'
+                        : 'The PoE chain differs from the URDF on the sampled configurations. Check the world-space axes, their signs, moment vectors and home matrix.';
+            }
+        }
+
+        const dhChain = ['correct', 'incorrect'].includes(fk.status) ? chainFromValues(values) : null;
+        const poeChain = ['correct', 'incorrect'].includes(poe.status) ? poeFromValues(values) : null;
+        function checkNamedPose(chain, q, forwardKinematics, status) {
+            if (!chain) return { status, positionError: null, rotationError: null };
+            const error = poseError(referenceForwardKinematics(q), forwardKinematics(chain, q));
+            if (!Number.isFinite(error.position) || !Number.isFinite(error.rotation)) {
+                return { status: 'invalid', positionError: null, rotationError: null };
+            }
+            return {
+                status: error.position <= TOLERANCES.position && error.rotation <= TOLERANCES.rotation ? 'correct' : 'incorrect',
+                positionError: error.position, rotationError: error.rotation
+            };
+        }
+        const poseChecks = Object.fromEntries(Object.entries(POSES).map(([name, q]) => [name, {
+            dh: checkNamedPose(dhChain, q, chainForwardKinematics, fk.status),
+            poe: checkNamedPose(poeChain, q, poeForwardKinematics, poe.status)
+        }]));
+
+        // Corrections are componentwise changes to the supplied URDF origins.
+        // Compare the repaired RPY triples as rotations, preserving equivalent
+        // Euler representations without interpreting the deltas as rotations.
+        CLEAN_VISUAL_ORIGINS.forEach((origin, index) => {
             const prefix = `visual.${index}`;
             ['x', 'y', 'z'].forEach(column => {
                 const key = `${prefix}.${column}`;
                 if (!Object.prototype.hasOwnProperty.call(values, key)) return;
                 fields[key].message = fields[key].status === 'correct'
-                    ? 'Matches the reference mesh translation in this URDF link frame.'
-                    : 'Does not match the reference mesh translation in this URDF link frame.';
+                    ? 'This correction restores the reference mesh translation in this URDF link frame.'
+                    : 'Check the translation correction: repaired value minus the initial value in the supplied URDF.';
             });
             const rotationKeys = ['roll', 'pitch', 'yaw'].map(column => `${prefix}.${column}`);
             if (rotationKeys.every(key => Object.prototype.hasOwnProperty.call(values, key))) {
-                const rotation = transform([0, 0, 0].concat(rotationKeys.map(key => values[key])));
-                const matches = poseError(identity(), rotation).rotation <= TOLERANCES.rotation;
+                const repairedRpy = rotationKeys.map((key, component) => initialVisualOrigins[index][component + 3] + values[key]);
+                const rotation = transform([0, 0, 0].concat(repairedRpy));
+                const matches = poseError(transform(origin), rotation).rotation <= TOLERANCES.rotation;
                 rotationKeys.forEach(key => {
-                    if (matches) fields[key] = { status: 'correct', message: 'The complete RPY rotation matches the reference visual origin; equivalent Euler representations are accepted.' };
+                    if (matches) fields[key] = { status: 'correct', message: 'The initial RPY values plus these corrections restore the reference visual rotation; equivalent repaired Euler representations are accepted.' };
                     else fields[key].message = fields[key].status === 'correct'
-                        ? 'Matches this reference angle, but the complete visual-origin rotation differs.'
-                        : 'Differs from this reference angle and the complete visual-origin rotation differs; this does not isolate an individual Euler-angle error.';
+                        ? 'Matches this reference angle correction, but the repaired visual rotation differs.'
+                        : 'Check the RPY corrections: add each to its initial URDF value. The repaired visual rotation differs; this does not isolate an individual angle error.';
                 });
             }
         });
@@ -310,9 +453,9 @@
         });
         const summary = { correct: 0, incorrect: 0, unanswered: 0, invalid: 0, total: 0 };
         Object.values(fields).forEach(field => { summary[field.status] += 1; summary.total += 1; });
-        return { fields, summary, fk };
+        return { fields, summary, fk, poe, poseChecks };
     }
 
     return Object.freeze({ evaluate, parseNumber, referenceAnswers, referenceForwardKinematics,
-        evaluateDhForwardKinematics, tolerances: TOLERANCES, poses: POSES });
+        evaluateDhForwardKinematics, evaluatePoeForwardKinematics, tolerances: TOLERANCES, poses: POSES });
 }));

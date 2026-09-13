@@ -182,7 +182,7 @@
       <h2 class="slide-title">A screw couples rotation and translation</h2>
       <p class="slide-subtitle">A general instantaneous rigid motion combines rotation about an axis with translation along it; pure translation is the zero-angular-part case.</p>
       <div class="layout-two-column divided">
-        <div><p class="lead">Let the axis pass through point \(\mathbf r\), with unit direction \(\boldsymbol\omega\), and pitch \(h\).</p><div class="equation">\[\mathbf v=-\boldsymbol\omega\times\mathbf r+h\boldsymbol\omega\]</div><p>The first term locates the axis; the second adds translation along it.</p></div>
+        <div><p class="lead">Let \(\mathbf r\) point from the coordinate origin to a point on the screw axis, with unit axis direction \(\boldsymbol\omega\) and pitch \(h\).</p><div class="equation">\[\mathbf v=-\boldsymbol\omega\times\mathbf r+h\boldsymbol\omega\]</div><p>The radius from the axis back to the coordinate origin is \(-\mathbf r\). The right-hand rule gives \(\boldsymbol\omega\times(-\mathbf r)\); \(h\boldsymbol\omega\) adds translation along the axis.</p></div>
         <div class="screw-cases"><div><strong>Revolute</strong><p>\(\|\boldsymbol\omega\|=1,\ h=0\)</p></div><div><strong>Helical</strong><p>\(\|\boldsymbol\omega\|=1,\ h\neq0\)</p></div><div><strong>Prismatic</strong><p>\(\boldsymbol\omega=\mathbf0,\ \|\mathbf v\|=1\)</p></div></div>
       </div>
       <div class="clean-callout">Here \(\mathbf v\) is not generally the velocity of the body-frame origin; it is the linear part of the twist representation.</div>
@@ -360,9 +360,9 @@
     <section class="slide interactive-slide">
       <p class="slide-kicker">Act II · Interactive frame transformation</p>
       <h2 class="slide-title">Move the observer, not the screw</h2>
-      <p class="slide-subtitle">The red screw is fixed in world geometry. Move frame \(B\) and observe how the same screw’s coordinates change.</p>
+      <p class="slide-subtitle">The red screw is parallel to \(z_W\) through \((0.8,0,0)_W\). The sliders place frame \(B\) in world coordinates; the readouts express the same screw in each frame.</p>
       <div class="layout-full demo-layout"><div data-screw-frame-demo></div></div>
-      <p class="slide-takeaway"><strong>Takeaway:</strong> the adjoint gives portability between motion coordinates and frame transformations.</p>
+      <p class="slide-takeaway"><strong>At zero yaw:</strong> \({}^{B}\mathbf v=[-y_W,\ x_W-0.8,\ 0]^T\). Moving \(B\) along \(x_W\) changes \(v_y\); the cross product in \(\mathbf v=-\boldsymbol\omega\times\mathbf r\) couples the axes.</p>
     </section>
 
     <section class="slide">
@@ -382,7 +382,7 @@
     <section class="slide">
       <p class="slide-kicker">Act III · Build the custom-3R model</p>
       <h2 class="slide-title">Read each screw directly from the home geometry</h2>
-      <p class="slide-subtitle">For a revolute joint through \(\mathbf r_i\) with unit axis \(\boldsymbol\omega_i\), use \(\mathbf v_i=-\boldsymbol\omega_i\times\mathbf r_i\).</p>
+      <p class="slide-subtitle">For a revolute joint, let \(\mathbf r_i\) point from the world origin to its axis and \(\boldsymbol\omega_i\) give the unit axis direction. Then \(\mathbf v_i=-\boldsymbol\omega_i\times\mathbf r_i\).</p>
       <table class="lecture-table">
         <thead><tr><th>Joint</th><th>\(\boldsymbol\omega_i\)</th><th>Point \(\mathbf r_i\) on axis</th><th>\(\mathbf v_i\)</th></tr></thead>
         <tbody><tr><td>1</td><td>\([0,0,1]^T\)</td><td>\([0,0,0.5]^T\)</td><td>\([0,0,0]^T\)</td></tr><tr><td>2</td><td>\([0,1,0]^T\)</td><td>\([1,0,1]^T\)</td><td>\([-1,0,1]^T\)</td></tr><tr><td>3</td><td>\([0,0,1]^T\)</td><td>\([3,1.25,1]^T\)</td><td>\([1.25,-3,0]^T\)</td></tr></tbody>

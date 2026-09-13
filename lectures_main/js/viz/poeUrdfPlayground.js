@@ -226,21 +226,38 @@ function createScrewExponentialDemo(container) {
 function createScrewFrameDemo(container) {
   container.className = 'l2-demo screw-frame-demo';
   container.innerHTML = `
-    <div class="l2-stage"><p class="l2-stage-note">same red world screw · move observer B</p></div>
+    <div class="l2-stage"><p class="l2-stage-note">frame axes: x red · y green · z blue · fixed screw ∥ z_W</p></div>
     <div class="l2-panel">
       <div class="l2-card"><strong>Pose \\({}^{W}T_B\\)</strong>
-        <div class="l2-control"><label>x</label><input data-x type="range" min="-1.5" max="1.5" step=".05" value=".4"><output data-x-out>0.40</output></div>
-        <div class="l2-control"><label>y</label><input data-y type="range" min="-1.5" max="1.5" step=".05" value=".7"><output data-y-out>0.70</output></div>
-        <div class="l2-control"><label>yaw</label><input data-yaw type="range" min="-180" max="180" value="35"><output data-yaw-out>35°</output></div>
+        <div class="l2-control"><label>x<sub>W</sub> [m]</label><input data-x aria-label="Frame B origin x coordinate in world, metres" type="range" min="-1.5" max="1.5" step=".05" value=".4"><output data-x-out>0.40</output></div>
+        <div class="l2-control"><label>y<sub>W</sub> [m]</label><input data-y aria-label="Frame B origin y coordinate in world, metres" type="range" min="-1.5" max="1.5" step=".05" value=".7"><output data-y-out>0.70</output></div>
+        <div class="l2-control"><label>yaw [°]</label><input data-yaw aria-label="Frame B yaw about world z, degrees" type="range" min="-180" max="180" value="35"><output data-yaw-out>35°</output></div>
       </div>
-      <div class="l2-card"><strong>Same physical screw</strong><p class="l2-vector">\\(^{W}\\xi=[0,0,1;\ 0,-0.8,0]\\)</p><p class="l2-vector" data-xi-b></p></div>
+      <div class="l2-card"><strong>Same screw, coordinates in W and B</strong>
+        <p>Component order: \\(\\xi=[\\omega_x,\\omega_y,\\omega_z;\\,v_x,v_y,v_z]\\)</p>
+        <p class="l2-vector">\\({}^{W}\\boldsymbol{\\xi}=\\left[0.00,0.00,1.00;\\;0.00,-0.80,0.00\\right]\\)</p>
+        <p class="l2-vector" data-xi-b></p>
+      </div>
       <div class="l2-card"><strong>Adjoint check</strong><p style="margin:.35rem 0 0">\\(^{B}\\xi=\\operatorname{Ad}_{({}^{W}T_B)^{-1}}{}^{W}\\xi\\)</p></div>
     </div>`;
   const kit = sceneKit(container.querySelector('.l2-stage'));
   const worldFrame = frame('W', 0.7); worldFrame.group.matrix.identity(); kit.world.add(worldFrame.group);
   const bFrame = frame('B', 0.7, true); kit.world.add(bFrame.group);
+  for (const [name, coordinateFrame] of [['W', worldFrame], ['B', bFrame]]) {
+    for (const [index, axis] of ['x', 'y', 'z'].entries()) {
+      const label = sprite(axis + '_' + name);
+      label.position.setComponent(index, 0.84);
+      label.scale.set(0.46, 0.16, 1);
+      coordinateFrame.group.add(label);
+    }
+  }
   kit.world.add(line([new THREE.Vector3(.8,0,-1.4), new THREE.Vector3(.8,0,2.6)], 0xff0000));
+  const screwLabel = sprite('screw ∥ z_W', true); screwLabel.position.set(.8, 0, 2.4); kit.world.add(screwLabel);
   const inputs = Object.fromEntries(['x','y','yaw'].map((key) => [key, container.querySelector(`[data-${key}]`)]));
+  const twistReadout = container.querySelector('[data-xi-b]');
+  let twistTypesetting = window.MathJax?.startup?.promise || Promise.resolve();
+  let twistRevision = 0;
+  let initialTypeset = true;
   function update() {
     const x = Number(inputs.x.value), y = Number(inputs.y.value), yaw = Number(inputs.yaw.value) * DEG;
     const matrix = rpyMatrix(x, y, 0, 0, 0, yaw); bFrame.group.matrix.copy(matrix); bFrame.group.matrixWorldNeedsUpdate = true;
@@ -250,9 +267,21 @@ function createScrewFrameDemo(container) {
     const vB = vW.clone().sub(new THREE.Vector3().crossVectors(new THREE.Vector3(x,y,0), omegaW)).applyMatrix3(rotationT);
     container.querySelector('[data-x-out]').textContent = format(x,2); container.querySelector('[data-y-out]').textContent = format(y,2);
     container.querySelector('[data-yaw-out]').textContent = inputs.yaw.value + '°';
-    container.querySelector('[data-xi-b]').textContent = `ᴮξ = [${[omegaB.x,omegaB.y,omegaB.z,vB.x,vB.y,vB.z].map((n)=>format(n,2)).join(', ')}]`;
+    const angular = [omegaB.x, omegaB.y, omegaB.z].map((n) => format(n, 2)).join(',');
+    const linear = [vB.x, vB.y, vB.z].map((n) => format(n, 2)).join(',');
+    const tex = `\\({}^{B}\\boldsymbol{\\xi}=\\left[${angular};\\;${linear}\\right]\\)`;
+    const revision = ++twistRevision;
+    // Keep DOM replacement and MathJax rendering together; use the latest slider values.
+    twistTypesetting = twistTypesetting.then(() => {
+      if (revision !== twistRevision) return;
+      window.MathJax?.typesetClear?.([twistReadout]);
+      twistReadout.textContent = tex;
+      const target = initialTypeset ? container : twistReadout;
+      initialTypeset = false;
+      return window.MathJax?.typesetPromise?.([target]);
+    }).catch((error) => console.warn('Twist typeset failed:', error));
   }
-  Object.values(inputs).forEach((input) => input.addEventListener('input', update)); update(); typeset(container);
+  Object.values(inputs).forEach((input) => input.addEventListener('input', update)); update();
 }
 
 async function createCustom3RPoeDemo(container) {
