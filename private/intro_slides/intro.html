@@ -26,8 +26,17 @@
       <p>You could briefly introduce Me and Arda, who will connect the two parts of the course to their research, before moving to a few examples of motion planning in practice.</p>
     </aside>
   </section>
+
+   <section class="slide" id="slide-4" data-title="Traditional Control" aria-label="Slide 1: Fully prescribed motions">
+    <p class="eyebrow">Demonstrate robot capabilities</p>
+    <h2 class="slide-title">Precoded trajectories</h2>
+    <div class="stakes-layout">
+      <div class="stakes-images" role="group" aria-label="Assistive and collaborative robots">
+     </div>
+      <div class="stakes-copy"><p class="lead">Obstacles were known, static and path was guaranteed to be feasible.</p>    </div>
+  </section>
  
-  <section class="slide" id="slide-4" data-title="Motion Planning is Everywhere" aria-label="Slide 4: From industry to everyday life">
+  <section class="slide" id="slide-2" data-title="Motion Planning is Everywhere" aria-label="Slide 2: From industry to everyday life">
     <p class="eyebrow">From industry to everyday life</p>
     <h2 class="slide-title">From industry to everyday life</h2>
     <div class="stakes-layout">
@@ -45,12 +54,24 @@
     </aside>
   </section>
 
-  <section class="slide" id="slide-3" data-title="When motion fails" aria-label="Slide 3: When motion fails">
+
+  <section class="slide" id="slide-3" data-title="Training Robots" aria-label="Slide 3: Demonstrations in Cartesian Space">
+    <p class="eyebrow">Demonstration</p>
+    <h2 class="slide-title">Demonstration</h2>
+
+    <div class="failure-layout">
+      <figure class="media-slot teleoperation" data-media="zucchini"><div class="media-stage"><video controls playsinline preload="metadata" aria-label="Zucchini"></video><div class="media-fallback"><span class="media-number">!</span></div></div><figcaption>To ease transfer, one can embody the robot.<span class="media-credit">EPFL-LASA</span></figcaption></figure>
+      <div class="teleoperation"><p class="large-question">Can the robot<br>reproduce safely the path even</em> when starting with different initial
+      conditions?</p><p>The learned control policy must be safe.</p><div class="discussion"><span>What would you check?</span><p>Convergence<br>Stability at target<br>Bounded forces</p></div></div>
+   <p>Topics covered in MICRO-462 Learning and Adaptive Control for Robots (Spring 2027)</p> </div>
+  </section>
+
+    <section class="slide" id="slide-4" data-title="When motion fails" aria-label="Slide 4: When motion fails">
     <p class="eyebrow">The limits of a successful demonstration</p>
     <h2 class="slide-title">When motion fails</h2>
     <div class="failure-layout">
       <figure class="media-slot failure-video" data-media="failure"><div class="media-stage"><video controls playsinline preload="metadata" aria-label="Jaco motion planning failure"></video><div class="media-fallback"><span class="media-number">!</span><strong>Jaco</strong><span>Motion failure</span><small>Video unavailable</small></div></div><figcaption>Real world consequences of failed robot planning.<span class="media-credit">Video source: <a href="https://achille0.medium.com/under-the-radar-cuspidal-robots-7091eca01271" target="_blank" rel="noopener noreferrer">Achille Verheye on Medium</a></span></figcaption></figure>
-      <div class="failure-copy"><p class="large-question">Can the robot execute<br>the <em>whole path?</em></p><p>A reachable goal does not establish a feasible motion to it.</p><div class="discussion"><span>What would you check?</span><p>Joint limits and collisions<br>Lost motion directions (singularities)<br>Continuous joint motion</p></div></div>
+      <div class="failure-copy"><p class="large-question">Can the robot execute<br>the <em>whole path?</em></p><p>Even if the goal is reachable, this does guarantee that there is a feasible path to reach it.</p><div class="discussion"><span>What would you check?</span><p>Continuous path in joint space<br>Joint limits and collisions<br>Lost motion directions (singularities)</p></div></div>
     </div>
     <aside class="notes">
       <p>You may show this Jaco example to illustrate how motion planning can fail in the real world, even during an everyday task.</p>
@@ -59,6 +80,16 @@
     </aside>
   </section>
 
+   <section class="slide" id="slide-4" data-title="Beyond Training Robots From Humans" aria-label="Slide 1: Fully prescribed motions">
+    <p class="eyebrow">Beyond Training Robots From Humans</p>
+    <h2 class="slide-title">Transfer Knowledge across robots</h2>
+    <div class="stakes-layout">
+      <div class="stakes-images" role="group" aria-label="Assistive and collaborative robots">
+     </div>
+      <div class="stakes-copy"><p class="lead">Kinematics may differ. A feasible path for the first robot may become infeasible for another robot.</p> 
+      <p><a><href="https://www.science.org/doi/full/10.1126/scirobotics.aea1995?casa_token=mi-EzFSYWx8AAAAA%3AXThz4oZGZhQFVybslfiN6QX2EGigZ4S3BGVIz4VMLoNrJ-M9vXZens-hsLVA8FZrOEd6gnSVQw1PtzM">Gupta, S., Salunkhe, D. H., & Billard, A. (2026). Demonstrate once, execute on many: Kinematic intelligence for cross-robot skill transfer. Science Robotics, 11(113), 2026</a></p></p></div>
+  </section>
+  
   <section class="slide" id="slide-5" data-title="Global analysis and guarantees" aria-label="Slide 5: Global analysis and guarantees">
     <p class="eyebrow">The engineering standard we will develop</p>
     <h2 class="slide-title">Global analysis and guarantees</h2>
