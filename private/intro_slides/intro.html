@@ -46,22 +46,23 @@
   </section>
 
 
-  <section class="slide" id="slide-3" data-title="Training Robots" aria-label="Slide 3: Demonstrations in Carthesian Space">
+  <section class="slide" id="slide-3" data-title="Training Robots" aria-label="Slide 3: Demonstrations in Cartesian Space">
     <p class="eyebrow">Demonstration</p>
     <h2 class="slide-title">Demonstration</h2>
-    <div class="teleoperation-layout">
-      <figure class="media-slot teleoperation" data-media="zucchini"><div class="media-stage"><video controls playsinline preload="metadata" aria-label="Teleoperation"></video><div class="media-fallback"><span class="media-number">!</span></div></div><figcaption>To ease transfer, one can embody the robot.<span class="media-credit">EPFL-LASA</span></figcaption></figure>
+
+    <div class="failure-layout">
+      <figure class="media-slot teleoperation" data-media="zucchini"><div class="media-stage"><video controls playsinline preload="metadata" aria-label="Zucchini"></video><div class="media-fallback"><span class="media-number">!</span></div></div><figcaption>To ease transfer, one can embody the robot.<span class="media-credit">EPFL-LASA</span></figcaption></figure>
       <div class="teleoperation"><p class="large-question">Can the robot<br>reproduce safely the path even</em> when starting with different initial
       conditions?</p><p>The learned control policy must be safe.</p><div class="discussion"><span>What would you check?</span><p>Convergence<br>Stability at target<br>Bounded forces</p></div></div>
    <p>Topics covered in MICRO-462 Learning and Adaptive Control for Robots (Spring 2027)</p> </div>
   </section>
 
-    <section class="slide" id="slide-3" data-title="When motion fails" aria-label="Slide 3: When motion fails">
+    <section class="slide" id="slide-4" data-title="When motion fails" aria-label="Slide 4: When motion fails">
     <p class="eyebrow">The limits of a successful demonstration</p>
     <h2 class="slide-title">When motion fails</h2>
     <div class="failure-layout">
       <figure class="media-slot failure-video" data-media="failure"><div class="media-stage"><video controls playsinline preload="metadata" aria-label="Jaco motion planning failure"></video><div class="media-fallback"><span class="media-number">!</span><strong>Jaco</strong><span>Motion failure</span><small>Video unavailable</small></div></div><figcaption>Real world consequences of failed robot planning.<span class="media-credit">Video source: <a href="https://achille0.medium.com/under-the-radar-cuspidal-robots-7091eca01271" target="_blank" rel="noopener noreferrer">Achille Verheye on Medium</a></span></figcaption></figure>
-      <div class="failure-copy"><p class="large-question">Can the robot execute<br>the <em>whole path?</em></p><p>A reachable goal does not establish a feasible motion to it.</p><div class="discussion"><span>What would you check?</span><p>Joint limits and collisions<br>Lost motion directions (singularities)<br>Continuous joint motion</p></div></div>
+      <div class="failure-copy"><p class="large-question">Can the robot execute<br>the <em>whole path?</em></p><p>Even if the goal is reachable, this does guarantee that there is a feasible path to reach it.</p><div class="discussion"><span>What would you check?</span><p>Continuous path in joint space<br>Joint limits and collisions<br>Lost motion directions (singularities)</p></div></div>
     </div>
     <aside class="notes">
       <p>You may show this Jaco example to illustrate how motion planning can fail in the real world, even during an everyday task.</p>
