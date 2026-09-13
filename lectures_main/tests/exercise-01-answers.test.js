@@ -59,6 +59,20 @@ test('schema four matrices and visual corrections migrate unchanged into schema 
   assert.deepEqual(answers.parsePayload(JSON.stringify(answers.createPayload(restored))), restored);
 });
 
+test('older files clear the replaced wrist pose while preserving other pose responses', () => {
+  const wristKeys = answers.FIELD_KEYS.filter(key => key.startsWith('fk.wrist_turn.'));
+  assert.equal(wristKeys.length, 16);
+  const entered = { ...Object.fromEntries(wristKeys.map((key, index) => [key, `${index}/16`])),
+    'fk.home.1.1': '1', 'fk.bent.1.4': '0.2 + 0.3', 'fk.bent_back.2.4': '0', 'fk.side_reach.4.4': '1' };
+  for (const schemaVersion of [1, 2, 3, 4]) {
+    const restored = answers.validatePayload({ ...answers.createPayload({}), schemaVersion, answers: entered });
+    for (const key of wristKeys) assert.equal(restored[key], '', `schema ${schemaVersion}: ${key}`);
+    for (const key of ['fk.home.1.1', 'fk.bent.1.4', 'fk.bent_back.2.4', 'fk.side_reach.4.4']) assert.equal(restored[key], entered[key]);
+  }
+  const current = answers.parsePayload(JSON.stringify(answers.createPayload(entered)));
+  for (const [key, value] of Object.entries(entered)) assert.equal(current[key], value);
+});
+
 test('old xyz/RPY files migrate expressions and ordered rotations into homogeneous matrices', () => {
   for (const schemaVersion of [1, 2]) {
     const legacy = { ...answers.createPayload({}), schemaVersion, answers: {

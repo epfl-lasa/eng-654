@@ -106,6 +106,11 @@
         });
       });
     }
+    if (payload.schemaVersion < 5) {
+      for (let row = 1; row <= 4; row += 1) {
+        for (let column = 1; column <= 4; column += 1) answers[`fk.wrist_turn.${row}.${column}`] = '';
+      }
+    }
     return answers;
   }
 
