@@ -26,22 +26,24 @@
       <p>You could briefly introduce Me and Arda, who will connect the two parts of the course to their research, before moving to a few examples of motion planning in practice.</p>
     </aside>
   </section>
- 
-  <section class="slide" id="slide-4" data-title="Motion Planning is Everywhere" aria-label="Slide 4: From industry to everyday life">
-    <p class="eyebrow">From industry to everyday life</p>
-    <h2 class="slide-title">From industry to everyday life</h2>
-    <div class="stakes-layout">
-      <div class="stakes-images" role="group" aria-label="Assistive and collaborative robots">
-        <figure><img class="kinova-image" src="assets/images/kinova.webp" alt="A Kinova assistive arm helping a person eat at home"><figcaption class="media-credit">Image source: <a href="https://www.kinovarobotics.com/fr/produit/jaco" target="_blank" rel="noopener noreferrer">Kinova’s Jaco page</a></figcaption></figure>
-        <figure><img src="assets/images/ur5_hri.png" alt="A person working closely with a UR5 collaborative robot"><figcaption class="media-credit">Image source: <a href="https://link.springer.com/article/10.1007/s00170-020-05363-1" target="_blank" rel="noopener noreferrer">Springer article</a></figcaption></figure>
-        <figure><img src="assets/images/abb_crb.jpeg" alt="A person guiding an ABB collaborative robot by hand"><figcaption class="media-credit">Image source: <a href="https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=10711794" target="_blank" rel="noopener noreferrer">Research article</a></figcaption></figure>
-      </div>
-      <div class="stakes-copy"><p class="lead">Robots have moved from industrial settings into everyday life.</p><p>Assistive and collaborative robots now interact directly with people.</p><p class="red-takeaway">Motion planning with guarantees is essential for safe human–robot interaction.</p></div>
+
+  <section class="slide" id="slide-2" data-title="Motion planning is everywhere" aria-label="Slide 2: Motion planning is everywhere">
+    <p class="eyebrow">Real-world motion</p>
+    <div class="video-heading">
+      <h2 class="slide-title">Motion planning is everywhere</h2>
+      <button type="button" class="play-all" id="play-all" title="Play all four videos from the beginning"><span aria-hidden="true">▶</span> Play all</button>
     </div>
+    <div class="video-grid">
+      <figure class="media-slot" data-media="success1"><div class="media-stage"><video controls playsinline muted preload="metadata" aria-label="Robot painting"></video><div class="media-fallback"><span class="media-number">01</span><strong>Robot painting</strong><span>Industrial motion planning</span><small>Video unavailable</small></div></div><figcaption>Earlier applications of robot motion planning<span class="media-credit">Video source: <a href="https://www.youtube.com/watch?v=d4G7Ul62ibE" target="_blank" rel="noopener noreferrer">YouTube</a></span></figcaption></figure>
+      <figure class="media-slot" data-media="success2"><div class="media-stage"><video controls playsinline muted preload="metadata" aria-label="Yaskawa manipulation"></video><div class="media-fallback"><span class="media-number">02</span><strong>Yaskawa manipulation</strong><span>Environment aware motion planning</span><small>Video unavailable</small></div></div><figcaption>Environment aware motion planning</figcaption></figure>
+      <figure class="media-slot" data-media="success3"><div class="media-stage"><video controls playsinline muted preload="metadata" aria-label="Yaskawa robot moving a television"></video><div class="media-fallback"><span class="media-number">03</span><strong>Yaskawa robot moving a television</strong><span>Robot planning in action</span><small>Video unavailable</small></div></div><figcaption>Interesting applications for robot planning</figcaption></figure>
+      <figure class="media-slot" data-media="success4"><div class="media-stage"><video controls playsinline muted preload="metadata" aria-label="Humanoid motion"></video><div class="media-fallback"><span class="media-number">04</span><strong>Humanoid motion</strong><span>Recent robot applications</span><small>Video unavailable</small></div></div><figcaption>Recent use case<span class="media-credit">Video source: <a href="https://www.youtube.com/watch?v=rTej9ym9UQc" target="_blank" rel="noopener noreferrer">YouTube</a></span></figcaption></figure>
+    </div>
+    <p class="bottom-line">Every useful robot action depends on a feasible motion.</p>
     <aside class="notes">
-      <p>You could bring the Jaco failure back into the discussion: what would that unexpected motion mean for someone working closely with the robot?</p>
-      <p>You may emphasise why predictable motion matters when people share the workspace or depend on a robot for assistance. This could help students see why guarantees matter.</p>
-      <p>You could follow with: “What can we establish about a motion before we let the robot execute it?”</p>
+      <p>You may let the clips run for a moment to show how widely motion planning is used, from established industrial tasks to newer robot applications.</p>
+      <p>You may ask the room: “What has to go right for these motions to look so effortless?” The whole robot moving within its limits and avoiding obstacles could be useful points to draw out.</p>
+      <p>A possible lead-in to the Jaco example: “Now let’s see what happens when the motion fails.”</p>
     </aside>
   </section>
 
@@ -56,6 +58,24 @@
       <p>You may show this Jaco example to illustrate how motion planning can fail in the real world, even during an everyday task.</p>
       <p>You may ask students what they would check before running the motion. You could give them a moment to suggest answers before bringing in joint limits, collisions, singularities and continuity.</p>
       <p>A possible takeaway: reaching the target is only part of the problem. The robot needs a feasible path all the way there.</p>
+    </aside>
+  </section>
+
+  <section class="slide" id="slide-4" data-title="From industry to everyday life" aria-label="Slide 4: From industry to everyday life">
+    <p class="eyebrow">Why this matters now</p>
+    <h2 class="slide-title">From industry to everyday life</h2>
+    <div class="stakes-layout">
+      <div class="stakes-images" role="group" aria-label="Assistive and collaborative robots">
+        <figure><img class="kinova-image" src="assets/images/kinova.webp" alt="A Kinova assistive arm helping a person eat at home"><figcaption class="media-credit">Image source: <a href="https://www.kinovarobotics.com/fr/produit/jaco" target="_blank" rel="noopener noreferrer">Kinova’s Jaco page</a></figcaption></figure>
+        <figure><img src="assets/images/ur5_hri.png" alt="A person working closely with a UR5 collaborative robot"><figcaption class="media-credit">Image source: <a href="https://link.springer.com/article/10.1007/s00170-020-05363-1" target="_blank" rel="noopener noreferrer">Springer article</a></figcaption></figure>
+        <figure><img src="assets/images/abb_crb.jpeg" alt="A person guiding an ABB collaborative robot by hand"><figcaption class="media-credit">Image source: <a href="https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=10711794" target="_blank" rel="noopener noreferrer">Research article</a></figcaption></figure>
+      </div>
+      <div class="stakes-copy"><p class="lead">Robots have moved from industrial settings into everyday life.</p><p>Assistive and collaborative robots now interact directly with people.</p><p class="red-takeaway">Motion planning with guarantees is essential for safe human–robot interaction.</p></div>
+    </div>
+    <aside class="notes">
+      <p>You could bring the Jaco failure back into the discussion: what would that unexpected motion mean for someone working closely with the robot?</p>
+      <p>You may emphasise why predictable motion matters when people share the workspace or depend on a robot for assistance. This could help students see why guarantees matter.</p>
+      <p>You could follow with: “What can we establish about a motion before we let the robot execute it?”</p>
     </aside>
   </section>
 
