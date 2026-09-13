@@ -3,179 +3,189 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Exercise 02 · Analytical IK for a Wrist-Partitioned 6R Robot | ENG-654</title>
+  <title>Exercise 02 · Build the iiwa 7 inverse kinematics | ENG-654</title>
   <link rel="stylesheet" href="../css/base.css">
   <link rel="stylesheet" href="../css/layouts.css">
   <link rel="stylesheet" href="../css/components.css">
   <link rel="stylesheet" href="../css/reveal.css">
   <link rel="stylesheet" href="../css/navigation.css">
-  <link rel="stylesheet" href="../css/viz.css">
   <link rel="stylesheet" href="../css/exercises.css">
-  <script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']],displayMath:[['\\[','\\]']]}};</script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <link rel="stylesheet" href="../css/exercise-01-answers.css">
+  <link rel="stylesheet" href="../css/exercise-02.css">
+  <link rel="stylesheet" href="../css/exercise-02-equations.css">
+  <script type="importmap">
+  { "imports": { "three": "../vendor/three/build/three.module.js", "three/addons/": "../vendor/three/examples/jsm/" } }
+  </script>
 </head>
-<body class="mode-deck narrative-lecture exercise-deck exercise-02">
-<main id="deck" class="deck">
+<body class="mode-scroll narrative-lecture exercise-deck exercise-02">
+<header class="answer-toolbar ex02-toolbar" aria-label="Exercise responses">
+  <a class="answer-home" href="../">ENG-654</a><strong>Exercise 02</strong>
+  <span id="progress" aria-live="polite">Start with q₃</span>
+  <div class="answer-actions ex02-actions"><button id="download-responses" type="button">Download responses</button>
+  <label class="answer-upload ex02-upload">Load saved responses<input id="load-responses" type="file" accept=".json,application/json"></label></div>
+  <p id="file-status" class="answer-status" role="status" aria-live="polite">Metres · radians · saved in this browser</p>
+</header>
+<noscript><p class="ex02-noscript">Enable JavaScript to build equations and check your answers.</p></noscript>
+<main id="deck" class="deck" data-default-mode="mode-scroll" data-interactive-exercise="exercise_02">
+<section class="slide title-slide exercise-slide">
+  <div class="title-slide-content">
+  <p class="eyebrow">ENG-654 · Exercise 02</p>
+  <h1 class="course-title">Build the iiwa 7 inverse kinematics</h1>
+  <p class="subtitle">One fixed joint. A positioning arm. A spherical wrist.<br>Derive the branches, then decide which the robot can reach.</p>
+  <div class="exercise-tags"><span>01 · Reduce</span><span>02 · Derive</span><span>03 · Verify</span></div>
+  <p class="exercise-answer-intro">Work in order. <strong>Check answers</strong> on each slide: <span class="ex02-key correct">light green = correct</span> and <span class="ex02-key incorrect">light red = incorrect</span>. Checks give no replacement answers. Correct answers unlock the next step.</p>
+  <p class="ex02-title-help">Build formulas by dragging or clicking symbol blocks, or type equivalent expressions. Keep every sign branch. At the end, your equations will run on a pose you choose.</p>
+  <a class="ex02-button ex02-start" href="#slide-2">Start the tutorial →</a>
+  </div>
+</section>
 
-  <section class="slide title-slide exercise-slide">
-    <div class="title-slide-content">
-      <p class="eyebrow">ENG-654 · Exercise 02</p>
-      <h1 class="course-title">Derive the 6R Inverse Kinematics</h1>
-      <p class="subtitle">Exploit a spherical wrist, solve the positioning chain without losing roots, and recover every regular orientation branch.</p>
-      <div class="exercise-tags"><span>wrist partition</span><span>3R position IK</span><span>branch enumeration</span><span>FK validation</span></div>
-      <p class="exercise-promise">The goal is not one converged configuration. The goal is an explicit, auditable map from a desired pose to all real branches admitted by the custom robot.</p>
-    </div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Learning objective</p>
-    <h2 class="slide-title">Turn one six-dimensional pose equation into two solvable subproblems</h2>
-    <div class="ex-objective">
-      <div class="ex-question">
-        <strong>Which geometric property makes analytical partitioning possible?</strong>
-        <p>The axes of joints 4–6 intersect at one wrist point. Joints 1–3 place that point; joints 4–6 supply the residual orientation.</p>
-        <p><a class="ex-file" href="../assets/models/custom_6R/custom_6R_new.urdf">assets/models/custom_6R/custom_6R_new.urdf</a></p>
-      </div>
-      <div class="ex-steps reveal-children">
-        <div class="ex-step"><span>1</span><p>Remove the known tool transform and compute the desired wrist frame.</p></div>
-        <div class="ex-step"><span>2</span><p>Solve every real branch of the 3R wrist-position problem.</p></div>
-        <div class="ex-step"><span>3</span><p>For each arm branch, solve the residual spherical-wrist orientation.</p></div>
-        <div class="ex-step"><span>4</span><p>Validate full pose, branch uniqueness, singularity, and limits.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Partition at the wrist</p>
-    <h2 class="slide-title">Remove the complete tool transform before solving position</h2>
-    <p class="ex-subtitle">Let the desired tool pose be \({}^0T_t=[R_d,p_d]\), and let the constant wrist-to-tool transform from the model be \({}^wT_t=[R_{wt},p_{wt}]\).</p>
-    <div class="ex-grid-2">
-      <div class="ex-equation red">
-        \[
-        {}^0T_w={}^0T_t({}^wT_t)^{-1},\qquad
-        R_w=R_dR_{wt}^{\top},\qquad
-        p_w=p_d-R_dR_{wt}^{\top}p_{wt}
-        \]
-      </div>
-      <div class="ex-card black">
-        <h3>Evidence to show</h3>
-        <ul>
-          <li>Identify the wrist intersection in the course model.</li>
-          <li>Write the exact fixed transforms between joint 3, the wrist frame, and the tool.</li>
-          <li>Verify that joints 4–6 do not move \(p_w\).</li>
-          <li>Keep position and orientation in the same base-frame convention.</li>
-        </ul>
-      </div>
-    </div>
-    <div class="ex-caveat">The shortcut \(p_w=p_d-\ell R_d\hat z\) is valid only when the wrist-to-tool transform is a pure offset of length \(\ell\) along that specified tool axis. Use the full transform for the custom robot.</div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Position IK decision tree</p>
-    <h2 class="slide-title">Check \(a_1=0\) before choosing the shoulder equations</h2>
-    <div class="ex-decision">
-      <article>
-        <h3>Intersecting first axes: \(a_1=0\)</h3>
-        <ul>
-          <li>For \(\rho=\sqrt{x_w^2+y_w^2}>0\), reduce the target to a meridian plane and retain every valid shoulder direction implied by the remaining offsets.</li>
-          <li>For \(\rho=0\), \(q_1\) may be undetermined: treat it as a base-axis singular subcase, not one numerical angle.</li>
-          <li>Solve the remaining two-link geometry for both elbow signs whenever its discriminant is positive.</li>
-        </ul>
-      </article>
-      <i>or</i>
-      <article>
-        <h3>Offset first axes: \(a_1\neq0\)</h3>
-        <ul>
-          <li>Do not assume \(q_1=\operatorname{atan2}(y_w,x_w)\).</li>
-          <li>Derive the robot-specific shoulder equation \(A\sin q_1+B\cos q_1=C\).</li>
-          <li>When \(A^2+B^2>0\), test \(\Delta=A^2+B^2-C^2\): negative gives no solution, zero one tangent root, and positive two candidates.</li>
-          <li>If \(A=B=0\), solve separately: \(C=0\) leaves \(q_1\) arbitrary; \(C\ne0\) is infeasible.</li>
-        </ul>
-      </article>
-    </div>
-    <div class="ex-takeaway">After selecting a shoulder candidate, substitute it back into the original position equations and determine which elbow subcase the custom geometry produces.</div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Enumerate without losing solutions</p>
-    <h2 class="slide-title">Every algebraic division creates a subcase you must preserve</h2>
-    <div class="ex-grid-2">
-      <div class="ex-steps reveal-children">
-        <div class="ex-step"><span>1</span><p>Write the three scalar equations \(p_w=f_p(q_1,q_2,q_3)\) from your own forward model.</p></div>
-        <div class="ex-step"><span>2</span><p>Eliminate variables geometrically or with \(t_i=\tan(q_i/2)\); record every factor you divide by.</p></div>
-        <div class="ex-step"><span>3</span><p>Solve the zero-factor cases separately, including roots at \(t_i=\infty\), which represent \(q_i=\pi\).</p></div>
-        <div class="ex-step"><span>4</span><p>Back-substitute into the original equations, wrap angles only for comparison, and deduplicate modulo \(2\pi\).</p></div>
-      </div>
-      <div class="ex-card red">
-        <h3>Root ledger</h3>
-        <table class="ex-table" aria-label="Inverse kinematics root ledger">
-          <thead><tr><th>arm root</th><th>shoulder</th><th>elbow</th><th>position residual</th></tr></thead>
-          <tbody><tr><td>A1</td><td>\(\pm\)</td><td>\(\pm\)</td><td>\(\square\)</td></tr><tr><td>A2</td><td>\(\pm\)</td><td>\(\pm\)</td><td>\(\square\)</td></tr><tr><td>…</td><td>…</td><td>…</td><td>…</td></tr></tbody>
-        </table>
-        <p>Do not assume the final branch count in advance. Derive it for a regular target, then explain why it changes on boundaries or singular sets.</p>
-      </div>
-    </div>
-    <div class="ex-caveat">Clamp quantities such as a computed cosine only within a stated numerical tolerance. A value genuinely outside \([-1,1]\) is evidence that the branch is not real.</div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Orientation IK</p>
-    <h2 class="slide-title">Each arm solution creates its own residual wrist rotation</h2>
-    <div class="ex-grid-2">
+<section class="slide exercise-slide" data-stage="setup">
+  <p class="ex-kicker">01 · Choose the reduced mechanism</p><h2 class="slide-title">Fix the original joint q₃</h2>
+  <div class="stage-lock" role="status">Complete the preceding step to unlock this slide.</div>
+  <div data-stage-content hidden inert>
+<div class="ex-grid-2 ex02-columns"><article class="ex-card black ex02-card"><h3>Use the actual iiwa 7</h3>
+<p>The model runs from <code>world</code> to <code>iiwa_link_ee</code>. Use the supplied joint directions and zeros, including the fixed tool offset.</p>
+<p><a href="../assets/models/iiwa7/iiwa7.urdf" download>Download iiwa7.urdf</a></p>
+<p>Lock original q₃ = φ. The remaining six joints still move. In the reduced home configuration, all six remaining coordinates are zero while q₃ stays at φ.</p>
+</article><article class="ex-card black ex02-card"><h3>Choose φ in radians</h3>
+<label class="ex02-field"><span>Fixed q₃ = φ</span><input id="fixed-q3" type="text" value="pi/6" maxlength="120" autocomplete="off" aria-describedby="phi-help"></label>
+<p id="phi-help">Start with <code>pi/6</code> (30°). The URDF permits −170° to 170°. Expressions such as <code>pi/4</code> are accepted.</p>
+<button id="apply-q3" class="primary" type="button">Fix q₃ and update the model</button><p id="setup-message" role="status"></p>
+<p class="ex02-note">Changing φ restarts the dependent steps. Download your work first if you want to keep another version.</p>
+<a data-continue="setup" class="ex02-next" hidden>Inspect the updated model →</a></article></div></div>
+</section>
+<section class="slide exercise-slide" data-stage="model">
+  <p class="ex-kicker">02 · Automatic model update</p><h2 class="slide-title">One mechanism, two representations</h2>
+  <div class="stage-lock" role="status">Complete the preceding step to unlock this slide.</div>
+  <div data-stage-content hidden inert>
+<p>Fixed q₃ = <strong data-phi></strong> rad. Toggle between the same exact forward models.</p>
+<div class="ex02-segment" role="group" aria-label="Kinematic representation"><button data-representation="dh" aria-pressed="true" type="button">D-H parameters</button><button data-representation="poe" aria-pressed="false" type="button">Product of exponentials</button></div>
+<div id="full-representation"></div>
+<div class="ex02-checkbar"><button id="review-model" class="primary" type="button">I have inspected the updated model</button><span data-status="model" role="status"></span><a data-continue="model" class="ex02-next" hidden>Find the wrist point →</a></div></div>
+</section>
+<section class="slide exercise-slide" data-stage="home">
+  <p class="ex-kicker">03 · Identify the wrist</p><h2 class="slide-title">Where do the wrist axes intersect?</h2>
+  <div class="stage-lock" role="status">Complete the preceding step to unlock this slide.</div>
+  <div data-stage-content hidden inert>
+<div class="ex-grid-2 ex02-columns"><div><p>At the reduced home, inspect the joint-axis lines and the URDF origins. The wrist centre is their intersection; a CAD link origin need not lie at that intersection.</p>
+<p>Enter p<sub>w,home</sub> in <strong>world</strong> coordinates, in metres. Use at least six decimals when needed.</p>
+<div class="ex02-vector"><label class="ex02-field" data-answer-wrap="wrist.home.x"><span>x</span><input data-answer="wrist.home.x" type="text" maxlength="500" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"><small class="answer-result" aria-live="polite"></small></label><label class="ex02-field" data-answer-wrap="wrist.home.y"><span>y</span><input data-answer="wrist.home.y" type="text" maxlength="500" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"><small class="answer-result" aria-live="polite"></small></label><label class="ex02-field" data-answer-wrap="wrist.home.z"><span>z</span><input data-answer="wrist.home.z" type="text" maxlength="500" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="m"><small class="answer-result" aria-live="polite"></small></label></div><fieldset class="ex02-choice" data-answer-wrap="wrist.axes"><legend>Which original joint axes define the spherical wrist?</legend><label><input type="radio" name="wrist.axes" data-answer="wrist.axes" value="4,5,6"><span>Axes 4, 5 and 6</span></label><label><input type="radio" name="wrist.axes" data-answer="wrist.axes" value="5,6,7"><span>Axes 5, 6 and 7</span></label><label><input type="radio" name="wrist.axes" data-answer="wrist.axes" value="3,5,7"><span>Axes 3, 5 and 7</span></label><small class="answer-result" aria-live="polite"></small></fieldset><p class="ex02-note">Home axes may coincide. Their intersection must stay fixed when only the wrist joints rotate. The extended lines pass through the actual URDF joint origins. Use the opacity and frame controls to inspect the geometry.</p></div><div id="home-preview" class="ex02-scene-host"></div></div><div class="ex02-checkbar"><button class="primary" data-check="home" type="button">Check answers</button><span data-status="home" role="status" aria-live="polite"></span><a data-continue="home" class="ex02-next" hidden>Continue →</a></div></div>
+</section>
+<section class="slide exercise-slide" data-stage="partition">
+  <p class="ex-kicker">04 · Separate position and orientation</p><h2 class="slide-title">Extract the positioning 3R chain</h2>
+  <div class="stage-lock" role="status">Complete the preceding step to unlock this slide.</div>
+  <div data-stage-content hidden inert>
+<div class="ex-grid-2 ex02-columns"><fieldset class="ex02-choice" data-answer-wrap="partition.arm"><legend>Which three original coordinates position the wrist centre?</legend><label><input type="radio" name="partition.arm" data-answer="partition.arm" value="1,2,3"><span>q₁, q₂, q₃</span></label><label><input type="radio" name="partition.arm" data-answer="partition.arm" value="1,2,4"><span>q₁, q₂, q₄</span></label><label><input type="radio" name="partition.arm" data-answer="partition.arm" value="2,4,5"><span>q₂, q₄, q₅</span></label><small class="answer-result" aria-live="polite"></small></fieldset><fieldset class="ex02-choice" data-answer-wrap="partition.wrist"><legend>Which coordinates remain for the wrist orientation?</legend><label><input type="radio" name="partition.wrist" data-answer="partition.wrist" value="4,5,6"><span>q₄, q₅, q₆</span></label><label><input type="radio" name="partition.wrist" data-answer="partition.wrist" value="3,6,7"><span>q₃, q₆, q₇</span></label><label><input type="radio" name="partition.wrist" data-answer="partition.wrist" value="5,6,7"><span>q₅, q₆, q₇</span></label><small class="answer-result" aria-live="polite"></small></fieldset></div><div class="ex02-checkbar"><button class="primary" data-check="partition" type="button">Check answers</button><span data-status="partition" role="status" aria-live="polite"></span><a data-continue="partition" class="ex02-next" hidden>Continue →</a></div>
+<div id="arm-representation-area" hidden><p class="ex02-formula">(θ₁, θ₂, θ₃) = (q₁, q₂, q₄)</p>
+<p>From now on <strong>θ₃ means original q₄</strong>; original q₃ remains fixed at φ.</p>
+<div class="ex02-segment" role="group" aria-label="Positioning arm representation"><button data-representation="dh" aria-pressed="true" type="button">D-H factors</button><button data-representation="poe" aria-pressed="false" type="button">PoE screws</button></div><div id="arm-representation"></div></div></div>
+</section>
+<section class="slide exercise-slide" data-stage="method">
+  <p class="ex-kicker">05 · Choose the method</p><h2 class="slide-title">Which IK method would you use?</h2>
+  <div class="stage-lock" role="status">Complete the preceding step to unlock this slide.</div>
+  <div data-stage-content hidden inert>
+    <div class="ex-grid-2 ex02-columns">
       <div>
-        <div class="ex-equation red">\[{}^3R_w(q_4,q_5,q_6)=\bigl({}^0R_3(q_1,q_2,q_3)\bigr)^\top R_w\]</div>
-        <p class="ex-subtitle">Match this matrix to the actual joint-axis sequence of the custom wrist. Do not import a Z–Y–Z formula unless the model has that sequence.</p>
+        <p>Inspect the reduced robot and the kinematic model you obtained in the previous steps. Choose a method for its position inverse kinematics and justify your choice in your working notes.</p>
+        <fieldset class="ex02-choice" data-answer-wrap="method">
+          <legend>Choose an IK method</legend>
+          <label><input type="radio" name="method" data-answer="method" value="algebraic"><span>Algebraic elimination</span></label>
+          <label><input type="radio" name="method" data-answer="method" value="geometric"><span>Paden–Kahan subproblems</span></label>
+          <small class="answer-result" aria-live="polite"></small>
+        </fieldset>
+        <div class="ex02-checkbar"><button class="primary" data-check="method" type="button">Check answers</button><span data-status="method" role="status" aria-live="polite"></span><a data-continue="method" class="ex02-next" hidden>Continue →</a></div>
+        <p id="method-remediation" hidden><a class="ex02-button" href="../lectures/lecture_02.html#slide-30" target="_blank" rel="noopener noreferrer">Revisit the method conditions in Lecture 02 ↗</a></p>
       </div>
-      <div class="ex-card green">
-        <h3>Regular wrist</h3>
-        <p>Use robust <code>atan2</code> expressions to recover the two flip-related solutions. Substitute both into the residual rotation.</p>
-        <h3>Wrist singularity</h3>
-        <p>When the middle-angle sine vanishes, axes 4 and 6 align. Their angles become coupled; report the family relation instead of dividing by zero.</p>
-      </div>
+      <div id="method-preview" class="ex02-scene-host"></div>
     </div>
-    <div class="ex-takeaway">Branch labels are bookkeeping, not proof. A shoulder/elbow/wrist label is valid only after the recovered joint vector reproduces the desired pose.</div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Validation campaign</p>
-    <h2 class="slide-title">Challenge the solver with poses whose answer you already know</h2>
-    <div class="ex-grid-3">
-      <div class="ex-card red">
-        <h3>Pose closure</h3>
-        <div class="ex-equation compact">\[e_p=\|p(q)-p_d\|_2,\quad e_R=\|\log(R_d^\top R(q))\|_2\]</div>
-        <p>Report tolerances and residuals for every returned branch.</p>
-      </div>
-      <div class="ex-card green">
-        <h3>Branch completeness</h3>
-        <p>Generate targets from known random configurations. Verify that the source configuration is recovered modulo periodicity and that all returned roots are distinct.</p>
-      </div>
-      <div class="ex-card yellow">
-        <h3>Physical filtering</h3>
-        <p>First enumerate mathematical roots; then apply joint limits. Keep rejected roots in the report so the loss of each branch is explainable.</p>
-      </div>
-    </div>
-    <div class="ex-caveat">Test regular targets, workspace-boundary targets, \(a_1\)-specific subcases, and wrist-singular orientations. A solver tested only on one friendly pose is not validated.</div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Submission and reflection</p>
-    <h2 class="slide-title">What changes when the robot has seven joints?</h2>
-    <div class="ex-grid-2">
-      <div class="ex-checklist reveal-children">
-        <div class="ex-check"><span>✓</span><p>Wrist-frame derivation, including the nontrivial tool transform.</p></div>
-        <div class="ex-check"><span>✓</span><p>Decision tree for \(a_1=0\), \(a_1\neq0\), and every zero-denominator subcase.</p></div>
-        <div class="ex-check"><span>✓</span><p>Complete arm/wrist branch ledger with singular cases identified.</p></div>
-        <div class="ex-check"><span>✓</span><p>Solver code and FK/limit validation results for a target suite.</p></div>
-      </div>
-      <div class="ex-question">
-        <strong>Reflection: KUKA LBR iiwa 7</strong>
-        <p>A regular 7R pose has a one-dimensional inverse image, not isolated roots. Explain how you would choose a redundancy coordinate—such as \(q_3\) or an elbow-swivel angle—solve finite branches at fixed values, and continue the resulting family. What happens when that coordinate reaches a chart fold?</p>
-      </div>
-    </div>
-    <div class="ex-deliverable"><strong>Deliverables:</strong> symbolic/geometric derivation, decision tree, implementation, branch table, validation report, and the 7R reflection.</div>
-  </section>
-
+  </div>
+</section>
+<section class="slide exercise-slide" data-stage="elbow">
+  <p class="ex-kicker">06 · Paden–Kahan subproblem 3</p><h2 class="slide-title">Remove θ₁ and θ₂ with a distance</h2>
+  <div class="stage-lock" role="status">Complete the preceding step to unlock this slide.</div>
+  <div data-stage-content hidden inert>
+<p>Paden–Kahan subproblem 3 finds the rotation that puts a point at a prescribed distance from another point. The first two arm axes meet at the shoulder, so their rotations preserve the shoulder-to-wrist distance. Use this distance to solve θ₃, then recover θ₂ and θ₁ by Cramer’s rule.</p>
+<p>For a desired tool pose T<sub>d</sub> = [R<sub>d</sub>, p<sub>d</sub>], the wrist point is p<sub>w</sub> = p<sub>d</sub> − 0.126 R<sub>d</sub>e<sub>z</sub>. The offset 0.126 m includes 0.081 m in the last joint and the 0.045 m fixed tool.</p>
+<div class="ex-grid-2 ex02-columns"><article class="ex-card black ex02-card"><h3>Coordinates from the shoulder</h3>
+<p class="ex02-formula">x = p<sub>w,x</sub>, y = p<sub>w,y</sub>, z = p<sub>w,z</sub> − H<br>ρ² = x² + y², R = ρ² + z²</p>
+<p>H = 0.34 m; L = U = 0.40 m. Here R is a <strong>squared distance</strong>; rotation matrices always carry a subscript.</p>
+</article><article class="ex-card black ex02-card"><h3>The reduced FK gives</h3>
+<p class="ex02-formula">A = L + U c₃<br>B = −U cos(φ) s₃, C = −U sin(φ) s₃<br>E = A s₂ + B c₂, z = A c₂ − B s₂<br>x = c₁E − s₁C, y = s₁E + c₁C</p></article></div>
+<p>Write cᵢ = cos(θᵢ), sᵢ = sin(θᵢ). Expand x² + y² + z² and cancel the rotations. Build R first, then solve for c₃, both signs of s₃, and θ₃. <code>sigma3</code> takes +1 and −1. Use <code>^</code> for powers and <code>atan2(y,x)</code> for quadrant-aware angles.</p>
+<div id="elbow-builder"></div><div class="ex02-checkbar"><button class="primary" data-check="elbow" type="button">Check answers</button><span data-status="elbow" role="status" aria-live="polite"></span><a data-continue="elbow" class="ex02-next" hidden>Continue →</a></div></div>
+</section>
+<section class="slide exercise-slide" data-stage="radial">
+  <p class="ex-kicker">07 · Keep the projection sign</p><h2 class="slide-title">Why can E have two values?</h2>
+  <div class="stage-lock" role="status">Complete the preceding step to unlock this slide.</div>
+  <div data-stage-content hidden inert>
+<div class="ex-grid-2 ex02-columns"><article class="ex-card black ex02-card"><h3>A signed distance, not a radius</h3>
+<p>E is the component of the wrist projection along the first link’s rotating radial direction. C is its perpendicular component.</p>
+<p class="ex02-formula">[x, y]ᵀ = R<sub>z,2D</sub>(θ₁) [E, C]ᵀ<br>ρ² = E² + C²</p>
+<svg viewBox="0 0 360 220" class="ex02-projection" role="img" aria-labelledby="projection-title projection-desc">
+<title id="projection-title">Two signed radial projections at one perpendicular offset</title><desc id="projection-desc">A circle of radius rho centred on axis one intersects the line of fixed perpendicular component C twice, giving positive and negative E.</desc>
+<circle cx="170" cy="112" r="82" fill="none" stroke="#111" stroke-width="1.7"/>
+<path d="M48 112H290 M170 18V202" stroke="#aaa" stroke-width="1" fill="none"/>
+<path d="M67 77H274" stroke="#f00" stroke-width="2"/>
+<path d="M170 112L244.16 77 M95.84 77V112 M244.16 77V112" stroke="#666" stroke-width="1.5" fill="none" stroke-dasharray="4 4"/>
+<circle cx="95.84" cy="77" r="5" fill="#f00"/><circle cx="244.16" cy="77" r="5" fill="#f00"/>
+<circle cx="170" cy="112" r="3" fill="#111"/>
+<g fill="#111" font-family="Georgia, serif" font-size="15"><text x="77" y="65">E &lt; 0</text><text x="229" y="65">E &gt; 0</text><text x="281" y="82">v = C</text><text x="194" y="109">ρ</text><text x="153" y="135">axis 1</text><text x="283" y="130">u</text></g>
+<text x="170" y="217" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#555">Top view in axes rotated by θ₁ · u = E, v = C</text>
+</svg>
+<p>For each elbow sign, C = −U sin(φ)s₃ is known. Build both E values with <code>sigmaE</code> = ±1. Use <code>rho</code> for ρ or <code>rho2</code> for ρ².</p>
+</article><fieldset class="ex02-choice" data-answer-wrap="arm.signReason"><legend>Why must both E signs be retained?</legend><label><input type="radio" name="arm.signReason" data-answer="arm.signReason" value="elbow-only"><span>They are merely the two signs of s₃, so one E sign is sufficient.</span></label><label><input type="radio" name="arm.signReason" data-answer="arm.signReason" value="squared-projection"><span>Squaring removes the sign of the radial component E; both directions can produce the same ρ².</span></label><label><input type="radio" name="arm.signReason" data-answer="arm.signReason" value="negative-radius"><span>A circle has both a positive radius and a negative radius.</span></label><small class="answer-result" aria-live="polite"></small></fieldset></div><div id="radial-builder"></div>
+<p class="ex02-note">A negative radicand gives no real branch. A zero radicand merges the two E branches. The generic case has two elbow signs × two E signs.</p><div class="ex02-checkbar"><button class="primary" data-check="radial" type="button">Check answers</button><span data-status="radial" role="status" aria-live="polite"></span><a data-continue="radial" class="ex02-next" hidden>Continue →</a></div></div>
+</section>
+<section class="slide exercise-slide" data-stage="backsub">
+  <p class="ex-kicker">08 · Back-substitute</p><h2 class="slide-title">Two small systems, two angles</h2>
+  <div class="stage-lock" role="status">Complete the preceding step to unlock this slide.</div>
+  <div data-stage-content hidden inert>
+<p>For each pair (σ₃, σ<sub>E</sub>), evaluate A, B, C and E. Apply Cramer’s rule to recover the cosine and sine together, then use <code>atan2</code>.</p>
+<div class="ex-grid-2 ex02-columns"><article class="ex-card black ex02-card"><h3>Recover θ₂</h3><p class="ex02-formula">B c₂ + A s₂ = E<br>A c₂ − B s₂ = z</p><p>Write the determinant of the 2 × 2 coefficient matrix and replace one column at a time.</p></article><article class="ex-card black ex02-card"><h3>Recover θ₁</h3><p class="ex02-formula">E c₁ − C s₁ = x<br>C c₁ + E s₁ = y</p><p>A vanishing determinant needs a separate singular-case analysis. Do not silently divide by zero.</p></article></div>
+<div id="backsub-builder"></div><div class="ex02-checkbar"><button class="primary" data-check="backsub" type="button">Check answers</button><span data-status="backsub" role="status" aria-live="polite"></span><a data-continue="backsub" class="ex02-next" hidden>Continue →</a></div><div id="arm-results" hidden></div></div>
+</section>
+<section class="slide exercise-slide" data-stage="wrist">
+  <p class="ex-kicker">09 · Solve the remaining orientation</p><h2 class="slide-title">Which rotation must the wrist supply?</h2>
+  <div class="stage-lock" role="status">Complete the preceding step to unlock this slide.</div>
+  <div data-stage-content hidden inert>
+<p>Let R<sub>03</sub> be the rotation at the end of the <strong>reduced</strong> 3R arm: this is the teaching D-H frame after original joint 4. It is not the URDF link-3 frame.</p>
+<p class="ex02-formula">R<sub>d</sub> = R<sub>03</sub> R<sub>w</sub></p>
+<div class="ex-grid-2 ex02-columns"><fieldset class="ex02-choice" data-answer-wrap="wrist.relative"><legend>How do you obtain the required wrist rotation?</legend><label><input type="radio" name="wrist.relative" data-answer="wrist.relative" value="target-arm-transpose"><span>Rw = Rd R03ᵀ</span></label><label><input type="radio" name="wrist.relative" data-answer="wrist.relative" value="arm-transpose-target"><span>Rw = R03ᵀ Rd</span></label><label><input type="radio" name="wrist.relative" data-answer="wrist.relative" value="arm-target"><span>Rw = R03 Rd</span></label><small class="answer-result" aria-live="polite"></small></fieldset><fieldset class="ex02-choice" data-answer-wrap="wrist.convention"><legend>Under the displayed D-H convention, the remaining wrist is…</legend><label><input type="radio" name="wrist.convention" data-answer="wrist.convention" value="xyz"><span>Rx(q₅) Ry(q₆) Rz(q₇): X-Y-Z</span></label><label><input type="radio" name="wrist.convention" data-answer="wrist.convention" value="zyz"><span>Rz(q₅) Ry(q₆) Rz(q₇): Z-Y-Z</span></label><label><input type="radio" name="wrist.convention" data-answer="wrist.convention" value="zxz"><span>Rz(q₅) Rx(q₆) Rz(q₇): Z-X-Z</span></label><small class="answer-result" aria-live="polite"></small></fieldset></div>
+<p>Multiply your selected elementary rotations. Use the (3,3) entry to find the middle angle; the last column and last row determine the outer angles.</p>
+<div class="ex-grid-2 ex02-columns"><label class="ex02-field" data-answer-wrap="wrist.r33"><span>(Rw)₃₃ =</span><input data-answer="wrist.r33" type="text" maxlength="500" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="expression in q6"><small class="answer-result" aria-live="polite"></small></label><fieldset class="ex02-choice" data-answer-wrap="wrist.count"><legend>For a nonsingular orientation, how many wrist branches?</legend><label><input type="radio" name="wrist.count" data-answer="wrist.count" value="1"><span>One</span></label><label><input type="radio" name="wrist.count" data-answer="wrist.count" value="2"><span>Two</span></label><label><input type="radio" name="wrist.count" data-answer="wrist.count" value="4"><span>Four</span></label><small class="answer-result" aria-live="polite"></small></fieldset></div><div class="ex02-checkbar"><button class="primary" data-check="wrist" type="button">Check answers</button><span data-status="wrist" role="status" aria-live="polite"></span><a data-continue="wrist" class="ex02-next" hidden>Continue →</a></div><div id="wrist-example" hidden></div></div>
+</section>
+<section class="slide exercise-slide" data-stage="verify">
+  <p class="ex-kicker">10 · Put your equations to work</p><h2 class="slide-title">Verify the complete IK branches</h2>
+  <div class="stage-lock" role="status">Complete the preceding step to unlock this slide.</div>
+  <div data-stage-content hidden inert>
+<p>The reference target is generated by FK with q = <span id="lesson-q"></span> rad. The original q₃ is your chosen φ. Your validated equation blocks will calculate the arm; the chosen wrist convention completes each solution.</p><div id="lesson-target" class="ex02-matrix-host"></div>
+<div class="ex-grid-2 ex02-columns"><label class="ex02-field" data-answer-wrap="branches.count"><span>For this target, how many distinct complete solutions do you expect?</span><input data-answer="branches.count" type="text" maxlength="500" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="integer"><small class="answer-result" aria-live="polite"></small></label><p id="lesson-geometry-note"></p></div><div class="ex02-checkbar"><button class="primary" data-check="verify" type="button">Check count and run my IK</button><span data-status="verify" role="status" aria-live="polite"></span><a data-continue="verify" class="ex02-next" hidden>Continue →</a></div><div id="lesson-results" hidden></div>
+<p class="ex02-note">Eight solutions is the regular maximum for this fixed-q₃ construction. At singular poses, discrete branches can merge or become continuous families. Always verify against the original seven-joint FK before applying joint limits.</p></div>
+</section>
+<section class="slide exercise-slide" data-stage="pose">
+  <p class="ex-kicker">11 · Choose your own target</p><h2 class="slide-title">Generate a pose through FK</h2>
+  <div class="stage-lock" role="status">Complete the preceding step to unlock this slide.</div>
+  <div data-stage-content hidden inert>
+<p>Move the six active joints within their URDF limits. Original q₃ stays fixed. This supplies a reachable tool pose; your IK must recover all of its branches, including those outside the joint limits.</p>
+<div class="ex-grid-2 ex02-columns"><div><div id="target-sliders"></div><button id="reset-target" type="button">Restore reference pose</button><p id="pose-message" role="status"></p></div><div id="target-preview" class="ex02-scene-host"></div></div>
+<div id="own-target" class="ex02-matrix-host"></div>
+<div class="ex02-checkbar"><button id="solve-own" class="primary" type="button">Run my IK on this pose</button><span id="own-solve-status" role="status"></span><a data-continue="pose" class="ex02-next" hidden>Check the joint limits →</a></div></div>
+</section>
+<section class="slide exercise-slide" data-stage="limits">
+  <p class="ex-kicker">12 · Decide which branches are usable</p><h2 class="slide-title">Same tool pose, different joint configurations</h2>
+  <div class="stage-lock" role="status">Complete the preceding step to unlock this slide.</div>
+  <div data-stage-content hidden inert>
+<p>Select a branch to compare its robot configuration with the target. Every listed branch has passed the full FK check. Classify each one using <strong>all seven</strong> URDF joint limits.</p>
+<div id="limit-reference"></div><div id="own-results"></div>
+<div class="ex-grid-2 ex02-columns"><div id="branch-preview" class="ex02-scene-host"></div><article class="ex-card black ex02-card"><h3>Keep the two checks separate</h3><p>A mathematical IK solution must reproduce the position and orientation. A physically allowed solution must also respect every joint limit.</p><p>Angles are reported in [−π, π]. None of these joints has a ±2π permitted interval, so wrapping a rejected angle by one turn cannot rescue it.</p><p>Joint limits alone do not check collisions or plan a safe motion between configurations.</p><p id="limit-summary" role="status"></p></article></div><div class="ex02-checkbar"><button class="primary" data-check="limits" type="button">Check answers</button><span data-status="limits" role="status" aria-live="polite"></span><a data-continue="limits" class="ex02-next" hidden>Continue →</a></div><div id="completion" class="ex02-complete" hidden><h3>Tutorial complete</h3><p>You reduced the model, built and ran the arm IK, solved the wrist and classified the branches. Download your responses using the toolbar to keep your equations, chosen pose and joint-limit decisions.</p></div></div>
+</section>
 </main>
+<script src="../js/exercises/exercise-02-expressions.js"></script>
+<script src="../js/exercises/exercise-02-model.js"></script>
+<script src="../js/exercises/exercise-02-equations.js"></script>
+<script src="../js/exercises/exercise-02-scene.js"></script>
+<script src="../js/exercises/exercise-02-tutorial.js"></script>
+<script src="../js/exercises/exercise-02.js"></script>
 <script src="../js/deck/nav-runtime.js"></script>
 </body>
 </html>

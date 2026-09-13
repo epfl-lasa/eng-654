@@ -4,7 +4,7 @@
   margin-inline: auto;
 }
 
-.exercise-01 .course-title { max-width: 18ch; }
+:is(.exercise-01, .exercise-02) .course-title { max-width: 18ch; }
 
 .exercise-deck .slide-title {
   margin-bottom: .42rem;

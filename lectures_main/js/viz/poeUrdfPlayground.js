@@ -49,7 +49,13 @@ function sceneKit(stage, cameraPosition = [4.5, 3.2, 4.2]) {
   controls.enableDamping = true; controls.dampingFactor = 0.08; controls.target.set(0.8, 0.4, 0.5); controls.update();
   const resize = () => resizeRendererToContainer(renderer, camera, stage);
   const observer = new ResizeObserver(resize); observer.observe(stage); resize();
-  function animate() { sceneControls.syncLabels(); controls.update(); renderer.render(scene, camera); requestAnimationFrame(animate); }
+  function animate() {
+    sceneControls.syncLabels();
+    // A marker drag also pauses residual camera damping, keeping its drag plane steady.
+    if (controls.enabled) controls.update();
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
   requestAnimationFrame(animate);
   return { camera, renderer, world, controls, sceneControls };
 }
@@ -649,24 +655,40 @@ function enableFrameDrag(kit, visuals, onMove) {
     raycaster.setFromCamera(pointer, kit.camera);
   }
   canvas.addEventListener('pointerdown', (event) => {
+    // Claim a marker drag before OrbitControls starts its own pointer gesture.
+    // Empty-space drags and the other mouse buttons still belong to the camera.
+    if (active) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      return;
+    }
+    if (event.button !== 0 || event.isPrimary === false) return;
     rayFromEvent(event); kit.world.updateMatrixWorld(true);
     const hits = raycaster.intersectObjects(visuals.map((v) => v.marker), false); if (!hits.length) return;
-    active = hits[0].object.userData.dragFrame;
-    const visual = visuals.find((v) => v.marker.userData.dragFrame === active);
+    const frameId = hits[0].object.userData.dragFrame;
+    const visual = visuals.find((v) => v.marker.userData.dragFrame === frameId);
+    active = { frameId, pointerId: event.pointerId, controlsEnabled: kit.controls.enabled };
     const renderedPosition = visual.marker.getWorldPosition(new THREE.Vector3());
     plane.constant = -renderedPosition.y;
+    event.preventDefault(); event.stopImmediatePropagation();
     kit.controls.enabled = false; canvas.setPointerCapture(event.pointerId);
-  });
+  }, { capture: true });
   canvas.addEventListener('pointermove', (event) => {
-    if (!active) return; rayFromEvent(event);
+    if (!active || active.pointerId !== event.pointerId) return;
+    if (!canvas.hasPointerCapture(event.pointerId)) { stop(event); return; }
+    rayFromEvent(event);
     const hit = new THREE.Vector3();
-    if (raycaster.ray.intersectPlane(plane, hit)) onMove(active, kit.world.worldToLocal(hit.clone()));
+    if (raycaster.ray.intersectPlane(plane, hit)) onMove(active.frameId, kit.world.worldToLocal(hit.clone()));
   });
   function stop(event) {
-    if (!active) return; active = null; kit.controls.enabled = true;
-    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    if (!active || (event.pointerId !== undefined && event.pointerId !== active.pointerId)) return;
+    const { pointerId, controlsEnabled } = active;
+    active = null;
+    kit.controls.enabled = controlsEnabled;
+    if (canvas.hasPointerCapture(pointerId)) canvas.releasePointerCapture(pointerId);
   }
   canvas.addEventListener('pointerup', stop); canvas.addEventListener('pointercancel', stop);
+  canvas.addEventListener('lostpointercapture', stop);
+  window.addEventListener('blur', stop);
 }
 
 function numbers(value, length) {

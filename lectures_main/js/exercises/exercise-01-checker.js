@@ -2,9 +2,9 @@
 (function (root, factory) {
     'use strict';
     const numbers = typeof module === 'object' && module.exports
-        ? require('../../js/exercises/exercise-01-numbers.js') : root.Exercise01Numbers;
+        ? require('./exercise-01-numbers.js') : root.Exercise01Numbers;
     const visualOrigins = typeof module === 'object' && module.exports
-        ? require('../../js/exercises/exercise-01-visual-origins.js') : root.Exercise01VisualOrigins;
+        ? require('./exercise-01-visual-origins.js') : root.Exercise01VisualOrigins;
     const checker = factory(numbers.parseNumber, visualOrigins.initialVisualOrigins);
     if (typeof module === 'object' && module.exports) module.exports = checker;
     // Browser feedback has no answer-key getter. Reference helpers are only

@@ -99,10 +99,11 @@ export function initPumaIiwaIkDemos() {
 
 function createDemo(container) {
   container.classList.add('ik6r-demo');
-  container.innerHTML = '<div class="ik6r-canvas"></div><p class="ik6r-note"></p><div class="ik6r-controls"></div>';
+  container.innerHTML = '<div class="ik6r-canvas"></div><p class="ik6r-note"></p><div class="ik6r-controls"></div><div class="ik6r-display-controls"></div>';
   const stage = container.querySelector('.ik6r-canvas');
   const note = container.querySelector('.ik6r-note');
   const controlsHost = container.querySelector('.ik6r-controls');
+  const displayControlsHost = container.querySelector('.ik6r-display-controls');
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xfcfcfc);
   const camera = new THREE.PerspectiveCamera(38, 1, .005, 100);
@@ -115,7 +116,7 @@ function createDemo(container) {
   light.position.set(4, 6, 8);
   scene.add(light);
   const world = createZUpWorld(scene);
-  world.userData.sceneControls = createSceneControlPanel(stage, world, { labels: false });
+  world.userData.sceneControls = createSceneControlPanel(displayControlsHost, world, { labels: false });
   world.userData.labelSprites = [];
   world.userData.labelsVisible = true;
   const grid = new THREE.GridHelper(2.8, 28, 0xcccccc, 0xe8e8e8);
@@ -169,8 +170,8 @@ async function buildPumaSolutions(kit) {
   let selected = 0;
   const robot = await createRobot(kit.world, model, radians(PUMA_IK_DEG[selected]));
   const target = endTransform(model, radians(PUMA_QD_DEG));
-  addFrame(kit, target, .09, 'same T_d');
-  marker(kit, wristFromPumaPose(target), .018, 0xff2020, 'p_w');
+  addFrame(kit, target, .09, 'same T_d', [0, 0, .18]);
+  marker(kit, wristFromPumaPose(target), .018, 0xff2020, 'p_w', [0, 0, -.15]);
   addSelect(kit, 'PUMA IK', PUMA_IK_DEG.map((q, index) => [index,
     `IK ${index + 1} · arm ${Math.floor(index / 2) + 1} · flip ${(index % 2) + 1}`
   ]), (value) => {
@@ -335,22 +336,22 @@ function verifySolutions(model, solutions, targetQ, tolerance, name) {
   });
 }
 
-function marker(kit, position, radius, color, text) {
+function marker(kit, position, radius, color, text, labelOffset = [radius * 2, radius * 2, radius * 3]) {
   const object = new THREE.Mesh(new THREE.SphereGeometry(radius, 22, 14), new THREE.MeshStandardMaterial({ color }));
   object.position.copy(position);
   kit.world.add(object);
-  if (text) addLabel(kit, object, new THREE.Vector3(radius * 2, radius * 2, radius * 3), text, color);
+  if (text) addLabel(kit, object, new THREE.Vector3(...labelOffset), text, color);
   return object;
 }
 
-function addFrame(kit, matrix, scale, label) {
+function addFrame(kit, matrix, scale, label, labelOffset = [0, 0, scale * .8]) {
   const origin = new THREE.Vector3().setFromMatrixPosition(matrix);
   const axes = [new THREE.Vector3(1,0,0), new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,1)];
   [0xe74c3c, 0x35a853, 0x2775ff].forEach((color, index) => {
     const direction = axes[index].transformDirection(matrix).multiplyScalar(scale);
     kit.world.add(new THREE.ArrowHelper(direction.clone().normalize(), origin, scale, color, scale * .24, scale * .12));
   });
-  addLabel(kit, kit.world, origin.clone().add(new THREE.Vector3(0,0,scale * .8)), label);
+  addLabel(kit, kit.world, origin.clone().add(new THREE.Vector3(...labelOffset)), label);
 }
 
 function addLabel(kit, parent, position, text, color = 0x111111) {

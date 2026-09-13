@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const checker = require('../solutions/js/exercise-01-checker.js');
+const checker = require('../js/exercises/exercise-01-checker.js');
 
 const urdf = fs.readFileSync(path.join(__dirname, '../assets/models/iiwa7/iiwa7.urdf'), 'utf8');
 const misalignedUrdf = fs.readFileSync(path.join(__dirname, '../assets/models/iiwa7/kuka_iiwa7_misaligned.urdf'), 'utf8');
@@ -582,7 +582,7 @@ test('Node fixtures are fresh and the browser global exposes no answer-key helpe
     const sandbox = {};
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../js/exercises/exercise-01-numbers.js'), 'utf8'), sandbox);
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../js/exercises/exercise-01-visual-origins.js'), 'utf8'), sandbox);
-    vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../solutions/js/exercise-01-checker.js'), 'utf8'), sandbox);
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../js/exercises/exercise-01-checker.js'), 'utf8'), sandbox);
     assert.equal(sandbox.Exercise01Checker.referenceAnswers, undefined);
     assert.equal(sandbox.Exercise01Checker.referenceForwardKinematics, undefined);
     assert.deepEqual(Object.keys(sandbox.Exercise01Checker).sort(), ['evaluate', 'evaluateDhForwardKinematics', 'evaluatePoeForwardKinematics', 'parseNumber', 'poses', 'tolerances']);

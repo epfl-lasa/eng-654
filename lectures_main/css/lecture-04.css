@@ -85,6 +85,88 @@
 }
 .lecture-04 .ik6r-toggle input { accent-color: var(--epfl-red); }
 
+.lecture-04 .home-description-grid { flex: 0; margin-block: .6rem; }
+.lecture-04 .home-description-grid h3 { margin: 0 0 .4rem; font-size: 1.2rem; }
+.lecture-04 .home-description-grid p { font-size: .92rem; }
+.lecture-04 .home-description-grid .equation { font-size: .8rem; }
+
+.lecture-04 .arm-position-path {
+  flex: 0;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: .65rem;
+  align-items: stretch;
+  margin-block: .5rem;
+}
+
+.lecture-04 .arm-position-path .method-card {
+  min-width: 0;
+  min-height: 0;
+  padding: .65rem .8rem;
+}
+
+.lecture-04 .arm-position-path .method-number { font-size: 1.35rem; }
+.lecture-04 .arm-position-path h3 { margin: .25rem 0; font-size: 1.15rem; }
+.lecture-04 .arm-position-path p { margin: .4rem 0; font-size: .92rem; }
+.lecture-04 .arm-position-path .method-bridge { align-self: center; }
+.lecture-04 .arm-position-slide .ik-callout { font-size: .9rem; }
+
+.lecture-04 .wrist-factor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .65rem;
+  margin-block: .4rem;
+}
+
+.lecture-04 .wrist-factor-grid > .equation {
+  min-width: 0;
+  margin: 0;
+  padding: .3rem;
+  border-top: 3px solid var(--black);
+  background: #fafafa;
+  font-size: .88rem;
+}
+
+.lecture-04 .wrist-matrix-slide mjx-container[display="true"] { margin: .45em 0; }
+.lecture-04 .wrist-matrix-slide .wrist-product { font-size: .92rem; }
+.lecture-04 .wrist-matrix-slide .condition-list { gap: .15rem; font-size: .88rem; }
+.lecture-04 .wrist-matrix-slide .condition-list > div { padding-block: .25rem; }
+
+.lecture-04 .wrist-branches-slide { padding-bottom: 4rem; }
+.lecture-04 .wrist-branches-slide .comparison-grid { flex: 0; margin-block: .6rem; }
+.lecture-04 .wrist-branches-slide .comparison-card h3 { margin: 0; font-size: 1.15rem; }
+.lecture-04 .wrist-branches-slide .comparison-card mjx-container[display="true"] { margin: .4em 0; }
+.lecture-04 .wrist-branches-slide .ik6r-demo { flex: 1; min-height: 16rem; }
+
+.lecture-04 .serial-ik-slide { padding-bottom: 3.5rem; }
+.lecture-04 .serial-ik-slide > .layout-30-70 { flex: 1; }
+.lecture-04 .serial-ik-slide [data-serial-ik] { min-height: 18rem; }
+
+.lecture-04 [data-mode="wrist-branches"],
+.lecture-04 [data-serial-ik] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.lecture-04 [data-mode="wrist-branches"] .ik6r-canvas,
+.lecture-04 [data-serial-ik] .ik6r-canvas { grid-area: 1 / 1 / 2 / -1; }
+.lecture-04 [data-mode="wrist-branches"] .ik6r-note,
+.lecture-04 [data-serial-ik] .ik6r-note {
+  position: relative;
+  inset: auto;
+  grid-area: 2 / 1;
+  margin: .45rem;
+}
+
+.lecture-04 .ik6r-display-controls {
+  grid-area: 2 / 2;
+  z-index: 3;
+  margin: .45rem .45rem .45rem 0;
+}
+
+.lecture-04 .ik6r-display-controls .course-3d-controls { position: static; max-width: none; }
+
 .lecture-04 .wrist-equation {
   border-left: 5px solid #2775ff;
   background: rgba(39,117,255,.06);
@@ -93,6 +175,18 @@
 .lecture-04 .wrist-point-layout,
 .lecture-04 .wrist-flip-layout,
 .lecture-04 .puma-target-layout { align-items: start; }
+
+.lecture-04 :is(
+  [data-mode="partition"],
+  [data-mode="wrist-center"],
+  [data-mode="all-branches"],
+  [data-mode="arm-branches"],
+  [data-mode="fk"]
+) .course-3d-controls {
+  top: auto;
+  bottom: 3.5rem;
+  right: .45rem;
+}
 
 .lecture-04 .solution-count {
   display: grid;
@@ -182,4 +276,10 @@
   .lecture-04 .solution-count { grid-template-columns: 1fr; }
   .lecture-04 .dh-compare-grid { grid-template-columns: 1fr; }
   .lecture-04 .dh-parameter-transfer { grid-template-columns: auto auto auto; }
+  .lecture-04 .arm-position-path { gap: .35rem; }
+  .lecture-04 .arm-position-path .method-card { padding: .5rem; }
+  .lecture-04 .wrist-factor-grid > .equation { font-size: .76rem; }
+  .lecture-04 [data-mode="wrist-branches"] .ik6r-note,
+  .lecture-04 [data-serial-ik] .ik6r-note { grid-column: 1 / -1; }
+  .lecture-04 .ik6r-display-controls { grid-area: 3 / 1 / 4 / -1; justify-self: end; margin-top: 0; }
 }

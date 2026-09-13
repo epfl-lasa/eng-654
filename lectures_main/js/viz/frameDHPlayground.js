@@ -38,7 +38,7 @@ export function initFrameDHPlaygrounds() {
 
 function fail(container, error) {
   container.innerHTML = `<div class="warning">Interactive 3D demo could not start: ${escapeHtml(error.message)}</div>`;
-  console.error('ENG-654 frame/DH visualization failed:', error);
+  console.error('ENG-654 frame/D-H visualization failed:', error);
 }
 
 function createScene(stage, options = {}) {
@@ -712,7 +712,7 @@ function createDHPlayground(container) {
     <div class="dh-stage">
       <p class="dh-stage-note">Click a frame origin to select · drag to orbit · scroll to zoom</p>
     </div>
-    <aside class="dh-panel" aria-label="DH playground controls">
+    <aside class="dh-panel" aria-label="D-H playground controls">
       <details open>
         <summary>Frames</summary>
         <div class="dh-section-body">
@@ -749,7 +749,7 @@ function createDHPlayground(container) {
       </details>
 
       <details open>
-        <summary>Add / edit with standard DH</summary>
+        <summary>Add / edit with standard D-H</summary>
         <div class="dh-section-body">
           <div class="dh-grid-2">
             <div class="dh-field">
@@ -778,7 +778,7 @@ function createDHPlayground(container) {
       </details>
 
       <details open>
-        <summary>Infer DH between two frames</summary>
+        <summary>Infer D-H between two frames</summary>
         <div class="dh-section-body">
           <div class="dh-grid-2">
             <div class="dh-field"><label>Frame A</label><select data-infer-a></select></div>
@@ -787,7 +787,7 @@ function createDHPlayground(container) {
           <div class="dh-result-grid" data-infer-results></div>
           <div class="dh-status" data-infer-status aria-live="polite"></div>
           <table class="dh-matrix" aria-label="Relative homogeneous transformation"><tbody data-infer-matrix></tbody></table>
-          <p class="dh-help">A general rigid transform has 6 DOF; a standard-DH link transform has 4. A non-zero fit residual means the selected frames are not a valid consecutive standard-DH pair.</p>
+          <p class="dh-help">A general rigid transform has 6 DOF; a standard D-H link transform has 4. A non-zero fit residual means the selected frames are not a valid consecutive standard D-H pair.</p>
         </div>
       </details>
 
@@ -796,7 +796,7 @@ function createDHPlayground(container) {
         <div class="dh-section-body dh-checks">
           <label><input type="checkbox" data-toggle-labels checked> labels</label>
           <label><input type="checkbox" data-toggle-zaxes checked> extended z-axes</label>
-          <label><input type="checkbox" data-toggle-links checked> DH construction</label>
+          <label><input type="checkbox" data-toggle-links checked> D-H construction</label>
         </div>
       </details>
     </aside>
@@ -1076,7 +1076,7 @@ function createDHPlayground(container) {
     applyRobotDisplay();
     updateBundledRobotVisuals();
     fitCameraToRobot();
-    els.robotStatus.textContent = 'Default: custom_3R URDF with ' + loadedMeshes + ' STL visuals and DH frames F0–F3.';
+    els.robotStatus.textContent = 'Default: custom_3R URDF with ' + loadedMeshes + ' STL visuals and D-H frames F0–F3.';
   }
 
   function addFrame(spec) {
@@ -1154,7 +1154,7 @@ function createDHPlayground(container) {
     els.inferB.value = 'F1';
     updateInference();
     els.robotStatus.textContent = 'Loading bundled custom_3R URDF and STL visuals…';
-    note('Loaded the custom_3R DH teaching model. F0 is offset from the URDF base by a fixed transform.');
+    note('Loaded the custom_3R D-H teaching model. F0 is offset from the URDF base by a fixed transform.');
     loadBundledCustom3RVisuals().catch((error) => {
       console.error('Bundled custom_3R load failed:', error);
       state.robotMode = 'default';
@@ -1321,8 +1321,8 @@ function createDHPlayground(container) {
     els.inferMatrix.innerHTML = matrixTableHtml(relative, 3);
     els.inferStatus.classList.toggle('is-warning', !inferred.compatible);
     els.inferStatus.innerHTML = inferred.compatible
-      ? `<strong>DH-compatible</strong><span>fit residual ${inferred.residual.toExponential(2)}</span>`
-      : `<strong>Not a consecutive DH pair</strong><span>best 4-parameter fit residual ${inferred.residual.toExponential(2)}</span>`;
+      ? `<strong>D-H-compatible</strong><span>fit residual ${inferred.residual.toExponential(2)}</span>`
+      : `<strong>Not a consecutive D-H pair</strong><span>best 4-parameter fit residual ${inferred.residual.toExponential(2)}</span>`;
   }
 
   function updateAll() {
@@ -1380,7 +1380,7 @@ function createDHPlayground(container) {
     els.inferA.value = parentId;
     els.inferB.value = id;
     updateInference();
-    note(`Added ${name} as a DH child of ${labelForFrame(parentId, state.frames)}.`);
+    note(`Added ${name} as a D-H child of ${labelForFrame(parentId, state.frames)}.`);
   });
 
   els.apply.addEventListener('click', () => {
@@ -1390,7 +1390,7 @@ function createDHPlayground(container) {
     frame.name = uniqueFrameName((els.frameName.value || frame.name).trim() || frame.name, state.frames, frame.id);
     frame.visual.group.userData.frameName = frame.name;
     updateAll();
-    note(`Updated ${frame.name} from the four DH parameters.`);
+    note(`Updated ${frame.name} from the four D-H parameters.`);
   });
 
   els.remove.addEventListener('click', () => {
@@ -1756,7 +1756,7 @@ function createCustom3RDHDemo(container) {
         <div data-q-controls style="margin-top:0.5rem"></div>
       </div>
       <div class="custom3r-card">
-        <strong>Standard DH table</strong>
+        <strong>Standard D-H table</strong>
         <table class="custom3r-table">
           <thead><tr><th>i</th><th>aᵢ [m]</th><th>αᵢ</th><th>dᵢ [m]</th><th>θᵢ</th></tr></thead>
           <tbody>
@@ -1765,7 +1765,7 @@ function createCustom3RDHDemo(container) {
             <tr data-row="3"><td>3</td><td>1.50</td><td>0°</td><td>0.25</td><td>q₃</td></tr>
           </tbody>
         </table>
-        <p class="dh-help">Fixed base transform: \\({}^{W}T_{0}=T_z(1.0\\,\\mathrm{m})\\). The DH frame origin may lie anywhere on the same revolute axis; it need not coincide with the URDF joint-origin point.</p>
+        <p class="dh-help">Fixed base transform: \\({}^{W}T_{0}=T_z(1.0\\,\\mathrm{m})\\). The D-H frame origin may lie anywhere on the same revolute axis; it need not coincide with the URDF joint-origin point.</p>
       </div>
       <div class="custom3r-card">
         <strong>Tool pose \\({}^{W}T_{3}\\)</strong>

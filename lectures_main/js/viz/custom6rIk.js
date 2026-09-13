@@ -133,7 +133,13 @@ function createDemo(container) {
   light.position.set(5, 8, 9);
   scene.add(light);
   const world = createZUpWorld(scene);
-  world.userData.sceneControls = createSceneControlPanel(stage, world, { labels: false });
+  let displayControlsHost = stage;
+  if (container.dataset.mode === 'wrist-branches') {
+    displayControlsHost = document.createElement('div');
+    displayControlsHost.className = 'ik6r-display-controls';
+    container.append(displayControlsHost);
+  }
+  world.userData.sceneControls = createSceneControlPanel(displayControlsHost, world, { labels: false });
   world.userData.labelSprites = [];
   world.userData.labelsVisible = true;
   const grid = new THREE.GridHelper(12, 24, 0xcccccc, 0xe8e8e8);
@@ -293,11 +299,13 @@ async function buildArmBranches(kit) {
 async function buildWristBranches(kit) {
   await loadModel();
   kit.setCamera([9.7, 7.4, 7.4], [3.1, .5, 1.2]);
-  const robot = await createRobot(kit.world, IK_SOLUTIONS_DEG[0].map((angle) => angle * DEG));
-  const target = endEffectorTransform(EXAMPLE_Q_DEG.map((angle) => angle * DEG));
-  addFrame(kit.world, target, .62, 'T_d');
-  marker(kit.world, wristFromPose(target), .14, 0xff0000, 'O_w');
   let selected = 6;
+  const robot = await createRobot(kit.world, IK_SOLUTIONS_DEG[selected].map((angle) => angle * DEG));
+  const target = endEffectorTransform(EXAMPLE_Q_DEG.map((angle) => angle * DEG));
+  const targetFrame = addFrame(kit.world, target, .62, 'T_d');
+  const wristCenter = marker(kit.world, wristFromPose(target), .14, 0xff0000, 'O_w');
+  addToggle(kit, 'target frame', true, (visible) => { targetFrame.visible = visible; });
+  addToggle(kit, 'wrist center', true, (visible) => { wristCenter.visible = visible; });
   const displayOrder = [6, 7, 0, 1, 2, 3, 4, 5];
   addSelect(kit, 'solution', displayOrder.map((index) => [index, `IK ${index + 1} · arm ${Math.floor(index / 2) + 1} · flip ${(index % 2) + 1}`]), (value) => { selected = Number(value); });
   kit.note.textContent = 'Choose any arm branch and either wrist flip. Both flips preserve the complete desired pose.';

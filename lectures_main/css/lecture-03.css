@@ -289,12 +289,26 @@
 
 .ik3r-canvas canvas:active { cursor: grabbing; }
 
-.ik3r-note {
+.ik3r-footer {
   position: absolute;
   left: .55rem;
   right: .55rem;
   bottom: .5rem;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .35rem;
+  pointer-events: none;
+}
+
+.ik3r-footer .course-3d-controls {
+  position: static;
+  max-width: 100%;
+}
+
+.ik3r-note {
+  align-self: stretch;
   max-width: none;
   margin: 0;
   padding: .32rem .48rem;
@@ -460,4 +474,248 @@
   .flow-arrow { display: none; }
   .ik3r-application,
   .ik3r-application.is-wide { grid-template-columns: 1fr; }
+}
+
+/* Slide 05: preimage definitions and a scalar example. */
+.lecture-03 .preimage-slide,
+.lecture-03 .pieper-overview,
+.lecture-03 .pieper-recovery { padding-bottom: 4rem; }
+
+.preimage-slide .preimage-ik-cases {
+  flex-shrink: 0;
+}
+
+.preimage-slide .preimage-ik-cases .step-card {
+  padding: .45rem .6rem;
+  font-size: .9rem;
+  line-height: 1.3;
+}
+
+.preimage-slide .preimage-ik-cases p {
+  margin-top: .2rem;
+  line-height: 1.3;
+}
+
+.preimage-primer {
+  margin-top: auto;
+  padding-top: .6rem;
+  border-top: 1px solid var(--line);
+}
+
+.preimage-definitions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.preimage-definitions article { min-width: 0; }
+.preimage-definitions h3 {
+  margin: 0 0 .15rem;
+  color: var(--epfl-red);
+  font-size: .95rem;
+}
+
+.preimage-definitions p {
+  margin: 0;
+  font-size: .84rem;
+  line-height: 1.35;
+}
+
+.preimage-example {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.15fr);
+  align-items: center;
+  gap: 1rem;
+  margin-top: .6rem;
+}
+
+.preimage-plot { margin: 0; min-width: 0; }
+.preimage-plot figcaption {
+  color: var(--ink);
+  font-size: .85rem;
+  text-align: center;
+}
+.preimage-plot svg {
+  display: block;
+  width: 100%;
+  height: clamp(150px, 25vh, 210px);
+}
+
+.preimage-example-results { min-width: 0; }
+.preimage-image { margin: 0 0 .35rem; font-size: .9rem; }
+.preimage-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .8rem;
+}
+.preimage-table th,
+.preimage-table td {
+  padding: .38rem .35rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+.preimage-table th { border-bottom: 2px solid var(--black); }
+.preimage-table td:first-child { font-weight: 700; }
+.preimage-table td:nth-child(2) { white-space: nowrap; }
+.preimage-caption {
+  max-width: none;
+  margin: .45rem 0 0;
+  color: var(--muted);
+  font-size: .75rem;
+  line-height: 1.3;
+}
+
+@media (max-width: 900px) {
+  .preimage-slide .preimage-ik-cases { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .preimage-definitions { gap: .5rem; }
+  .preimage-example { gap: .5rem; }
+}
+
+@media (max-width: 600px) {
+  .preimage-slide .preimage-ik-cases,
+  .preimage-definitions,
+  .preimage-example { grid-template-columns: 1fr; }
+  .preimage-primer { margin-top: .8rem; }
+}
+
+/* The Pieper overview and Cramer systems share one compact two-column rhythm. */
+.pieper-columns { margin-top: .65rem; }
+.pieper-columns h3 { margin: .25rem 0 .45rem; font-size: clamp(1rem, 1.45vw, 1.45rem); }
+.pieper-columns p { font-size: clamp(.88rem, 1.1vw, 1.15rem); line-height: 1.35; }
+.pieper-overview .ik-callout, .pieper-overview .ik-takeaway,
+.pieper-recovery .ik-takeaway { font-size: clamp(.84rem, 1.05vw, 1.08rem); }
+.pieper-recovery .boxed-result { padding: .45rem; }
+
+/* Direct back-substitution: reuse the earlier formulas and work one example. */
+.lecture-03 .pk-simple-backsub { padding-bottom: 4rem; }
+.pk-simple-backsub p:not(.slide-title):not(.slide-subtitle):not(.slide-kicker),
+.pk-simple-backsub .ik-takeaway { font-size: .88rem; line-height: 1.35; }
+.pk-simple-backsub .pk-backsub-table { font-size: .8rem; }
+.pk-backsub-table th,
+.pk-backsub-table td { padding: .5rem .25rem; white-space: nowrap; }
+.pk-e-sign-figure { margin: 0; }
+.pk-e-sign-figure svg { display: block; width: 100%; height: clamp(130px, 22vh, 205px); }
+
+/* PoE-to-quartic derivation: one algebraic step per slide. */
+.lecture-03 .derivation-slide { padding-bottom: 4rem; }
+.derivation-slide > .slide-kicker,
+.derivation-slide > p:not(.slide-subtitle) { max-width: none; }
+.derivation-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1.6rem;
+  min-height: 0;
+}
+.derivation-columns > * { min-width: 0; }
+.derivation-columns h3,
+.quartic-properties h3 {
+  margin: .35rem 0 .5rem;
+  font-size: clamp(1.05rem, 1.5vw, 1.6rem);
+}
+.derivation-slide > .derivation-columns { flex: 1; }
+.derivation-slide .ik-takeaway { font-size: .92rem; }
+.derivation-slide .screw-table { font-size: .92rem; }
+.derivation-slide .source-note { margin-top: .45rem; }
+.quartic-substitution-slide .quartic-coefficients { flex: 0; gap: .7rem; }
+.quartic-substitution-slide .quartic-coefficients .equation { font-size: .88rem; }
+.quartic-properties {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+  flex: 1;
+}
+.quartic-properties p { font-size: .94rem; line-height: 1.4; }
+.projection-columns { grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); align-items: center; }
+.axis-projection-figure { margin: 0; min-width: 0; }
+.axis-projection-figure svg { max-height: 59vh; }
+
+/* PK geometry and the guided CGA construction keep the explanation beside the scene. */
+.lecture-03 .pk-angle-derivation,
+.lecture-03 .pk-reduction-slide,
+.lecture-03 .cga-guided-slide { padding-bottom: 4rem; }
+.pk-angle-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.4rem;
+  flex: 1;
+  min-height: 0;
+}
+.pk-angle-columns > div { min-width: 0; }
+.pk-angle-columns h3 { margin: .3rem 0; font-size: 1.05rem; }
+.pk-angle-columns p,
+.pk-angle-derivation .ik-callout { font-size: .86rem; line-height: 1.35; }
+.pk-angle-columns .boxed-result { padding: .45rem; }
+.pk-animation-steps { gap: .6rem; }
+.pk-animation-steps .derivation-row { grid-template-columns: 1.2rem 1fr; gap: .5rem; }
+.pk-animation-steps p { font-size: .88rem; line-height: 1.35; }
+.pk-reduction-slide .ik-callout { font-size: .88rem; }
+.cga-guided-layout {
+  display: grid;
+  grid-template-columns: minmax(0, .85fr) minmax(0, 1.8fr);
+  gap: 1rem;
+  flex: 1;
+  min-height: 0;
+}
+.cga-guided-layout .derivation-row { grid-template-columns: 1.25rem minmax(0, 1fr); gap: .4rem; }
+.cga-guided-layout .derivation-row p { font-size: .86rem; line-height: 1.4; }
+.cga-guided-layout .derivation-stack { gap: .8rem; }
+.cga-guided-slide .ik-takeaway { font-size: .87rem; }
+.ik3r-cga-instruction,
+.ik3r-cga-joint-readout {
+  position: absolute;
+  left: .55rem;
+  top: .55rem;
+  z-index: 4;
+  margin: 0;
+  padding: .4rem .55rem;
+  border-left: 3px solid var(--epfl-red);
+  background: rgba(255, 255, 255, .95);
+  color: var(--ink);
+  font-size: clamp(.78rem, .95vw, 1rem);
+  line-height: 1.35;
+  pointer-events: none;
+}
+.ik3r-cga-joint-readout { font-variant-numeric: tabular-nums; font-weight: 700; }
+.ik3r-cga-instruction { right: .55rem; min-height: 3.2rem; }
+.is-cga-interactive .ik3r-controls { top: 4.1rem; }
+.ik3r-cga-joint-controls {
+  display: grid;
+  gap: .45rem;
+  margin-top: .85rem;
+  padding-block: .5rem;
+  border-top: 1px solid var(--line);
+}
+.ik3r-cga-joint-controls .ik3r-slider-control {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr) 3.8rem;
+  gap: .5rem;
+  font-size: .9rem;
+  color: var(--ink);
+}
+.ik3r-cga-joint-controls .ik3r-slider-control input {
+  width: 100%;
+  min-width: 0;
+  height: 2rem;
+  margin: 0;
+  cursor: ew-resize;
+  accent-color: #2775ff;
+}
+.ik3r-slider-control:has(input:disabled) { opacity: .45; }
+.ik3r-slider-control input:disabled { cursor: not-allowed; }
+.ik3r-cga-action {
+  padding: .16rem .4rem;
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.ik3r-cga-action:hover { background: #f3f3f3; }
+.ik3r-cga-action:focus-visible { outline: 2px solid #2775ff; outline-offset: 2px; }
+@media (max-width: 600px) {
+  .derivation-columns,
+  .quartic-properties,
+  .pk-angle-columns,
+  .cga-guided-layout { grid-template-columns: 1fr; }
 }

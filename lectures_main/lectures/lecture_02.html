@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="../css/reveal.css">
   <link rel="stylesheet" href="../css/navigation.css">
   <link rel="stylesheet" href="../css/viz.css">
-  <link rel="stylesheet" href="../css/lecture-02.css">
+  <link rel="stylesheet" href="../css/lecture-02.css?v=20260913-1">
   <script>
     window.MathJax = { tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] } };
   </script>
@@ -284,39 +284,52 @@
       <div class="clean-callout"><strong>Check:</strong> at \(\theta=0\), \(R=I\); differentiating at zero gives \(\left.\frac{dR}{d\theta}\right|_0=[\boldsymbol\omega]_\times\).</div>
     </section>
 
-    <section class="slide">
+    <section class="slide g-derivation-slide">
       <p class="slide-kicker">Act II · From rotation to rigid transformation</p>
-      <h2 class="slide-title">The same exponential generates the full pose</h2>
-      <p class="slide-subtitle">Rodrigues provides the rotational block; integrating the twist’s linear component provides the translation.</p>
-      <div class="layout-two-column divided">
+      <h2 class="slide-title">Derive \(G(\theta)\) from the exponential’s translation block</h2>
+      <p class="slide-subtitle">Let \(K=[\boldsymbol\omega]_\times\), with \(\|\boldsymbol\omega\|=1\), and \(\widehat{\boldsymbol\xi}=\begin{bmatrix}K&\mathbf v\\\mathbf0^T&0\end{bmatrix}\). Expand the same matrix exponential used for rotation.</p>
+      <div class="g-derivation-columns">
         <div>
-          <div class="equation">
-            \[
+          <h3>1 · Expand the block powers</h3>
+          <div class="equation">\[
+            \widehat{\boldsymbol\xi}^{\,2}=\begin{bmatrix}K^2&K\mathbf v\\\mathbf0^T&0\end{bmatrix},\qquad
+            \widehat{\boldsymbol\xi}^{\,n}=\begin{bmatrix}K^n&K^{n-1}\mathbf v\\\mathbf0^T&0\end{bmatrix}\quad(n\ge1).
+          \]</div>
+          <div class="equation">\[
             e^{\widehat{\boldsymbol\xi}\theta}
-            =
-            \begin{bmatrix}
-            R(\theta)&G(\theta)\mathbf v\\
-            \mathbf0^T&1
-            \end{bmatrix}
-            \]
-          </div>
-          <div class="equation">
-            \[
-            G(\theta)=I\theta+(1-\cos\theta)K+(\theta-\sin\theta)K^2.
-            \]
-          </div>
+            =I_4+\theta\widehat{\boldsymbol\xi}
+            +\frac{\theta^2}{2!}\widehat{\boldsymbol\xi}^{\,2}
+            +\frac{\theta^3}{3!}\widehat{\boldsymbol\xi}^{\,3}+\cdots
+          \]</div>
+          <p>Read the upper-right block:</p>
+          <div class="equation">\[\begin{aligned}
+            \mathbf t(\theta)&=\underbrace{\left(\theta I+\frac{\theta^2}{2!}K+\frac{\theta^3}{3!}K^2
+              +\frac{\theta^4}{4!}K^3+\cdots\right)}_{G(\theta)}\mathbf v.
+          \end{aligned}\]</div>
+          <p class="g-explanation">Each translation term has one fewer power of \(K\). Equivalently, \(G(\theta)\) is the term-by-term integral of \(R(\theta)\).</p>
         </div>
         <div>
-          <p>Using \(K=[\boldsymbol\omega]_\times\), the same translation can be written as</p>
-          <div class="equation">
-            \[
-            G(\theta)\mathbf v
-            =(I-R)(\boldsymbol\omega\times\mathbf v)
-            +\boldsymbol\omega\boldsymbol\omega^T\mathbf v\,\theta.
-            \]
-          </div>
-          <div class="definition"><strong>Pure translation:</strong> if \(\boldsymbol\omega=\mathbf0\), then \(R=I\) and \(\mathbf t=\mathbf v\theta\).</div>
+          <h3>2 · Reduce powers and recognize the series</h3>
+          <p>Use \(K^3=-K\), \(K^4=-K^2\), \(K^5=K\), …</p>
+          <div class="equation">\[\begin{aligned}
+            G(\theta)&=\theta I\\
+              &\quad+\underbrace{\left(\frac{\theta^2}{2!}-\frac{\theta^4}{4!}
+                +\frac{\theta^6}{6!}-\cdots\right)}_{1-\cos\theta}K\\
+              &\quad+\underbrace{\left(\frac{\theta^3}{3!}-\frac{\theta^5}{5!}
+                +\frac{\theta^7}{7!}-\cdots\right)}_{\theta-\sin\theta}K^2.
+          \end{aligned}\]</div>
+          <div class="equation g-result">\[\boxed{G(\theta)=\theta I+(1-\cos\theta)K+(\theta-\sin\theta)K^2.}\]</div>
         </div>
+      </div>
+      <div class="g-integral">
+        <strong>The same result by integrating Rodrigues:</strong>
+        <div class="equation">\[G(\theta)=\int_0^\theta e^{Ku}\,du
+          =\int_0^\theta\big[I+\sin u\,K+(1-\cos u)K^2\big]du.\]</div>
+      </div>
+      <div class="g-pose-result">
+        <div class="equation">\[e^{\widehat{\boldsymbol\xi}\theta}
+          =\begin{bmatrix}R(\theta)&G(\theta)\mathbf v\\\mathbf0^T&1\end{bmatrix}.\]</div>
+        <p><strong>Pure translation:</strong> if \(\boldsymbol\omega=\mathbf0\), then \(K=0\), \(G(\theta)=\theta I\), and \(\mathbf t=\theta\mathbf v\).</p>
       </div>
     </section>
 
@@ -462,8 +475,20 @@
       </div>
     </section>
 
+    <section class="slide" id="ik-method-condition">
+      <p class="slide-kicker">Exercise 02 · Check the geometric assumptions</p>
+      <h2 class="slide-title">Check the geometry before dividing by a₁</h2>
+      <p class="slide-subtitle">The generic elimination step below requires a nonzero offset between the first two joint axes.</p>
+      <div class="equation">\[R=2a_1 E+F_3\quad\Longrightarrow\quad E=\frac{R-F_3}{2a_1},\qquad \boxed{a_1\ne0}\]</div>
+      <div class="layout-two-column divided">
+        <div class="definition"><strong>When a₁ ≠ 0</strong><p>The distance equation can be rearranged to isolate the signed radial component E. Continue the generic algebraic elimination with this expression.</p></div>
+        <div class="warning"><strong>For the iiwa 7, a₁ = 0</strong><p>The first two axes intersect. Fixing original q₃ does not change that intersection, so the displayed division is undefined. Use the geometric distance and projection construction, then recover the angles with Cramer’s rule.</p></div>
+      </div>
+      <p class="bridge-note">This restriction concerns the displayed elimination formula; it does not rule out algebraic treatments of the intersecting-axis case. In Exercise 02, return to the tutorial tab and choose the route that respects the geometry.</p>
+    </section>
+
   </main>
   <script src="../js/deck/nav-runtime.js"></script>
-  <script type="module" src="../js/main.js?v=20260831-1"></script>
+  <script type="module" src="../js/main.js?v=20260913-8"></script>
 </body>
 </html>

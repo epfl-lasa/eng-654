@@ -21,7 +21,7 @@ exercises/                 four assignment briefing decks
 solutions/                 feedback slides and answer files, released in stages
 css/                       separated style layers
 js/deck/                   slide navigation, reveal logic, scroll/deck modes
-js/exercises/              student answer downloads/imports
+js/exercises/              response downloads/imports and shared answer checks
 js/viz/                    importable visualization modules
 assets/images/             photos and raster figures
 assets/svg/                reusable SVG figures
@@ -36,7 +36,23 @@ docs/                      authoring notes and uploaded lecture plan
 
 Open `exercises/exercise_01.html` for the 19-slide workflow: load only the supplied URDF in the instructor-provided simulator, derive PoE and standard-D–H models, implement both, and compare their forward kinematics at five named poses. Load the STL meshes last and repair their placement through visual-origin offsets, then confirm that the tool poses are unchanged. The worksheet has 248 responses: 42 screw components, 16 PoE home-matrix entries, 28 D–H entries, 32 fixed-transform entries, 80 pose-matrix entries, 48 visual corrections, and two choices. **Download responses** saves schema version 5 JSON; **Load saved responses** restores partial work, leaving new PoE fields and the revised Mixed wrist turn matrix blank when importing older files. Submit both FK implementations, their derivations, the five-pose comparison report, response JSON, and repaired URDF. Set the five joint configurations as specified in the worksheet. Module 1 starts with `kuka_iiwa7_misaligned.urdf` and its deliberate visual-origin errors.
 
-The instructor shares the response worksheet first, the feedback slides later, and the final answer file separately. Publishing follows the `stage` value in `exercise_01_release.json`: `exercise`, `feedback`, then `answers`. The default is `exercise`.
+Each slide with response fields has a **Check answers** button. It checks that slide and fills correct entries light green and wrong entries light red, without showing solutions or detailed explanations. Students can revise their entries and check again, and still download or reload partial work.
+
+The instructor shares this worksheet with its per-slide checks first, the detailed feedback slides later, and the final answer file separately. Publishing follows the `stage` value in `exercise_01_release.json`: `exercise`, `feedback`, then `answers`. The default is `exercise`; the shared checker and student controls are published at every stage.
+
+## Exercise 02 tutorial
+
+Open `exercises/exercise_02.html` for the 13-slide iiwa 7 IK tutorial. Students fix original q₃, inspect the automatically updated D-H or PoE model, identify the home wrist point and choose Paden–Kahan after inspecting the robot geometry. Step 05 gives no geometric hints; the PK3 distance construction is introduced only after the correct choice. Correct answers unlock the next step. A wrong method choice links to the condition on Lecture 02 slide 30 in a new tab.
+
+Students build eleven expressions using draggable symbol blocks or typed formulas, then answer the wrist rotation questions. The solver executes their validated expressions and checks each branch against the full URDF-equivalent FK. The reference target has eight solutions, six within the URDF limits at q₃ = π/6. Students can generate another target through FK and classify its branches; singular cases explicitly report merged branches or family representatives. **Download responses** and **Load responses** preserve the equations, fixed angle, target and checks in schema version 1 JSON.
+
+Instructor materials are `solutions/exercise_02.html` and `solutions/exercise_02_answers.json`; the existing site staging excludes both. The student tutorial never requests the answer file. The robot views load the actual iiwa 7 URDF and eight STL meshes, with adjustable opacity, extended joint axes, URDF frames and labels. Run the course’s local server to load these views; Three.js and all model assets are stored in the repository, so no internet connection is needed.
+
+Run the model, expression and tutorial checks from the repository root with `node --test lectures_main/tests/exercise-02-*.test.*`.
+
+The optional end-to-end browser check is `node lectures_main/tests/browser/exercise-02-flow.cjs`. It expects a local Chromium browser with remote debugging on port 9256 and a repository-root preview server on port 8050; override these using `EXERCISE02_CDP_PORT` and `EXERCISE02_PREVIEW_URL`. It clears only Exercise 02 responses in that test browser, exercises the gates and file import, and writes screenshots to `/tmp`.
+
+The STL viewer check is `node lectures_main/tests/browser/exercise-02-stl.cjs`, using the same browser with WebGL enabled. Its default preview URL is `http://127.0.0.1:8052/exercises/exercise_02.html` (serve `lectures_main` on port 8052), also overridable with `EXERCISE02_PREVIEW_URL`. It verifies actual mesh and frame placement, joint axes, display controls, camera interaction, FK/IK motion, and mobile layout.
 
 ## Main conventions
 

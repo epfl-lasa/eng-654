@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Exercise 02 · Worked solutions · KUKA iiwa 7 IK | ENG-654</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/layouts.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/reveal.css">
+  <link rel="stylesheet" href="../css/navigation.css">
+  <link rel="stylesheet" href="../css/exercises.css">
+  <style>
+    .exercise-02-solutions .course-title { max-width: 20ch; }
+    body.mode-scroll.exercise-02-solutions .slide { min-height: 760px; }
+    .exercise-02-solutions .ex-card { border-top-color: #111; }
+    .exercise-02-solutions .ex-card.red { border-top-color: #ff0000; }
+    .exercise-02-solutions .ex-card p, .exercise-02-solutions .ex-card li { font-size: clamp(.9rem, 1.05vw, 1.1rem); line-height: 1.5; }
+    .exercise-02-solutions .ex-equation { overflow-x: auto; }
+    .exercise-02-solutions .worked-note { font-size: .92rem; line-height: 1.5; }
+    .exercise-02-solutions .solution-table { width: 100%; border-collapse: collapse; font-size: .87rem; }
+    .exercise-02-solutions .solution-table th, .exercise-02-solutions .solution-table td { padding: .42rem .5rem; border-bottom: 1px solid #ccc; text-align: right; white-space: nowrap; }
+    .exercise-02-solutions .solution-table th:first-child, .exercise-02-solutions .solution-table td:first-child { text-align: left; }
+    .exercise-02-solutions .solution-table thead { color: #fff; background: #111; }
+    .exercise-02-solutions .table-scroll { width: 100%; overflow-x: auto; }
+    .exercise-02-solutions .table-hint { display: none; }
+    .exercise-02-solutions .formula-list { display: grid; gap: .6rem; align-content: center; }
+    .exercise-02-solutions .formula-list p { margin: 0; line-height: 1.5; }
+    .exercise-02-solutions .solution-links { display: flex; flex-wrap: wrap; gap: .8rem; justify-content: center; margin-top: 1rem; }
+    .exercise-02-solutions .solution-links a { color: #111; border: 1px solid #111; padding: .45rem .65rem; }
+    .exercise-02-solutions svg { max-height: 310px; width: 100%; }
+    .exercise-02-solutions .limit-rejected { font-weight: 700; color: #c00000; }
+    @media (max-width: 760px) {
+      .exercise-02-solutions .ex-grid-2 { grid-template-columns: 1fr; flex: none; align-items: start; }
+      body.mode-scroll.exercise-02-solutions .slide { min-height: 0; padding-bottom: 3.4rem; }
+      .exercise-02-solutions .ex-card p, .exercise-02-solutions .ex-card li,
+      .exercise-02-solutions .ex-subtitle, .exercise-02-solutions .ex-caveat,
+      .exercise-02-solutions .ex-takeaway { font-size: .94rem; line-height: 1.5; }
+      .exercise-02-solutions .table-hint { display: block; margin: .4rem 0; font-size: .88rem; line-height: 1.4; }
+    }
+    @media print { .exercise-02-solutions .slide { break-after: page; } }
+  </style>
+  <script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]}};</script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="mode-scroll narrative-lecture exercise-deck exercise-02-solutions">
+<main id="deck" class="deck" data-default-mode="mode-scroll">
+  <section class="slide title-slide exercise-slide">
+    <div class="title-slide-content">
+      <p class="eyebrow">ENG-654 · Exercise 02 · Worked solutions</p>
+      <h1 class="course-title">Eight inverse-kinematic branches of the iiwa 7</h1>
+      <p class="subtitle">Fix the original joint 3, position the wrist with three active joints, then recover the wrist orientation.</p>
+      <div class="exercise-tags"><span>fixed redundancy coordinate</span><span>Paden–Kahan position IK</span><span>Cramer’s rule</span><span>Z–Y–Z wrist</span></div>
+      <p class="exercise-promise">This reference uses the supplied limited-joint iiwa URDF, the frame <code>world</code>, and the tool <code>iiwa_link_ee</code>. Lengths are in metres and calculations use radians.</p>
+      <div class="solution-links"><a href="../exercises/exercise_02.html">Open student tutorial</a></div>
+    </div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">1 · Fix the redundancy coordinate</p>
+    <h2 class="slide-title">Original joint 3 is fixed; reduced joint 3 is original joint 4</h2>
+    <div class="ex-grid-2">
+      <div class="ex-card red"><h3>Keep both index systems visible</h3>
+        <div class="ex-equation">\[q_3=\phi=\frac{\pi}{6},\qquad (\theta_1,\theta_2,\theta_3)=(q_1,q_2,q_4).\]</div>
+        <p>The positioning chain has the three active coordinates \(\theta_1,\theta_2,\theta_3\). The wrist has \(q_5,q_6,q_7\). There are six unknown angles after fixing \(\phi\).</p>
+      </div>
+      <div class="ex-card"><h3>Define “home” for this six-joint member</h3>
+        <p>Set all six active coordinates to zero while keeping \(q_3=\phi\). The wrist is still at \((0,0,1.14)^\top\), while the tool’s home orientation becomes \(R_z(\phi)\).</p>
+        <p>Changing \(\phi\) changes the six-joint kinematic model. A generic pose of the unrestricted seven-joint robot has a continuous IK family; the eight branches below are the isolated solutions at this fixed \(\phi\).</p>
+      </div>
+    </div>
+    <div class="ex-takeaway">Throughout the position derivation, \(c_i=\cos\theta_i\), \(s_i=\sin\theta_i\). In particular, \(c_3=\cos q_4\), not \(\cos q_3\).</div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">2 · Updated D-H model</p>
+    <h2 class="slide-title">Substitute the fixed angle into the original D-H chain</h2>
+    <p class="ex-subtitle">Use standard Denavit–Hartenberg transformations \(A_i=R_z(q_i)T_z(d_i)T_x(a_i)R_x(\alpha_i)\), with identity base transform and final tool transform \(T_z(0.045)\).</p>
+    <div class="ex-grid-2">
+      <div class="table-scroll"><table class="solution-table" aria-label="Standard D-H parameters after fixing joint 3"><thead><tr><th>Original row</th><th>angle</th><th>\(d_i\)</th><th>\(a_i\)</th><th>\(\alpha_i\)</th></tr></thead><tbody>
+        <tr><td>1</td><td>\(\theta_1\)</td><td>0.34</td><td>0</td><td>\(-\pi/2\)</td></tr>
+        <tr><td>2</td><td>\(\theta_2\)</td><td>0</td><td>0</td><td>\(\pi/2\)</td></tr>
+        <tr><td>3 · fixed</td><td>\(\phi\)</td><td>0.4</td><td>0</td><td>\(\pi/2\)</td></tr>
+        <tr><td>4</td><td>\(\theta_3\)</td><td>0</td><td>0</td><td>\(-\pi/2\)</td></tr>
+        <tr><td>5</td><td>\(q_5\)</td><td>0.4</td><td>0</td><td>\(-\pi/2\)</td></tr>
+        <tr><td>6</td><td>\(q_6\)</td><td>0</td><td>0</td><td>\(\pi/2\)</td></tr>
+        <tr><td>7</td><td>\(q_7\)</td><td>0.081</td><td>0</td><td>0</td></tr>
+      </tbody></table></div>
+      <div class="ex-card red"><h3>Three active positioning factors</h3>
+        <div class="ex-equation compact">\[B_1=A_1(\theta_1),\quad B_2=A_2(\theta_2)A_3(\phi),\quad B_3=A_4(\theta_3).\]</div>
+        <p>Retaining the fixed third D-H row gives an exact model with no frame redefinition. The composite \(B_2\) contains one active coordinate and one fixed transform; it is not claimed to be a single standard D-H row.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">2 · Updated PoE model</p>
+    <h2 class="slide-title">Move the fixed exponential into the downstream home screws</h2>
+    <p class="ex-subtitle">All screws below use the order \(S=(\omega,v)\) and are expressed in the fixed world frame at the new home configuration. Write \(c_\phi=\cos\phi\), \(s_\phi=\sin\phi\).</p>
+    <div class="table-scroll"><table class="solution-table" aria-label="Six reduced space screws"><thead><tr><th>Active coordinate</th><th>\(\omega^\top\)</th><th>\(v^\top\)</th></tr></thead><tbody>
+      <tr><td>\(\theta_1=q_1\)</td><td>\((0,0,1)\)</td><td>\((0,0,0)\)</td></tr>
+      <tr><td>\(\theta_2=q_2\)</td><td>\((0,1,0)\)</td><td>\((-0.34,0,0)\)</td></tr>
+      <tr><td>\(\theta_3=q_4\)</td><td>\((s_\phi,-c_\phi,0)\)</td><td>\((0.74c_\phi,0.74s_\phi,0)\)</td></tr>
+      <tr><td>\(q_5\)</td><td>\((0,0,1)\)</td><td>\((0,0,0)\)</td></tr>
+      <tr><td>\(q_6\)</td><td>\((-s_\phi,c_\phi,0)\)</td><td>\((-1.14c_\phi,-1.14s_\phi,0)\)</td></tr>
+      <tr><td>\(q_7\)</td><td>\((0,0,1)\)</td><td>\((0,0,0)\)</td></tr>
+    </tbody></table></div>
+    <div class="ex-equation compact">\[T=e^{\widehat S_1\theta_1}e^{\widehat S_2\theta_2}e^{\widehat{\bar S}_4\theta_3}e^{\widehat{\bar S}_5q_5}e^{\widehat{\bar S}_6q_6}e^{\widehat{\bar S}_7q_7}M_\phi,\qquad M_\phi=\begin{bmatrix}R_z(\phi)&amp;(0,0,1.266)^\top\\0&amp;1\end{bmatrix}.\]</div>
+    <p class="worked-note">For \(Q=e^{\widehat S_3\phi}\), the identity \(Qe^{\widehat S_jq}=e^{\widehat{\operatorname{Ad}_Q S_j}q}Q\) gives \(\bar S_j=\operatorname{Ad}_Q S_j\) for \(j=4,5,6,7\), and \(M_\phi=QM\). Here \(Q\) is simply a rotation about the world \(z\)-axis.</p>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">3 · Identify the wrist</p>
+    <h2 class="slide-title">The last three axes intersect at one point</h2>
+    <div class="ex-grid-2">
+      <div class="ex-card red"><h3>At the new home configuration</h3>
+        <div class="ex-equation">\[p_{w,0}=\begin{bmatrix}0\\0\\H+L+U\end{bmatrix}=\begin{bmatrix}0\\0\\1.14\end{bmatrix},\qquad H=0.34,\ L=U=0.4.\]</div>
+        <p>Joints 5, 6 and 7 rotate about axes through this wrist point. Their motion changes the tool orientation without moving the wrist intersection.</p>
+      </div>
+      <div class="ex-card"><h3>For a desired tool pose</h3>
+        <div class="ex-equation">\[p_w=p_d-\ell R_d e_z,\qquad \ell=0.081+0.045=0.126.\]</div>
+        <p>The offset is along the desired tool’s \(z\)-axis. The 0.081 m final-joint offset and the 0.045 m fixed tool offset must both be included.</p>
+        <p>The wrist intersection has no unique orientation until a frame is chosen. Position partitioning requires the point, not an invented fixed wrist-to-tool rotation.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">4 · Separate the positioning robot</p>
+    <h2 class="slide-title">Use the same point in either representation</h2>
+    <div class="ex-grid-2">
+      <div class="ex-card red"><h3>D-H position chain</h3><div class="ex-equation compact">\[\begin{bmatrix}p_w\\1\end{bmatrix}=A_1(\theta_1)A_2(\theta_2)A_3(\phi)A_4(\theta_3)\begin{bmatrix}0\\0\\U\\1\end{bmatrix}.\]</div><p>The point \((0,0,U)^\top\) is expressed in standard D-H frame 4, immediately after original joint 4.</p></div>
+      <div class="ex-card"><h3>PoE position chain</h3><div class="ex-equation compact">\[\begin{bmatrix}p_w\\1\end{bmatrix}=e^{\widehat S_1\theta_1}e^{\widehat S_2\theta_2}e^{\widehat{\bar S}_4\theta_3}\begin{bmatrix}p_{w,0}\\1\end{bmatrix}.\]</div><p>The three omitted wrist exponentials each fix \(p_{w,0}\). They can therefore be removed when computing this point, even though they are required for the complete tool pose.</p></div>
+    </div>
+    <div class="ex-takeaway">The representations produce the same wrist-position equations. Switching between D-H and PoE changes how the model is written, not which IK solutions exist.</div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">5–6 · Correct method choice</p>
+    <h2 class="slide-title">Choose Paden–Kahan from the arm geometry</h2>
+    <div class="ex-grid-2">
+      <div class="ex-card red"><h3>Correct tutorial choice: Paden–Kahan subproblems</h3><p>The first two active axes intersect at the shoulder, so \(a_1=0\). Both rotations preserve the shoulder-to-wrist distance. Paden–Kahan subproblem 3 (PK3) uses that distance to determine the elbow angle; Cramer’s rule then recovers the shoulder and base angles.</p><div class="ex-equation">\[R=L^2+U^2+2LU\cos\theta_3.\]</div></div>
+      <div class="ex-card"><h3>Which algebraic step fails?</h3><p>In the offset-arm derivation, one may recover a signed radial quantity through \(E=(R-F_3)/(2a_1)\). That division requires \(a_1\ne0\), and therefore cannot be used here.</p><p>This does not rule out all algebraic methods. The Paden–Kahan distance constraint also produces an equation, and Cramer’s rule is a valid back-substitution. The geometry makes a quartic elimination unnecessary.</p><p><a href="../lectures/lecture_02.html#slide-30" target="_blank" rel="noopener">Review the condition in Lecture 02, slide 30</a>.</p></div>
+    </div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">7 · Expand the wrist position</p>
+    <h2 class="slide-title">Separate the base rotation from the shoulder and elbow</h2>
+    <p class="ex-subtitle">Let \((x,y,z_w)=p_w\). Shift the shoulder height once: \(z=z_w-H\). Define \(\rho^2=x^2+y^2\) and \(R=\rho^2+z^2\); this scalar \(R\) is a squared distance, whereas \(R_d\) is a rotation matrix.</p>
+    <div class="ex-grid-2">
+      <div class="formula-list"><div class="ex-equation">\[A=L+Uc_3,\qquad B=-Uc_\phi s_3,\qquad C=-Us_\phi s_3.\]</div><div class="ex-equation">\[E=As_2+Bc_2,\qquad z=Ac_2-Bs_2.\]</div></div>
+      <div class="formula-list"><div class="ex-equation">\[\begin{bmatrix}x\\y\end{bmatrix}=\begin{bmatrix}c_1&amp;-s_1\\s_1&amp;c_1\end{bmatrix}\begin{bmatrix}E\\C\end{bmatrix}.\]</div><p>Thus \(x=c_1E-s_1C\) and \(y=s_1E+c_1C\). Rotation about axis 1 preserves the horizontal length: \(x^2+y^2=E^2+C^2\). The signed value \(E\) is not automatically the nonnegative radius \(\rho\).</p></div>
+    </div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">8 · Recover reduced θ₃</p>
+    <h2 class="slide-title">PK3 removes two angles with a distance constraint</h2>
+    <p class="ex-subtitle">Translate the origin to the home elbow \(e=(0,0,H+L)^\top\). Set \(p=Ue_z\), \(q=-Le_z\), and \(\omega=(\sin\phi,-\cos\phi,0)^\top\). The PK3 constraint is \(\|\operatorname{Rot}(\omega,\theta_3)p-q\|=\sqrt R\). Here \(p\) is the home wrist relative to the elbow and \(q\) is the shoulder relative to the elbow; \(q\) denotes a point in this constraint, not a joint angle.</p>
+    <div class="ex-equation">\[R=E^2+C^2+z^2=A^2+B^2+C^2=L^2+U^2+2LUc_3.\]</div>
+    <div class="ex-grid-2">
+      <div class="ex-card red"><h3>Both elbow signs</h3><div class="ex-equation compact">\[c_3=\frac{R-L^2-U^2}{2LU},\qquad s_3=\sigma_3\sqrt{1-c_3^2},\qquad\theta_3=\operatorname{atan2}(s_3,c_3),\quad\sigma_3\in\{-1,+1\}.\]</div></div>
+      <div class="ex-card"><h3>Keep the real-root test</h3><p>For \(|c_3|&lt;1\), there are two distinct elbow angles. At \(c_3=\pm1\), they meet. If \(|c_3|&gt;1\) beyond numerical tolerance, the target wrist point is unreachable.</p><p>Now calculate \(A,B,C\) separately for each elbow sign. In particular, changing \(s_3\) changes the signs of both \(B\) and \(C\).</p></div>
+    </div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">8 · Why two E values?</p>
+    <h2 class="slide-title">The measured horizontal distance does not determine a sign</h2>
+    <div class="ex-grid-2">
+      <div class="ex-card red"><div class="ex-equation">\[\rho^2=E^2+C^2\quad\Longrightarrow\quad E=\sigma_E\sqrt{\rho^2-C^2},\qquad\sigma_E\in\{-1,+1\}.\]</div><p>For a chosen elbow sign, \(C\) is known. Intersect the circle of radius \(\rho\) with the line whose second coordinate equals \(C\). Two intersections give two signed first coordinates, \(E_-\) and \(E_+\).</p><p>Each pair \((E,C)\) is rotated by its own \(\theta_1\) onto the same desired \((x,y)\). The corresponding \(\theta_2\) is then recovered from \((E,z)\).</p></div>
+      <div class="ex-card"><svg viewBox="0 0 440 330" role="img" aria-label="A circle of radius rho intersects a horizontal line at C at negative E and positive E."><defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#111"/></marker></defs><path d="M35 190H410 M220 305V20" stroke="#111" fill="none" stroke-width="1.8" marker-end="url(#arrow)"/><circle cx="220" cy="190" r="110" fill="none" stroke="#111" stroke-width="2"/><path d="M55 125H390" stroke="#ff0000" stroke-width="2"/><path d="M220 190L309 125" stroke="#111" stroke-dasharray="5 4"/><circle cx="131" cy="125" r="6" fill="#ff0000"/><circle cx="309" cy="125" r="6" fill="#ff0000"/><g font-family="Arial,sans-serif" font-size="18" fill="#111"><text x="402" y="215">E</text><text x="230" y="35">C</text><text x="85" y="111">(E₋, C)</text><text x="304" y="111">(E₊, C)</text><text x="257" y="169">ρ</text><text x="51" y="150">known C</text><text x="199" y="211">0</text></g></svg><p>The negative sign is a distinct shoulder solution, not a negative physical length. If \(\rho^2=C^2\), the two values meet at \(E=0\). If \(\rho^2&lt;C^2\), that elbow candidate gives no real shoulder solution.</p></div>
+    </div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">8 · Back-substitute θ₂</p>
+    <h2 class="slide-title">Cramer’s rule gives cosine and sine together</h2>
+    <div class="ex-equation">\[\begin{bmatrix}B&amp;A\\A&amp;-B\end{bmatrix}\begin{bmatrix}c_2\\s_2\end{bmatrix}=\begin{bmatrix}E\\z\end{bmatrix},\qquad\det=-(A^2+B^2).\]</div>
+    <div class="ex-grid-2">
+      <div class="ex-card red"><div class="ex-equation compact">\[c_2=\frac{BE+Az}{A^2+B^2},\qquad s_2=\frac{AE-Bz}{A^2+B^2},\qquad\theta_2=\operatorname{atan2}(s_2,c_2).\]</div></div>
+      <div class="ex-card"><h3>Why the signs are fixed</h3><p>The numerator for \(c_2\) is \(-BE-Az\); the numerator for \(s_2\) is \(Bz-AE\). Dividing each by the negative determinant gives the expressions at left.</p><p>Use the same \(E\), \(A\) and \(B\) branch throughout. Verify \(c_2^2+s_2^2=1\) and substitute into both original equations. There is no additional ± sign once this pair is known.</p></div>
+    </div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">8 · Back-substitute θ₁</p>
+    <h2 class="slide-title">Apply the same two-equation idea to x and y</h2>
+    <div class="ex-equation">\[\begin{bmatrix}E&amp;-C\\C&amp;E\end{bmatrix}\begin{bmatrix}c_1\\s_1\end{bmatrix}=\begin{bmatrix}x\\y\end{bmatrix},\qquad\det=E^2+C^2=\rho^2.\]</div>
+    <div class="ex-grid-2">
+      <div class="ex-card red"><div class="ex-equation compact">\[c_1=\frac{Ex+Cy}{E^2+C^2},\qquad s_1=\frac{Ey-Cx}{E^2+C^2},\qquad\theta_1=\operatorname{atan2}(s_1,c_1).\]</div></div>
+      <div class="ex-card"><h3>Four generic arm branches</h3><p>Enumerate \((\sigma_3,\sigma_E)\) with each sign positive or negative, keeping only real solutions. Rebuild \(p_w\) for every candidate.</p><p>Since \(C\) is generally nonzero for \(\phi=\pi/6\), \(\theta_1\) is generally not just \(\operatorname{atan2}(y,x)\). The equivalent geometric expression is:</p><div class="ex-equation compact">\[\theta_1=\operatorname{atan2}(y,x)-\operatorname{atan2}(C,E).\]</div></div>
+    </div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">9 · Wrist convention and relative orientation</p>
+    <h2 class="slide-title">Express the desired tool orientation in the solved arm frame</h2>
+    <div class="ex-grid-2">
+      <div class="ex-card red"><h3>The correct multiplication order</h3><div class="ex-equation compact">\[R_d=R_{\mathrm{arm}}R_{\mathrm{wrist}},\qquad R_{\mathrm{wrist}}=R_{\mathrm{arm}}^\top R_d.\]</div><p>Here \(R_{\mathrm{arm}}={}^0R_{4,\mathrm{DH}}\), the orientation after original joint 4. It is also the third active arm frame if that reduced frame is chosen to coincide with this D-H frame.</p></div>
+      <div class="ex-card"><h3>Correct convention: intrinsic Z–Y–Z</h3><div class="ex-equation compact">\[R_{\mathrm{wrist}}=R_z(q_5)R_x(-\pi/2)R_z(q_6)R_x(\pi/2)R_z(q_7)=R_z(q_5)R_y(q_6)R_z(q_7).\]</div><p>The fixed tool transform is a translation, so it introduces no additional orientation factor. Compute a new residual matrix for each of the four arm solutions.</p></div>
+    </div>
+    <div class="ex-caveat">A PoE product of the three active exponentials alone is a displacement from home, not automatically the chosen arm frame. Include its home orientation before using the residual-rotation formula.</div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">9 · Complete the rotation and solve the wrist</p>
+    <h2 class="slide-title">The bottom-right entry is cos q₆</h2>
+    <p class="ex-subtitle">On this slide only, write \(C_i=\cos q_i\), \(S_i=\sin q_i\) for original wrist joints \(i=5,6,7\), and denote the entries of \(R_{\mathrm{wrist}}\) by \(r_{ij}\).</p>
+    <div class="ex-equation compact">\[R_{\mathrm{wrist}}=\begin{bmatrix}C_5C_6C_7-S_5S_7&amp;-C_5C_6S_7-S_5C_7&amp;C_5S_6\\S_5C_6C_7+C_5S_7&amp;-S_5C_6S_7+C_5C_7&amp;S_5S_6\\-S_6C_7&amp;S_6S_7&amp;\boxed{C_6}\end{bmatrix}.\]</div>
+    <div class="ex-grid-2">
+      <div class="ex-card red"><div class="ex-equation compact">\[s_6=\sigma_w\sqrt{r_{13}^2+r_{23}^2},\quad q_6=\operatorname{atan2}(s_6,r_{33}),\quad \sigma_w=\pm1.\]</div><div class="ex-equation compact">\[q_5=\operatorname{atan2}(r_{23}/s_6,r_{13}/s_6),\quad q_7=\operatorname{atan2}(r_{32}/s_6,-r_{31}/s_6).\]</div></div>
+      <div class="ex-card"><h3>Two wrist branches per regular arm solution</h3><p>The branches are related by \((q_5,q_6,q_7)\mapsto(q_5+\pi,-q_6,q_7+\pi)\), with angle wrapping for comparison.</p><p>The division by \(s_6\) retains the correct quadrant for both signs. At \(s_6=0\), these formulas must be replaced by a coupled-angle relation.</p></div>
+    </div>
+  </section>
+
+  <section class="slide exercise-slide" id="reference-target">
+    <p class="ex-kicker">10 · Verified reference pose</p>
+    <h2 class="slide-title">Generate the target with FK before solving IK</h2>
+    <div id="reference-target-content"><div class="ex-equation compact">\[q_d=(0.35,\ 0.55,\ \pi/6,\ -1.10,\ 0.70,\ 0.80,\ -0.45)\ \mathrm{rad}.\]</div><div class="ex-equation compact">\[T_d=\begin{bmatrix}-0.646840&amp;-0.761182&amp;0.046911&amp;0.477515\\-0.293138&amp;0.304949&amp;0.906133&amp;0.476067\\-0.704037&amp;0.572371&amp;-0.420385&amp;0.621356\\0.000000&amp;0.000000&amp;0.000000&amp;1.000000\end{bmatrix}.\]</div><div class="ex-grid-2"><div class="ex-card red"><h3>Extract the wrist point</h3><div class="ex-equation compact">\[p_w=\begin{bmatrix}0.471604\\0.361894\\0.674325\end{bmatrix},\qquad z=0.334325.\]</div></div><div class="ex-card"><h3>Shared scalar values</h3><p>\(R=0.465150759\), \(c_3=0.453596121\), \(|s_3|=0.891207360\).</p><p>Both elbow signs give \(|E|=0.567104623\). The four sign pairs therefore give four distinct real arm configurations.</p></div></div></div>
+    <div class="ex-takeaway">The FK source vector is one known solution. An IK result is complete only after every distinct real branch has been enumerated and substituted into the full tool FK.</div>
+  </section>
+
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">10 · One complete numerical back-substitution</p>
+    <h2 class="slide-title">Choose the negative elbow and positive E</h2>
+    <p class="ex-subtitle">Take \(\sigma_3=-1\), \(\sigma_E=+1\). The distance equation gives \(\theta_3=-1.1\) rad. Evaluate the coefficients for this elbow before solving the two linear systems.</p>
+    <div class="ex-equation compact">\[A=0.581438449,\quad B=0.308723286,\quad C=0.178241472,\quad E=0.567104623,\quad z=0.334324817.\]</div>
+    <div class="ex-grid-2">
+      <div class="ex-card red"><h3>Recover the shoulder</h3><div class="ex-equation compact">\[c_2=\frac{BE+Az}{A^2+B^2}=0.852524522,\quad s_2=\frac{AE-Bz}{A^2+B^2}=0.522687229.\]</div><div class="ex-equation compact">\[\theta_2=\operatorname{atan2}(0.522687229,0.852524522)=0.55\ \mathrm{rad}.\]</div></div>
+      <div class="ex-card"><h3>Recover the base rotation</h3><div class="ex-equation compact">\[c_1=\frac{Ex+Cy}{E^2+C^2}=0.939372713,\quad s_1=\frac{Ey-Cx}{E^2+C^2}=0.342897807.\]</div><div class="ex-equation compact">\[\theta_1=\operatorname{atan2}(0.342897807,0.939372713)=0.35\ \mathrm{rad}.\]</div></div>
+    </div>
+    <div class="ex-takeaway">The arm coordinates are \((q_1,q_2,q_4)=(0.35,0.55,-1.1)\). Its two wrist solutions are \((q_5,q_6,q_7)=(0.7,0.8,-0.45)\) and \((0.7-\pi,-0.8,\pi-0.45)\); both reproduce the complete target.</div>
+  </section>
+
+  <section class="slide exercise-slide" id="reference-branches">
+    <p class="ex-kicker">10 · Eight mathematical solutions</p>
+    <h2 class="slide-title">Four arm branches × two wrist branches</h2>
+    <p class="ex-subtitle">Angles below are degrees for readability. Original joint 3 remains fixed at 30° in every row. Branch signs are \((\sigma_3,\sigma_E,\sigma_w)\). Full-precision values and residuals are retained in the separate reference JSON.</p>
+    <p class="table-hint">Scroll the table horizontally to see all seven joints and the limit checks.</p>
+    <div id="reference-branch-content"><div class="table-scroll"><table class="solution-table" aria-label="Eight inverse kinematics solutions in degrees"><thead><tr><th>Branch / signs</th><th>q1</th><th>q2</th><th>q3</th><th>q4</th><th>q5</th><th>q6</th><th>q7</th><th>Within limits?</th></tr></thead><tbody><tr data-branch="arm-p-p-wp"><td>1 · + + +</td><td>54.949</td><td>87.446</td><td>30.000</td><td>63.025</td><td>11.264</td><td>103.032</td><td>1.098</td><td>Yes</td></tr>
+<tr data-branch="arm-p-p-wm"><td>2 · + + −</td><td>54.949</td><td>87.446</td><td>30.000</td><td>63.025</td><td>-168.736</td><td>-103.032</td><td>-178.902</td><td class="limit-rejected">No · q7</td></tr>
+<tr data-branch="arm-p-m-wp"><td>3 · + − +</td><td>-159.946</td><td>-31.513</td><td>30.000</td><td>63.025</td><td>-139.893</td><td>45.837</td><td>-25.783</td><td>Yes</td></tr>
+<tr data-branch="arm-p-m-wm"><td>4 · + − −</td><td>-159.946</td><td>-31.513</td><td>30.000</td><td>63.025</td><td>40.107</td><td>-45.837</td><td>154.217</td><td>Yes</td></tr>
+<tr data-branch="arm-m-p-wp"><td>5 · − + +</td><td>20.054</td><td>31.513</td><td>30.000</td><td>-63.025</td><td>40.107</td><td>45.837</td><td>-25.783</td><td>Yes</td></tr>
+<tr data-branch="arm-m-p-wm"><td>6 · − + −</td><td>20.054</td><td>31.513</td><td>30.000</td><td>-63.025</td><td>-139.893</td><td>-45.837</td><td>154.217</td><td>Yes</td></tr>
+<tr data-branch="arm-m-m-wp"><td>7 · − − +</td><td>-125.051</td><td>-87.446</td><td>30.000</td><td>-63.025</td><td>-168.736</td><td>103.032</td><td>1.098</td><td>Yes</td></tr>
+<tr data-branch="arm-m-m-wm"><td>8 · − − −</td><td>-125.051</td><td>-87.446</td><td>30.000</td><td>-63.025</td><td>11.264</td><td>-103.032</td><td>-178.902</td><td class="limit-rejected">No · q7</td></tr></tbody></table></div><p class="worked-note">Every full-precision solution has position and orientation residuals below 10<sup>−14</sup>. The source configuration is branch 5, with signs (−, +, +).</p></div>
+    <div class="ex-caveat">Eight is the generic count for this verified target and fixed redundancy coordinate. Workspace boundaries, chart degeneracies and wrist singularities can merge roots, remove real roots or produce a family.</div>
+  </section>
+
+  <section class="slide exercise-slide" id="reference-limits">
+    <p class="ex-kicker">11 · Apply the actual joint limits</p>
+    <h2 class="slide-title">Pose closure and physical admissibility are different checks</h2>
+    <div class="ex-grid-2">
+      <div class="ex-card red"><h3>Limits in the supplied robot</h3><p>Original joints 1, 3 and 5: ±170°. Joints 2, 4 and 6: ±120°. Joint 7: ±175°. Use the URDF’s numerical radian bounds in code.</p><p>Test all seven coordinates, including the fixed \(q_3\). A mathematical IK branch that reproduces the pose may still exceed one or more joint limits.</p><p>The narrower-than-360° limits make a wrapped angle outside the listed interval infeasible; adding a full turn cannot move it inside that interval.</p></div>
+      <div class="ex-card"><h3>Reference classification</h3><div id="reference-limit-content"><p><strong>6 of 8 branches respect every joint limit.</strong></p><p>Branches 2 and 8 are rejected: q7 = -178.902412°, below its −175° lower bound.</p><p>All other listed branches are admissible for the supplied joint limits.</p></div><p>For the student’s own FK target, recompute the classification from the new solutions. Do not carry the reference target’s yes/no answers to a different pose.</p></div>
+    </div>
+  </section>
+
+  <section class="slide exercise-slide">
+    <p class="ex-kicker">Validation and exceptional cases</p>
+    <h2 class="slide-title">State the conditions behind every division and branch count</h2>
+    <div class="ex-grid-2">
+      <div class="ex-card red"><h3>Regular-case checks</h3><p>Require \(|c_3|&lt;1\), \(\rho^2-C^2&gt;0\), \(A^2+B^2&gt;0\), \(\rho^2&gt;0\) and \(|s_6|&gt;0\) for four distinct arm roots and two wrist roots each.</p><p>After solving, verify both \(\|p(q)-p_d\|_2\) and \(\|R(q)-R_d\|_F\), using documented tolerances. Compare joint vectors modulo \(2\pi\) to remove duplicate roots.</p></div>
+      <div class="ex-card"><h3>Do not divide through singularities</h3><p>If \(A=B=0\), the shoulder equations may leave \(\theta_2\) free. If \(\rho=0\), the base angle can be undetermined. Report these as families or special cases, not as eight isolated solutions.</p><p>At \(q_6=0\), only \(q_5+q_7\) is fixed. At \(q_6=\pi\), only \(q_5-q_7\) is fixed. Choose a member of the wrist family only after considering the joint limits.</p></div>
+    </div>
+    <div class="ex-deliverable"><strong>Completed derivation:</strong> fix original \(q_3\) → update either FK representation → identify and place the wrist → enumerate both elbow and signed-radial choices → back-substitute with Cramer’s rule → recover both Z–Y–Z wrist branches → verify FK → apply joint limits.</div>
+  </section>
+</main>
+<script src="../js/deck/nav-runtime.js"></script>
+</body>
+</html>

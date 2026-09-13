@@ -115,6 +115,34 @@
 .rodrigues-meaning > div:nth-child(2) { border-top-color: var(--epfl-red); }
 .rodrigues-meaning p { margin-bottom: 0; }
 
+/* Slide 18: expand and regroup the translational exponential in one view. */
+.lecture-02 .g-derivation-slide { padding-bottom: 3.5rem; }
+.g-derivation-slide .slide-subtitle { max-width: none; }
+.g-derivation-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.3rem;
+  min-height: 0;
+  flex-shrink: 0;
+}
+.g-derivation-columns > div { min-width: 0; }
+.g-derivation-columns > div:first-child { padding-right: 1.3rem; border-right: 1px solid var(--line); }
+.g-derivation-columns h3 { margin: .15rem 0 .4rem; font-size: 1.05rem; }
+.g-derivation-slide .equation { margin-block: .45rem; font-size: clamp(.82rem, 1.08vw, 1.12rem); }
+.g-derivation-slide p:not(.slide-kicker):not(.slide-subtitle) { margin-block: .35rem; font-size: .88rem; line-height: 1.35; }
+.g-derivation-slide .g-explanation { color: var(--muted); }
+.g-derivation-slide .g-result { margin-top: .6rem; }
+.g-integral { margin-top: .65rem; padding: .4rem .65rem; background: #f8f8f8; border-left: 3px solid var(--epfl-red); }
+.g-integral strong { font-size: .85rem; }
+.g-integral mjx-container[display="true"],
+.g-pose-result mjx-container[display="true"] { margin: .4em 0 !important; }
+.g-pose-result { display: grid; grid-template-columns: 1fr 1.4fr; gap: 1rem; align-items: center; margin-top: .35rem; }
+@media (max-width: 600px) {
+  .g-derivation-columns,
+  .g-pose-result { grid-template-columns: 1fr; }
+  .g-derivation-columns > div:first-child { border-right: 0; padding-right: 0; }
+}
+
 .adjoint-layout {
   display: grid;
   grid-template-columns: minmax(18rem, .72fr) minmax(0, 1.28fr);

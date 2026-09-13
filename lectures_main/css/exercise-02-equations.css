@@ -1,0 +1,85 @@
+/* Exercise 02 equation blocks. Colors are inherited from the lecture theme. */
+.ex02-equation-builder { --equation-red: var(--epfl-red, #f00); color: #111; text-align: left; }
+.ex02-equation-builder * { box-sizing: border-box; }
+.ex02-equation-instructions,
+.ex02-equation-keyboard-help { max-width: none; margin: .35rem 0 .7rem; font-size: .84rem; line-height: 1.4; color: #444; }
+.ex02-equation-keyboard-help { margin-top: .65rem; font-size: .75rem; }
+.ex02-equation-rows { display: grid; gap: .7rem; }
+.ex02-equation-row { min-width: 0; padding: .65rem .75rem; background: #fff; border: 1px solid #bcbcbc; border-left: 3px solid #bcbcbc; border-radius: 4px; }
+.ex02-equation-row.is-active { border-left-color: #111; }
+.ex02-equation-heading { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }
+.ex02-equation-label { color: #111; font-size: .95rem; font-weight: 750; }
+.ex02-equation-feedback { font-size: .8rem; font-weight: 700; }
+.ex02-equation-prompt { max-width: none; margin: .25rem 0 .5rem; font-size: .8rem; line-height: 1.45; color: #444; }
+.ex02-equation-dropzone { display: flex; align-items: center; align-content: flex-start; flex-wrap: wrap; gap: .25rem; min-height: 2.65rem; padding: .35rem; margin: .4rem 0 .45rem; border: 1px dashed #999; border-radius: 3px; background: rgba(255,255,255,.6); }
+.ex02-equation-drop-hint { padding: .3rem .15rem; font-size: .78rem; color: #656565; }
+.ex02-equation-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: .4rem; align-items: stretch; }
+.ex02-equation-input { width: 100%; min-width: 0; min-height: 2.45rem; padding: .45rem .55rem; border: 1px solid #777; border-radius: 3px; background: #fff; color: #111; font: 400 .85rem/1.4 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.ex02-equation-builder button { margin: 0; border-radius: 3px; box-shadow: none; cursor: pointer; text-transform: none; letter-spacing: normal; transition: none; }
+.ex02-equation-check,
+.ex02-equation-clear { min-height: 2.45rem; padding: .4rem .65rem; border: 1px solid #111; background: #111; color: #fff; font-family: inherit; font-size: .8rem; font-weight: 650; line-height: 1.3; }
+.ex02-equation-clear { background: #fff; color: #111; }
+.ex02-equation-check:hover { background: #333; }
+.ex02-equation-clear:hover { background: #eee; }
+.ex02-equation-palette { position: sticky; top: .5rem; z-index: 15; display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin: .7rem 0; padding: .65rem .75rem; border: 1px solid #111; border-radius: 4px; background: #f5f5f5; box-shadow: 0 3px 0 #fff; }
+.exercise-02.mode-scroll .ex02-equation-palette { top: var(--ex02-equation-toolbar-offset, 118px); }
+/* A scrolling slide already reserves the toolbar in its top padding. */
+.exercise-02.mode-deck .ex02-equation-palette { top: calc(8px - var(--slide-padding-y)); }
+.ex02-equation-palette-label { font-size: .72rem; font-weight: 750; text-transform: uppercase; letter-spacing: .07em; }
+.ex02-equation-palette-target { flex: 1 0 65%; font-size: .76rem; font-weight: 600; text-align: right; color: #444; }
+.ex02-equation-builder .ex02-equation-token,
+.ex02-equation-builder .ex02-equation-chip { display: inline-flex; align-items: center; justify-content: center; min-width: 2rem; min-height: 2rem; padding: .3rem .55rem; border: 1px solid #777; background: #fff; color: #111; font: 500 .84rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; cursor: grab !important; overflow-wrap: anywhere; max-width: 100%; }
+.ex02-equation-token:hover,
+.ex02-equation-chip:hover { border-color: #111; background: #eee; }
+.ex02-equation-token:active,
+.ex02-equation-chip:active { cursor: grabbing !important; }
+.ex02-equation-chip.is-selected { outline: 2px solid #111; outline-offset: 1px; }
+.ex02-equation-chip.is-dragging { opacity: .4; }
+.ex02-equation-dropzone.is-drop-target { border-color: var(--equation-red); outline: 1px solid var(--equation-red); }
+.ex02-equation-chip.is-drop-before { box-shadow: -3px 0 0 var(--equation-red); }
+.ex02-equation-builder :focus-visible { outline: 2px solid #111; outline-offset: 3px; }
+.ex02-equation-row[data-result="correct"] { background: #e6f4e9; border-color: #67a976; }
+.ex02-equation-row[data-result="incorrect"] { background: #fde8e8; border-color: #ca7878; }
+.ex02-equation-row[data-result="correct"] .ex02-equation-input { background: #eff9f0; }
+.ex02-equation-row[data-result="incorrect"] .ex02-equation-input { background: #fff0f0; }
+.ex02-robot-scene { margin: 0; border: 1px solid #ccc; border-radius: 5px; overflow: hidden; background: #fff; }
+.ex02-robot-scene svg { display: block; width: 100%; height: auto; max-height: 390px; min-height: 230px; background: #fff; touch-action: none; cursor: grab; }
+.ex02-robot-scene svg:active { cursor: grabbing; }
+.ex02-robot-scene svg:focus-visible { outline: 2px solid #111; outline-offset: -3px; }
+.ex02-scene-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .35rem .8rem; padding: .4rem .55rem; background: #f5f5f5; border-top: 1px solid #ddd; }
+.ex02-scene-help { font-size: .72rem; line-height: 1.4; color: #555; }
+.ex02-scene-controls { display: inline-flex; gap: .3rem; }
+.ex02-scene-controls button { margin: 0; min-height: 2rem; min-width: 2rem; padding: .3rem .5rem; border: 1px solid #888; border-radius: 3px; background: #fff; color: #111; font: inherit; font-size: .75rem; cursor: pointer; }
+.ex02-scene-controls button:hover { border-color: #111; background: #eee; }
+.ex02-scene-caption { padding: .4rem .55rem; font-size: .72rem; line-height: 1.4; color: #555; }
+.ex02-scene-adapter, .ex02-scene-mount { min-width: 0; width: 100%; }
+.ex02-scene-viewport { position: relative; width: 100%; height: clamp(270px, 36vw, 390px); overflow: hidden; background: #fff; }
+.ex02-scene-viewport canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.ex02-scene-viewport canvas:active { cursor: grabbing; }
+.ex02-scene-viewport canvas:focus-visible { outline: 2px solid #111; outline-offset: -3px; }
+.ex02-scene-label-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.ex02-scene-label { position: absolute; top: 0; left: 0; white-space: nowrap; font: 650 12px/1.2 system-ui, sans-serif; color: #111; text-shadow: 0 1px 2px #fff, 0 -1px 2px #fff, 1px 0 2px #fff, -1px 0 2px #fff; }
+.ex02-scene-label[hidden] { display: none; }
+.ex02-scene-display-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem .85rem; border-top: 1px solid #ddd; padding: .6rem .65rem; background: #fff; }
+.ex02-scene-toggle { display: inline-flex; align-items: center; gap: .3rem; margin: 0; font-size: .75rem; font-weight: 550; color: #111; cursor: pointer; }
+.ex02-scene-toggle input { width: 1rem; height: 1rem; margin: 0; accent-color: #111; }
+.ex02-scene-slider { display: grid; grid-template-columns: auto minmax(70px, 1fr) 3.4rem; align-items: center; gap: .45rem; margin: 0; flex: 1 1 220px; max-width: 100%; color: #111; font-size: .75rem; }
+.ex02-scene-slider input { width: 100%; min-width: 0; margin: 0; accent-color: #111; }
+.ex02-scene-slider output { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.ex02-scene-load-status { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; padding: .45rem .1rem; font-size: .7rem; line-height: 1.4; color: #555; }
+.ex02-scene-adapter[data-scene-state="loading"] .ex02-scene-load-status { min-height: 110px; justify-content: center; border: 1px solid #ccc; padding: 1rem; }
+.ex02-scene-adapter[data-scene-state="fallback"] .ex02-scene-load-status { color: #111; }
+.ex02-scene-load-status button { margin: 0; padding: .35rem .55rem; border: 1px solid #888; border-radius: 3px; background: #fff; color: #111; font: inherit; cursor: pointer; }
+.ex02-scene-load-status button[hidden] { display: none; }
+@media (max-width: 600px) {
+  .exercise-02.mode-scroll .ex02-equation-palette { top: var(--ex02-equation-toolbar-offset, 144px); }
+  .ex02-equation-palette { gap: .25rem; padding: .5rem; }
+  .ex02-equation-palette-label { flex-basis: 100%; }
+  .ex02-equation-palette-target { flex-basis: 100%; text-align: left; margin-bottom: .15rem; }
+  .ex02-equation-row { padding: .6rem; }
+  .ex02-equation-entry { grid-template-columns: 1fr auto; }
+  .ex02-equation-input { grid-column: 1 / -1; }
+  .ex02-equation-token,
+  .ex02-equation-chip { min-height: 2.4rem; }
+  .ex02-equation-check, .ex02-equation-clear { min-height: 2.5rem; }
+}

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ff0000">
+  <title>Kinematic building blocks · ENG-654</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="stylesheet" href="styles.css?v=3">
+  <script defer src="math.js?v=3"></script>
+  <script defer src="graph.js?v=3"></script>
+  <script defer src="presets.js?v=3"></script>
+  <script defer src="python.js?v=3"></script>
+  <script defer src="python-import.js?v=3"></script>
+  <script defer src="preview.js?v=3"></script>
+  <script defer src="app.js?v=3"></script>
+</head>
+<body class="app-shell">
+  <header class="app-header">
+    <a class="brand" href="building_blocks.html" aria-label="Kinematic building blocks home">
+      <span class="brand-mark" aria-hidden="true">K<span>▸</span></span>
+      <span><strong class="brand-name">Kinematic building blocks</strong><span class="brand-subtitle">EPFL · ENG-654 / Playground</span></span>
+    </a>
+    <div class="header-actions">
+      <button id="undo" title="Undo (Ctrl / ⌘ Z)" aria-label="Undo">↶</button>
+      <button id="redo" title="Redo (Ctrl / ⌘ Shift Z)" aria-label="Redo">↷</button>
+      <span class="header-divider" aria-hidden="true"></span>
+      <button id="import">Open</button><button id="save">Save graph</button>
+      <button id="help" class="quiet">How it works <span aria-hidden="true">?</span></button>
+    </div>
+  </header>
+
+  <section class="toolbar" aria-label="Block library">
+    <div class="toolbar-label">BUILD WITH<span>Drag or click a block</span></div>
+    <div class="palette">
+      <button class="palette-item" draggable="true" data-type="rotation" title="Add a rotation matrix"><span class="palette-icon">R</span><span class="palette-copy"><strong>Rotation</strong><small>Axis + angle</small></span></button>
+      <button class="palette-item" draggable="true" data-type="translation" title="Add a translation vector"><span class="palette-icon">p</span><span class="palette-copy"><strong>Translation</strong><small>Three components</small></span></button>
+      <button class="palette-item" draggable="true" data-type="transform" title="Add a homogeneous transformation matrix"><span class="palette-icon">T</span><span class="palette-copy"><strong>Transform</strong><small>4 × 4 matrix</small></span></button>
+      <button class="palette-item" draggable="true" data-type="exponential" title="Add a screw exponential"><span class="palette-icon">e<sup>ξ̂θ</sup></span><span class="palette-copy"><strong>Exponential</strong><small>Screw + amount</small></span></button>
+      <button class="palette-item" draggable="true" data-type="inverse" title="Invert the connected input"><span class="palette-icon">T<sup>−1</sup></span><span class="palette-copy"><strong>Inverse</strong><small>Reverse the pose</small></span></button>
+      <button class="palette-item" draggable="true" data-type="logarithm" title="Extract a screw from the connected numeric pose"><span class="palette-icon">log</span><span class="palette-copy"><strong>To screw</strong><small>Matrix logarithm</small></span></button>
+    </div>
+  </section>
+
+  <section class="function-library" aria-label="Saved function blocks">
+    <span class="section-label">MY BLOCKS</span><div id="function-library" class="library-items"></div>
+    <button id="import-python">Import Python</button>
+  </section>
+
+  <main class="workspace">
+    <section class="canvas-panel" aria-label="Block composition canvas">
+      <div class="canvas-heading">
+        <div><label class="section-label" for="example">TEMPLATES & EXAMPLES</label><select id="example"><optgroup label="Student templates · custom_3R"><option value="custom3r-poe">custom_3R · PoE forward kinematics</option><option value="custom3r-dh">custom_3R · D-H forward kinematics</option></optgroup><optgroup label="Basic examples"><option value="dh" selected>D–H transformation</option><option value="poe">Product of exponentials</option><option value="screw">Screw → matrix → screw</option><option value="empty">Empty canvas</option></optgroup></select></div>
+        <div class="canvas-subtitle">Column vectors <span>·</span> A → B computes <strong>A B</strong></div>
+      </div>
+      <div id="canvas" class="viewport" tabindex="0" aria-label="Drag empty space to select blocks. Shift-click to add to selection. Space-drag to pan. Connect an output port to an input port.">
+        <div id="world" class="world"><svg id="connections" class="connections" aria-label="Block connections"></svg><div id="nodes" class="nodes"></div></div>
+        <div id="selection-box" class="selection-box" hidden></div>
+        <div id="empty-state" class="empty-state" hidden><div class="empty-icon">[ &nbsp; ]</div><h1>Start with a motion.</h1><p>Drag a block from the toolbar.<br>Connect its output to the next block’s input.</p><button id="load-dh" class="primary">Try a D–H transformation</button></div>
+        <div id="connection-tip" class="connection-tip" role="status" hidden>Choose an input port · Esc to cancel</div>
+      </div>
+      <div class="selection-actions"><span id="selection-count">1 selected</span><button id="combine-selection">Combine</button><button id="save-function">Save as function</button></div>
+      <div class="canvas-controls"><button id="select-mode" aria-pressed="true" title="Drag to select blocks">Select</button><button id="pan-mode" aria-pressed="false" title="Drag to pan the canvas">Pan</button><button id="zoom-out" aria-label="Zoom out">−</button><output id="zoom-level" class="zoom-readout">100%</output><button id="zoom-in" aria-label="Zoom in">+</button><button id="fit" title="Fit the graph to the canvas">Fit</button></div>
+      <p class="canvas-help">Shift-click to select · Space-drag to pan · Scroll to zoom</p>
+    </section>
+
+    <section class="output-panel" aria-label="Live composition result">
+      <div class="panel-heading"><div><span class="section-label">LIVE OUTPUT</span><h2 id="output-title">Composition</h2></div><span id="output-dimension" class="badge">4 × 4</span><div class="output-toolbar"><div class="segmented" aria-label="Result display"><button id="symbolic-view" aria-pressed="true">Symbolic</button><button id="numeric-view" aria-pressed="false">Numeric</button></div><button id="copy-result" title="Copy the selected result">Copy</button><button id="output-python" class="code-button">Python &lt;/&gt;</button></div></div>
+      <div id="output-content"></div>
+    </section>
+
+    <aside class="inspector" aria-label="Selected block settings">
+      <div class="inspector-header"><span class="section-label">INSPECTOR</span><span id="selected-id" class="tag"></span></div>
+      <details id="preset-guide" class="preset-guide" hidden><summary>custom_3R · template guide</summary><div id="preset-guide-content"></div></details>
+      <div id="inspector-content"></div>
+      <section class="inspector-section"><div class="section-label">SYMBOL VALUES <span class="optional-label">for numeric output</span></div><div id="bindings" class="symbol-bindings"></div></section>
+      <section class="inspector-section"><div class="field-row"><label for="angle-unit">Angle inputs</label><select id="angle-unit"><option value="rad">Radians</option><option value="deg">Degrees</option></select></div><p class="hint">Rotation angles use this unit. Translation components use one consistent length unit.</p></section>
+      <section class="inspector-section"><div class="section-label">POSE PREVIEW</div><div id="preview" class="frame-preview"></div></section>
+    </aside>
+  </main>
+
+  <footer class="statusbar"><span id="status" role="status">Ready</span><span id="save-status">Saved on this device</span></footer>
+  <div id="context-menu" class="context-menu" role="menu" hidden></div>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <input type="file" id="graph-file" accept=".json,application/json" hidden>
+
+  <dialog id="code-dialog" aria-labelledby="code-title">
+    <div class="dialog-header"><div><span class="section-label">READABLE · EDITABLE · YOURS</span><h2 id="code-title">Python for this composition</h2></div><form method="dialog"><button aria-label="Close Python code">✕</button></form></div>
+    <div class="dialog-body"><p class="hint">Each operation has a commented function. The composed function calls them in order and accepts symbolic or numeric arguments.</p><div class="code-options"><label class="field"><span>Export</span><select id="code-scope"><option value="chain">Composed function · includes upstream blocks</option><option value="block">This block’s function</option></select></label><label class="code-bindings"><input id="code-bindings" type="checkbox"> Use numeric values in the example</label></div><pre class="code-output"><code id="python-code"></code></pre></div>
+    <div class="dialog-actions"><button id="download-python">Download .py</button><button id="copy-python" class="primary">Copy Python</button></div>
+  </dialog>
+
+  <dialog id="function-dialog" aria-labelledby="function-title">
+    <div class="dialog-header"><div><span class="section-label">REUSABLE MOTIONS</span><h2 id="function-title">Combine blocks</h2></div><form method="dialog"><button aria-label="Close function settings">✕</button></form></div>
+    <form id="function-form">
+      <div class="dialog-body"><label class="field"><span>Block name</span><input id="function-name" maxlength="80" required placeholder="^0T_1 or forward_kinematics" autocomplete="off"></label><div id="function-name-preview" class="function-name-preview"></div><p class="hint">Use ^0T_1 or ^{0}T_{1} for frame notation, or choose any name.</p><p id="function-description"></p><div id="function-parameters" class="parameter-chips"></div><p id="function-error" class="error-message" role="alert"></p></div>
+      <div class="dialog-actions"><button id="function-submit" class="primary" type="submit">Combine blocks</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="python-import-dialog" aria-labelledby="python-import-title">
+    <div class="dialog-header"><div><span class="section-label">FROM CODE TO BLOCK</span><h2 id="python-import-title">Import a Python function</h2></div><form method="dialog"><button aria-label="Close Python import">✕</button></form></div>
+    <div class="dialog-body"><p class="hint">Open a .py file exported by this playground, or paste a Python FK function. Playground exports import offline. External NumPy / SymPy functions load a Python runtime on first use and must return a symbolic 3 × 3, 3 × 1, or 4 × 4 matrix.</p><label class="field"><span>Python file</span><input id="python-file" type="file" accept=".py,text/x-python,text/plain"></label><label class="field"><span>Python source</span><textarea id="python-source" rows="10" maxlength="1048576" spellcheck="false" placeholder="def forward_kinematics(q1, q2): …"></textarea></label><div class="field-row"><label class="field"><span>Function to import (external code)</span><input id="python-function-name" placeholder="forward_kinematics" autocomplete="off"></label><label class="field"><span>Block name (optional)</span><input id="python-block-name" maxlength="80" placeholder="My FK"></label></div><p id="python-import-status" class="hint" role="status"></p><p id="python-import-error" class="error-message" role="alert"></p></div>
+    <div class="dialog-actions"><button id="cancel-python-import" hidden>Cancel import</button><button id="run-python-import" class="primary">Import as block</button></div>
+  </dialog>
+
+  <dialog id="help-dialog" aria-labelledby="help-title">
+    <div class="dialog-header"><div><span class="section-label">KINEMATIC BUILDING BLOCKS</span><h2 id="help-title">Build a motion, one block at a time.</h2></div><form method="dialog"><button aria-label="Close instructions">✕</button></form></div>
+    <div class="dialog-body help-content">
+      <ol><li><strong>Add a block.</strong> Drag it onto the canvas or click it in the toolbar.</li><li><strong>Edit its parameters.</strong> Select a block or right-click → Edit. Enter numbers, symbols such as <code>theta</code>, or expressions such as <code>pi/2</code> and <code>2*a</code>.</li><li><strong>Connect motions.</strong> Drag the right output port to another block’s left input port. You can also click one port, then the other. Each block accepts one input; an output can feed several blocks.</li><li><strong>Read the result.</strong> The lower panel shows the selected block’s accumulated output. Set symbol values in the inspector to evaluate it numerically.</li><li><strong>Take the code with you.</strong> Right-click → Python code to inspect, copy, or download the commented functions and composition.</li></ol>
+      <h3>Order matters</h3><p>A → B computes <strong>A B</strong> using column vectors. When this product acts on a point, the rightmost matrix acts first. Connecting a rotation and translation embeds both in 4 × 4 homogeneous matrices. A D–H chain is <strong>R<sub>z</sub>(θ) · T<sub>z</sub>(d) · T<sub>x</sub>(a) · R<sub>x</sub>(α)</strong>.</p>
+      <h3>custom_3R FK templates</h3><p>Choose a custom_3R template from <strong>Templates & examples</strong>. The PoE template contains three screw exponentials followed by the home pose M. The D-H template contains three 4 × 4 matrices; each expands into four D-H operations. Both calculate the pose of tool0 in base_link using the exact custom_3R.urdf. Joint values start at zero radians; the home position is (4.5, 1.25, 1.25) metres. Open the template guide in the inspector for the parameters, then change q1, q2, and q3 to explore the FK.</p>
+      <h3>Screws and exponentials</h3><p>Enter the screw as <strong>ξ = (ω, v)</strong>, angular components first. The block shows <strong>e<sup>[ξ]θ</sup></strong>; its Matrix switch reveals the 4 × 4 result. For a unit rotational axis, θ is the rotation angle. For a pure translation (ω = 0), the amount is a displacement and the angle-unit setting has no effect. To screw extracts one principal screw from a numeric rigid transform; its rotational angle is in radians, between 0 and π. Its output is screw coordinates: enter them in an Exponential block to compose that motion.</p>
+      <h3>Combine and reuse</h3><p>Shift-click (or Ctrl/⌘-click) to select multiple blocks, or drag a rectangle around them. Click <strong>Combine</strong> to replace a connected chain with one block. Name it <code>^0T_1</code> for frame notation or use any label. <strong>Save as function</strong> stores the selected chain in My blocks; selecting just the final block saves all its upstream operations. Drag a saved function onto the canvas and enter values or symbols for its arguments. A function keeps the angle convention used when it was created. Use <strong>Expand into individual blocks</strong> to inspect its operations again.</p>
+      <h3>Python functions</h3><p>The Python panel shows commented functions for each operation and a callable function for the chain. Its numeric example runs only when the file is executed directly. Download the file to use it in Python, or choose <strong>Import Python</strong> to bring it back as a reusable block. Playground exports import offline. External NumPy / SymPy functions require a Python runtime download on first use; they must accept scalar parameters and return a symbolic matrix. Edited exports must be re-exported, or have their saved-definition footer removed before external import.</p>
+      <h3>Working on the canvas</h3><p>Drag selected blocks by a header. Drag empty space to select; hold Space and drag to pan, or use the Pan button. Scroll to zoom. Ctrl/⌘ A selects all blocks; Ctrl/⌘ G combines the selection. Delete removes the selection; Ctrl/⌘ Z undoes a change. Right-click a connection to disconnect it. Save graph downloads an editable JSON file including embedded functions; Open restores it. The current graph and My blocks are saved on this device.</p>
+      <h3>Pose preview controls</h3><p>Left-drag to orbit, right- or Shift-drag to pan, and scroll or middle-drag to zoom. On a touch screen, use one finger to orbit and two fingers to pan or pinch. Use Reset to restore the camera view. These controls change the view, not the computed FK.</p>
+      <p class="hint">Expressions support +, −, *, /, ^, pi, sin, cos, tan, sqrt, acos, and atan2. Use * explicitly. Function arguments such as sin(pi/2) are always radians; Angle inputs controls rotation and exponential parameters.</p>
+      <p class="hint">Screw convention: <a href="https://modernrobotics.northwestern.edu/nu-gm-book-resource/3-3-3-exponential-coordinates-of-rigid-body-motion/" target="_blank" rel="noreferrer">Modern Robotics, §3.3.3</a>.</p>
+    </div>
+  </dialog>
+  <noscript>This playground needs JavaScript to calculate matrices and connect blocks.</noscript>
+</body>
+</html>

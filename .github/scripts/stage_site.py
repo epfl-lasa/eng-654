@@ -11,7 +11,6 @@ RELEASE_CONFIG = Path("lectures_main/exercise_01_release.json")
 SOLUTIONS = Path("lectures_main/solutions")
 FEEDBACK_FILES = (
     "exercise_01.html",
-    "js/exercise-01-checker.js",
     "js/exercise-01-verification.js",
 )
 ANSWER_FILE = "exercise_01_answers.json"

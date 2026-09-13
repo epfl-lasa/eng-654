@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Frames, Transformations, and DH Modelling — ENG-654</title>
+  <title>Frames, Transformations, and D-H Modelling — ENG-654</title>
 
   <link rel="stylesheet" href="../css/base.css">
   <link rel="stylesheet" href="../css/layouts.css">
@@ -38,9 +38,9 @@
     <section class="slide title-slide">
       <div class="title-slide-content">
         <p class="eyebrow">ENG-654 · Lecture 01</p>
-        <h1 class="course-title dh-lecture-title">Frames, Transformations &amp; DH Modelling</h1>
+        <h1 class="course-title dh-lecture-title">Frames, Transformations &amp; D-H Modelling</h1>
         <p class="subtitle">How do we turn robot geometry into a reproducible kinematic model?</p>
-        <p class="lecture-promise">Coordinates become rigid transformations; repeated transformations become a DH model; numerical checks establish whether that model reproduces the physical robot.</p>
+        <p class="lecture-promise">Coordinates become rigid transformations; repeated transformations become a D-H model; numerical checks establish whether that model reproduces the physical robot.</p>
       </div>
     </section>
 
@@ -85,7 +85,7 @@
       <p class="slide-subtitle">The sequence moves from reading a robot to reasoning globally about all motions it can perform.</p>
       <div class="layout-two-column divided">
         <ul class="minimal-list">
-          <li><strong>01 · Frames and DH:</strong> build a reproducible forward model.</li>
+          <li><strong>01 · Frames and D-H:</strong> build a reproducible forward model.</li>
           <li><strong>02 · URDF and PoE:</strong> connect files, geometry, and screw motion.</li>
           <li><strong>03 · 3R inverse kinematics:</strong> expose solution multiplicity.</li>
           <li><strong>04 · Wrist-partitioned 6R IK:</strong> separate position and orientation.</li>
@@ -449,8 +449,8 @@
 
     <section class="slide">
       <p class="slide-kicker">Act IV · Frame placement needs a convention</p>
-      <h2 class="slide-title">Why we need the DH convention</h2>
-      <p class="slide-subtitle">DH does not compress an arbitrary frame pair. It deliberately places consecutive frames so their relative pose has a four-parameter structure.</p>
+      <h2 class="slide-title">Why we need the D-H convention</h2>
+      <p class="slide-subtitle">D-H stands for <strong>Denavit-Hartenberg</strong>. Its four parameters describe the relative pose between deliberately placed consecutive link frames.</p>
       <div class="layout-two-column divided">
         <div>
           <p class="lead">A completely free rigid transform has six degrees of freedom.</p>
@@ -458,17 +458,18 @@
           <p>That freedom is useful, but it makes a serial robot difficult to tabulate consistently.</p>
         </div>
         <div>
-          <p class="lead">DH chooses consecutive frames around the joint axes and common normal so that only four numbers remain.</p>
+          <p class="lead">D-H chooses consecutive frames around the joint axes and common normal so that only four numbers remain.</p>
           <div class="equation">\[(a_i,\alpha_i,d_i,\theta_i)\]</div>
-          <div class="definition"><strong>Purpose of DH:</strong> a compact, auditable link-by-link table after the joint axes and common normals have fixed the frame structure.</div>
+          <div class="definition"><strong>Purpose of D-H:</strong> a compact, auditable link-by-link table after the joint axes and common normals have fixed the frame structure.</div>
         </div>
       </div>
       <div class="clean-callout"><strong>Not unique:</strong> parallel, intersecting, or coincident axes can admit several valid origin, sign, and zero-offset choices. Equivalent tables are acceptable when they reproduce the same base-to-tool kinematics.</div>
+      <p class="bridge-note"><strong>Original paper:</strong> J. Denavit and R. S. Hartenberg (1955), <a href="https://doi.org/10.1115/1.4011045"><em>A Kinematic Notation for Lower-Pair Mechanisms Based on Matrices</em></a>, <em>Journal of Applied Mechanics</em>, 22(2), 215–221.</p>
     </section>
 
     <section class="slide">
-      <p class="slide-kicker">Act IV · Standard DH</p>
-      <h2 class="slide-title">One standard-DH row means four ordered motions</h2>
+      <p class="slide-kicker">Act IV · Standard D-H</p>
+      <h2 class="slide-title">One standard D-H row means four ordered motions</h2>
       <p class="slide-subtitle">The parameter values and their multiplication order jointly define the relative pose from frame \(i-1\) to frame \(i\).</p>
       <div class="equation">
         \[
@@ -481,12 +482,12 @@
         <div class="dh-convention-step"><strong>3 · \\(a_i\\)</strong>Translate along the common normal \\(x_i\\).</div>
         <div class="dh-convention-step"><strong>4 · \\(\alpha_i\\)</strong>Rotate about \\(x_i\\) to align the next z-axis.</div>
       </div>
-      <p class="lead" style="margin-inline:auto;text-align:center;">The order is part of the convention. Modified DH uses a different order and indexing; never combine rows from the two conventions without converting them.</p>
+      <p class="lead" style="margin-inline:auto;text-align:center;">The order is part of the convention. Modified D-H uses a different order and indexing; never combine rows from the two conventions without converting them.</p>
     </section>
 
     <section class="slide">
       <p class="slide-kicker">Act IV · Geometric interpretation</p>
-      <h2 class="slide-title">Reading the four DH parameters</h2>
+      <h2 class="slide-title">Reading the four D-H parameters</h2>
       <p class="slide-subtitle">Each parameter measures either separation or alignment between two consecutive joint axes.</p>
       <div class="dh-parameter-grid reveal-children">
         <div class="dh-parameter-item"><strong>\\(a_i\\)</strong><p>How far apart are the two joint axes along their common normal?</p></div>
@@ -499,35 +500,35 @@
 
     <section class="slide">
       <p class="slide-kicker">Act IV · Experiment</p>
-      <h2 class="slide-title">Build and test a DH frame assignment</h2>
-      <p class="slide-subtitle">Change the four parameters, compare frames, and test whether a selected pair can be represented by one standard-DH row.</p>
-      <div class="demo-prompt"><strong>Explore:</strong> edit \(\theta_i\) and watch the DH frames and loaded robot visuals move. Then compare a direct parent–child pair with a nonconsecutive pair.</div>
+      <h2 class="slide-title">Build and test a D-H frame assignment</h2>
+      <p class="slide-subtitle">Change the four parameters, compare frames, and test whether a selected pair can be represented by one standard D-H row.</p>
+      <div class="demo-prompt"><strong>Explore:</strong> edit \(\theta_i\) and watch the D-H frames and loaded robot visuals move. Then compare a direct parent–child pair with a nonconsecutive pair.</div>
       <div class="layout-full demo-layout">
         <div class="visual-container">
           <div data-frame-dh-playground></div>
         </div>
       </div>
-      <p class="slide-takeaway"><strong>Takeaway:</strong> DH parameters describe a constrained relationship between deliberately assigned consecutive frames.</p>
+      <p class="slide-takeaway"><strong>Takeaway:</strong> D-H parameters describe a constrained relationship between deliberately assigned consecutive frames.</p>
     </section>
 
     <section class="slide">
       <p class="slide-kicker">Act IV · Falsification</p>
-      <h2 class="slide-title">Not every frame pair is one DH step</h2>
-      <p class="slide-subtitle">A general rigid transform has six degrees of freedom, so an arbitrary pair usually cannot satisfy the four-parameter standard-DH structure exactly.</p>
+      <h2 class="slide-title">Not every frame pair is one D-H step</h2>
+      <p class="slide-subtitle">A general rigid transform has six degrees of freedom, so an arbitrary pair usually cannot satisfy the four-parameter standard D-H structure exactly.</p>
       <div class="layout-two-column divided">
         <div>
-          <p class="lead">The playground constructs a standard-DH candidate from \\({}^{A}T_B\\) and tests whether it reconstructs the selected transform.</p>
+          <p class="lead">The playground constructs a standard D-H candidate from \\({}^{A}T_B\\) and tests whether it reconstructs the selected transform.</p>
           <div class="equation">
             \[
-            \widehat T_{DH}=R_z(\hat\theta)T_z(\hat d)T_x(\hat a)R_x(\hat\alpha)
+            \widehat T_{\text{D-H}}=R_z(\hat\theta)T_z(\hat d)T_x(\hat a)R_x(\hat\alpha)
             \]
           </div>
-          <p>If reconstruction is not near exact, the selected frame pair does not satisfy the standard-DH placement constraints.</p>
+          <p>If reconstruction is not near exact, the selected frame pair does not satisfy the standard D-H placement constraints.</p>
         </div>
         <div class="reveal-children">
-          <div class="clean-callout"><strong>Test 1:</strong> select a parent and its direct DH child → reconstruction should be essentially exact.</div>
-          <div class="clean-callout"><strong>Test 2:</strong> select F0 and F2 in the <code>custom_3R</code> preset → two DH steps generally cannot be compressed into one DH step.</div>
-          <div class="clean-callout"><strong>Lesson:</strong> DH parameters belong to a <em>frame convention</em>, not merely to two arbitrary coordinate systems.</div>
+          <div class="clean-callout"><strong>Test 1:</strong> select a parent and its direct D-H child → reconstruction should be essentially exact.</div>
+          <div class="clean-callout"><strong>Test 2:</strong> select F0 and F2 in the <code>custom_3R</code> preset → two D-H steps generally cannot be compressed into one D-H step.</div>
+          <div class="clean-callout"><strong>Lesson:</strong> D-H parameters belong to a <em>frame convention</em>, not merely to two arbitrary coordinate systems.</div>
         </div>
       </div>
       <p class="bridge-note">A scalar matrix residual is only a diagnostic because it mixes dimensionless rotation entries with translation. For model validation, report position error in metres and orientation error in radians separately.</p>
@@ -536,8 +537,8 @@
     <section class="slide">
       <p class="slide-kicker">Act V · Validate the model</p>
       <h2 class="slide-title">Animate the compact model before comparing representations</h2>
-      <p class="slide-subtitle">This view renders the standard-DH frames and a line model. The dimensions come from the <code>custom_3R</code> URDF geometry, which remains the independent reference model.</p>
-      <div class="demo-prompt"><strong>Explore:</strong> move each joint, identify the active DH row, and predict how the base-to-tool transform changes. The next step is to compare its pose numerically with the URDF model.</div>
+      <p class="slide-subtitle">This view renders the standard D-H frames and a line model. The dimensions come from the <code>custom_3R</code> URDF geometry, which remains the independent reference model.</p>
+      <div class="demo-prompt"><strong>Explore:</strong> move each joint, identify the active D-H row, and predict how the base-to-tool transform changes. The next step is to compare its pose numerically with the URDF model.</div>
       <div class="layout-full demo-layout">
         <div class="visual-container">
           <div data-custom3r-dh-demo></div>
@@ -547,8 +548,8 @@
 
     <section class="slide">
       <p class="slide-kicker">Act V · Establish equivalence</p>
-      <h2 class="slide-title">The compact DH model</h2>
-      <p class="slide-subtitle">Three standard-DH rows plus explicit base and tool choices reproduce the <code>custom_3R</code> reference pose.</p>
+      <h2 class="slide-title">The compact D-H model</h2>
+      <p class="slide-subtitle">Three standard D-H rows plus explicit base and tool choices reproduce the <code>custom_3R</code> reference pose.</p>
       <div class="layout-center" style="flex-direction:column;gap:var(--vgap-md);">
         <table class="dh-table-large">
           <thead>
@@ -566,7 +567,7 @@
           T_z(1.0)\,A_1(q_1)A_2(q_2)A_3(q_3)
           \]
         </div>
-        <p class="lead" style="text-align:center;max-width:58ch;">The DH origin need not coincide with the URDF joint-origin point; it must lie on the same physical revolute axis and satisfy the chosen convention. A different valid assignment may change the table, base transform, joint zero offsets, or fixed tool transform while preserving the same physical map.</p>
+        <p class="lead" style="text-align:center;max-width:58ch;">The D-H origin need not coincide with the URDF joint-origin point; it must lie on the same physical revolute axis and satisfy the chosen convention. A different valid assignment may change the table, base transform, joint zero offsets, or fixed tool transform while preserving the same physical map.</p>
       </div>
     </section>
 
@@ -577,8 +578,8 @@
       <div class="layout-two-column divided">
         <div>
           <p class="lead">For several configurations \\(q^{(k)}\\), compute the tool pose from every representation you claim is equivalent.</p>
-          <div class="equation">\[e_p=\|\mathbf p_{\mathrm{DH}}-\mathbf p_{\mathrm{ref}}\|_2\quad[\mathrm m]\]</div>
-          <div class="equation">\[e_R=\cos^{-1}\!\left(\frac{\operatorname{tr}(R_{\mathrm{ref}}^{T}R_{\mathrm{DH}})-1}{2}\right)\quad[\mathrm{rad}]\]</div>
+          <div class="equation">\[e_p=\|\mathbf p_{\text{D-H}}-\mathbf p_{\mathrm{ref}}\|_2\quad[\mathrm m]\]</div>
+          <div class="equation">\[e_R=\cos^{-1}\!\left(\frac{\operatorname{tr}(R_{\mathrm{ref}}^{T}R_{\text{D-H}})-1}{2}\right)\quad[\mathrm{rad}]\]</div>
         </div>
         <div class="reveal-children">
           <p>Check the zero configuration first.</p>
@@ -598,8 +599,8 @@
       <div class="takeaway-stack">
         <div class="takeaway-row"><div class="takeaway-number">01</div><div><strong>Coordinates are frame-dependent.</strong> Always state what frame a vector or matrix is expressed in.</div></div>
         <div class="takeaway-row"><div class="takeaway-number">02</div><div><strong>Homogeneous transforms compose along compatible frame labels.</strong> Order matters.</div></div>
-        <div class="takeaway-row"><div class="takeaway-number">03</div><div><strong>DH is a frame-assignment convention.</strong> The four parameters are meaningful only after the consecutive frames satisfy that convention.</div></div>
-        <div class="takeaway-row"><div class="takeaway-number">04</div><div><strong>Use the interactive lab as a falsification tool.</strong> A non-zero DH residual tells you the selected frame pair is not a valid one-step standard-DH relation.</div></div>
+        <div class="takeaway-row"><div class="takeaway-number">03</div><div><strong>D-H is a frame-assignment convention.</strong> The four parameters are meaningful only after the consecutive frames satisfy that convention.</div></div>
+        <div class="takeaway-row"><div class="takeaway-number">04</div><div><strong>Use the interactive lab as a falsification tool.</strong> A non-zero D-H residual tells you the selected frame pair is not a valid one-step standard D-H relation.</div></div>
         <div class="takeaway-row"><div class="takeaway-number">05</div><div><strong>Validate numerically.</strong> The next lecture reads the software model in URDF and expresses the same motion through screw axes and PoE.</div></div>
       </div>
     </section>
@@ -607,6 +608,6 @@
   </main>
 
   <script src="../js/deck/nav-runtime.js"></script>
-  <script type="module" src="../js/main.js?v=20260831-1"></script>
+  <script type="module" src="../js/main.js?v=20260913-1"></script>
 </body>
 </html>

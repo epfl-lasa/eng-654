@@ -7,7 +7,7 @@ const path = require('node:path');
 const answers = require('../js/exercises/exercise-01-answers.js');
 const { parseNumber } = require('../js/exercises/exercise-01-numbers.js');
 const { initialVisualOrigins } = require('../js/exercises/exercise-01-visual-origins.js');
-const checker = require('../solutions/js/exercise-01-checker.js');
+const checker = require('../js/exercises/exercise-01-checker.js');
 
 test('download/import preserves screw and matrix expressions, choices and unfinished answers', () => {
   const entered = { 'dh.1.alpha': '-pi/2', 'dh.1.d': '0.34', 'base.1.4': '0.1 + 0.2', 'tool.3.4': '0.045',
@@ -250,7 +250,7 @@ test('rejects unknown/prototype keys and never evaluates submitted expressions',
   assert.equal(globalThis.answerInjected, undefined);
 });
 
-test('exercise and feedback clone expose matching labeled fields, with feedback only in the clone', () => {
+test('exercise and feedback pages share labeled fields and checker, with detailed feedback only in solutions', () => {
   for (const directory of ['exercises', 'solutions']) {
     const html = fs.readFileSync(path.join(__dirname, '..', directory, 'exercise_01.html'), 'utf8');
     const fields = Array.from(html.matchAll(/data-field="([^"]+)"/g), match => match[1]);
@@ -268,15 +268,26 @@ test('exercise and feedback clone expose matching labeled fields, with feedback 
     const poses = Array.from(html.matchAll(/data-fk-pose="([^"]+)" data-q-radians='([^']+)'/g));
     assert.equal(poses.length, 5);
     for (const [, name, q] of poses) assert.deepEqual(JSON.parse(q), checker.poses[name]);
-    assert.equal(html.includes('exercise-01-checker.js'), directory === 'solutions');
+    assert.ok(html.includes('<script src="../js/exercises/exercise-01-checker.js"></script>'));
+    assert.equal(html.includes('exercise-01-slide-checks.js'), directory === 'exercises');
     assert.equal(html.includes('exercise-01-verification.js'), directory === 'solutions');
   }
 });
 
-test('student slides contain no solution link, verification controls, results or checker code', () => {
+test('student slides load binary slide checks without solution links, detailed results or answer downloads', () => {
   const html = fs.readFileSync(path.join(__dirname, '../exercises/exercise_01.html'), 'utf8');
-  assert.doesNotMatch(html, /solutions\/|exercise-01-(?:checker|verification)\.js|id="(?:verification|verify-answers|view-results)[^"]*"|Check answers|answer-feedback/);
+  assert.doesNotMatch(html, /solutions\/|exercise-01-verification\.js|id="(?:verification|verify-answers|view-results)[^"]*"|answer-feedback|exercise_01_answers\.json|download-answer-key|exercise-answer-key|<script[^>]+type="application\/json"/);
+  const scripts = Array.from(html.matchAll(/<script\s+src="([^"]+)"/g), match => match[1]);
+  for (const name of ['numbers', 'visual-origins', 'answers', 'checker', 'slide-checks']) {
+    const script = `../js/exercises/exercise-01-${name}.js`;
+    assert.equal(scripts.filter(source => source === script).length, 1, script);
+    assert.ok(fs.existsSync(path.join(__dirname, '../exercises', script)), script);
+  }
+  const checksIndex = scripts.indexOf('../js/exercises/exercise-01-slide-checks.js');
+  for (const name of ['numbers', 'visual-origins', 'answers', 'checker']) {
+    assert.ok(scripts.indexOf(`../js/exercises/exercise-01-${name}.js`) < checksIndex, name);
+  }
   const shared = fs.readFileSync(path.join(__dirname, '../js/exercises/exercise-01-answers.js'), 'utf8');
   assert.doesNotMatch(shared, /Exercise01Checker|referenceAnswers|function verify\(/);
-  assert.equal(fs.existsSync(path.join(__dirname, '../js/exercises/exercise-01-checker.js')), false);
+  assert.equal(fs.existsSync(path.join(__dirname, '../solutions/js/exercise-01-checker.js')), false);
 });

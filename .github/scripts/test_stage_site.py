@@ -20,6 +20,10 @@ class SiteStagingTests(unittest.TestCase):
             "assets/projects/project_21.pdf",
             "lectures_main/exercises/exercise_01.html",
             "lectures_main/js/exercises/exercise-01-answers.js",
+            "lectures_main/js/exercises/exercise-01-numbers.js",
+            "lectures_main/js/exercises/exercise-01-visual-origins.js",
+            "lectures_main/js/exercises/exercise-01-checker.js",
+            "lectures_main/js/exercises/exercise-01-slide-checks.js",
             "lectures_main/assets/models/iiwa7/iiwa7.urdf",
             RELEASE_CONFIG.as_posix(),
         }
@@ -31,6 +35,7 @@ class SiteStagingTests(unittest.TestCase):
             f"{SOLUTIONS}/README.md",
             f"{SOLUTIONS}/exercise_02.html",
             f"{SOLUTIONS}/exercise_02_answers.json",
+            f"{SOLUTIONS}/js/exercise-01-checker.js",
             f"{SOLUTIONS}/{ANSWER_FILE}",
             *(f"{SOLUTIONS}/{name}" for name in FEEDBACK_FILES),
         }

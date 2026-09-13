@@ -1,0 +1,87 @@
+/* Exercise 02 uses the shared exercise slide, title and answer-toolbar layout.
+ * Only the IK tutorial's additional controls and diagrams are styled here. */
+.exercise-02 { --ex02-good: #edf8ef; --ex02-bad: #fff0f1; }
+.exercise-02 [hidden] { display: none !important; }
+.exercise-02 [data-stage-content] { min-width: 0; }
+.exercise-02.mode-scroll .slide { overflow: visible; }
+.exercise-02 .title-slide { justify-content: safe center; }
+.exercise-02 .ex02-title-help { max-width: 70ch; margin: .7rem auto; font-size: .9rem; line-height: 1.5; }
+.ex02-toolbar #progress { color: var(--muted); font-size: .75rem; }
+.ex02-toolbar #download-responses { color: #fff; background: var(--epfl-red); border-color: var(--epfl-red); }
+.ex02-upload input { inset: 0; width: 100%; height: 100%; cursor: pointer; }
+
+/* Leave the shared navigation arrows and equation-block controls to their own styles. */
+.exercise-02 :where(.ex02-checkbar, .ex02-segment, .ex02-table) button,
+.exercise-02 :where(#apply-q3, #reset-target),
+.ex02-button { padding: .5rem .85rem; min-height: 2.3rem; border: 1px solid #111; border-radius: 2px; background: #fff; color: #111; font: inherit; font-size: .9rem; font-weight: 700; line-height: 1.3; cursor: pointer; text-decoration: none; }
+.exercise-02 .slide button:hover, .ex02-button:hover { box-shadow: inset 0 0 0 1px currentColor; }
+.exercise-02 .slide button.primary,
+.ex02-button.primary { background: #111; border-color: #111; color: #fff; }
+.exercise-02 .slide button.primary:hover { background: #333; }
+.exercise-02 .slide :focus-visible { outline: 3px solid #1765a7; outline-offset: 3px; }
+.exercise-02 .slide a { color: #a51c22; text-underline-offset: 3px; }
+.exercise-02 .slide .ex02-start { display: inline-flex; align-items: center; margin-top: .5rem; color: #111; }
+.ex02-key { padding: 2px 4px; white-space: nowrap; }
+.ex02-key.correct { background: var(--ex02-good); }
+.ex02-key.incorrect { background: var(--ex02-bad); }
+.ex02-columns { margin: .65rem 0; }
+.ex02-columns > * { min-width: 0; }
+.ex02-formula { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(.78rem, 1.12vw, 1.25rem); background: #fafafa; border: 2px solid #111; padding: .55rem .7rem; line-height: 1.6; overflow-x: auto; max-width: 100%; }
+.exercise-02 .ex02-card .ex02-formula { font-size: clamp(.78rem, 1.12vw, 1.25rem); line-height: 1.6; }
+.ex02-note { color: var(--muted); font-size: .85rem; line-height: 1.4; border-left: 3px solid #ccc; padding-left: .65rem; }
+.ex02-segment { display: flex; flex-wrap: wrap; gap: 0; margin: .65rem 0; }
+.exercise-02 .ex02-segment button { border-radius: 0; }
+.exercise-02 .ex02-segment [aria-pressed=true] { background: #111; border-color: #111; color: #fff; }
+.ex02-table-wrap { max-width: 100%; overflow: auto; margin: .65rem 0; }
+.ex02-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: .85rem; white-space: nowrap; }
+.ex02-table th, .ex02-table td { text-align: right; border: 1px solid var(--line); padding: .45rem .5rem; }
+.ex02-table th:first-child, .ex02-table td:first-child { text-align: left; }
+.ex02-table thead { background: #111; color: #fff; }
+.ex02-table .fixed-row { background: #f4f4f4; font-weight: 750; border-left: 3px solid var(--epfl-red); }
+.ex02-table tbody tr[data-branch] { cursor: pointer; }
+.ex02-table tbody tr[data-branch]:hover { background: #f3f3f3; }
+.ex02-table tbody tr.selected-branch { outline: 2px solid #111; outline-offset: -2px; }
+.ex02-matrix { display: inline-grid; gap: .3rem .7rem; border-inline: 3px solid #111; padding: .45rem .6rem; font-family: ui-monospace, monospace; font-size: .9rem; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ex02-matrix-host { overflow: auto; padding: .3rem 0; }
+.ex02-matrix-host > p { font-weight: 650; }
+.ex02-field { display: flex; flex-direction: column; gap: .35rem; padding: .55rem; border: 1px solid #bbb; margin: .5rem 0; min-width: 0; border-radius: 2px; }
+.ex02-field > span { font-size: .95rem; font-weight: 700; }
+.ex02-field input { min-width: 0; width: 100%; min-height: 2.6rem; border: 1px solid #737373; background: #fff; border-radius: 2px; padding: .5rem; color: #111; font: inherit; font-size: .95rem; line-height: 1.35; }
+.ex02-vector { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+.ex02-choice { min-width: 0; margin: .5rem 0; border: 1px solid #bbb; border-radius: 2px; padding: .65rem; }
+.ex02-choice legend { font-weight: 700; font-size: .95rem; padding-inline: .2rem; }
+.ex02-choice label { display: flex; gap: .5rem; align-items: start; padding: .45rem .3rem; line-height: 1.4; cursor: pointer; font-size: .9rem; }
+.ex02-choice input { margin-top: .25rem; accent-color: #111; flex-shrink: 0; }
+.exercise-02 [data-result=correct] { background: var(--ex02-good); }
+.exercise-02 [data-result=incorrect] { background: var(--ex02-bad); }
+.exercise-02 .answer-result { display: block; min-height: 1em; font-size: .75rem; }
+.ex02-checkbar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .85rem; margin: .65rem 0 .85rem; }
+.ex02-checkbar [role=status] { font-size: .82rem; color: #444; }
+.exercise-02 .ex02-checkbar button { min-height: 2.75rem; }
+.ex02-next { font-size: .9rem; font-weight: 700; }
+.stage-lock { margin: .65rem 0; border: 1px dashed #aaa; padding: 1rem; background: #fafafa; color: var(--muted); font-size: .95rem; }
+.ex02-scene-host { min-width: 0; }
+.ex02-joint-slider { display: grid; grid-template-columns: 2rem minmax(80px, 1fr) 5rem; align-items: center; gap: .65rem; margin: .6rem 0; padding: .15rem 0; }
+.ex02-joint-slider label { font-size: .93rem; font-weight: 650; }
+.ex02-joint-slider input[type=range] { width: 100%; height: 30px; accent-color: var(--epfl-red); cursor: pointer; }
+.ex02-joint-slider input[type=number] { width: 100%; min-width: 0; padding: .5rem .3rem; border: 1px solid #737373; font-size: .9rem; }
+.ex02-joint-slider.is-fixed { opacity: .65; }
+.ex02-limits-select { background: #fff; padding: .45rem; border: 1px solid #737373; }
+.ex02-complete { margin-top: .65rem; border-left: 4px solid #111; padding: .8rem; background: #f6f6f6; }
+.ex02-noscript { position: fixed; bottom: 0; left: 0; right: 0; z-index: 5200; background: #fff; border: 2px solid var(--epfl-red); padding: 1rem; }
+.ex02-projection { display: block; width: 100%; max-height: 240px; margin: .5rem auto; }
+@media(max-width: 800px) {
+  .ex02-columns { grid-template-columns: 1fr; }
+}
+@media(max-width: 600px) {
+  .ex02-toolbar #progress { margin-left: auto; }
+  .ex02-vector { gap: .3rem; }
+  .ex02-field { padding: .4rem; }
+  .ex02-field input { font-size: 1rem; }
+  .ex02-checkbar { align-items: flex-start; }
+  .ex02-matrix { font-size: .8rem; gap: .3rem .5rem; padding-inline: .4rem; }
+}
+@media print {
+  .ex02-toolbar, .deck-nav, .ex02-checkbar, .ex02-actions, .stage-lock { display: none !important; }
+  .exercise-02 .slide { min-height: 0; padding-top: var(--slide-padding-y); break-before: page; border: none; }
+}
