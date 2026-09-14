@@ -72,7 +72,7 @@
             const next = $(`[data-continue="${stage}"]`);
             if (next) { next.hidden = !passed[stage] || stage === 'limits'; next.href = '#slide-' + (i + 3); }
             const status = $(`[data-status="${stage}"]`);
-            if (status) status.textContent = passed[stage] ? 'Correct. Next step unlocked.' : state.checked[stage] && open ? 'Some answers are incorrect.' : '';
+            if (status) status.textContent = passed[stage] ? (stage === 'model' ? 'Derivation recorded. Next step unlocked.' : 'Correct. Next step unlocked.') : state.checked[stage] && open ? 'Some answers are incorrect.' : '';
             if (passed[stage]) completed += 1;
             open = !!passed[stage];
         });
