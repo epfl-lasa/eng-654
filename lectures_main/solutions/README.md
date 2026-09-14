@@ -1,8 +1,8 @@
 # Exercise 01: responses, feedback, then answers
 
 1. Share `../exercises/exercise_01.html`. Students fill in the response fields, use **Check answers** on each response slide, and download their JSON file. The checks fill correct entries light green and wrong entries light red, showing only whether each answer is right or wrong.
-2. The worksheet’s final slide links to `exercise_01.html` from this folder for detailed feedback. Students use **Upload responses** to load their JSON, inspect the explanations and model checks, revise values, and check again. This page has no embedded answer file.
-3. The final slide also offers `exercise_01_answers.json` as **Download solution JSON**. This reference file is complete and matches the current worksheet. Students can upload it to the feedback page to inspect the completed answers and their checks.
+2. Later, share `exercise_01.html` from this folder for detailed feedback. Students upload that JSON, inspect the explanations and model checks, revise values, and check again. This page has no answer-key download or embedded answer file.
+3. Finally, share `exercise_01_answers.json` separately. This reference file is complete and matches the current worksheet.
 
 The 19-slide worksheet starts with the supplied URDF in the instructor-provided simulator, with STL meshes unloaded. Students inspect link frames and joint axes, derive the world-space product-of-exponentials (PoE) model and then the standard-D–H model, implement both, and compare their forward kinematics with the simulator at five poses. They then load the STL meshes, repair their placement through visual-origin offsets, and repeat the comparisons to confirm that joint kinematics are unchanged.
 
@@ -22,9 +22,9 @@ Set `stage` in `../exercise_01_release.json` before a normal website deployment:
 | --- | --- |
 | `exercise` | Student worksheet with per-slide right/wrong checks and Module 1; no detailed feedback slides or answer file. |
 | `feedback` | Adds the detailed feedback slides and their interface script; the answer JSON remains excluded. |
-| `answers` | Adds the final JSON file linked from the worksheet’s last slide. |
+| `answers` | Adds the final JSON file for separate sharing. |
 
-The checked-in setting is `answers`, so the worksheet’s final-slide download and feedback links both resolve after deployment. The shared checker and the student's per-slide controls are published in every stage. If returning to an earlier release stage, also remove the final-slide links to any files that stage excludes. This controls website publishing, not access to repository source. A browser-based checker necessarily contains the calculations used to assess a response.
+The checked-in default is `exercise`. The shared checker and the student's per-slide controls are published in every stage. No link from the worksheet reveals the later pages, and the feedback page never offers the full answer file. This controls website publishing, not access to repository source. A browser-based checker necessarily contains the calculations used to assess a response.
 
 Use a local web server for Module 1. The worksheet and feedback page also support local file opening for answer downloads and uploads.
 
@@ -42,7 +42,7 @@ python3 -B -m unittest discover -s .github/scripts -p 'test_stage_site.py'
 
 ## Exercise 02: fixed-redundancy iiwa 7 inverse kinematics
 
-Share `../exercises/exercise_02.html` for the guided tutorial. Students fix original joint 3 and use the D-H and PoE prompts on slide 3 to derive both models in their working notes. The slide supplies no completed model tables or transforms; students confirm completion of their derivations themselves. The positioning-model panel likewise asks them to derive the reduced chain. Students identify the wrist, choose a valid position-IK method, assemble their own equations, and complete the wrist and joint-limit questions. Per-step answer checks report only correct or incorrect and use light green or light red. The reduced positioning coordinates are `(theta1, theta2, theta3) = (q1, q2, q4)`; original `q3 = phi` remains fixed.
+Share `../exercises/exercise_02.html` for the guided tutorial. Students fix original joint 3, switch between the automatically updated D-H and PoE models, identify the wrist, choose a valid position-IK method, assemble their own equations, and complete the wrist and joint-limit questions. Per-step checks report only correct or incorrect and use light green or light red. The reduced positioning coordinates are `(theta1, theta2, theta3) = (q1, q2, q4)`; original `q3 = phi` remains fixed.
 
 `exercise_02.html` in this folder is a separate, 19-slide worked solution. It develops the exact grouped D-H and reduced PoE chains, identifies why Paden–Kahan is the appropriate tutorial choice, derives the elbow distance equation as subproblem 3 (PK3), explains both signed `E` values, back-substitutes with Cramer’s rule, and derives the Z–Y–Z wrist extraction. Step 05 of the student tutorial leaves the geometry and method choice for students to identify; the explanation is available after the correct choice. The saved answer value `method: "geometric"` is retained for compatibility and refers to the Paden–Kahan option. The worked slides include the complete eight-branch numerical example and its joint-limit classification. They do not need to fetch the answer JSON to display the worked solutions.
 

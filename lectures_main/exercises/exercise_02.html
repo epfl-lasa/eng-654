@@ -50,19 +50,18 @@
 </article><article class="ex-card black ex02-card"><h3>Choose φ in radians</h3>
 <label class="ex02-field"><span>Fixed q₃ = φ</span><input id="fixed-q3" type="text" value="pi/6" maxlength="120" autocomplete="off" aria-describedby="phi-help"></label>
 <p id="phi-help">Start with <code>pi/6</code> (30°). The URDF permits −170° to 170°. Expressions such as <code>pi/4</code> are accepted.</p>
-<button id="apply-q3" class="primary" type="button">Fix q₃</button><p id="setup-message" role="status"></p>
+<button id="apply-q3" class="primary" type="button">Fix q₃ and update the model</button><p id="setup-message" role="status"></p>
 <p class="ex02-note">Changing φ restarts the dependent steps. Download your work first if you want to keep another version.</p>
-<a data-continue="setup" class="ex02-next" hidden>Derive the reduced model →</a></article></div></div>
+<a data-continue="setup" class="ex02-next" hidden>Inspect the updated model →</a></article></div></div>
 </section>
 <section class="slide exercise-slide" data-stage="model">
-  <p class="ex-kicker">02 · Derive the reduced model</p><h2 class="slide-title">One mechanism, two representations</h2>
+  <p class="ex-kicker">02 · Automatic model update</p><h2 class="slide-title">One mechanism, two representations</h2>
   <div class="stage-lock" role="status">Complete the preceding step to unlock this slide.</div>
   <div data-stage-content hidden inert>
-<p>Fixed q₃ = <strong data-phi></strong> rad. Starting from the supplied URDF and your Exercise 01 work, derive the reduced forward model in both representations. Record your parameters, frame choices and derivations in your working notes.</p>
+<p>Fixed q₃ = <strong data-phi></strong> rad. Toggle between the same exact forward models.</p>
 <div class="ex02-segment" role="group" aria-label="Kinematic representation"><button data-representation="dh" aria-pressed="true" type="button">D-H parameters</button><button data-representation="poe" aria-pressed="false" type="button">Product of exponentials</button></div>
 <div id="full-representation"></div>
-<p class="ex02-note">Verify that both models reproduce the URDF forward kinematics with q₃ fixed. Keep these derivations with your submission; the button below records your progress.</p>
-<div class="ex02-checkbar"><button id="review-model" class="primary" type="button">I have derived and verified both models</button><span data-status="model" role="status"></span><a data-continue="model" class="ex02-next" hidden>Find the wrist point →</a></div></div>
+<div class="ex02-checkbar"><button id="review-model" class="primary" type="button">I have inspected the updated model</button><span data-status="model" role="status"></span><a data-continue="model" class="ex02-next" hidden>Find the wrist point →</a></div></div>
 </section>
 <section class="slide exercise-slide" data-stage="home">
   <p class="ex-kicker">03 · Identify the wrist</p><h2 class="slide-title">Where do the wrist axes intersect?</h2>
@@ -186,7 +185,7 @@
 <script src="../js/exercises/exercise-02-equations.js"></script>
 <script src="../js/exercises/exercise-02-scene.js"></script>
 <script src="../js/exercises/exercise-02-tutorial.js"></script>
-<script src="../js/exercises/exercise-02.js?v=20260914-student-model"></script>
+<script src="../js/exercises/exercise-02.js"></script>
 <script src="../js/deck/nav-runtime.js"></script>
 </body>
 </html>

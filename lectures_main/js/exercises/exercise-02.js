@@ -72,7 +72,7 @@
             const next = $(`[data-continue="${stage}"]`);
             if (next) { next.hidden = !passed[stage] || stage === 'limits'; next.href = '#slide-' + (i + 3); }
             const status = $(`[data-status="${stage}"]`);
-            if (status) status.textContent = passed[stage] ? (stage === 'model' ? 'Derivation recorded. Next step unlocked.' : 'Correct. Next step unlocked.') : state.checked[stage] && open ? 'Some answers are incorrect.' : '';
+            if (status) status.textContent = passed[stage] ? 'Correct. Next step unlocked.' : state.checked[stage] && open ? 'Some answers are incorrect.' : '';
             if (passed[stage]) completed += 1;
             open = !!passed[stage];
         });
@@ -126,26 +126,36 @@
         catch (_) { $('#file-status').textContent = 'Browser storage is unavailable. Download your responses to keep them.'; }
     }
     function renderRepresentation() {
-        const representation = state.representation || 'dh';
+        const model = M.reduce(state.fixedQ3), representation = state.representation || 'dh';
         $$('[data-phi]').forEach(node => { node.textContent = format(state.fixedQ3); });
         $$('[data-representation]').forEach(button => { button.setAttribute('aria-pressed', String(button.dataset.representation === representation)); });
         const full = $('#full-representation'), arm = $('#arm-representation'); full.replaceChildren(); arm.replaceChildren();
         if (representation === 'dh') {
-            full.append(element('h3', 'Derive the D-H representation'));
-            full.append(element('p', 'Use standard D-H: Aᵢ = Rz(θᵢ) Tz(dᵢ) Tx(aᵢ) Rx(αᵢ). Distances are in metres and angles in radians.'));
-            full.append(element('p', 'Assign the frames and construct your parameter table. Identify which transform becomes constant when q₃ is fixed, evaluate it for your chosen φ, and write the complete world-to-tool chain. Include the fixed base and tool transforms from your model.'));
-            full.append(element('p', 'Explain how you group the factors into six variable joint transforms while preserving their order. Check your result at the reduced home configuration and at several nonzero joint configurations.'));
-            arm.append(element('p', 'Use your D-H derivation to extract the positioning chain. Write its three variable groups, account for the frozen joint transform, and derive the wrist point in world coordinates. Keep the frame convention explicit in your notes.'));
+            full.append(element('p', 'Standard D-H: Aᵢ = Rz(qᵢ) Tz(dᵢ) Tx(aᵢ) Rx(αᵢ). Distances are in metres and angles in radians. The frozen row remains in the product.'));
+            const tab = table(['Original joint', 'θ', 'd', 'a', 'α'], model.dhRows.map(row => [String(row.joint) + (row.fixed ? ' · fixed' : ''), row.fixed ? `φ = ${format(state.fixedQ3)}` : row.theta,
+                format(row.d), format(row.a), row.alpha === 0 ? '0' : row.alpha < 0 ? '−π/2' : 'π/2']));
+            tab.querySelectorAll('tbody tr')[2].classList.add('fixed-row'); full.append(tab);
+            full.append(element('p', 'T(q; φ) = A₁(q₁) A₂(q₂) A₃(φ) A₄(q₄) A₅(q₅) A₆(q₆) A₇(q₇) Tz(0.045)', 'ex02-formula'));
+            full.append(matrix(model.fixedFactor, 'The automatically evaluated constant factor A₃(φ)'));
+            arm.append(element('p', 'B₁ = A₁(θ₁),  B₂ = A₂(θ₂) A₃(φ),  B₃ = A₄(θ₃)', 'ex02-formula'));
+            arm.append(element('p', 'B₂ is a composite of two standard D-H factors. Freezing a joint leaves three variable groups; it does not turn every group into a single standard D-H row.'));
+            arm.append(element('p', 'T₀₃ = B₁ B₂ B₃,     p̄w = T₀₃ [0, 0, U, 1]ᵀ,     U = 0.40 m', 'ex02-formula'));
         } else {
-            full.append(element('h3', 'Derive the PoE representation'));
-            full.append(element('p', 'Starting from the original seven-joint space screws and home transform, fix q₃ at φ. Determine the six active screw axes in world coordinates at the reduced home and calculate the new home transform.'));
-            full.append(element('p', 'Show how the frozen joint affects each remaining screw. Write the reduced product of exponentials and verify that it agrees with your D-H model and the URDF at the same configurations.'));
-            arm.append(element('p', 'Use your reduced space screws to write the positioning chain acting on the home wrist point you identified. State which original screw corresponds to each reduced coordinate and verify the wrist position with your D-H chain.'));
+            full.append(element('p', 'Let Cφ = exp([S₃]φ). Absorb the frozen exponential by conjugating every downstream screw and updating the home pose. All listed space screws are expressed in world at the reduced home.'));
+            full.append(element('p', 'S′₁ = S₁, S′₂ = S₂;   S′ⱼ = Ad(Cφ)Sⱼ for j = 4…7;   Mφ = Cφ M', 'ex02-formula'));
+            full.append(element('p', 'T = exp([S₁]q₁) exp([S₂]q₂) exp([S′₄]q₄) exp([S′₅]q₅) exp([S′₆]q₆) exp([S′₇]q₇) Mφ', 'ex02-formula'));
+            full.append(screwTable(model.screws)); full.append(matrix(model.M, 'Reduced home transform Mφ'));
+            arm.append(element('p', 'p̄w = exp([S₁]θ₁) exp([S₂]θ₂) exp([S′₄]θ₃) p̄w,home', 'ex02-formula'));
+            arm.append(screwTable(model.armScrews));
+            arm.append(element('p', 'p̄w,home = [0, 0, 1.14, 1]ᵀ. The original screw label 4 corresponds to reduced angle θ₃.'));
         }
         const lesson = lessonQ();
         $('#lesson-q').textContent = '[' + lesson.map(n => format(n)).join(', ') + ']';
         $('#lesson-target').replaceChildren(matrix(M.fk(lesson), 'Target T_d = world → iiwa_link_ee'));
         $('#lesson-geometry-note').textContent = 'Count the independent elbow signs, signed radial projections and wrist flips. This reference stays nonsingular throughout the permitted φ range.';
+    }
+    function screwTable(screws) {
+        return table(['Original screw', 'ωx', 'ωy', 'ωz', 'vx [m]', 'vy [m]', 'vz [m]'], screws.map(s => ['S′' + s.joint, ...s.omega.map(n => format(n)), ...s.v.map(n => format(n))]));
     }
     function renderArmResults() {
         const target = M.fk(lessonQ());

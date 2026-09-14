@@ -215,6 +215,8 @@ test('completed answer-key JSON fills every response and passes numeric verifica
   assert.equal(result.summary.unanswered, 0);
   const solution = fs.readFileSync(path.join(__dirname, '../solutions/exercise_01.html'), 'utf8');
   assert.equal(/exercise_01_answers\.json|download-answer-key|exercise-answer-key|<script[^>]+type="application\/json"/.test(solution), false, 'feedback page must not link to or embed the answer key');
+  const student = fs.readFileSync(path.join(__dirname, '../exercises/exercise_01.html'), 'utf8');
+  assert.doesNotMatch(student, /exercise_01_answers\.json|download-answer-key/);
 });
 
 test('rejects unsupported exercise, version, model and units instead of silently interpreting them', () => {
@@ -272,14 +274,9 @@ test('exercise and feedback pages share labeled fields and checker, with detaile
   }
 });
 
-test('student slides use binary checks and link to the solution file and feedback on the final slide', () => {
+test('student slides load binary slide checks without solution links, detailed results or answer downloads', () => {
   const html = fs.readFileSync(path.join(__dirname, '../exercises/exercise_01.html'), 'utf8');
-  assert.doesNotMatch(html, /exercise-01-verification\.js|id="(?:verification|verify-answers|view-results)[^"]*"|answer-feedback|exercise-answer-key|<script[^>]+type="application\/json"/);
-  const lastSlideStart = html.lastIndexOf('<section class="slide exercise-slide">');
-  const lastSlide = html.slice(lastSlideStart);
-  assert.doesNotMatch(html.slice(0, lastSlideStart), /solutions\//);
-  assert.match(lastSlide, /href="\.\.\/solutions\/exercise_01_answers\.json" download="exercise_01_answers\.json"/);
-  assert.match(lastSlide, /href="\.\.\/solutions\/exercise_01\.html"/);
+  assert.doesNotMatch(html, /solutions\/|exercise-01-verification\.js|id="(?:verification|verify-answers|view-results)[^"]*"|answer-feedback|exercise_01_answers\.json|download-answer-key|exercise-answer-key|<script[^>]+type="application\/json"/);
   const scripts = Array.from(html.matchAll(/<script\s+src="([^"]+)"/g), match => match[1]);
   for (const name of ['numbers', 'visual-origins', 'answers', 'checker', 'slide-checks']) {
     const script = `../js/exercises/exercise-01-${name}.js`;
