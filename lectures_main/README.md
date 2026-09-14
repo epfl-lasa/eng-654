@@ -38,7 +38,7 @@ Open `exercises/exercise_01.html` for the 19-slide workflow: load only the suppl
 
 Each slide with response fields has a **Check answers** button. It checks that slide and fills correct entries light green and wrong entries light red, without showing solutions or detailed explanations. Students can revise their entries and check again, and still download or reload partial work.
 
-The instructor shares this worksheet with its per-slide checks first, the detailed feedback slides later, and the final answer file separately. Publishing follows the `stage` value in `exercise_01_release.json`: `exercise`, `feedback`, then `answers`. The default is `exercise`; the shared checker and student controls are published at every stage.
+The worksheet’s final slide links to the reference solution JSON and `solutions/exercise_01.html`. Students can download the solution and use **Upload responses** in the feedback page to load it, or upload their own responses for detailed feedback. Publishing follows the `stage` value in `exercise_01_release.json`: `exercise`, `feedback`, then `answers`. The current setting is `answers`, which includes both linked files and the feedback interface; the shared checker and student controls are published at every stage.
 
 ## Exercise 02 tutorial
 
