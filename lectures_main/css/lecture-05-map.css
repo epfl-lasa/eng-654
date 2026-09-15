@@ -1,0 +1,43 @@
+/* Lecture 05: SVG joint-space determinant map. */
+.sing-map-lab { grid-template-columns: minmax(0, 1.75fr) minmax(16rem, .8fr); }
+.sing-map-stage { background: #fff; }
+.sing-map-stage svg { font-family: inherit; }
+.sing-map-panel { gap: .7rem; padding: .8rem 1rem; }
+.sing-map-panel h3 { font-size: clamp(1rem, 1.25vw, 1.25rem); }
+.sing-map-cases { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; }
+.sing-map-cases button { border: 1px solid #c5ccd3; border-radius: 5px; background: #fff; color: #29394c; font-weight: 750; padding: .5rem .3rem; }
+.sing-map-cases button span { display: block; margin-top: .15rem; font-weight: 400; font-size: .85em; }
+.sing-map-cases button[aria-pressed=true] { background: #e9f0f7; border-color: #245e96; box-shadow: inset 0 0 0 1px #245e96; }
+.sing-map-controls { display: grid; gap: .5rem; }
+.sing-map-controls label { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr) 4.8rem; align-items: center; gap: .4rem; font-size: clamp(.75rem, .9vw, .95rem); }
+.sing-map-controls input { width: 100%; accent-color: #245e96; }
+.sing-map-controls output { text-align: right; font-variant-numeric: tabular-nums; }
+.sing-map-coordinate { font-variant-numeric: tabular-nums; color: #53616e; }
+.sing-map-panel .sing-metric { padding: .7rem .6rem; }
+.sing-map-panel .sing-metric strong { font-size: clamp(1rem, 1.45vw, 1.5rem); }
+.sing-map-legend { display: grid; grid-template-columns: 2rem 1fr; align-items: center; gap: .2rem .5rem; padding: .5rem 0; font-size: clamp(.75rem, .9vw, .95rem); }
+.sing-map-legend > span:last-child { grid-column: 2; color: #53616e; font-size: .9em; }
+.sing-map-zero-key { height: 3px; background: #172331; box-shadow: 0 0 0 2px white; }
+.sing-map-equation { display: grid; gap: .3rem; padding: .65rem; border-left: 3px solid #245e96; background: #f2f6fa; font-size: clamp(.75rem, .9vw, .95rem); }
+.sing-map-equation > span { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.sing-map-panel [data-snap] { background: #fff; border: 1px solid #a5afb9; border-radius: 4px; padding: .55rem; font-weight: 650; }
+.sing-map-panel .sing-status { color: #27394b; line-height: 1.45; font-size: clamp(.75rem, .88vw, .94rem); }
+.sing-map-panel .sing-map-help { margin-top: auto; padding-top: .6rem; border-top: 1px solid #e3e7eb; color: #53616e; line-height: 1.45; }
+.sing-map-caption { fill: #53616e; font-size: 12px; letter-spacing: .015em; }
+.sing-map-axis { stroke: #80909f; stroke-width: 1; }
+.sing-map-axis-label { fill: #263b50; font-size: 15px; font-weight: 650; }
+.sing-map-tick { fill: #475c70; font-size: 12px; }
+.sing-map-color-label { fill: #263b50; font-size: 12px; font-weight: 650; }
+.sing-map-grid { stroke: #33485e; stroke-width: .65; stroke-opacity: .16; }
+.sing-map-zero-halo { fill: none; stroke: #fff; stroke-width: 5.5; stroke-linejoin: round; stroke-linecap: round; }
+.sing-map-zero { fill: none; stroke: #172331; stroke-width: 2.3; stroke-linejoin: round; stroke-linecap: round; }
+.sing-map-crosshair { fill: none; stroke: #172331; stroke-opacity: .55; stroke-width: 1; stroke-dasharray: 3 5; }
+.sing-map-cursor circle { fill: #fff; stroke: #172331; stroke-width: 2.5; }
+.sing-map-cursor .sing-map-cursor-dot { fill: #172331; stroke: none; }
+.sing-map-hit { cursor: crosshair; }
+.sing-map-hit:focus-visible { outline: none; stroke: #245e96; stroke-width: 3; stroke-dasharray: 5 3; }
+.sing-map-panel button:focus-visible, .sing-map-panel input:focus-visible { outline: 2px solid #245e96; outline-offset: 3px; }
+@media (max-width: 900px) {
+  .sing-map-lab { grid-template-columns: 1fr; grid-template-rows: minmax(45vh, 1fr) auto; }
+  .sing-map-panel { max-height: 42vh; }
+}

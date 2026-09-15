@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createSceneControlPanel, createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
 import { parseStlGeometry } from './frameDHPlayground.js';
+import { createDeterminantMap } from './determinantMap.js';
 
 const DEG = Math.PI / 180;
 const COLORS = [0xff2020, 0x2d73d5, 0x68a84f, 0xd79b00, 0x9673a6, 0x00a0a0];
@@ -131,6 +132,7 @@ function createThreeLab(host, mode) {
   else if(mode==='dh-3r') setup=setupDhLab(kit);
   else if(mode==='three-r') setup=setupUrdfJacobianLab(kit,'custom 3R');
   else if(mode==='six-r') setup=setupUrdfJacobianLab(kit,'custom 6R');
+  else if(mode==='preferential-6r') setup=setupPreferential6RLab(kit);
   else setup=Promise.resolve();
   setup.catch((error)=>{panel.querySelector('.sing-status').textContent=error.message; panel.querySelector('.sing-status').classList.add('error'); console.error(error);});
   return kit;
@@ -143,10 +145,28 @@ function createWorld(stage) {
   // Robot coordinates are z-up inside a root rotated by Rx(-pi/2). OrbitControls
   // targets scene coordinates, so (x,y,z)_robot maps to (x,z,-y)_scene.
   controls.target.set(2,1.2,0); controls.update();
-  let needs=true, raf=0; const render=()=>{needs=true;renderer.render(scene,camera);if(!raf)raf=requestAnimationFrame(frame);}; function frame(){raf=0;if(!needs)return;needs=false;sceneControls.syncLabels();controls.update();renderer.render(scene,camera);if(controls.enableDamping)render();}
+  // Draw only after a change. OrbitControls emits further changes while damping
+  // settles, so a static slide does not need a permanent animation loop.
+  let visible=false,raf=0;
+  const render=()=>{if(visible&&!raf)raf=requestAnimationFrame(frame);};
+  function frame(){
+    raf=0;
+    if(!visible)return;
+    sceneControls.syncLabels();
+    controls.update();
+    renderer.render(scene,camera);
+  }
   const sceneControls=createSceneControlPanel(stage,world,{render});
-  controls.addEventListener('change',render); const ro=new ResizeObserver(()=>{resizeRendererToContainer(renderer,camera,stage);render();});ro.observe(stage);resizeRendererToContainer(renderer,camera,stage);render();
-  return {scene,camera,renderer,world,controls,render,sceneControls,dispose(){ro.disconnect();controls.dispose();renderer.dispose();cancelAnimationFrame(raf);}};
+  const visibility=new IntersectionObserver(entries=>{
+    visible=entries.some(entry=>entry.isIntersecting);
+    if(visible)render();
+    else{cancelAnimationFrame(raf);raf=0;}
+  },{threshold:0});
+  visibility.observe(stage);
+  controls.addEventListener('change',render);
+  const ro=new ResizeObserver(()=>{resizeRendererToContainer(renderer,camera,stage);render();});
+  ro.observe(stage);resizeRendererToContainer(renderer,camera,stage);
+  return {scene,camera,renderer,world,controls,render,sceneControls,dispose(){visibility.disconnect();ro.disconnect();controls.removeEventListener('change',render);controls.dispose();renderer.dispose();cancelAnimationFrame(raf);}};
 }
 
 function setupScrewLab(kit) {
@@ -168,6 +188,153 @@ async function setupDhLab(kit) {
   canvas.addEventListener('pointerdown',(e)=>{dragging=true;kit.controls.enabled=false;canvas.setPointerCapture(e.pointerId);const kin=dhKinematics(state);target.copy(kin.end);plane.setFromNormalAndCoplanarPoint(kit.camera.getWorldDirection(new THREE.Vector3()),target);drag(e);});canvas.addEventListener('pointermove',(e)=>{if(dragging)drag(e);});canvas.addEventListener('pointerup',()=>{dragging=false;kit.controls.enabled=true;});
   function drag(e){const r=canvas.getBoundingClientRect();mouse.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mouse,kit.camera);if(ray.ray.intersectPlane(plane,target)){for(let n=0;n<18;n++){const kin=dhKinematics(state),err=target.clone().sub(kin.end);if(err.length()<1e-3)break;const J=positionJacobian(kin.axes,kin.points,kin.end);const dq=dampedStep(J,err,.08);state.q=state.q.map((q,i)=>q+clamp(dq[i],-.16,.16));}syncRanges(controls,{q1:state.q[0],q2:state.q[1],q3:state.q[2]});update();}}
   function update(){clearGroup(dynamic);const kin=dhKinematics(state);drawSkeleton(dynamic,kin.points,kin.end,kin.axes);const J=positionJacobian(kin.axes,kin.points,kin.end),det=determinant(J);panel.querySelector('[data-det]').textContent=signed(det,5);panel.querySelector('[data-det]').parentElement.classList.toggle('near',Math.abs(det)<.08);factor.textContent=formatDh3Factorization(state.rows);panel.querySelector('[data-matrix]').textContent=`Jₚ(q) at the current configuration\n${matrixText(J,3)}`;panel.querySelector('.sing-status').textContent=`p = ${vec(kin.end)} m · the displayed determinant is simplified symbolically after every D–H edit.`;kit.render();}
+  update();
+}
+
+// The three symbolic factors belong to the lecture's spherical-wrist DH family.
+// Keep this example separate from the independently modelled course URDF.
+const PREFERENTIAL_6R_PARAMETERS = Object.freeze({
+  a1: 1, a2: 2, a3: 1, a6: .35, d1: .8, d4: 1.5, d6: .3, alpha2: 60 * DEG
+});
+
+function preferential6RRows(p) {
+  return [[p.a1,Math.PI/2,p.d1],[p.a2,p.alpha2,0],[p.a3,Math.PI/2,0],
+    [0,Math.PI/2,p.d4],[0,Math.PI/2,0],[p.a6,0,p.d6]];
+}
+
+function preferential6RFactors(q,p) {
+  const c2=Math.cos(q[1]),s2=Math.sin(q[1]),c3=Math.cos(q[2]),s3=Math.sin(q[2]);
+  const F=p.d4*c3-p.a3*s3,H=p.a3*c3+p.d4*s3;
+  const G=p.a1*p.a2+p.a1*Math.sin(p.alpha2)**2*H+p.a2*c2*(p.a2+H)+p.a2*s2*Math.cos(p.alpha2)*F;
+  return {F,G,wrist:Math.sin(q[4])};
+}
+
+function preferential6RPreset(which,p=PREFERENTIAL_6R_PARAMETERS) {
+  const q=[20,-30,35,25,45,-20].map(v=>v*DEG);
+  if(which==='F') q[2]=Math.atan2(p.d4,p.a3);
+  if(which==='G') {
+    // G=A+B cos(q2)+C sin(q2): choose an exact zero with F and sin(q5) nonzero.
+    const F=p.d4*Math.cos(q[2])-p.a3*Math.sin(q[2]);
+    const H=p.a3*Math.cos(q[2])+p.d4*Math.sin(q[2]);
+    const A=p.a1*p.a2+p.a1*Math.sin(p.alpha2)**2*H;
+    const B=p.a2*(p.a2+H),C=p.a2*Math.cos(p.alpha2)*F;
+    q[1]=Math.atan2(C,B)+Math.acos(-A/Math.hypot(B,C));
+  }
+  if(which==='wrist') q[4]=0;
+  return q;
+}
+
+async function setupPreferential6RLab(kit) {
+  const {panel,world}=kit,p=PREFERENTIAL_6R_PARAMETERS;
+  const state={q:preferential6RPreset('regular'),i:3,j:5,k:0,preset:'regular'};
+  kit.host.classList.add('sing-factor-lab');
+  panel.innerHTML=`<h3>Choose one factor to collapse</h3>
+    <div class="sing-case-buttons sing-factor-cases" role="group" aria-label="Isolated singularity presets">
+      <button type="button" data-case="regular">Regular</button>
+      <button type="button" data-case="F">F = 0</button>
+      <button type="button" data-case="G">G = 0</button>
+      <button type="button" data-case="wrist">sin q₅ = 0</button>
+    </div>
+    <div class="sing-factor-values">
+      <div class="sing-metric" data-factor="F"><span>F = d₄c₃ − a₃s₃ [m]</span><strong></strong></div>
+      <div class="sing-metric" data-factor="G"><span>G(q₂,q₃) [m²]</span><strong></strong></div>
+      <div class="sing-metric" data-factor="wrist"><span>sin q₅ [1]</span><strong></strong></div>
+    </div>
+    <div class="sing-formula sing-factor" data-product aria-live="polite"></div>
+    <p class="sing-status" aria-live="polite"></p>
+    <div class="sing-controls"></div>
+    <details class="sing-factor-details"><summary>Inspect the Jacobian and its representation</summary>
+      <div class="sing-selects"></div>
+      <div class="sing-formula l5-matrix" data-matrix></div>
+      <p>Frame i expresses all columns; point j changes the screw reference point. These rigid changes preserve the full 6 × 6 determinant.</p>
+    </details>
+    <details class="sing-factor-details"><summary>D–H example parameters</summary>
+      <p>Same spherical-wrist family as the symbolic derivation: a₁ = 1, a₂ = 2, a₃ = 1, d₄ = 1.5 m; α₂ = 60°. Also d₁ = 0.8, a₆ = 0.35, d₆ = 0.3 m. Each preset starts from a regular pose and zeros just its selected factor.</p>
+    </details>`;
+  const controls=panel.querySelector('.sing-controls'),cases=panel.querySelector('.sing-case-buttons');
+  state.q.forEach((q,k)=>addRange(controls,`q${k+1}`,-180,180,.01,q/DEG,value=>{
+    state.q[k]=value*DEG;state.preset='custom';update();
+  }));
+  const selects=panel.querySelector('.sing-selects');
+  selects.append(
+    makeSelect('frame i',rangeOptions(0,6,'F'),3,value=>{state.i=+value;update();}),
+    makeSelect('point j',rangeOptions(0,6,'O'),5,value=>{state.j=+value;update();}),
+    makeSelect('column k',rangeOptions(1,6,'J'),1,value=>{state.k=+value-1;update();})
+  );
+  cases.addEventListener('click',event=>{
+    const which=event.target.closest('button[data-case]')?.dataset.case;
+    if(!which)return;
+    state.q=preferential6RPreset(which,p);state.preset=which;
+    controls.querySelectorAll('input[type=range]').forEach((input,k)=>{
+      input.value=state.q[k]/DEG;input.nextElementSibling.value=`${(state.q[k]/DEG).toFixed(2)}°`;
+    });
+    update();
+  });
+  const dynamic=new THREE.Group();world.add(dynamic);
+  kit.camera.position.set(10,8,9);kit.controls.target.set(1.2,1.8,0);kit.controls.update();
+
+  function update() {
+    clearGroup(dynamic);
+    const kin=dhKinematics({q:state.q,rows:preferential6RRows(p)});
+    const J=screwJacobian(kin,state.j,state.i),Jw=screwJacobian(kin,5,3);
+    const A=Jw.slice(0,3).map(row=>row.slice(0,3)),W=Jw.slice(3).map(row=>row.slice(3));
+    const factors=preferential6RFactors(state.q,p),product=factors.F*factors.G*factors.wrist,direct=determinant(J);
+    const rank=numericRank(J),armRank=numericRank(A),wristRank=numericRank(W);
+    const zeros=Object.keys(factors).filter(key=>Math.abs(factors[key])<1e-7);
+    for(const [key,value] of Object.entries(factors)) {
+      const metric=panel.querySelector(`[data-factor="${key}"]`);
+      metric.querySelector('strong').textContent=signed(value,5);
+      metric.classList.toggle('near',Math.abs(value)<1e-7);
+    }
+    cases.querySelectorAll('button').forEach(button=>{
+      const active=button.dataset.case===state.preset;
+      button.setAttribute('aria-pressed',String(active));button.classList.toggle('active',active);
+    });
+    panel.querySelector('[data-product]').textContent=
+      `F × G × sin q₅ = ${signed(product,6)} m³\ndirect det J  = ${signed(direct,6)} m³\nrank J: ${rank}/6 · arm: ${armRank}/3 · wrist: ${wristRank}/3`;
+    panel.querySelector('[data-matrix]').textContent=`J at O${state.j}, expressed in F${state.i}\n${matrixText(J,3)}`;
+    const message=zeros.length>1?'Multiple factors vanish: the losses can overlap. Read the computed rank to count independent motions.':
+      zeros[0]==='F'?'F = 0: q₃ makes the three wrist-center velocity arrows coplanar. The arm loses one translation; the wrist still supplies three independent rotations.':
+      zeros[0]==='G'?'G = 0: this q₂–q₃ alignment also makes the wrist-center velocity arrows coplanar. Their common normal is an unavailable translation.':
+      zeros[0]==='wrist'?'sin q₅ = 0: wrist axes 4 and 6 are collinear. At O₅ their full columns are dependent, so two joint rates produce the same rotation direction.':
+      'Regular: three independent arm translations and three independent wrist rotations give six instantaneous task motions. Select a factor to see which freedom disappears.';
+    panel.querySelector('.sing-status').textContent=message;
+    kit.hud.textContent=`Spherical-wrist D–H family · rank ${rank}/6 · geometry in F₀`;
+    drawSkeleton(dynamic,kin.points,kin.end,kin.axes);
+    const wrist=framePoint(kin,5);
+    dynamic.add(sphere(wrist,.14,0x151515));
+    addTextLabel(dynamic,wrist.clone().add(new THREE.Vector3(0,0,.45)),'O5 · wrist center',0x151515).scale.multiplyScalar(.8);
+    if(zeros.includes('wrist')) {
+      [3,4,5].forEach(k=>{
+        addAxisLine(dynamic,wrist,kin.axes[k],k===3?4:3,COLORS[k]);
+        addArrow(dynamic,wrist,kin.axes[k],1.5,COLORS[k]);
+        addTextLabel(dynamic,wrist.clone().addScaledVector(kin.axes[k],1.65),`axis ${k+1}`,COLORS[k]).scale.multiplyScalar(.8);
+      });
+    } else {
+      const columns=kin.axes.slice(0,3).map((axis,k)=>axis.clone().cross(wrist.clone().sub(kin.points[k])));
+      columns.forEach((column,k)=>{
+        addArrow(dynamic,wrist,column,.42,COLORS[k]);
+        const labelPoint=wrist.clone().addScaledVector(column,.46).add(new THREE.Vector3(0,0,(1-k)*.22));
+        addTextLabel(dynamic,labelPoint,`v${k+1}`,COLORS[k]).scale.multiplyScalar(.65);
+      });
+      if(armRank===2) {
+        // Choose the most stable pair to visualize the missing translation.
+        const normals=[columns[0].clone().cross(columns[1]),columns[0].clone().cross(columns[2]),columns[1].clone().cross(columns[2])];
+        const normal=normals.sort((a,b)=>b.lengthSq()-a.lengthSq())[0].normalize();
+        addArrow(dynamic,wrist,normal,1.6,0xb31127);
+        addTextLabel(dynamic,wrist.clone().addScaledVector(normal,1.8),'lost translation',0xb31127).scale.multiplyScalar(.8);
+      }
+    }
+    if(panel.querySelector('.sing-factor-details').open) {
+      const pk=kin.points[state.k],reference=framePoint(kin,state.j),axis=kin.axes[state.k];
+      addAxisLine(dynamic,pk,axis,3.5,COLORS[state.k]);
+      addArrow(dynamic,pk,reference.clone().sub(pk),1,COLORS[3]);
+      addArrow(dynamic,reference,axis.clone().cross(reference.clone().sub(pk)),.42,COLORS[state.k]);
+      addTextLabel(dynamic,pk.clone().addScaledVector(axis,1.4),`selected column ${state.k+1}`,COLORS[state.k]);
+    }
+    kit.render();
+  }
+  panel.querySelector('.sing-factor-details').addEventListener('toggle',update);
   update();
 }
 
@@ -199,13 +366,7 @@ async function setupUrdfJacobianLab(kit,builtin) {
 }
 
 function create3RMap(host) {
-  host.className += ' sing-lab';host.innerHTML=`<div class="sing-stage"><canvas></canvas><div class="sing-hud">Drag the white point · det(Jₚ)=0 contour</div></div><aside class="sing-panel"><h3>Symbolic 3R singularity map</h3><div class="sing-controls"></div><div class="sing-selects"></div><div class="sing-metric"><span>det(Jₚ)</span><strong data-det></strong></div><div class="sing-formula">horizontal q₂ · vertical q₃<br>red/blue: determinant sign<br>white: |det J| ≈ 0</div><p class="sing-status"></p></aside>`;
-  const canvas=host.querySelector('canvas'),ctx=canvas.getContext('2d'),controls=host.querySelector('.sing-controls'),state={q2:-25*DEG,q3:80*DEG,a1:1};addRange(controls,'q2',-180,180,1,state.q2/DEG,v=>{state.q2=v*DEG;draw();});addRange(controls,'q3',-180,180,1,state.q3/DEG,v=>{state.q3=v*DEG;draw();});host.querySelector('.sing-selects').append(makeSelect('D–H case',[['1','a₁ = 1 · offset'],['0','a₁ = 0 · intersecting']],'1',value=>{state.a1=+value;image=null;draw();}));let size=[1,1],image;
-  const ro=new ResizeObserver(()=>{const dpr=Math.min(devicePixelRatio||1,2);size=[canvas.clientWidth,canvas.clientHeight];canvas.width=size[0]*dpr;canvas.height=size[1]*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);image=null;draw();});ro.observe(canvas);
-  function detAt(q2,q3){return course3RDet([0,q2,q3],state.a1);}
-  function buildImage(){const w=Math.max(120,Math.floor(size[0]/3)),h=Math.max(90,Math.floor(size[1]/3)),off=document.createElement('canvas');off.width=w;off.height=h;const c=off.getContext('2d'),im=c.createImageData(w,h);let max=0,vals=new Float32Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const v=detAt((x/(w-1)*2-1)*Math.PI,(1-y/(h-1)*2)*Math.PI);vals[y*w+x]=v;max=Math.max(max,Math.abs(v));}for(let n=0;n<vals.length;n++){const t=vals[n]/(max||1),a=Math.min(1,Math.abs(t)*2.6),white=Math.abs(t)<.018;im.data[n*4]=white?250:(t>0?220:35);im.data[n*4+1]=white?250:Math.round(245-145*a);im.data[n*4+2]=white?250:(t>0?60:215);im.data[n*4+3]=255;}c.putImageData(im,0,0);image=off;}
-  function draw(){if(!image)buildImage();ctx.clearRect(0,0,...size);ctx.imageSmoothingEnabled=true;ctx.drawImage(image,0,0,...size);const x=(state.q2/Math.PI+1)*.5*size[0],y=(1-state.q3/Math.PI)*.5*size[1];ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#111';ctx.lineWidth=3;ctx.stroke();const det=detAt(state.q2,state.q3);host.querySelector('[data-det]').textContent=signed(det,5);host.querySelector('.sing-metric').classList.toggle('near',Math.abs(det)<.08);host.querySelector('.sing-status').textContent=state.a1?'Offset case: c₂(c₃ − 2s₃) − s₃ = 0.':'Intersecting-axis case: c₂(c₃ − 2s₃) = 0.';}
-  let dragging=false;canvas.addEventListener('pointerdown',(e)=>{dragging=true;canvas.setPointerCapture(e.pointerId);drag(e);});canvas.addEventListener('pointermove',(e)=>{if(dragging)drag(e);});canvas.addEventListener('pointerup',()=>dragging=false);function drag(e){const r=canvas.getBoundingClientRect();state.q2=((e.clientX-r.left)/r.width*2-1)*Math.PI;state.q3=(1-(e.clientY-r.top)/r.height*2)*Math.PI;syncRanges(controls,{q2:state.q2,q3:state.q3});draw();}return{dispose(){ro.disconnect();}};
+  return createDeterminantMap(host, (q2, q3, a1) => course3RDet([0, q2, q3], a1));
 }
 
 function createBuilder(host) {
@@ -301,5 +462,14 @@ async function runDevelopmentChecks(){try{for(let n=0;n<12;n++){const q=[(Math.r
 function runSymbolicChecks(){try{
   for(const firstA of [1,0])for(let n=0;n<16;n++){const q=Array(3).fill(0).map(()=>Math.random()*4-2),d1=.3+Math.random()*1.7,alpha3=(Math.random()*2-1)*Math.PI,rows=[[firstA,Math.PI/2,d1],[2,Math.PI/2,1],[1.5,alpha3,0]],direct=dh3Det(q,rows),symbolic=course3RDet(q,firstA);if(Math.abs(direct-symbolic)>1e-8*Math.max(1,Math.abs(direct)))throw new Error(`3R symbolic determinant check failed for a1=${firstA}.`);}
   for(let n=0;n<12;n++){const q=Array(6).fill(0).map(()=>Math.random()*4-2),parameters={a1:.4+Math.random(),a2:.8+Math.random()*1.5,a3:.5+Math.random(),a6:.3+Math.random(),d1:.2+Math.random(),d4:.5+Math.random()*1.5,d6:.2+Math.random(),alpha2:(Math.random()*2-1)*Math.PI},rows=[[parameters.a1,Math.PI/2,parameters.d1],[parameters.a2,parameters.alpha2,0],[parameters.a3,Math.PI/2,0],[0,Math.PI/2,parameters.d4],[0,Math.PI/2,0],[parameters.a6,0,parameters.d6]],kin=dhKinematics({q,rows}),direct=screwJacobian(kin,5,3),symbolic=symbolicPreferential6R(q,parameters);for(let r=0;r<6;r++)for(let c=0;c<6;c++)if(Math.abs(direct[r][c]-symbolic[r][c])>2e-8)throw new Error('Preferential Jacobian entry check failed.');const detDirect=determinant(direct),detSymbolic=symbolicPreferential6RDet(q,parameters);if(Math.abs(detDirect-detSymbolic)>2e-8*Math.max(1,Math.abs(detDirect)))throw new Error('Preferential determinant check failed.');}
-  console.info('ENG-654 symbolic checks passed: both 3R determinants and the exact frame-3, O5 preferential 6R Jacobian.');
+  for(const which of ['regular','F','G','wrist']) {
+    const p=PREFERENTIAL_6R_PARAMETERS,q=preferential6RPreset(which,p),factors=preferential6RFactors(q,p);
+    const kin=dhKinematics({q,rows:preferential6RRows(p)}),J=screwJacobian(kin,5,3);
+    if(numericRank(J)!==(which==='regular'?6:5))throw new Error(`Unexpected rank for the ${which} factor preset.`);
+    for(const [key,value] of Object.entries(factors)) {
+      if(key===which?Math.abs(value)>1e-10:Math.abs(value)<1e-3)throw new Error(`The ${which} preset does not isolate its intended factor.`);
+    }
+    if(Math.abs(determinant(J)-factors.F*factors.G*factors.wrist)>1e-8)throw new Error(`Determinant mismatch for the ${which} factor preset.`);
+  }
+  console.info('ENG-654 symbolic checks passed: both 3R determinants, the frame-3/O5 preferential 6R Jacobian, and all three isolated factor presets.');
 }catch(error){console.error('ENG-654 symbolic validation failed:',error);}}
