@@ -179,6 +179,17 @@
 <div id="limit-reference"></div><div id="own-results"></div>
 <div class="ex-grid-2 ex02-columns"><div id="branch-preview" class="ex02-scene-host"></div><article class="ex-card black ex02-card"><h3>Keep the two checks separate</h3><p>A mathematical IK solution must reproduce the position and orientation. A physically allowed solution must also respect every joint limit.</p><p>Angles are reported in [−π, π]. None of these joints has a ±2π permitted interval, so wrapping a rejected angle by one turn cannot rescue it.</p><p>Joint limits alone do not check collisions or plan a safe motion between configurations.</p><p id="limit-summary" role="status"></p></article></div><div class="ex02-checkbar"><button class="primary" data-check="limits" type="button">Check answers</button><span data-status="limits" role="status" aria-live="polite"></span><a data-continue="limits" class="ex02-next" hidden>Continue →</a></div><div id="completion" class="ex02-complete" hidden><h3>Tutorial complete</h3><p>You reduced the model, built and ran the arm IK, solved the wrist and classified the branches. Download your responses using the toolbar to keep your equations, chosen pose and joint-limit decisions.</p></div></div>
 </section>
+<section class="slide exercise-slide">
+  <p class="ex-kicker">Solutions · Upload and verify</p>
+  <h2 class="slide-title">Download the solutions and check responses</h2>
+  <p class="ex-subtitle"><a class="ex-file" href="../solutions/exercise_02_answers.json" download>Download solutions (.json)</a></p>
+  <div class="ex-checklist">
+    <div class="ex-check"><span>1</span><p>Save your work first with <strong>Download responses</strong> in the toolbar. Loading a file replaces your responses, fixed q₃ and target pose. The solution file uses q₃ = π/6 (30°) and the reference target.</p></div>
+    <div class="ex-check"><span>2</span><p>Select <strong>Load saved responses</strong> in the toolbar and choose <code>exercise_02_answers.json</code> to load the solutions, or choose your own downloaded response JSON to restore your work.</p></div>
+    <div class="ex-check"><span>3</span><p>The solution file is checked automatically on upload. Review the feedback on each slide; use <strong>Check answers</strong> after editing responses. Light green means correct; light red means incorrect. Correct answers unlock the next step.</p></div>
+    <div class="ex-check"><span>4</span><p>To verify the complete IK, select <strong>Check count and run my IK</strong> on the branch-verification slide. For your chosen target, select <strong>Run my IK on this pose</strong>, then classify the branches and select <strong>Check answers</strong> on the joint-limits slide.</p></div>
+  </div>
+</section>
 </main>
 <script src="../js/exercises/exercise-02-expressions.js"></script>
 <script src="../js/exercises/exercise-02-model.js"></script>
