@@ -169,3 +169,34 @@
 .l7-crb-slice-settings .l7-controls { gap: .25rem; }
 .l7-crb-slice-settings [data-resolution] { font-size: .62rem; }
 .l7-crb-slice-settings button { font-size: .62rem; }
+
+/* Lecture edits: compact safeguards, IK recall, and sequential hybrid loop. */
+.l7-compact-cards { flex: 0; align-items: start; margin-block: auto; }
+.l7-abb-starts { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.55fr); gap: .7rem; }
+.l7-start-solutions { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.l7-start-solutions p { font-size: clamp(.75rem,1vw,1.05rem); margin: 0 0 .5rem; }
+.l7-start-solutions table { width: 100%; border-collapse: collapse; font-size: clamp(.58rem,.78vw,.88rem); font-variant-numeric: tabular-nums; }
+.l7-start-solutions caption { text-align: left; margin-bottom: .35rem; }
+.l7-start-solutions th,.l7-start-solutions td { padding: .4rem .25rem; border-bottom: 1px solid #ccc; text-align: right; white-space: nowrap; }
+.l7-start-solutions th { color: white; background: #15191d; }
+.l7-start-solutions td:nth-child(2) { text-align: left; }
+.l7-start-solutions tr.active { background: #eaf2fa; font-weight: 700; }
+.l7-start-solutions button { font: inherit; padding: .15rem .35rem; border: 1px solid #777; background: white; cursor: pointer; }
+.l7-start-solutions button[aria-pressed="true"] { background: #245e96; color: white; }
+.l7-det-recall { margin-top: .6rem; padding: .5rem .7rem; border: 1px solid #aaa; font-size: clamp(.76rem,1.03vw,1.15rem); line-height: 1.8; }
+.l7-algorithm { align-self: center; font-size: clamp(.8rem,1.02vw,1.1rem); line-height: 1.45; }
+.l7-algorithm > div { margin: .35rem 0; }
+.l7-algorithm .indent { margin-left: 1rem; }
+.l7-algorithm .indent-2 { margin-left: 2rem; padding-left: .6rem; border-left: 2px solid #bbb; }
+.l7-hybrid-algorithm .l7-equation-stack { font-size: clamp(.82rem,1.15vw,1.3rem); padding: .5rem; }
+.lecture-07 .l7-irb-path-only { grid-template-columns: minmax(0,1.35fr) minmax(0,1fr); grid-template-rows: minmax(0,1fr) auto; }
+.l7-irb-path-only .l7-irb-panel { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); }
+.l7-irb-path-only .l7-irb-scrub { width: auto; flex: 1; }
+.l7-global-conclusion { margin: .7rem 0 0; padding: .65rem .8rem; border-left: 4px solid #111; color: #111; font-size: clamp(.95rem,1.2vw,1.3rem); }
+/* Keep the 3R demonstrations focused on paths and playback. */
+.l7-master .l7-readout,.l7-custom-lab .l7-readout,.l7-custom-lab .l7-status { display: none; }
+.l7-master .l7-status { background: none; padding: 0; color: #111; }
+.l7-master .l7-status:empty { display: none; }
+.l7-custom-lab .l7-custom-controls { grid-template-columns: auto minmax(15rem,1fr); }
+.l7-custom-lab[data-selected-outcome="unavailable"] .l7-status { display: block; color: #111; background: none; }
+.l7-conclusion .derivation-row { grid-template-columns: minmax(0,1fr); }

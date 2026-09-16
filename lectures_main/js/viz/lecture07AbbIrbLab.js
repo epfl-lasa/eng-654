@@ -1,24 +1,78 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
+import { createZUpWorld, createBoldAxes, resizeRendererToContainer } from './threeUtils.js';
 import { loadAbbIrbVisuals } from './abbIrbVisuals.js';
 import { abbUrdfTransforms, abbDeterminant } from './abbIrbKinematics.js';
+import { solveAbbIk } from './abbIrbIk.js';
+import { abbPathTarget, abbPathPosition } from './lecture07AbbIrbPaths.js';
 import { analyzeAbbPath, abbPathPoseError, abbPathJointVelocity, ABB_PATH_SPEED_LIMITS, ABB_PATH_SPEC, abbPositionSliceBoundaries, abbRectangleClock, abbRectangleTime } from './lecture07AbbIrbPaths.js';
 
 const DEG = Math.PI / 180;
 const label = signs => signs.map((sign, i) => `${['S', 'E', 'W'][i]}${sign > 0 ? '+' : '−'}`).join(' ');
 const svgNS = 'http://www.w3.org/2000/svg';
 
+function addWorldFrame(world) {
+  const frame = createBoldAxes(.65); frame.name = 'world-frame'; world.add(frame);
+  for (const [text, position] of [['x₀', [.78, 0, .04]], ['y₀', [0, .78, .04]], ['z₀', [0, 0, .78]], ['O₀', [-.16, -.12, .05]]]) {
+    const canvas = document.createElement('canvas'); canvas.width = 128; canvas.height = 64;
+    const ctx = canvas.getContext('2d'); ctx.fillStyle = '#ffffffdd'; ctx.fillRect(0, 0, 128, 64);
+    ctx.fillStyle = '#17242d'; ctx.font = 'bold 42px Arial'; ctx.textAlign = 'center'; ctx.fillText(text, 64, 46);
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), depthTest: false }));
+    sprite.position.set(...position); sprite.scale.set(.26, .13, 1); frame.add(sprite);
+  }
+  return frame;
+}
+
+/** The eight mathematical IKs of the actual rectangle's first tool pose. */
+export async function createAbbIrbStarts(host) {
+  const roots = solveAbbIk(abbPathTarget(abbPathPosition(0)));
+  host.innerHTML = `<div class="l7-stage"><div class="hud">ABB IRB 4600 · starting tool pose</div></div>
+    <div class="l7-start-solutions"><p>Start: (1.40, 0.30, 1.10) m · fixed downward tool orientation.<br>Eight mathematical IK solutions; four inside joint limits. Select an IK to view it.</p>
+    <table><caption>Joint angles in degrees · determinant in m³</caption><thead><tr><th>IK</th><th>S/E/W</th>${Array.from({length:6},(_,i)=>`<th>q${i+1}</th>`).join('')}<th>det J</th><th>Limits</th></tr></thead><tbody></tbody></table></div>`;
+  const stage = host.querySelector('.l7-stage'), scene = new THREE.Scene(); scene.background = new THREE.Color(0xf1f2f3);
+  const camera = new THREE.PerspectiveCamera(38, 1, .02, 60); camera.position.set(4.8, 3.4, 5);
+  const renderer = new THREE.WebGLRenderer({antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .8; stage.prepend(renderer.domElement);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x626a70, 2.4));
+  const light = new THREE.DirectionalLight(0xffffff, 2.5); light.position.set(5, 7, 9); scene.add(light);
+  const world = createZUpWorld(scene); addWorldFrame(world);
+  const grid = new THREE.GridHelper(6, 24, 0xb4bbc1, 0xdadfe3); grid.rotation.x = Math.PI / 2; world.add(grid);
+  const controls = new OrbitControls(camera, renderer.domElement); controls.target.set(.6, 1, 0); controls.update();
+  const render = () => renderer.render(scene, camera); controls.addEventListener('change', render);
+  const visuals = await loadAbbIrbVisuals(world);
+  visuals.group.children.forEach((link, i) => link.traverse(object => {
+    if (object.isMesh) object.material.color.set(i === 0 || i === 1 || i === 4 ? 0x777d82 : 0xe9e8e4);
+  }));
+  const tbody = host.querySelector('tbody');
+  const choose = index => {
+    visuals.update(abbUrdfTransforms(roots[index].q));
+    tbody.querySelectorAll('tr').forEach((row, i) => {
+      row.classList.toggle('active', i === index); row.querySelector('button').setAttribute('aria-pressed', String(i === index));
+    });
+    host.dataset.selectedIk = index; render();
+  };
+  roots.forEach((root, index) => {
+    const row = document.createElement('tr'); row.dataset.sew = label(root.signs);
+    row.innerHTML = `<td><button type="button" aria-label="Show IK ${index+1}">${index+1}</button></td><td>${label(root.signs)}</td>${root.q.map(q=>`<td>${(q/DEG).toFixed(1)}</td>`).join('')}<td>${root.determinant.toFixed(3)}</td><td>${root.withinLimits?'Within':'Outside'}</td>`;
+    row.querySelector('button').addEventListener('click', () => choose(index)); tbody.append(row);
+  });
+  const resize = new ResizeObserver(() => { resizeRendererToContainer(renderer, camera, stage); render(); }); resize.observe(stage);
+  resizeRendererToContainer(renderer, camera, stage); choose(roots.findIndex(root=>root.withinLimits));
+  host.dataset.meshCount = visuals.count; host.dataset.startIkCount = roots.length; host.dataset.ready = 'true';
+  return { dispose() { resize.disconnect(); controls.dispose(); visuals.dispose(); renderer.dispose(); } };
+}
+
 /** Full-pose numerical continuation and genuine analytical ABB IK enumeration. */
 export async function createAbbIrbPathLab(host, mode) {
   if (!['abb-irb-path', 'abb-irb-numerical', 'abb-irb-analytical'].includes(mode)) throw new Error(`Unknown ABB path mode: ${mode}`);
   const analytical = mode === 'abb-irb-analytical';
+  const pathOnly = mode === 'abb-irb-path';
   host.classList.add('l7-viewer-lab', 'l7-irb-lab');
   host.innerHTML = `<div class="l7-stage"><div class="hud">ABB IRB 4600 · fixed tool orientation · tool path</div>
     <label class="l7-irb-opacity"><span>STL opacity</span><input aria-label="ABB mesh opacity" type="range" min="10" max="100" step="5" value="100"><output>100%</output></label></div>
     <div class="l7-plot l7-irb-plot"><svg role="img" aria-label="Desired and achieved tool path, x and y in metres"></svg></div>
     <aside class="l7-panel l7-irb-panel"><div class="l7-controls"><button class="primary" data-play>Play path</button><button data-reset>Reset</button>
-    <select data-seed aria-label="Starting ABB inverse-kinematic solution"></select><label class="l7-irb-scrub">Duration T <input data-duration aria-label="ABB trajectory duration" type="range" min="2" max="20" step="1" value="12"><output data-duration-value>12 s</output></label><label class="l7-irb-scrub">Path progress <input data-progress aria-label="Path progress" type="range" min="0" max="360" value="0"></label></div>
+    ${pathOnly ? '' : '<select data-seed aria-label="Starting ABB inverse-kinematic solution"></select>'}<label class="l7-irb-scrub">Duration T <input data-duration aria-label="ABB trajectory duration" type="range" min="2" max="20" step="1" value="12"><output data-duration-value>12 s</output></label><label class="l7-irb-scrub">Path progress <input data-progress aria-label="Path progress" type="range" min="0" max="360" value="0"></label></div>
     <table class="l7-irb-branches"><thead><tr><th>Start IK</th><th>${analytical ? 'Whole-path analysis' : 'Local continuation'}</th></tr></thead><tbody></tbody></table>
     <div><div class="l7-readout"></div><p class="l7-status" aria-live="polite"></p></div></aside>`;
   const stage = host.querySelector('.l7-stage'), play = host.querySelector('[data-play]'), reset = host.querySelector('[data-reset]');
@@ -36,12 +90,16 @@ export async function createAbbIrbPathLab(host, mode) {
   tracks.forEach((track, index) => {
     const option = document.createElement('option'); option.value = index;
     option.textContent = `${label(track.seed.signs)}${track.failIndex === 0 ? ' · rejected at start' : ''}`;
-    select.append(option);
+    select?.append(option);
     const row = document.createElement('tr'); row.dataset.branch = label(track.seed.signs); row.dataset.seedIndex = index;
     const name = document.createElement('td'), state = document.createElement('td'); name.textContent = label(track.seed.signs);
     row.append(name, state); table.append(row);
   });
-  select.value = selected;
+  if (select) select.value = selected;
+  if (pathOnly) {
+    table.closest('table').remove(); readout.parentElement.remove();
+    host.classList.add('l7-irb-path-only');
+  }
 
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0xf1f2f3);
   const camera = new THREE.PerspectiveCamera(38, 1, .02, 60); camera.position.set(4.5, 3.1, 4.7);
@@ -51,6 +109,7 @@ export async function createAbbIrbPathLab(host, mode) {
   scene.add(new THREE.HemisphereLight(0xffffff, 0x626a70, 2.4));
   const light = new THREE.DirectionalLight(0xffffff, 2.5); light.position.set(5, 7, 9); scene.add(light);
   const world = createZUpWorld(scene), grid = new THREE.GridHelper(6, 24, 0xb4bbc1, 0xdadfe3); grid.rotation.x = Math.PI / 2; world.add(grid);
+  addWorldFrame(world); host.dataset.worldFrame = 'true';
   const controls = new OrbitControls(camera, renderer.domElement); controls.target.set(1.05, 1, -.3); controls.enableDamping = false; controls.update();
   const render = () => { if (!disposed) renderer.render(scene, camera); };
   controls.addEventListener('change', render);
@@ -70,10 +129,10 @@ export async function createAbbIrbPathLab(host, mode) {
   });
   const pathGeometry = new THREE.BufferGeometry().setFromPoints(data.targets.map(target => new THREE.Vector3(...target.position)));
   const desiredLine = new THREE.Line(pathGeometry, new THREE.LineBasicMaterial({ color: 0xe00000 })); world.add(desiredLine);
-  const trailGeometry = new THREE.BufferGeometry(), trail = new THREE.Line(trailGeometry, new THREE.LineBasicMaterial({ color: 0x222b32 })); world.add(trail);
+  const trailGeometry = new THREE.BufferGeometry(), trail = new THREE.Line(trailGeometry, new THREE.LineBasicMaterial({ color: 0x245e96 })); world.add(trail);
   const sphereGeometry = new THREE.SphereGeometry(.035, 16, 12);
   const desired = new THREE.Mesh(sphereGeometry, new THREE.MeshStandardMaterial({ color: 0xe00000 }));
-  const actual = new THREE.Mesh(sphereGeometry, new THREE.MeshStandardMaterial({ color: 0x222b32 })); actual.scale.setScalar(.72); world.add(desired, actual);
+  const actual = new THREE.Mesh(sphereGeometry, new THREE.MeshStandardMaterial({ color: 0x245e96 })); actual.scale.setScalar(.72); world.add(desired, actual);
   const plot = createPathPlot(host.querySelector('svg'), data.targets);
   const resize = new ResizeObserver(() => { resizeRendererToContainer(renderer, camera, stage); render(); }); resize.observe(stage);
   resizeRendererToContainer(renderer, camera, stage);
@@ -127,12 +186,12 @@ export async function createAbbIrbPathLab(host, mode) {
     playing = true; startTime = performance.now() - abbRectangleTime(frame/(data.targets.length-1),duration)*1000; play.textContent = 'Pause'; update(frame); raf = requestAnimationFrame(tick);
   });
   reset.addEventListener('click', () => { stop(); update(0); });
-  select.addEventListener('change', () => { stop(); selected = Number(select.value); update(0); });
+  select?.addEventListener('change', () => { stop(); selected = Number(select.value); update(0); });
   progress.addEventListener('input', () => { stop(); update(Number(progress.value)); });
   host.querySelector('[data-duration]').addEventListener('input', event => {
     stop();duration=Number(event.target.value);host.querySelector('[data-duration-value]').textContent=duration+' s';update(0);
   });
-  table.addEventListener('click', event => { const row = event.target.closest('[data-seed-index]'); if (row) { select.value = row.dataset.seedIndex; select.dispatchEvent(new Event('change')); } });
+  if (!pathOnly) table.addEventListener('click', event => { const row = event.target.closest('[data-seed-index]'); if (row) { select.value = row.dataset.seedIndex; select.dispatchEvent(new Event('change')); } });
   function onHash() { if (host.closest('.slide')?.classList.contains('active') === false) stop(); }
   window.addEventListener('hashchange', onHash);
   update(0);
@@ -175,14 +234,14 @@ function createPathPlot(svg, targets) {
     element('path', { d: `M${bounds.left},${bounds.top}V${bounds.bottom}H${bounds.right}`, fill: 'none', stroke: '#63717b', 'stroke-width': 1.2 });
     text((bounds.left + bounds.right) / 2, height - 4, 'x [m]', { 'text-anchor': 'middle', 'font-size': 11 }); text(13, (bounds.top + bounds.bottom) / 2, 'y [m]', { transform: `rotate(-90 13 ${(bounds.top + bounds.bottom) / 2})`, 'text-anchor': 'middle', 'font-size': 11 });
     element('path', { d: path(targets.map(target => target.position)), fill: 'none', stroke: '#e00000', 'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'miter' });
-    achieved = element('path', { fill: 'none', stroke: '#222b32', 'stroke-width': 1.7, 'stroke-linecap': 'round', 'stroke-linejoin': 'miter' });
+    achieved = element('path', { fill: 'none', stroke: '#245e96', 'stroke-width': 1.7, 'stroke-linecap': 'round', 'stroke-linejoin': 'miter' });
     const start = targets[0].position; element('circle', { cx: px(start[0]), cy: py(start[1]), r: 4, fill: '#fff', stroke: '#333', 'stroke-width': 1.5 }); text(px(start[0]) + 6, py(start[1]) + 13, 'start', { 'font-size': 10 });
     desiredDot = element('circle', { r: 4, fill: '#e00000', stroke: '#fff', 'stroke-width': 1.2 });
-    actualDot = element('circle', { r: 3, fill: '#222b32', stroke: '#fff', 'stroke-width': 1 });
+    actualDot = element('circle', { r: 3, fill: '#245e96', stroke: '#fff', 'stroke-width': 1 });
     stop = element('path', { fill: 'none', stroke: '#b86200', 'stroke-width': 2.5 });
     text(10, 34, 'Position IKs:', { 'font-size': 10 });
     [[83, '#fff', '4'], [116, '#e2e5e8', '2'], [149, '#b9bfc4', '0']].forEach(([x, fill, label]) => { element('rect', { x, y: 25, width: 9, height: 9, fill, stroke: '#67727b', 'stroke-width': .6 }); text(x + 12, 34, label, { 'font-size': 10 }); });
-    text(10, 48, '— desired', { fill: '#e00000', 'font-size': 10 }); text(88, 48, '— achieved', { fill: '#222b32', 'font-size': 10 });
+    text(10, 48, '— desired', { fill: '#e00000', 'font-size': 10 }); text(88, 48, '— achieved', { fill: '#245e96', 'font-size': 10 });
     if (lastState) update(...lastState);
   }
   function update(points, target, actual, track, showFailure) {

@@ -240,7 +240,7 @@ async function createSliceLab(host,mode) {
     host.dataset.mapView=mapView;host.dataset.viewBounds=JSON.stringify(bounds);
     if(shared.vertices.length>1)map.curves.append(element('path',{d:pathD(shared.vertices,map.map),fill:'none',stroke:'#c5242c','stroke-width':2.6,'stroke-linejoin':'round','stroke-linecap':'round'}));
     shared.vertices.forEach((point,i)=>{if(i===0||shared.vertices.length<20){const [x,y]=map.map(...point);map.curves.append(element('circle',{cx:x,cy:y,r:i===0?5:2.5,fill:i===0?'#111':'#c5242c',stroke:'white','stroke-width':1.3}));}});
-    if(trackPositions.length){const points=trackPositions.map(p=>sliceProjection(p,atlas));map.curves.append(element('path',{d:pathD(points.slice(0,index+1),map.map),fill:'none',stroke:'#17242d','stroke-width':2.4}));const [x,y]=map.map(...points[Math.min(index,points.length-1)]);map.curves.append(element('circle',{cx:x,cy:y,r:4.5,fill:'#17242d',stroke:'white','stroke-width':1.5}));}
+    if(trackPositions.length){const points=trackPositions.map(p=>sliceProjection(p,atlas));map.curves.append(element('path',{d:pathD(points.slice(0,index+1),map.map),fill:'none',stroke:'#245e96','stroke-width':2.4}));const [x,y]=map.map(...points[Math.min(index,points.length-1)]);map.curves.append(element('circle',{cx:x,cy:y,r:4.5,fill:'#245e96',stroke:'white','stroke-width':1.5}));}
     const stop=shared.track?.stop;
     if(stop?.position){const [x,y]=map.map(...sliceProjection(stop.position,atlas)),marker=element('g',{'data-limit-marker':'','aria-label':`q${stop.joint+1} joint limit at s ${stop.progress.toFixed(4)}`});marker.append(element('circle',{cx:x,cy:y,r:8,fill:'white',stroke:'#b7222a','stroke-width':1.5}),element('path',{d:`M${x-4},${y-4}L${x+4},${y+4}M${x-4},${y+4}L${x+4},${y-4}`,stroke:'#b7222a','stroke-width':2}),element('title',{},shared.track.reason),element('text',{x:Math.max(map.left+4,Math.min(map.left+map.width-95,x+11)),y:Math.max(map.top+14,y-9),fill:'#17242d','font-size':11,'font-weight':700,stroke:'white','stroke-width':3,'paint-order':'stroke'},`q${stop.joint+1} = ${(stop.limit*DEG).toFixed(0)}° stop`));map.curves.append(marker);}
     host.dataset.pathVertices=JSON.stringify(shared.vertices);host.dataset.pathPoints=String(shared.track?.q.length||0);
@@ -351,11 +351,11 @@ async function createNscs(host) {
   host.dataset.pathPoints=String(qs.length);host.dataset.endpointJointDistance=String(separation);host.dataset.minDet=String(min(dets));host.dataset.minLimitMargin=String(min(margins));
   function draw() {
     const wm=plot(work,bounds(points.map(p=>p[0])),bounds(points.map(p=>p[1])),['x [m]','y [m]']);
-    wm.curves.append(element('path',{d:pathD(points,wm.map),fill:'none',stroke:'#c5242c','stroke-width':2}),element('path',{d:pathD(points.slice(0,index+1),wm.map),fill:'none',stroke:'#20252b','stroke-width':2.8}));
-    const p=wm.map(...points[index]);wm.curves.append(element('circle',{cx:p[0],cy:p[1],r:4.5,fill:'#20252b',stroke:'#fff','stroke-width':1.5}));
-    const jm=plot(joint,[0,1],[-230,190],['Path parameter s','q [°]'],false,55);
-    for(let k=0;k<6;k++){jm.curves.append(element('path',{d:pathD(qs.map((q,i)=>[i/(qs.length-1),q[k]*DEG]),jm.map),fill:'none',stroke:JOINT_COLORS[k],'stroke-width':1.8}));joint.append(element('text',{x:jm.left+9+k*jm.width/6,y:39,style:`fill:${JOINT_COLORS[k]}`,class:'l7-svg-tick'},'q'+(k+1)));}
-    const x=jm.map(index/(qs.length-1),0)[0];jm.curves.append(element('line',{x1:x,x2:x,y1:jm.top,y2:jm.top+jm.height,stroke:'#111','stroke-width':1.2,'stroke-dasharray':'4 3'}));
+    wm.curves.append(element('path',{d:pathD(points,wm.map),fill:'none',stroke:'#c5242c','stroke-width':2}),element('path',{d:pathD(points.slice(0,index+1),wm.map),fill:'none',stroke:'#245e96','stroke-width':2.8}));
+    const p=wm.map(...points[index]);wm.curves.append(element('circle',{cx:p[0],cy:p[1],r:4.5,fill:'#245e96',stroke:'#fff','stroke-width':1.5}));
+    const jm=plot(joint,[0,100],[-230,190],['Path completion (%)','q [°]'],false,55);
+    for(let k=0;k<6;k++){jm.curves.append(element('path',{d:pathD(qs.map((q,i)=>[100*i/(qs.length-1),q[k]*DEG]),jm.map),fill:'none',stroke:JOINT_COLORS[k],'stroke-width':1.8}));joint.append(element('text',{x:jm.left+9+k*jm.width/6,y:39,style:`fill:${JOINT_COLORS[k]}`,class:'l7-svg-tick'},'q'+(k+1)));}
+    const x=jm.map(100*index/(qs.length-1),0)[0];jm.curves.append(element('line',{x1:x,x2:x,y1:jm.top,y2:jm.top+jm.height,stroke:'#111','stroke-width':1.2,'stroke-dasharray':'4 3'}));
   }
   function update() {
     viewer.update(qs[index]);viewer.setTrace(points.slice(0,index+1));viewer.setTarget(points[index]);

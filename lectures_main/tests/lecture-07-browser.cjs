@@ -81,7 +81,24 @@ async function main() {
     const {targetId} = await send('Target.createTarget', {url:'about:blank', browserContextId:contextId}, null);
     ({sessionId} = await send('Target.attachToTarget', {targetId, flatten:true}, null));
 await send('Runtime.enable');await send('Page.enable');await send('Network.enable');await send('Network.setCacheDisabled',{cacheDisabled:true});await send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
-await send('Page.navigate',{url:LECTURE_URL});await until(`!!document.querySelector('[data-crb-model]')`);assert.equal(await run(`document.querySelectorAll('#deck>.slide').length`),27);assert.equal(await run(`document.querySelector('[data-crb-lab=paper]')`),null);await go('intro');await until(`document.querySelector('[data-crb-model]')?.dataset.meshCount==='7'`);assert.deepEqual((await layout('intro')).overflow,[]);await capture('19-model');
+await send('Page.navigate',{url:LECTURE_URL});await until(`!!document.querySelector('[data-crb-model]')`);assert.equal(await run(`document.querySelectorAll('#deck>.slide').length`),25);assert.equal(await run(`document.querySelector('[data-crb-lab=paper]')`),null);await go('intro');await until(`document.querySelector('[data-crb-model]')?.dataset.meshCount==='7'`);assert.deepEqual((await layout('intro')).overflow,[]);await capture('19-model');
+// The opening IK table uses the actual path start; every row selects a 3D pose.
+await go('abb-irb-starts');await until(`document.querySelector('[data-path-lab=abb-irb-starts]')?.dataset.ready==='true'`);
+assert.equal(await run(`document.querySelectorAll('[data-path-lab=abb-irb-starts] tbody tr').length`),8);
+assert.equal(await run(`document.querySelector('[data-path-lab=abb-irb-starts]').dataset.meshCount`),'7');
+for(let i=0;i<8;i++){
+  await run(`document.querySelectorAll('[data-path-lab=abb-irb-starts] tbody button')[${i}].click()`);
+  assert.equal(await run(`document.querySelector('[data-path-lab=abb-irb-starts]').dataset.selectedIk`),String(i));
+}
+await capture('08-ik-solutions');
+await send('Emulation.setDeviceMetricsOverride',{width:1280,height:720,deviceScaleFactor:1,mobile:false});await wait(200);await capture('08-ik-solutions-1280');assert.deepEqual((await layout('abb-irb-starts')).overflow,[]);await send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+assert.deepEqual((await layout('abb-irb-starts')).overflow,[]);
+await run(`location.hash='slide-9'`);await until(`document.querySelector('.l7-hybrid-algorithm').classList.contains('active')`);
+assert.equal(await run(`document.querySelectorAll('.l7-hybrid-algorithm .l7-equation-stack .fragment').length`),0);
+assert.equal(await run(`document.querySelectorAll('.l7-hybrid-algorithm .l7-algorithm .fragment').length`),8);
+await send('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowRight',code:'ArrowRight'});
+assert.equal(await run(`document.querySelectorAll('.l7-hybrid-algorithm .fragment.revealed').length`),1);
+await capture('09-algorithm-first-step');
 await go('atlas');await until(`${h('atlas')}?.dataset.ikCount==='16'&&${h('atlas')}.dataset.busy==='false'`);
 assert.equal(await run(`${h('atlas')}.dataset.samples`),'100000');assert.equal(await run(`${h('atlas')}.dataset.slicePlane`),'xy');assert.equal(await run(`${h('atlas')}.dataset.sliceZ`),String(xyAtlas.z));assert.equal(await run(`${h('atlas')}.dataset.limitIkCount`),'10');assert.equal(await run(`${h('atlas')}.querySelector('[data-stage]').dataset.meshCount`),'7');assert.equal(await run(`${h('atlas')}.querySelector('[data-stage]').dataset.visibleIks`),'15');
 await click('atlas','[data-show-one]');assert.equal(await run(`${h('atlas')}.querySelector('[data-stage]').dataset.visibleIks`),'0');await click('atlas','[data-show-all]');assert.equal(await run(`${h('atlas')}.querySelector('[data-stage]').dataset.visibleIks`),'15');
@@ -96,20 +113,21 @@ const point=xyAtlas.demonstrationPoint;await clickMap('atlas',[point[0]+.015,poi
 const drawnVertices=await run(`${h('atlas')}.dataset.pathVertices`);await click('atlas','[data-track]');await until(`${h('atlas')}.dataset.busy==='false'&&Number(${h('atlas')}.dataset.pathPoints)>2`);assert.match(await run(`${h('atlas')}.querySelector('[data-status]').textContent`),/full path/);
 await go('draw');await until(`${h('draw')}?.dataset.ikCount==='16'`);assert.equal(await run(`${h('draw')}.dataset.pathVertices`),drawnVertices,'The actual drawn xy path carries into the next slide.');
 await go('atlas');await click('atlas','[data-example]');await until(`${h('atlas')}.dataset.busy==='false'&&JSON.parse(${h('atlas')}.dataset.pathVertices).length>10`);const vertices=await run(`${h('atlas')}.dataset.pathVertices`);await click('atlas','[data-compare]');await until(`${h('atlas')}.dataset.busy==='false'&&${h('atlas')}.querySelectorAll('[data-comparison] button').length===16`);
-const results=await run(`[...${h('atlas')}.querySelectorAll('[data-comparison] button')].map(b=>b.textContent)`);assert.deepEqual(results.flatMap((text,i)=>text.endsWith('complete')?[i]:[]),xyAtlas.demonstrationPath.verification.completeIndices);await capture('22-xy-comparison');
+// Current 30 cm loop, also verified by lecture-07-crb-example-loop.test.cjs.
+const results=await run(`[...${h('atlas')}.querySelectorAll('[data-comparison] button')].map(b=>b.textContent)`);assert.deepEqual(results.flatMap((text,i)=>text.endsWith('complete')?[i]:[]),[0,1,10]);await capture('22-xy-comparison');
 await go('draw');await until(`${h('draw')}?.dataset.ikCount==='16'`);assert.equal(await run(`${h('draw')}.dataset.pathVertices`),vertices);assert.equal(await run(`${h('draw')}.querySelectorAll('[data-comparison] button').length`),16);
-await run(`[...${h('draw')}.querySelectorAll('[data-comparison] button')].find(b=>b.textContent.endsWith('complete')).click()`);const count=+await run(`${h('draw')}.dataset.pathPoints`);assert.equal(count,xyAtlas.demonstrationPath.verification.targetSamples);assert.equal(await run(`${h('draw')}.querySelector('[data-stage]').dataset.hasGhost`),'true');
+await run(`[...${h('draw')}.querySelectorAll('[data-comparison] button')].find(b=>b.textContent.endsWith('complete')).click()`);const count=+await run(`${h('draw')}.dataset.pathPoints`);assert.equal(count,361);assert.equal(await run(`${h('draw')}.querySelector('[data-stage]').dataset.hasGhost`),'true');
 await click('draw','[data-play]');await until(`Number(${h('draw')}.querySelector('[data-progress]').value)>5`);await click('draw','[data-play]');const idx=+await run(`${h('draw')}.querySelector('[data-progress]').value`);await wait(120);assert.equal(+await run(`${h('draw')}.querySelector('[data-progress]').value`),idx);
 await run(`(()=>{const progress=${h('draw')}.querySelector('[data-progress]');progress.value=progress.max;progress.dispatchEvent(new Event('input'));})()`);assert.equal(await run(`${h('draw')}.querySelector('[data-play]').textContent`),'Replay');await click('draw','[data-play]');await until(`Number(${h('draw')}.querySelector('[data-progress]').value)>3&&Number(${h('draw')}.querySelector('[data-progress]').value)<50`);await click('draw','[data-reset]');assert.equal(await run(`${h('draw')}.querySelector('[data-progress]').value`),'0');assert.deepEqual((await layout('draw')).overflow,[]);
 await go('nscs');await until(`${h('nscs')}?.dataset.pathPoints&&${h('nscs')}.querySelector('[data-stage]').dataset.hasGhost==='true'`);const ns=await run(`({...${h('nscs')}.dataset})`);assert.ok(+ns.endpointJointDistance>1);assert.ok(+ns.minDet>0);assert.ok(+ns.minLimitMargin>0);const nscsStart=await run(`${h('nscs')}.querySelector('[data-stage]').dataset.q`);
-await click('nscs','[data-end]');assert.notEqual(await run(`${h('nscs')}.querySelector('[data-stage]').dataset.q`),nscsStart);assert.equal(await run(`${h('nscs')}.querySelector('[data-stage]').dataset.ghostQ`),nscsStart,'The transparent robot remains at the initial configuration.');assert.equal(+await run(`${h('nscs')}.dataset.frame`),+ns.pathPoints-1);await capture('22-endpoint');await click('nscs','[data-play]');await until(`+${h('nscs')}.dataset.frame>5&&+${h('nscs')}.dataset.frame<200`);await click('nscs','[data-reset]');assert.equal(await run(`${h('nscs')}.dataset.frame`),'0');assert.equal(await run(`${h('nscs')}.dataset.playing`),'false');assert.deepEqual((await layout('nscs')).overflow,[]);
+await click('nscs','[data-end]');assert.notEqual(await run(`${h('nscs')}.querySelector('[data-stage]').dataset.q`),nscsStart);assert.equal(await run(`${h('nscs')}.querySelector('[data-stage]').dataset.ghostQ`),nscsStart,'The transparent robot remains at the initial configuration.');assert.equal(+await run(`${h('nscs')}.dataset.frame`),+ns.pathPoints-1);assert.match(await run(`${h('nscs')}.querySelector('[data-joint]').textContent`),/Path completion \(\%\)/);await capture('22-endpoint');await click('nscs','[data-play]');await until(`+${h('nscs')}.dataset.frame>5&&+${h('nscs')}.dataset.frame<200`);await click('nscs','[data-reset]');assert.equal(await run(`${h('nscs')}.dataset.frame`),'0');assert.equal(await run(`${h('nscs')}.dataset.playing`),'false');assert.deepEqual((await layout('nscs')).overflow,[]);
     const abbHost = mode => `document.querySelector('[data-path-lab="${mode}"]')`;
     const abbSet = (mode, selector, value) => run(`(()=>{const input=${abbHost(mode)}.querySelector('${selector}');input.value='${value}';input.dispatchEvent(new Event('input'));})()`);
     const abbShow = async mode => { await go(mode); await until(`${abbHost(mode)}?.dataset.ready==='true'`); };
     const abbLayout = async mode => {
       const bounds = await run(`(()=>{
         const h=${abbHost(mode)},panel=h.querySelector('.l7-panel'),stage=h.querySelector('.l7-stage'),opacity=h.querySelector('.l7-irb-opacity');
-        const r=panel.getBoundingClientRect(),readout=h.querySelector('.l7-readout').getBoundingClientRect(),status=h.querySelector('.l7-status').getBoundingClientRect();
+        const r=panel.getBoundingClientRect(),readout=h.querySelector('.l7-readout')?.getBoundingClientRect()||r,status=h.querySelector('.l7-status')?.getBoundingClientRect()||r;
         const rectangle=h.querySelector('svg path[stroke="#e00000"]').getBBox();
         return {scroll:panel.scrollHeight,available:panel.clientHeight,readoutBottom:readout.bottom,statusBottom:status.bottom,panelBottom:r.bottom,
           opacityGap:stage.getBoundingClientRect().bottom-opacity.getBoundingClientRect().bottom,rectangleRatio:rectangle.height/rectangle.width,plotHeight:h.querySelector('svg').clientHeight};
@@ -126,18 +144,20 @@ await click('nscs','[data-end]');assert.notEqual(await run(`${h('nscs')}.querySe
       await abbShow(mode);
       const data = await run(`({...${abbHost(mode)}.dataset})`);
       assert.equal(data.pathPlane,'xy'); assert.equal(data.pathShape,'rectangle'); assert.equal(data.jacobianPoint,'6'); assert.equal(data.startIkCount, '8'); assert.equal(data.validStartCount, '4');
+      assert.equal(data.worldFrame, 'true');
+      if(mode==='abb-irb-path') assert.equal(await run(`${abbHost(mode)}.querySelector('select')`),null);
       assert.equal(data.completeBranchCount, '2'); assert.equal(data.meshCount, '7');
       await abbSet(mode, '[data-duration]', 2);
       await abbSet(mode,'[data-progress]',90); if(mode!=='abb-irb-numerical'){assert.equal(await run(`${abbHost(mode)}.dataset.positionIkCount`),'2');assert.equal(await run(`${abbHost(mode)}.dataset.fullPoseIkCount`),'4');} const ratio2 = +await run(`${abbHost(mode)}.dataset.peakSpeedRatio`);
       await abbSet(mode, '[data-progress]', 40);
       const rates = async () => (await run(`${abbHost(mode)}.querySelector('.l7-readout').textContent`)).split('\n').find(line=>line.startsWith('q̇')).split(':')[1].split(',').map(Number);
-      const rates2 = await rates();
+      const rates2 = mode === 'abb-irb-path' ? null : await rates();
       await abbSet(mode, '[data-duration]', 20);
       const ratio20 = +await run(`${abbHost(mode)}.dataset.peakSpeedRatio`);
       assert.ok(Math.abs(ratio2/ratio20-10) < 1e-10, 'Joint speed scales inversely with trajectory duration.');
       await abbSet(mode, '[data-progress]', 40);
-      const rates20 = await rates(); assert.equal(rates20.length, 6);
-      rates2.forEach((value,i) => assert.ok(Math.abs(value-10*rates20[i]) < .56, 'Displayed speeds agree within decimal rounding.'));
+      const rates20 = mode === 'abb-irb-path' ? null : await rates(); if (rates20) assert.equal(rates20.length, 6);
+      rates2?.forEach((value,i) => assert.ok(Math.abs(value-10*rates20[i]) < .56, 'Displayed speeds agree within decimal rounding.'));
       await abbSet(mode, '.l7-irb-opacity input', 25); assert.equal(await run(`${abbHost(mode)}.dataset.opacity`), '0.25');
       await abbSet(mode, '.l7-irb-opacity input', 100);
       await abbLayout(mode); await capture(mode+'-1440');
@@ -147,10 +167,10 @@ await click('nscs','[data-end]');assert.notEqual(await run(`${h('nscs')}.querySe
     await send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
 
     const pathMode = 'abb-irb-path'; await abbShow(pathMode); await abbSet(pathMode, '[data-duration]', 2);
-    const startTime = await run(`(()=>{${abbHost(pathMode)}.querySelector('[data-play]').click();return performance.now();})()`);
+    const startTime = await run(`(()=>{const time=performance.now();${abbHost(pathMode)}.querySelector('[data-play]').click();return time;})()`);
     await wait(500);
-    const state = await run(`({time:performance.now(),frame:+${abbHost(pathMode)}.dataset.frame})`),tau=Math.min(1,(state.time-startTime)/2000);
-    assert.ok(Math.abs(state.frame-(()=>{const edge=Math.min(3,Math.floor(4*tau)),u=4*tau-edge;return 90*(edge+10*u**3-15*u**4+6*u**5);})()) < 10, 'Playback follows the smooth clock for each rectangle edge.');
+    const state = await run(`new Promise(resolve=>requestAnimationFrame(time=>resolve({time,frame:+${abbHost(pathMode)}.dataset.frame})))`),tau=Math.min(1,(state.time-startTime)/2000);
+    assert.ok(Math.abs(state.frame-(()=>{const edge=Math.min(3,Math.floor(4*tau)),u=4*tau-edge;return 90*(edge+10*u**3-15*u**4+6*u**5);})()) < 10, 'Playback follows the smooth clock for each rectangle edge: '+JSON.stringify({state,startTime,tau}));
     await run(`${abbHost(pathMode)}.querySelector('[data-play]').click()`);
     const paused = await run(`${abbHost(pathMode)}.dataset.frame`); await wait(150);
     assert.equal(await run(`${abbHost(pathMode)}.dataset.frame`), paused);

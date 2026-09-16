@@ -111,7 +111,7 @@ export async function createAbbCrbViewer(host, fk) {
       host.dataset.visibleIks = String(configurations.length); render();
     },
     setPath(points) { line('desired', points, 0xd71920); render(); },
-    setTrace(points) { line('trace', points, 0x20252b); render(); },
+    setTrace(points) { line('trace', points, 0x245e96); render(); },
     setTarget(point) { target.visible = !!point; if (point) target.position.fromArray(point); render(); },
     /** Optional framing for tall or wide task examples, preserving view direction.
      * Callers include the base, robot joint origins, and tool path. The extra
