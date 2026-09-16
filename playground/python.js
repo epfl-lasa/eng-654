@@ -77,9 +77,13 @@ def to_homogeneous(value):
     if matrix.shape == (3, 1):
         return homogeneous(sp.eye(3), matrix)
     raise ValueError("Expected a 3 x 3 rotation, 3-vector, or 4 x 4 transform.")`,
-    compose: `def compose(left, right):
+    compose: `def compose(left, right, left_kind="transform", right_kind="transform"):
     """An A -> B connection computes A * B, acting on column vectors."""
     A, B = as_matrix(left), as_matrix(right)
+    if left_kind == "scalar" or right_kind == "scalar":
+        raise ValueError("A determinant is a scalar result and cannot compose as a matrix.")
+    if left_kind == "matrix" or right_kind == "matrix":
+        return A * B
     if A.shape == (3, 3) and B.shape == (3, 3):
         return A * B
     if A.shape == (3, 1) and B.shape == (3, 1):
@@ -197,21 +201,36 @@ def to_homogeneous(value):
     return MANIFEST_PREFIX + encoded + '\n';
   }
   const indent = source => String(source).split('\n').map(line => line ? '    ' + line : '').join('\n');
+  const inputOperation = type => ['inverse', 'logarithm', 'cross', 'columns', 'stack', 'determinant'].includes(type);
+  function orderedInputs(graph, node) {
+    const inputs = graph.edges.filter(edge => edge.to === node.id);
+    const slots = node.type === 'cross' || node.type === 'stack' ? ['a', 'b']
+      : node.type === 'columns' ? (node.params?.columns || []).map((_, index) => 'c' + index) : null;
+    if (!slots) {
+      if (inputs.length > 1) throw new Error('Each block can have only one input.');
+      return inputs;
+    }
+    if (inputs.some(edge => !slots.includes(edge.input)) || new Set(inputs.map(edge => edge.input)).size !== inputs.length) {
+      throw new Error('Each operation input must use a distinct named slot.');
+    }
+    if (slots.some(slot => !inputs.some(edge => edge.input === slot))) throw new Error('Connect every input before exporting ' + node.type + '.');
+    return slots.map(slot => inputs.find(edge => edge.input === slot));
+  }
   function ancestorChain(graph, nodeId, standalone = false) {
     if (!graph || !Array.isArray(graph.nodes) || !Array.isArray(graph.edges)) throw new Error('A block graph is required.');
-    const nodes = new Map(graph.nodes.map(node => [node.id, node])), chain = [], visiting = new Set();
+    const nodes = new Map(graph.nodes.map(node => [node.id, node])), chain = [], visiting = new Set(), visited = new Set();
     function visit(id) {
+      if (visited.has(id)) return;
       if (visiting.has(id)) throw new Error('A connection cycle cannot be exported.');
       visiting.add(id);
       const node = nodes.get(id);
       if (!node) throw new Error('Select an existing block to export.');
-      const inputs = standalone ? [] : graph.edges.filter(edge => edge.to === id);
-      if (inputs.length > 1) throw new Error('Each block can have only one input.');
-      if (inputs.length) {
-        if (nodes.get(inputs[0].from)?.type === 'logarithm') throw new Error('A screw result contains ω, v and θ. Enter these in an Exponential block to compose its motion.');
-        visit(inputs[0].from);
+      const inputs = standalone ? [] : orderedInputs(graph, node);
+      for (const input of inputs) {
+        if (nodes.get(input.from)?.type === 'logarithm') throw new Error('A screw result contains ω, v and θ. Enter these in an Exponential block to compose its motion.');
+        visit(input.from);
       }
-      chain.push(node);
+      visiting.delete(id); visited.add(id); chain.push(node);
     }
     visit(nodeId); return chain;
   }
@@ -219,7 +238,7 @@ def to_homogeneous(value):
     const p = node.params || {};
     if (node.type === 'rotation') return [...(p.axis || ['0', '0', '1']), p.angle === undefined ? 'theta' : p.angle];
     if (node.type === 'translation') return p.vector || ['0', '0', '0'];
-    if (node.type === 'transform') return (p.matrix || []).flat();
+    if (node.type === 'transform' || node.type === 'matrix') return (p.matrix || []).flat();
     if (node.type === 'exponential') return [...(p.omega || ['0', '0', '1']), ...(p.v || ['0', '0', '0']), p.theta === undefined ? 'theta' : p.theta];
     if (node.type === 'function') return p.definition.parameters.map(name => p.arguments?.[name] === undefined ? name : p.arguments[name]);
     return [];
@@ -230,6 +249,8 @@ def to_homogeneous(value):
     if (node.type === 'rotation') { params.axis = p.axis || ['0', '0', '1']; params.angle = p.angle === undefined ? 'theta' : p.angle; }
     else if (node.type === 'translation') params.vector = p.vector || ['0', '0', '0'];
     else if (node.type === 'transform') params.matrix = (p.matrix || []).flat();
+    else if (node.type === 'matrix') { params.rows = p.rows; params.columns = p.columns; params.matrix = (p.matrix || []).flat(); }
+    else if (node.type === 'columns') { params.columns = p.columns; params.rowStart = p.rowStart; params.rowCount = p.rowCount; }
     else if (node.type === 'exponential') { params.omega = p.omega || ['0', '0', '1']; params.v = p.v || ['0', '0', '0']; params.theta = p.theta === undefined ? 'theta' : p.theta; }
     else if (node.type === 'function') { params.definition = p.definition; params.arguments = p.arguments || {}; }
     return { id: String(node.id), type: node.type, label: String(node.label || node.type),
@@ -240,8 +261,9 @@ def to_homogeneous(value):
     const selected = graph?.nodes?.find(node => node.id === nodeId);
     if (!selected) throw new Error('Select a block to export.');
     const unary = selected.type === 'inverse' || selected.type === 'logarithm';
-    const standalone = options.scope === 'block' && !unary;
+    const standalone = options.scope === 'block' && !inputOperation(selected.type);
     const chain = ancestorChain(graph, nodeId, standalone);
+    const ids = new Set(chain.map(node => node.id));
     const parameters = [...new Set(chain.flatMap(nodeSymbols))].sort();
     const name = options.functionName || (standalone ? selected.label || selected.type : 'forward_kinematics');
     const defaults = Object.fromEntries(parameters.filter(parameter => Object.hasOwn(graph.bindings || {}, parameter))
@@ -249,11 +271,12 @@ def to_homogeneous(value):
     const definition = { version: 1, id: 'exported_function', name, kind: 'graph', parameters,
       angleUnit: graph.angleUnit === 'deg' ? 'deg' : 'rad', defaults,
       graph: { version: 1, name, angleUnit: graph.angleUnit === 'deg' ? 'deg' : 'rad', bindings: {},
-        nodes: chain.map(normalizedNode), edges: chain.slice(1).map((node, index) => ({ from: String(chain[index].id), to: String(node.id) })) },
+        nodes: chain.map(normalizedNode), edges: standalone ? [] : graph.edges.filter(edge => ids.has(edge.from) && ids.has(edge.to))
+          .map(edge => ({ from: String(edge.from), to: String(edge.to), ...(edge.input === undefined ? {} : { input: edge.input }) })) },
       outputId: String(nodeId) };
     const hasScrewResult = selected.type === 'logarithm';
     return compileExport(definition, { ...options, allowScrew: hasScrewResult,
-      note: options.scope === 'block' && unary ? 'This unary operation includes its input chain so the exported function is callable on its own.' : '' });
+      note: options.scope === 'block' && inputOperation(selected.type) ? 'This ' + (unary ? 'unary operation' : 'operation') + ' includes its input chain so the exported function is callable on its own.' : '' });
   }
   function exportFunction(definition, options = {}) {
     return compileExport(definition, options);
@@ -304,19 +327,21 @@ def to_homogeneous(value):
       const name = uniqueName(preferredName || def.name), parameters = def.parameters || [], names = parameterNames(parameters);
       if (def.kind === 'matrix') {
         let matrix = matrixCode(def.matrix, names);
+        if (def.outputKind === 'scalar') matrix += '[0, 0]';
         if (def.outputKind === 'transform') { needed.add('rigid'); matrix = 'check_rigid(' + matrix + ')'; }
         if (def.outputKind === 'rotation') { needed.add('homogeneous'); needed.add('rigid'); matrix = 'check_rigid(to_homogeneous(' + matrix + '))[:3, :3]'; }
         declarations.push(functionText(name, parameters.map(parameter => names.get(parameter)), ['return ' + matrix], 'Reusable matrix function: ' + def.name));
-        return { name, parameters, pythonParameters: parameters.map(parameter => names.get(parameter)) };
+        return { name, parameters, pythonParameters: parameters.map(parameter => names.get(parameter)), outputKind: def.outputKind };
       }
       if (def.kind !== 'graph') throw new Error('A reusable function must contain a graph or a matrix.');
-      const chain = ancestorChain(def.graph, def.outputId), body = [];
+      const chain = ancestorChain(def.graph, def.outputId), body = [], values = new Map(), kinds = new Map();
       chain.forEach((node, index) => {
         const ownParameters = parameters.filter(parameter => nodeSymbols(node).includes(parameter));
         const ownNames = parameterNames(ownParameters), functionName = uniqueName(name + '_block_' + (index + 1) + '_' + (node.label || node.type));
         const p = node.params || {}, unit = quote(def.angleUnit === 'deg' ? 'deg' : 'rad');
-        const unary = node.type === 'inverse' || node.type === 'logarithm';
-        let operation;
+        const inputs = orderedInputs(def.graph, node), usesInputs = inputOperation(node.type);
+        const inputNames = inputs.map((_, index) => 'input_' + (index + 1));
+        let operation, outputKind = { exponential: 'transform', determinant: 'scalar', cross: 'matrix', columns: 'matrix', stack: 'matrix' }[node.type] || node.type;
         if (node.type === 'rotation') {
           needed.add('skew'); needed.add('rotation');
           operation = 'rotation(' + vector(p.axis, ['0', '0', '1'], ownNames) + ', ' + source(p.angle === undefined ? 'theta' : p.angle, ownNames) + ', ' + unit + ')';
@@ -325,28 +350,63 @@ def to_homogeneous(value):
           const entries = (p.matrix || []).flat();
           if (entries.length !== 16) throw new Error('A homogeneous matrix needs 16 entries.');
           needed.add('rigid'); operation = 'check_rigid(' + matrixCode(Array.from({ length: 4 }, (_, row) => entries.slice(row * 4, row * 4 + 4)), ownNames) + ')';
+        } else if (node.type === 'matrix') {
+          const entries = (p.matrix || []).flat();
+          if (!Number.isInteger(p.rows) || !Number.isInteger(p.columns) || p.rows < 1 || p.columns < 1 || entries.length !== p.rows * p.columns) throw new Error('Enter the specified number of matrix entries.');
+          operation = matrixCode(Array.from({ length: p.rows }, (_, row) => entries.slice(row * p.columns, (row + 1) * p.columns)), ownNames);
         } else if (node.type === 'exponential') {
           needed.add('skew'); needed.add('homogeneous'); needed.add('exponential');
           operation = 'screw_exponential(' + vector(p.omega, ['0', '0', '1'], ownNames) + ', ' + vector(p.v, ['0', '0', '0'], ownNames) + ', ' + source(p.theta === undefined ? 'theta' : p.theta, ownNames) + ', ' + unit + ')';
-        } else if (unary) {
-          if (!index) throw new Error('Connect an input before exporting ' + node.type + '.');
+        } else if (node.type === 'inverse' || node.type === 'logarithm') {
+          if (!inputs.length) throw new Error('Connect an input before exporting ' + node.type + '.');
+          if (['matrix', 'scalar'].includes(kinds.get(inputs[0].from))) throw new Error('A general matrix or scalar does not represent a rigid motion.');
           needed.add('homogeneous'); needed.add('rigid'); needed.add(node.type);
           if (node.type === 'logarithm') needed.add('skew');
-          operation = (node.type === 'inverse' ? 'rigid_inverse' : 'matrix_to_screw') + '(input_value)';
+          operation = (node.type === 'inverse' ? 'rigid_inverse' : 'matrix_to_screw') + '(' + inputNames[0] + ')';
+          outputKind = node.type === 'inverse' ? kinds.get(inputs[0].from) : 'screw';
+        } else if (node.type === 'cross') operation = inputNames[0] + '.cross(' + inputNames[1] + ')';
+        else if (node.type === 'stack') operation = 'sp.Matrix.vstack(' + inputNames.join(', ') + ')';
+        else if (node.type === 'columns') {
+          if (!Array.isArray(p.columns) || !p.columns.length || !Number.isInteger(p.rowStart) || !Number.isInteger(p.rowCount) || p.rowStart < 1 || p.rowCount < 1 || p.columns.some(column => !Number.isInteger(column) || column < 1)) throw new Error('Select positive integer columns and a valid row slice.');
+          operation = 'sp.Matrix.hstack(' + inputNames.map((name, index) => name + '[' + (p.rowStart - 1) + ':' + (p.rowStart - 1 + p.rowCount) + ', ' + (p.columns[index] - 1) + ']').join(', ') + ')';
+        } else if (node.type === 'determinant') {
+          if (!inputs.length) throw new Error('Connect an input before exporting determinant.');
+          operation = inputNames[0] + '.det()';
         } else if (node.type === 'function') {
           const inner = compileDefinition(p.definition, p.definition.name, depth + 1);
           operation = inner.name + '(' + inner.parameters.map(parameter => source(p.arguments?.[parameter] === undefined ? parameter : p.arguments[parameter], ownNames)).join(', ') + ')';
+          outputKind = inner.outputKind;
         } else throw new Error('Unknown block type: ' + node.type);
-        declarations.push(functionText(functionName, unary ? ['input_value'] : ownParameters.map(parameter => ownNames.get(parameter)), ['return ' + operation], 'Block ' + (index + 1) + ': ' + (node.label || node.type)));
-        const call = functionName + '(' + (unary ? 'value_' + index : ownParameters.map(parameter => names.get(parameter)).join(', ')) + ')';
+        const checks = [];
+        if (node.type === 'cross') checks.push('if any(vector.shape != (3, 1) for vector in (' + inputNames.join(', ') + ')):', '    raise ValueError("Cross products need two 3 x 1 column vectors.")');
+        if (node.type === 'stack') checks.push('if ' + inputNames[0] + '.rows + ' + inputNames[1] + '.rows > 12:', '    raise ValueError("Stacked matrices may have at most 12 rows.")');
+        if (node.type === 'columns') inputNames.forEach((name, index) => checks.push('if ' + name + '.rows < ' + (p.rowStart - 1 + p.rowCount) + ' or ' + name + '.cols < ' + p.columns[index] + ':', '    raise ValueError("The selected column or rows exceed the input matrix.")'));
+        if (node.type === 'determinant') {
+          const name = inputNames[0];
+          checks.push('if not isinstance(' + name + ', sp.MatrixBase):',
+            '    raise ValueError("A determinant needs a square matrix; this input is not a matrix.")',
+            'if ' + name + '.rows != ' + name + '.cols:',
+            '    raise ValueError(f"A determinant needs a square matrix; this input is {' + name + '.rows} x {' + name + '.cols}.")');
+        }
+        declarations.push(functionText(functionName, usesInputs ? inputNames : ownParameters.map(parameter => ownNames.get(parameter)), [...checks, 'return ' + operation], 'Block ' + (index + 1) + ': ' + (node.label || node.type)));
+        const call = functionName + '(' + (usesInputs ? inputs.map(edge => values.get(edge.from)) : ownParameters.map(parameter => names.get(parameter))).join(', ') + ')';
         body.push(comment(node.label || node.type));
-        if (!index || unary) body.push('value_' + (index + 1) + ' = ' + call);
-        else { needed.add('homogeneous'); needed.add('compose'); body.push('value_' + (index + 1) + ' = compose(value_' + index + ', ' + call + ')'); }
+        const valueName = 'value_' + (index + 1);
+        if (!inputs.length || usesInputs) body.push(valueName + ' = ' + call);
+        else {
+          const parentKind = kinds.get(inputs[0].from);
+          needed.add('homogeneous'); needed.add('compose');
+          body.push(valueName + ' = compose(' + values.get(inputs[0].from) + ', ' + call + ', ' + quote(parentKind) + ', ' + quote(outputKind) + ')');
+          if (parentKind === 'scalar' || outputKind === 'scalar') throw new Error('A determinant is a scalar result and cannot compose as a matrix.');
+          outputKind = parentKind === 'matrix' || outputKind === 'matrix' ? 'matrix'
+            : parentKind === outputKind && ['rotation', 'translation'].includes(outputKind) ? outputKind : 'transform';
+        }
+        values.set(node.id, valueName); kinds.set(node.id, outputKind);
       });
-      body.push('return value_' + chain.length);
+      body.push('return ' + values.get(def.outputId));
       declarations.push(functionText(name, parameters.map(parameter => names.get(parameter)), body,
-        'Composed function: ' + def.name + '. Connections multiply left to right.'));
-      return { name, parameters, pythonParameters: parameters.map(parameter => names.get(parameter)) };
+        'Operation graph: ' + def.name + '. Named inputs feed the indicated operation.'));
+      return { name, parameters, pythonParameters: parameters.map(parameter => names.get(parameter)), outputKind: kinds.get(def.outputId) };
     }
     const exported = compileDefinition(definition, options.functionName || definition.name);
     const examples = exported.parameters.map(parameter => {
@@ -371,7 +431,7 @@ def to_homogeneous(value):
     const hasLog = needed.has('logarithm'), lines = [
       '# Kinematic playground — reusable Python functions.',
       '# Requires SymPy' + (hasLog ? ' and NumPy.' : '.'),
-      '# Vectors are columns. A -> B means A * B; B acts first on a point.',
+      '# Vectors are columns. Ordinary connections compose A * B; named inputs feed an operation.',
       '# Function parameters stay variable; the __main__ section is only an example.',
       '# Extracted rotational screw angles are in radians.',
       'import sympy as sp'

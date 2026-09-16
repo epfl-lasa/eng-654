@@ -235,16 +235,16 @@ function createScrewFrameDemo(container) {
     <div class="l2-stage"><p class="l2-stage-note">frame axes: x red · y green · z blue · fixed screw ∥ z_W</p></div>
     <div class="l2-panel">
       <div class="l2-card"><strong>Pose \\({}^{W}T_B\\)</strong>
-        <div class="l2-control"><label>x<sub>W</sub> [m]</label><input data-x aria-label="Frame B origin x coordinate in world, metres" type="range" min="-1.5" max="1.5" step=".05" value=".4"><output data-x-out>0.40</output></div>
-        <div class="l2-control"><label>y<sub>W</sub> [m]</label><input data-y aria-label="Frame B origin y coordinate in world, metres" type="range" min="-1.5" max="1.5" step=".05" value=".7"><output data-y-out>0.70</output></div>
+        <div class="l2-control"><label>\\({}^{W}p_{B,x}\\) [m]</label><input data-x aria-label="Frame B origin x coordinate in world, metres" type="range" min="-1.5" max="1.5" step=".05" value=".4"><output data-x-out>0.40</output></div>
+        <div class="l2-control"><label>\\({}^{W}p_{B,y}\\) [m]</label><input data-y aria-label="Frame B origin y coordinate in world, metres" type="range" min="-1.5" max="1.5" step=".05" value=".7"><output data-y-out>0.70</output></div>
         <div class="l2-control"><label>yaw [°]</label><input data-yaw aria-label="Frame B yaw about world z, degrees" type="range" min="-180" max="180" value="35"><output data-yaw-out>35°</output></div>
       </div>
       <div class="l2-card"><strong>Same screw, coordinates in W and B</strong>
         <p>Component order: \\(\\xi=[\\omega_x,\\omega_y,\\omega_z;\\,v_x,v_y,v_z]\\)</p>
-        <p class="l2-vector">\\({}^{W}\\boldsymbol{\\xi}=\\left[0.00,0.00,1.00;\\;0.00,-0.80,0.00\\right]\\)</p>
+        <p class="l2-vector">\\({}^{W}\\boldsymbol{\\xi}_i=\\left[0.00,0.00,1.00;\\;0.00,-0.80,0.00\\right]\\)</p>
         <p class="l2-vector" data-xi-b></p>
       </div>
-      <div class="l2-card"><strong>Adjoint check</strong><p style="margin:.35rem 0 0">\\(^{B}\\xi=\\operatorname{Ad}_{({}^{W}T_B)^{-1}}{}^{W}\\xi\\)</p></div>
+      <div class="l2-card"><strong>Adjoint check</strong><p style="margin:.35rem 0 0">\\({}^{B}\\xi_i=\\operatorname{Ad}_{({}^{W}T_B)^{-1}}{}^{W}\\xi_i\\)</p></div>
     </div>`;
   const kit = sceneKit(container.querySelector('.l2-stage'));
   const worldFrame = frame('W', 0.7); worldFrame.group.matrix.identity(); kit.world.add(worldFrame.group);
@@ -275,7 +275,7 @@ function createScrewFrameDemo(container) {
     container.querySelector('[data-yaw-out]').textContent = inputs.yaw.value + '°';
     const angular = [omegaB.x, omegaB.y, omegaB.z].map((n) => format(n, 2)).join(',');
     const linear = [vB.x, vB.y, vB.z].map((n) => format(n, 2)).join(',');
-    const tex = `\\({}^{B}\\boldsymbol{\\xi}=\\left[${angular};\\;${linear}\\right]\\)`;
+    const tex = `\\({}^{B}\\boldsymbol{\\xi}_i=\\left[${angular};\\;${linear}\\right]\\)`;
     const revision = ++twistRevision;
     // Keep DOM replacement and MathJax rendering together; use the latest slider values.
     twistTypesetting = twistTypesetting.then(() => {
@@ -300,8 +300,8 @@ async function createCustom3RPoeDemo(container) {
         <label class="poe-ghost-control"><input data-home-ghost type="checkbox" checked><span>Keep home configuration as ghost</span><output>50%</output></label>
         <p class="poe-model-status" data-model-status>Loading custom_3R meshes…</p>
       </div>
-      <div class="l2-card"><strong>Ordered factors</strong><div class="poe-factor-strip"><div class="poe-factor">\\(e^{\\hat\\xi_1q_1}\\)</div><div class="poe-factor">\\(e^{\\hat\\xi_2q_2}\\)</div><div class="poe-factor">\\(e^{\\hat\\xi_3q_3}\\)</div><div class="poe-factor">\\(M\\)</div></div></div>
-      <div class="l2-card"><strong>Tool pose \\(T(q)\\)</strong><table class="l2-matrix"><tbody data-tool-matrix></tbody></table></div>
+      <div class="l2-card"><strong>Ordered factors</strong><div class="poe-factor-strip"><div class="poe-factor">\\(e^{\\widehat{{}^{W}\\xi_1}q_1}\\)</div><div class="poe-factor">\\(e^{\\widehat{{}^{W}\\xi_2}q_2}\\)</div><div class="poe-factor">\\(e^{\\widehat{{}^{W}\\xi_3}q_3}\\)</div><div class="poe-factor">\\(M\\)</div></div></div>
+      <div class="l2-card"><strong>Tool pose \\({}^{W}T_E(q)\\)</strong><table class="l2-matrix"><tbody data-tool-matrix></tbody></table></div>
       <button class="control-button" data-clear-path type="button">Clear path</button>
     </div>`;
   const kit = sceneKit(container.querySelector('.l2-stage'), [7, 5.5, 6]);

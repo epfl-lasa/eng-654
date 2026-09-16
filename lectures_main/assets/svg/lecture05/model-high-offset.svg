@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 380" role="img" aria-labelledby="title desc">
+<title id="title">Robot with 0.75 metre end offset</title>
+<desc id="desc">3R robot at its zero joint angles. The fixed tool0 transform from joint 3 has x offset 1.5 m and z offset h=0.75 m. The teal segment and dimension mark show h along the blue third joint axis. All other offsets are unchanged between the two models. The end-effector point in frame0 is (4.5,1.25,1.75) m.</desc>
+<defs><marker id="axis" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#1565b0"/></marker><marker id="lever" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#9a6700"/></marker><marker id="velocity" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#c63835"/></marker><marker id="world" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#64748b"/></marker><style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #243746; font-size: 17px; }
+      .small { font-size: 14px; fill: #64748b; }
+      .tiny { font-size: 12px; fill: #64748b; }
+      .heading { font-size: 18px; font-weight: 600; }
+      .label { paint-order: stroke fill; stroke: white; stroke-width: 5px; stroke-linejoin: round; }
+      .link { fill: none; stroke: #243746; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .joint { fill: white; stroke: #243746; stroke-width: 3; }
+      .axis { stroke: #1565b0; stroke-width: 3; }
+      .axislabel { fill: #1565b0; font-weight: 600; }
+      .lever { stroke: #9a6700; stroke-width: 2.5; stroke-dasharray: 7 5; }
+      .leverlabel { fill: #9a6700; font-weight: 600; }
+      .velocity { stroke: #c63835; stroke-width: 3.5; }
+      .velocitylabel { fill: #c63835; font-weight: 600; }
+      .world { stroke: #64748b; stroke-width: 1.5; }
+      .guide { stroke: #cbd5e1; stroke-width: 1.2; fill: none; }
+      .offset { stroke: #0b7775; stroke-width: 5; }
+      .offsetlabel { fill: #0b7775; font-weight: 600; }
+    </style></defs>
+<rect width="540" height="380" fill="#fff"/>
+<text x="24.00" y="29.00" class="heading" text-anchor="start" >End offset h = 0.75 m</text><path d="M43,305 L65,293 L88,306 L65,319 Z" fill="#e8edf2" stroke="#cbd5e1"/><polyline points="65.00,300.00 65.00,266.00 65.00,232.00 126.00,213.00 248.00,175.00 295.50,213.75 295.50,162.75 387.00,134.25" class="link"/><circle cx="65" cy="266.0" r="7" class="joint"/><circle cx="126" cy="213" r="7" class="joint"/><circle cx="295.5" cy="213.75" r="7" class="joint"/><circle cx="387.0" cy="134.25" r="6" fill="#0b7775" stroke="white" stroke-width="2"/><text x="397.00" y="124.25" class="label heading" text-anchor="start" >tool0</text><text x="397.00" y="145.25" class="label" text-anchor="start" >pₜ</text><line x1="65.00" y1="300.00" x2="91.23" y2="291.83" class="world" marker-end="url(#world)" /><text x="97.00" y="293.00" class="tiny label" text-anchor="start" >x₀</text><line x1="65.00" y1="300.00" x2="85.90" y2="317.05" class="world" marker-end="url(#world)" /><text x="89.00" y="327.00" class="tiny label" text-anchor="start" >y₀</text><line x1="65.00" y1="300.00" x2="65.00" y2="272.80" class="world" marker-end="url(#world)" /><text x="43.00" y="278.00" class="tiny label" text-anchor="start" >z₀</text><text x="18.00" y="310.00" class="label small" text-anchor="start" >O</text><text x="24.00" y="345.00" class="small" text-anchor="start" >frame0</text><text x="35.00" y="257.00" class="label" text-anchor="start" >p₁</text><text x="116.00" y="193.00" class="label" text-anchor="start" >p₂</text><text x="266.00" y="239.00" class="label" text-anchor="start" >p₃</text><line x1="295.50" y1="213.75" x2="295.50" y2="162.75" class="offset" /><line x1="295.50" y1="213.75" x2="295.50" y2="125.35" class="axis" marker-end="url(#axis)" stroke-dasharray="4 4"/><text x="258.00" y="111.00" class="axislabel label" text-anchor="start" >⁰z₃</text><line x1="300.50" y1="213.75" x2="325.50" y2="213.75" class="guide" /><line x1="316.50" y1="216.75" x2="324.50" y2="210.75" class="offset" stroke-width="1.5"/><line x1="300.50" y1="162.75" x2="325.50" y2="162.75" class="guide" /><line x1="316.50" y1="165.75" x2="324.50" y2="159.75" class="offset" stroke-width="1.5"/><line x1="320.50" y1="213.75" x2="320.50" y2="162.75" class="offset" stroke-width="1.5"/><text x="330.50" y="194.25" class="offsetlabel label" text-anchor="start" >h</text><text x="180.00" y="294.00" class="offsetlabel" text-anchor="start" >h lies along the third joint axis.</text><text x="180.00" y="320.00" class="small" text-anchor="start" >All other joint and tool offsets are identical.</text><text x="180.00" y="346.00" class="small" text-anchor="start" >Shown at q = (0, 0, 0), in frame0.</text>
+</svg>

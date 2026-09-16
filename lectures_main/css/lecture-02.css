@@ -148,6 +148,40 @@
   grid-template-columns: minmax(18rem, .72fr) minmax(0, 1.28fr);
   gap: 0.7rem;
 }
+
+/* Keep the tool-point derivation legible without crowding the equations. */
+.lecture-02 .tool-twist-slide .slide-subtitle { max-width: none; }
+.tool-twist-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  min-height: 0;
+}
+.tool-twist-card {
+  min-width: 0;
+  padding: .65rem .8rem;
+  border-top: 3px solid var(--black);
+  background: #fafafa;
+}
+.tool-twist-card h3 { margin: .1rem 0 .45rem; font-size: 1.05rem; }
+.tool-twist-card h3:not(:first-child) { margin-top: .8rem; }
+.tool-twist-card p,
+.tool-twist-check { margin: .45rem 0; font-size: .94rem; line-height: 1.4; }
+.tool-twist-slide .equation { margin-block: .45rem; font-size: clamp(.82rem, 1.02vw, 1.1rem); }
+.tool-twist-slide mjx-container[display="true"] { margin: .65em 0 !important; }
+.tool-twist-result {
+  margin-top: .7rem;
+  padding: .4rem .8rem;
+  border-left: 3px solid var(--epfl-red);
+  background: #f7f7f7;
+}
+.tool-twist-result strong { font-size: .94rem; }
+.tool-twist-result .equation { margin-block: .2rem; }
+.tool-twist-check { color: var(--muted); }
+.tool-twist-slide .clean-callout { margin-top: .7rem; font-size: .94rem; }
+@media (max-width: 700px) {
+  .tool-twist-columns { grid-template-columns: 1fr; }
+}
 .adjoint-layout .definition { margin: 0; }
 .adjoint-formula {
   padding: 0.65rem;

@@ -25,7 +25,7 @@ test('validation sanitizes imports and preserves editable draft expressions', ()
 test('validation rejects malformed graphs, duplicate parents, cycles, and dangling edges', () => {
   assert.throws(() => G.validateGraph(null));
   assert.throws(() => G.validateGraph({ ...graph([]), version: 2 }), /version/);
-  assert.throws(() => G.validateGraph(graph(Array.from({ length: 41 }, (_, i) => node('n' + i)))), /40/);
+  assert.throws(() => G.validateGraph(graph(Array.from({ length: 121 }, (_, i) => node('n' + i)))), /120/);
   assert.throws(() => G.validateGraph(graph([node('a'), node('a')])), /unique/);
   assert.throws(() => G.validateGraph(graph([node('a')], [edge('a', 'missing')])), /missing/);
   assert.throws(() => G.validateGraph(graph([node('a')], [edge('a', 'a')])), /itself/);
@@ -146,4 +146,93 @@ test('numeric evaluation remains available when a symbolic product exceeds the e
   assert.equal(results.get('n14').error, null);
   const expected = K.computeBlock(node('expected', 'rotation', { axis: ['1', '2', '3'], angle: '0.45' }));
   close(K.numericMatrix(results.get('n14').value), K.numericMatrix(expected));
+});
+
+const matrixNode = (id, values) => node(id, 'matrix', { rows: values.length, columns: values[0].length, matrix: values.flat().map(String) });
+const slot = (from, to, input) => ({ from, to, input });
+function twistGraph() {
+  return graph([node('cross', 'cross', {}), node('twist', 'stack', {}),
+    matrixNode('p', [['x'], ['y'], ['z']]), matrixNode('w', [[0], [0], [1]])],
+  [slot('p', 'cross', 'a'), slot('w', 'cross', 'b'), slot('w', 'twist', 'a'), slot('cross', 'twist', 'b')], { x: '2', y: '3', z: '5' });
+}
+
+test('multi-input DAGs evaluate every dependency and shared source exactly once', () => {
+  const source = twistGraph(), original = K.computeBlock, calls = new Map();
+  K.computeBlock = function (block, ...args) { calls.set(block.id, (calls.get(block.id) || 0) + 1); return original(block, ...args); };
+  try {
+    const results = G.evaluateGraph(source, { numeric: true });
+    assert.equal(results.get('twist').error, null);
+    close(K.numericMatrix(results.get('twist').value), [[0], [0], [1], [3], [-2], [0]]);
+    assert.deepEqual([...calls.values()], [1, 1, 1, 1]);
+  } finally { K.computeBlock = original; }
+  source.nodes.find(n => n.id === 'p').params.matrix[0] = 'unfinished +';
+  const results = G.evaluateGraph(source);
+  assert.match(results.get('cross').error, /Fix the input.*p/);
+  assert.match(results.get('twist').error, /Fix the input.*cross/);
+  assert.equal(results.get('w').error, null);
+});
+
+test('connections replace only their named slot and all operands participate in cycle checks', () => {
+  const source = twistGraph();
+  assert.deepEqual(G.inputPorts(source.nodes[0]), ['a', 'b']);
+  assert.deepEqual(G.inputPorts(node('c', 'columns', { columns: [3, 1, 2], rowStart: 1, rowCount: 3 })), ['c0', 'c1', 'c2']);
+  const edges = G.connect(source, 'w', 'cross', 'a');
+  assert.deepEqual(edges.filter(e => e.to === 'cross'), [slot('w', 'cross', 'b'), slot('w', 'cross', 'a')]);
+  assert.equal(source.edges[0].from, 'p');
+  assert.match(G.canConnect(source, 'twist', 'cross', 'a'), /cycle/);
+  assert.match(G.canConnect(source, 'twist', 'cross', 'b'), /cycle/);
+  assert.match(G.canConnect(source, 'p', 'cross'), /Unknown input/);
+  assert.match(G.canConnect(source, 'p', 'cross', '__proto__'), /Unknown input/);
+  assert.throws(() => G.validateGraph({ ...source, edges: [...source.edges, slot('w', 'cross', 'a')] }), /one input/);
+  assert.deepEqual(G.validateGraph(graph([node('a'), node('b')], [slot('a', 'b', 'input')])).edges, [edge('a', 'b')]);
+});
+
+test('matrix and column metadata stay numeric through symbol discovery and function substitution', () => {
+  const source = graph([matrixNode('m', [['a', 'b'], ['c', 'd']]),
+    node('cols', 'columns', { columns: [2, 1], rowStart: 1, rowCount: 2 }), node('det', 'determinant', {})],
+  [slot('m', 'cols', 'c0'), slot('m', 'cols', 'c1'), edge('cols', 'det')], { a: '1', b: '2', c: '3', d: '4' });
+  assert.deepEqual(G.rawSymbols(source), ['a', 'b', 'c', 'd']);
+  const definition = G.functionFromOutput(source, 'det', { id: 'reordered', name: 'Reordered determinant' });
+  const instance = node('f', 'function', { definition, arguments: { a: '5', b: '6', c: '7', d: '8' } });
+  const canvas = graph([instance]);
+  const result = G.evaluateGraph(canvas, { numeric: true }).get('f');
+  assert.equal(result.error, null); assert.equal(result.value.kind, 'scalar');
+  close(K.numericMatrix(result.value), [[2]]);
+  const expanded = G.expandFunction(canvas, 'f');
+  assert.equal(expanded.graph.nodes.find(n => n.type === 'matrix').params.rows, 2);
+  assert.deepEqual(expanded.graph.nodes.find(n => n.type === 'columns').params.columns, [2, 1]);
+  assert.equal(expanded.graph.edges.filter(e => e.input).length, 2);
+  close(K.numericMatrix(G.evaluateGraph(expanded.graph, { numeric: true }).get(expanded.outputId).value), [[2]]);
+});
+
+test('saved outputs capture all DAG operands and expand without losing internal or external ports', () => {
+  const source = twistGraph();
+  const definition = G.functionFromOutput(source, 'cross', { id: 'moment', name: 'Linear screw' });
+  assert.equal(definition.graph.nodes.length, 3);
+  assert.equal(definition.graph.edges.length, 2);
+  const canvas = graph([node('f', 'function', { definition, arguments: { x: '7', y: '8', z: '9' } }),
+    matrixNode('w', [[0], [0], [1]]), node('twist', 'stack', {})], [slot('w', 'twist', 'a'), slot('f', 'twist', 'b')]);
+  const expected = [[0], [0], [1], [8], [-7], [0]];
+  close(K.numericMatrix(G.evaluateGraph(canvas, { numeric: true }).get('twist').value), expected);
+  const expanded = G.expandFunction(canvas, 'f');
+  close(K.numericMatrix(G.evaluateGraph(expanded.graph, { numeric: true }).get('twist').value), expected);
+  assert.equal(expanded.graph.edges.find(e => e.to === 'twist' && e.from === expanded.outputId).input, 'b');
+  assert.throws(() => G.captureFunction(source, ['p', 'w', 'cross']), /every operand/);
+  source.edges = source.edges.filter(e => !(e.to === 'cross' && e.input === 'b'));
+  assert.throws(() => G.functionFromOutput(source, 'cross'), /unconnected input/);
+});
+
+test('import validation bounds matrix metadata and accepts larger URDF operation canvases', () => {
+  const nodes = Array.from({ length: 120 }, (_, i) => node('n' + i));
+  assert.equal(G.validateGraph(graph(nodes)).nodes.length, 120);
+  for (const invalid of [0, 13, 1.5, '3']) {
+    assert.throws(() => G.validateGraph(graph([node('m', 'matrix', { rows: invalid, columns: 1, matrix: ['1'] })])), /integer/);
+  }
+  assert.throws(() => G.validateGraph(graph([node('m', 'matrix', { rows: 2, columns: 2, matrix: ['1'] })])), /4 entries/);
+  assert.throws(() => G.validateGraph(graph([node('c', 'columns', { columns: [], rowStart: 1, rowCount: 1 })])), /1 and 12/);
+  const manyEdges = graph([node('source'), ...Array.from({ length: 20 }, (_, i) => node('c' + i, 'columns', { columns: Array(12).fill(1), rowStart: 1, rowCount: 1 }))],
+    Array.from({ length: 240 }, (_, i) => slot('source', 'c' + Math.floor(i / 12), 'c' + (i % 12))));
+  assert.equal(G.validateGraph(manyEdges).edges.length, 240);
+  manyEdges.edges.push(slot('source', 'c0', 'c0'));
+  assert.throws(() => G.validateGraph(manyEdges), /240/);
 });

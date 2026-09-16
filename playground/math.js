@@ -156,7 +156,9 @@
     visit(parse(expression)); return [...found].sort();
   }
   function numberText(value) {
-    if (Math.abs(value) < 1e-10) return '0';
+    // A small nonzero determinant is still nonzero. Exact trigonometric zeros
+    // are cleaned when computed, rather than hiding arbitrary small values here.
+    if (value === 0) return '0';
     if (Number.isInteger(value)) return String(value);
     return String(Number(value.toPrecision(6)));
   }
@@ -210,9 +212,72 @@
   const dot = (a, b) => a.reduce((result, value, i) => add(result, mul(value, b[i])), num(0));
   const norm = vector => call('sqrt', [vector.reduce((sum, a) => add(sum, square(a)), num(0))]);
   const skew = w => [[num(0), neg(w[2]), w[1]], [w[2], num(0), neg(w[0])], [neg(w[1]), w[0], num(0)]];
+  function matrixShape(matrix) {
+    if (!Array.isArray(matrix) || !matrix.length || !Array.isArray(matrix[0]) || !matrix[0].length
+      || matrix.some(row => !Array.isArray(row) || row.length !== matrix[0].length)) throw new Error('Enter a rectangular matrix with at least one row and column.');
+    return [matrix.length, matrix[0].length];
+  }
   function multiply(a, b) {
-    if (!a.length || !b.length || a[0].length !== b.length) throw new Error('Matrix dimensions do not match.');
+    const [ar, ac] = matrixShape(a), [br, bc] = matrixShape(b);
+    if (ac !== br) throw new Error('Matrix dimensions do not match: ' + ar + ' × ' + ac + ' cannot multiply ' + br + ' × ' + bc + '.');
     return a.map(row => b[0].map((_, j) => dot(row, b.map(other => other[j]))));
+  }
+  function cross(a, b) {
+    a = vector(a, 'First cross-product vector'); b = vector(b, 'Second cross-product vector');
+    return [sub(mul(a[1], b[2]), mul(a[2], b[1])), sub(mul(a[2], b[0]), mul(a[0], b[2])), sub(mul(a[0], b[1]), mul(a[1], b[0]))];
+  }
+  function determinant(matrix) {
+    const [rows, columns] = matrixShape(matrix);
+    if (rows !== columns) throw new Error('A determinant needs a square matrix; this input is ' + rows + ' × ' + columns + '.');
+    if (rows > 12) throw new Error('Determinants support matrices up to 12 × 12.');
+    matrix = matrixMap(matrix, parse);
+    if (matrix.flat().every(entry => symbols(entry).length === 0)) {
+      // Partial pivoting avoids division by a zero leading diagonal entry.
+      // Do not use a fixed zero tolerance: a small determinant may be meaningful.
+      const values = numericMatrix(matrix); let result = 1;
+      for (let k = 0; k < rows; k++) {
+        let pivot = k;
+        for (let i = k + 1; i < rows; i++) if (Math.abs(values[i][k]) > Math.abs(values[pivot][k])) pivot = i;
+        if (values[pivot][k] === 0) return num(0);
+        if (pivot !== k) { [values[pivot], values[k]] = [values[k], values[pivot]]; result = -result; }
+        const diagonal = values[k][k]; result *= diagonal;
+        for (let i = k + 1; i < rows; i++) {
+          const factor = values[i][k] / diagonal;
+          for (let j = k + 1; j < rows; j++) values[i][j] -= factor * values[k][j];
+        }
+      }
+      return num(result);
+    }
+    // A division-free expansion remains valid when a symbolic pivot is zero.
+    // Sparse rows first and memoized column subsets keep robot matrices compact.
+    const order = matrix.map((row, index) => ({ row, index, nonzero: row.filter(entry => !isNum(entry, 0)).length }))
+      .sort((a, b) => a.nonzero - b.nonzero || a.index - b.index);
+    let sign = 1;
+    for (let i = 0; i < rows; i++) for (let j = i + 1; j < rows; j++) if (order[i].index > order[j].index) sign = -sign;
+    const memo = new Map();
+    function expand(row, mask) {
+      if (row === rows) return num(1);
+      if (memo.has(mask)) return memo.get(mask);
+      let result = num(0), columnSign = 1;
+      for (let column = 0; column < rows; column++) {
+        if (!(mask & (1 << column))) continue;
+        const entry = order[row].row[column];
+        if (!isNum(entry, 0)) {
+          const term = mul(entry, expand(row + 1, mask & ~(1 << column)));
+          result = add(result, columnSign === 1 ? term : neg(term));
+        }
+        columnSign = -columnSign;
+      }
+      memo.set(mask, result); return result;
+    }
+    const result = expand(0, (1 << rows) - 1);
+    return sign === 1 ? result : neg(result);
+  }
+  function inputMatrix(value, label = 'input') {
+    if (!value || !value.matrix) throw new Error('Connect a matrix to ' + label + '.');
+    if (value.kind === 'screw') throw new Error(SCREW_OUTPUT_MESSAGE);
+    if (value.kind === 'scalar') throw new Error('The ' + label + ' is a scalar; connect a vector or matrix.');
+    matrixShape(value.matrix); return value.matrix;
   }
   function vector(values, label) {
     if (!Array.isArray(values) || values.length !== 3) throw new Error(label + ' needs three components.');
@@ -230,6 +295,7 @@
       throw new Error('Expected a rotation, translation, or homogeneous matrix.');
     }
     if (!value || !value.matrix) throw new Error('Connect a matrix to this input.');
+    if (value.kind === 'matrix' || value.kind === 'scalar') throw new Error('A general matrix or scalar does not represent a rigid motion. Use a Rotation, Translation, or Transformation block for a pose.');
     return toHomogeneous(value.matrix);
   }
   function angle(value, unit) { const result = parse(value); return unit === 'deg' ? mul(result, div(sym('pi'), num(180))) : result; }
@@ -324,6 +390,9 @@
   function compose(a, b) {
     if (a && a.kind === 'screw' || b && b.kind === 'screw') throw new Error(SCREW_OUTPUT_MESSAGE);
     if (!a) return b;
+    if (!b) throw new Error('Connect a matrix to this input.');
+    if (a.kind === 'scalar' || b.kind === 'scalar') throw new Error('A determinant is a scalar and cannot be composed as a matrix operation.');
+    if (a.kind === 'matrix' || b.kind === 'matrix') return { kind: 'matrix', matrix: multiply(a.matrix, b.matrix) };
     if (a.kind === 'rotation' && b.kind === 'rotation') return { kind: 'rotation', matrix: multiply(a.matrix, b.matrix) };
     if (a.kind === 'translation' && b.kind === 'translation') return { kind: 'translation', matrix: matrixAdd(a.matrix, b.matrix) };
     return { kind: 'transform', matrix: multiply(toHomogeneous(a), toHomogeneous(b)) };
@@ -331,7 +400,32 @@
   function computeBlock(block, inputValue = null, bindings = {}, angleUnit = 'rad') {
     const params = block.params || {};
     let own;
-    if (block.type === 'rotation') {
+    if (block.type === 'cross') {
+      const a = inputMatrix(inputValue && inputValue.a, 'a'), b = inputMatrix(inputValue && inputValue.b, 'b');
+      if (a.length !== 3 || a[0].length !== 1 || b.length !== 3 || b[0].length !== 1) throw new Error('A cross product needs two 3 × 1 column vectors.');
+      return { kind: 'matrix', matrix: asColumn(cross(a.map(row => row[0]), b.map(row => row[0]))) };
+    } else if (block.type === 'stack') {
+      const a = inputMatrix(inputValue && inputValue.a, 'a'), b = inputMatrix(inputValue && inputValue.b, 'b');
+      if (a[0].length !== b[0].length) throw new Error('Stacked matrices must have the same number of columns.');
+      if (a.length + b.length > 12) throw new Error('Stacked matrices may have at most 12 rows.');
+      return { kind: 'matrix', matrix: [...a.map(row => [...row]), ...b.map(row => [...row])] };
+    } else if (block.type === 'columns') {
+      const selected = params.columns, start = params.rowStart, count = params.rowCount;
+      if (!Array.isArray(selected) || selected.length < 1 || selected.length > 12 || selected.some(column => !Number.isInteger(column) || column < 1 || column > 12)
+        || !Number.isInteger(start) || start < 1 || !Number.isInteger(count) || count < 1 || count > 12) throw new Error('Select 1–12 columns and a valid row range.');
+      const columns = selected.map((column, index) => {
+        const matrix = inputMatrix(inputValue && inputValue['c' + index], 'column ' + (index + 1));
+        if (column > matrix[0].length || start - 1 + count > matrix.length) throw new Error('Column ' + (index + 1) + ': the selected column or rows are outside the source matrix.');
+        return matrix.slice(start - 1, start - 1 + count).map(row => row[column - 1]);
+      });
+      return { kind: 'matrix', matrix: Array.from({ length: count }, (_, row) => columns.map(column => column[row])) };
+    } else if (block.type === 'determinant') return { kind: 'scalar', matrix: [[determinant(inputMatrix(inputValue))]] };
+    else if (block.type === 'matrix') {
+      const rows = params.rows, columns = params.columns;
+      if (!Number.isInteger(rows) || rows < 1 || rows > 12 || !Number.isInteger(columns) || columns < 1 || columns > 12) throw new Error('A matrix needs 1–12 rows and columns.');
+      if (!Array.isArray(params.matrix) || params.matrix.length !== rows * columns) throw new Error('The matrix needs ' + rows * columns + ' entries.');
+      own = { kind: 'matrix', matrix: Array.from({ length: rows }, (_, i) => params.matrix.slice(i * columns, (i + 1) * columns).map(parse)) };
+    } else if (block.type === 'rotation') {
       const axis = vector(params.axis || ['0', '0', '1'], 'Axis');
       const names = [...new Set(axis.flatMap(symbols))];
       if (names.every(name => Object.hasOwn(bindings, name)) && evaluate(norm(axis), bindings) === 0) throw new Error('The rotation axis cannot be the zero vector.');
@@ -356,7 +450,7 @@
     else throw new Error('Unknown block type: ' + block.type);
     return compose(inputValue, own);
   }
-  return { parse, format, tex, evaluate, symbols, num, numberText, multiply, toHomogeneous, numericMatrix,
+  return { parse, format, tex, evaluate, symbols, num, numberText, multiply, cross, determinant, toHomogeneous, numericMatrix,
     getSymbols, computeBlock, compose, inverseValue, logValue, identity, rotation, exponential,
     validateRigid: (matrix, bindings = {}, requireNumeric = true) => validateRigid(matrix, bindings, requireNumeric), validatedMatrix };
 });

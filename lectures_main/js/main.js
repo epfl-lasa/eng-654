@@ -7,7 +7,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
   // Keep the visualization module graph on one revision. This prevents browsers
   // from mixing a newly edited demo with stale cached dependencies.
-  const revision = '20260913-8';
+  const revision = new URL(import.meta.url).searchParams.get('revision') || '20260913-8';
   const loaders = [
     async () => {
       const module = await import(`./viz/robot2r.js?v=${revision}`);
@@ -48,6 +48,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     async () => {
       const module = await import(`./viz/pathPlanningLecture.js?v=${revision}`);
       module.initPathPlanningLecture?.();
+    },
+    async () => {
+      if (!document.querySelector('[data-jerk-lab]')) return;
+      const module = await import(`./viz/minimumJerkLecture.js?v=${revision}`);
+      module.initMinimumJerkLecture?.();
+    },
+    async () => {
+      if (!document.querySelector('[data-crb-lab],[data-crb-model]')) return;
+      const module = await import(`./viz/abbCrbLab.js?v=${revision}`);
+      module.initAbbCrbLecture?.();
     },
     async () => {
       const module = await import(`./viz/redundantPlanningLecture.js?v=${revision}`);

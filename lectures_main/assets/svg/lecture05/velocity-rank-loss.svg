@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 430" role="img" aria-labelledby="rank-title rank-desc">
+  <title id="rank-title">Loss of column independence does not mean every column is parallel</title>
+  <desc id="rank-desc">At left, three Cartesian velocity columns J1, J2, and J3 span three-dimensional space and the Jacobian has rank 3. At right, J1 and J2 are independent but J3 is their sum. All three columns lie in the shaded plane, so the rank is 2. None of the three columns are parallel to each other. The drawing illustrates one possible rank loss, rather than a particular robot configuration.</desc>
+  <defs>
+    <marker id="rank-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2463a6"/></marker>
+    <marker id="rank-ochre" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#a66b06"/></marker>
+    <marker id="rank-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#bd2840"/></marker>
+  </defs>
+  <rect width="520" height="430" rx="12" fill="#fff"/>
+  <path d="M260 22V326" stroke="#dfe4e9" stroke-width="1.5"/>
+  <g font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#202833" text-anchor="middle">
+    <text x="130" y="36">Independent columns</text><text x="130" y="69" font-weight="700">rank 3</text>
+    <text x="390" y="36">Columns in one plane</text><text x="390" y="69" font-weight="700">rank 2</text>
+  </g>
+  <!-- A projected parallelepiped represents a genuinely three-dimensional span. -->
+  <path d="M75 242L165 213L201 269L111 298Z" fill="#f3f5f7"/>
+  <path d="M75 126L165 97L201 153L111 182Z" fill="#edf2f7" stroke="#d9e0e7" stroke-width="1.5"/>
+  <g stroke="#c5ced8" stroke-width="1.5" stroke-dasharray="5 5" fill="none"><path d="M165 213V97 M201 269V153 M111 298V182 M165 213L201 269L111 298 M75 126L111 182L201 153"/></g>
+  <path d="M75 242L165 213" stroke="#2463a6" stroke-width="4" marker-end="url(#rank-blue)"/>
+  <path d="M75 242L111 298" stroke="#a66b06" stroke-width="4" marker-end="url(#rank-ochre)"/>
+  <path d="M75 242V126" stroke="#bd2840" stroke-width="4" marker-end="url(#rank-red)"/>
+  <circle cx="75" cy="242" r="5" fill="#36404c"/>
+  <!-- The right-hand third column is exactly the projected sum of the first two. -->
+  <path d="M283 186L430 134L487 278L340 330Z" fill="#edf2f7" stroke="#d9e0e7" stroke-width="1.5"/>
+  <path d="M401 186L431 251L346 281" fill="none" stroke="#a6b3c1" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <path d="M316 216L401 186" stroke="#2463a6" stroke-width="4" marker-end="url(#rank-blue)"/>
+  <path d="M316 216L346 281" stroke="#a66b06" stroke-width="4" marker-end="url(#rank-ochre)"/>
+  <path d="M316 216L431 251" stroke="#bd2840" stroke-width="4" marker-end="url(#rank-red)"/>
+  <circle cx="316" cy="216" r="5" fill="#36404c"/>
+  <g font-family="Arial, Helvetica, sans-serif" font-size="25">
+    <g fill="#2463a6"><text x="180" y="220">J₁</text><text x="391" y="166">J₁</text></g>
+    <g fill="#a66b06"><text x="119" y="321">J₂</text><text x="312" y="314">J₂</text></g>
+    <g fill="#bd2840"><text x="39" y="124">J₃</text><text x="442" y="250">J₃</text></g>
+    <g text-anchor="middle" fill="#202833"><text x="130" y="357">Span: 3D space</text><text x="390" y="357">J₃ = J₁ + J₂</text></g>
+    <text x="260" y="404" text-anchor="middle" fill="#475569">Rank can drop without parallel columns.</text>
+  </g>
+</svg>

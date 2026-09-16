@@ -13,7 +13,8 @@
   <link rel="stylesheet" href="../css/lecture-03.css">
   <link rel="stylesheet" href="../css/lecture-04.css">
   <link rel="stylesheet" href="../css/lecture-05.css">
-  <link rel="stylesheet" href="../css/lecture-06.css">
+  <link rel="stylesheet" href="../css/lecture-06.css?v=20260915-abb-render-1">
+  <link rel="stylesheet" href="../css/lecture-06-atlas.css">
   <script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']],displayMath:[['\\[','\\]']]}};</script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <script type="importmap">{"imports":{"three":"../vendor/three/build/three.module.js","three/addons/":"../vendor/three/examples/jsm/"}}</script>
@@ -26,7 +27,7 @@
       <p class="eyebrow">ENG-654 · Lecture 06</p>
       <h1 class="course-title">Cuspidality</h1>
       <p class="subtitle">How inverse-kinematic solutions are connected across joint space</p>
-      <p class="lecture-promise">From singularity curves to IK-solution distribution, aspects, and cuspidality—with 3R, wrist-partitioned 6R, PUMA, and FANUC examples.</p>
+      <p class="lecture-promise">From singularity curves to IK-solution distribution, aspects, and cuspidality—with 3R, wrist-partitioned 6R, ABB IRB 4600, and FANUC examples.</p>
     </div>
   </section>
 
@@ -53,7 +54,7 @@
     <p class="slide-kicker">Name the regions</p>
     <h2 class="slide-title">Aspects are maximal connected singularity-free regions</h2>
     <div class="layout-two-column">
-      <div class="layout-center"><div><div class="l6-big-equation">\[\mathcal A_i\text{ is a connected component of }\mathcal C\setminus\mathcal S,\qquad \mathcal S=\{\mathbf q:\operatorname{rank}J(\mathbf q)&lt;r_{\max}\}.\]</div><p>For a square, generically full-rank Jacobian this reduces to \(\det J=0\). For rectangular Jacobians, use rank or singular values instead.</p></div></div>
+      <div class="layout-center l6-aspect-definition"><div><p class="l6-definition-lead">Remove the singular configurations from joint space.</p><div class="l6-big-equation">\[\mathcal S=\{\mathbf q:\operatorname{rank}J(\mathbf q)&lt;r_{\max}\}\]</div><p>Each maximal connected region that remains is an <strong>aspect</strong>:</p><div class="l6-big-equation">\[\boxed{\mathcal A_i\subset\mathcal C\setminus\mathcal S}\]</div><p class="l6-aspect-note">Here \(r_{\max}\) is the maximum attainable rank. For a square, generically full-rank Jacobian, singularity means \(\det J=0\). For a rectangular Jacobian, check rank or singular values.</p></div></div>
       <div class="l6-stack reveal-children">
         <div class="l6-card red"><h3>Inside one aspect</h3><p>Every pair of configurations can be joined by at least one singularity-free joint path.</p></div>
         <div class="l6-card"><h3>Across aspects</h3><p>Every connecting joint path intersects the singularity set.</p></div>
@@ -84,7 +85,7 @@
 
   <section class="slide l6-slide">
     <p class="slide-kicker">Course URDF pair</p>
-    <h2 class="slide-title">Compare the exact course models before studying an idealized atlas</h2>
+    <h2 class="slide-title">Studying the examples from previous lectures</h2>
     <div class="l6-model-pair">
       <article><div data-cusp-model="3r-zero" data-hide-badge></div><h3><code>custom_3R_new_0.urdf</code></h3><p>intersecting-axis course example · noncuspidal</p></article>
       <article><div data-cusp-model="3r-offset" data-hide-badge></div><h3><code>custom_3R_new.urdf</code></h3><p>offset-axis course example · cuspidal</p></article>
@@ -115,7 +116,7 @@
     <p class="slide-kicker">Nonsingular change of solution</p>
     <h2 class="slide-title">Build a joint path and watch its closed workspace loop</h2>
     <p class="slide-subtitle">This laboratory uses the exact <code>custom_3R_new.urdf</code> kinematics and its visual meshes. A faded robot marks the starting configuration.</p>
-    <div class="demo-prompt"><strong>Explore:</strong> select a workspace point and two IKs in the same computed aspect, build a path, and verify that the determinant remains nonzero along the sampled motion.</div>
+    <div class="demo-prompt"><strong>Explore:</strong> select \((x,0,z)\) and two IKs. Build path searches the periodic joint grid, rejects singular edges, and samples joint-space interpolation. Play steps through these configurations in the \(y=0\) slice.</div>
     <div class="layout-full" data-cusp-lab="nscs-3r"></div>
   </section>
 
@@ -175,48 +176,53 @@
   <section class="slide interactive-slide l6-slide">
     <p class="slide-kicker">Cuspidal 6R example</p>
     <h2 class="slide-title"><code>custom_6R_new.urdf</code> inherits its cuspidality from joints 1 to 3</h2>
-    <p class="slide-subtitle">Orientation is fixed and the operational point is the wrist center. Select \((\rho,z)\) to solve \(O_w=(\rho,0,z)\), then compare the recovered numerical IK candidates in all three views.</p>
+    <p class="slide-subtitle">Select the wrist center \(O_w=(x,0,z)\), then choose start and goal IKs. Build path searches the positional chain and continuously adjusts the wrist to preserve the same tool orientation.</p>
     <div class="layout-full" data-cusp-lab="custom-6r"></div>
   </section>
 
   <section class="slide interactive-slide l6-slide">
     <p class="slide-kicker">Noncuspidal positional subchain</p>
-    <h2 class="slide-title">Explore the PUMA wrist-center singularities before classifying its IKs</h2>
-    <p class="slide-subtitle">The tool z-axis is fixed vertically downward and the operational point is the wrist center. Select \((\rho,z)\) to solve \(O_w=(\rho,0,z)\), then compare the recovered numerical IK candidates in all three views.</p>
-    <div class="layout-full" data-cusp-lab="puma-6r"></div>
+    <h2 class="slide-title">Explore the ABB IRB 4600 singularities and IK distribution</h2>
+    <p class="slide-subtitle">Keep the tool z-axis vertically downward. Select a wrist center \({}^0\mathbf p_5=(x,0,z)\), then compare its shoulder, elbow and wrist branches. The example target is used again in the following tables.</p>
+    <div class="layout-full" data-cusp-lab="abb-6r"></div>
   </section>
 
-  <section class="slide l6-slide">
+  <section class="slide l6-slide l6-abb-separators">
     <p class="slide-kicker">Noncuspidal 6R comparison</p>
-    <h2 class="slide-title">The PUMA 560 has three binary singularity separators</h2>
+    <h2 class="slide-title">The ABB IRB 4600 has three binary singularity separators</h2>
     <div class="layout-40-60">
-      <div data-serial-ik="puma-solutions"></div>
-      <div><div class="l6-big-equation">\[\det J=K\,f_S(\mathbf q)\,f_E(\mathbf q)\,f_W(\mathbf q)\]</div><div class="l6-factor-row"><span class="s">shoulder</span><span class="e">elbow</span><span class="w">wrist</span></div><p>Here \(S\) records the shoulder side, \(E\) the elbow posture, and \(W\) the wrist flip. Crossing the corresponding separator changes that sign; a nonsingular path preserves it.</p></div>
+      <div data-cusp-lab="abb-factors"></div>
+      <div class="l6-abb-factor-equations">
+        <div class="l6-big-equation">\[\boxed{\det({}^0J_5)=-a_2\,G\,F\,\sin q_5}\]</div>
+        <div class="l6-factor-row"><span class="s">shoulder · G</span><span class="e">elbow · F</span><span class="w">wrist · sin q₅</span></div>
+        <div class="l6-big-equation">\[\begin{aligned}G&=a_1+a_2s_2+a_3s_{23}+d_4c_{23},\\F&=a_3s_3+d_4c_3.\end{aligned}\]</div>
+        <p>Here \(s_{23}=\sin(q_2+q_3)\) and \(c_{23}=\cos(q_2+q_3)\). As in Lecture 05, \(a_1=a_3=0.175\), \(a_2=1.095\), \(d_4=1.270\), and \(d_1=0.495\) m.</p>
+        <ul class="l6-abb-factor-list"><li><strong>G = 0:</strong> the wrist center lies on the base axis.</li><li><strong>F = 0:</strong> \(q_3\approx-82.154^\circ+k\,180^\circ\); the arm loses one translational direction.</li><li><strong>sin q₅ = 0:</strong> axes 4 and 6 align.</li></ul>
+      </div>
     </div>
-    <div class="l6-takeaway">This three-factor structure supports a global shoulder, elbow, wrist classification for the eight regular IK solutions.</div>
+    <div class="l6-takeaway">Each factor’s sign stays constant along a nonsingular path. Changing a shoulder, elbow or wrist sign requires crossing its zero set.</div>
   </section>
 
   <section class="slide l6-slide">
     <p class="slide-kicker">Eight concrete branches</p>
-    <h2 class="slide-title">The PUMA target from Lecture 04 has eight regular IK solutions</h2>
-    <table class="l6-puma-table" aria-label="Eight PUMA 560 inverse kinematic solutions">
+    <h2 class="slide-title">One ABB IRB 4600 target has eight regular IK solutions</h2>
+    <p class="slide-subtitle">Wrist center \({}^0\mathbf p_5=(1.200,0,1.500)\) m; \({}^0R_t=\operatorname{diag}(1,-1,-1)\). With \(d_6=0.135\) m, the tool origin is \({}^0\mathbf p_t=(1.200,0,1.365)\) m.</p>
+    <table class="l6-ik-table" aria-label="Eight ABB IRB 4600 inverse kinematic solutions">
       <thead><tr><th>IK</th><th>\(q_1\)</th><th>\(q_2\)</th><th>\(q_3\)</th><th>\(q_4\)</th><th>\(q_5\)</th><th>\(q_6\)</th></tr></thead>
-      <tbody><tr><td>1</td><td>30.000</td><td>−35.000</td><td>45.000</td><td>−140.000</td><td>50.000</td><td>−120.000</td></tr><tr><td>2</td><td>30.000</td><td>−35.000</td><td>45.000</td><td>40.000</td><td>−50.000</td><td>60.000</td></tr><tr><td>3</td><td>30.000</td><td>−77.351</td><td>129.617</td><td>−90.226</td><td>29.499</td><td>178.601</td></tr><tr><td>4</td><td>30.000</td><td>−77.351</td><td>129.617</td><td>89.774</td><td>−29.499</td><td>−1.399</td></tr><tr><td>5</td><td>170.431</td><td>−139.617</td><td>129.617</td><td>−4.609</td><td>47.947</td><td>−111.487</td></tr><tr><td>6</td><td>170.431</td><td>−139.617</td><td>129.617</td><td>175.391</td><td>−47.947</td><td>68.513</td></tr><tr><td>7</td><td>170.431</td><td>−97.266</td><td>45.000</td><td>−31.539</td><td>6.549</td><td>−83.205</td></tr><tr><td>8</td><td>170.431</td><td>−97.266</td><td>45.000</td><td>148.461</td><td>−6.549</td><td>96.795</td></tr></tbody>
+      <tbody><tr><td>1</td><td>0.000</td><td>−13.499</td><td>24.016</td><td>0.000</td><td>79.483</td><td>180.000</td></tr><tr><td>2</td><td>0.000</td><td>−13.499</td><td>24.016</td><td>−180.000</td><td>−79.483</td><td>0.000</td></tr><tr><td>3</td><td>0.000</td><td>104.628</td><td>171.675</td><td>0.000</td><td>173.697</td><td>180.000</td></tr><tr><td>4</td><td>0.000</td><td>104.628</td><td>171.675</td><td>−180.000</td><td>−173.697</td><td>0.000</td></tr><tr><td>5</td><td>180.000</td><td>−102.650</td><td>6.660</td><td>−180.000</td><td>174.010</td><td>180.000</td></tr><tr><td>6</td><td>180.000</td><td>−102.650</td><td>6.660</td><td>0.000</td><td>−174.010</td><td>0.000</td></tr><tr><td>7</td><td>180.000</td><td>−5.023</td><td>−170.969</td><td>−180.000</td><td>94.008</td><td>180.000</td></tr><tr><td>8</td><td>180.000</td><td>−5.023</td><td>−170.969</td><td>0.000</td><td>−94.008</td><td>0.000</td></tr></tbody>
     </table>
-    <div class="l6-takeaway">All values are in degrees. Every row reproduces the same target pose in the stated model before joint-limit and collision feasibility are tested.</div>
+    <div class="l6-takeaway">Angles are in degrees, in the same convention as Lecture 05. These are eight mathematical branches of one pose; rows 1, 2, 7 and 8 satisfy the robot’s joint limits. Values shown are rounded.</div>
   </section>
 
   <section class="slide l6-slide">
     <p class="slide-kicker">SEW classification</p>
-    <h2 class="slide-title">Each of the eight PUMA IKs receives three binary labels</h2>
-    <div class="l6-sew-grid" aria-label="Shoulder elbow wrist classification of eight inverse kinematic solutions">
-      <div class="head">IK</div><div class="head">S</div><div class="head">E</div><div class="head">W</div>
-      <div>1</div><div>+</div><div>+</div><div>+</div><div>2</div><div>+</div><div>+</div><div>−</div>
-      <div>3</div><div>+</div><div>−</div><div>+</div><div>4</div><div>+</div><div>−</div><div>−</div>
-      <div>5</div><div>−</div><div>+</div><div>+</div><div>6</div><div>−</div><div>+</div><div>−</div>
-      <div>7</div><div>−</div><div>−</div><div>+</div><div>8</div><div>−</div><div>−</div><div>−</div>
+    <h2 class="slide-title">Each ABB IK receives its shoulder, elbow and wrist signs</h2>
+    <p class="slide-subtitle">For the preceding target: \(S=\operatorname{sgn}G\), \(E=\operatorname{sgn}F\), and \(W=\operatorname{sgn}(\sin q_5)\).</p>
+    <div class="l6-sew-grid" aria-label="Shoulder elbow wrist classification of eight ABB inverse kinematic solutions">
+      <div class="head">IK</div><div class="head">S = sign G</div><div class="head">E = sign F</div><div class="head">W = sign sin q₅</div>
+      <div>1</div><div>+</div><div>+</div><div>+</div><div>2</div><div>+</div><div>+</div><div>−</div><div>3</div><div>+</div><div>−</div><div>+</div><div>4</div><div>+</div><div>−</div><div>−</div><div>5</div><div>−</div><div>+</div><div>+</div><div>6</div><div>−</div><div>+</div><div>−</div><div>7</div><div>−</div><div>−</div><div>+</div><div>8</div><div>−</div><div>−</div><div>−</div>
     </div>
-    <div class="l6-takeaway">For this factorized PUMA model, three independent binary separators produce \(2^3=8\) labels. The separator argument—not the labels alone—establishes that changing any posture sign requires a singular crossing.</div>
+    <div class="l6-takeaway">The eight IKs have eight different sign triples. Any path between two of them must change at least one sign and cross a singularity. This ABB geometry is noncuspidal.</div>
   </section>
 
   <section class="slide l6-slide">
@@ -250,17 +256,19 @@
   <section class="slide l6-slide">
     <p class="slide-kicker">Summary</p>
     <h2 class="slide-title">Cuspidality is a global property of IK connectivity</h2>
-    <div class="derivation-stack reveal-children">
-      <div class="derivation-row"><span class="tag">1</span><p>Singularities partition joint space into aspects.</p></div>
-      <div class="derivation-row"><span class="tag">2</span><p>A cuspidal robot has distinct IK solutions of one pose inside the same aspect.</p></div>
-      <div class="derivation-row"><span class="tag">3</span><p>For the wrist-partitioned custom 6R robot, the positional 3R subchain decides cuspidality.</p></div>
-      <div class="derivation-row"><span class="tag">4</span><p>The PUMA’s factorized separators support SEW labels; a sixteen-root FANUC pose is evidence of a richer inverse distribution, not a connectivity proof.</p></div>
+    <p class="l6-global-lead">Distinct IKs of the same pose can belong to one aspect. Understanding their connections requires following <strong>whole paths</strong> through joint space.</p>
+    <div class="l6-path-types">
+      <div class="l6-card red"><h3>Feasible path</h3><p>The chosen starting IK can follow the prescribed tool path continuously, under the imposed constraints.</p></div>
+      <div class="l6-card red"><h3>Infeasible path</h3><p>That starting IK cannot complete the prescribed path. Another starting IK may allow it.</p></div>
+      <div class="l6-card red"><h3>Nonsingular change of solution</h3><p>A tool loop ends at a different IK without a singularity. Such a loop may be repeatable, cycling through IKs.</p></div>
+      <div class="l6-card red"><h3>Nonrepeatable path</h3><p>A loop works once, but its continuation cannot be repeated indefinitely from the configurations it reaches.</p></div>
     </div>
-    <div class="l6-takeaway"><strong>Bridge to Lecture 07:</strong> not only “which IK reaches the pose?” but “which IK lies in the component my robot can safely reach?” We now lift complete workspace paths through those components.</div>
+    <div class="l6-takeaway"><strong>Why planning is urgent:</strong> many modern collaborative robots are cuspidal. Their global IK connectivity calls for path-planning algorithms that handle these different possibilities.</div>
+    <p class="l6-reference">Salunkhe et al., <em>Kinematic issues in 6R cuspidal robots, guidelines for path planning and deciding cuspidality</em>, IJRR 44(6), 2025. <a href="https://doi.org/10.1177/02783649241293481" target="_blank" rel="noopener">doi:10.1177/02783649241293481</a></p>
   </section>
 
 </main>
 <script src="../js/deck/nav-runtime.js"></script>
-<script type="module" src="../js/main.js?v=20260831-1"></script>
+<script type="module" src="../js/main.js?revision=20260915-abb-render-1"></script>
 </body>
 </html>

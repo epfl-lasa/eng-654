@@ -270,9 +270,9 @@
         <aside class="custom3r-numeric-card accent">
           <h3>Read the home geometry</h3>
           <p>At \(\boldsymbol\theta=\mathbf0\), the joint axes point along \(+z,+y,+z\).</p>
-          <div class="equation compact">\[\boldsymbol\omega_1=\mathbf e_z,\qquad
-            \boldsymbol\omega_2=\mathbf e_y,\qquad
-            \boldsymbol\omega_3=\mathbf e_z.\]</div>
+          <div class="equation compact">\[{}^{0}\boldsymbol\omega_1=\mathbf e_z,\qquad
+            {}^{0}\boldsymbol\omega_2=\mathbf e_y,\qquad
+            {}^{0}\boldsymbol\omega_3=\mathbf e_z.\]</div>
           <p>The D–H table supplies the axis offsets and the tool’s home position.</p>
           <div class="equation compact boxed-result">\[\mathbf p_0=\begin{bmatrix}a_1+a_2+a_3\\d_2\\d_1+d_3\end{bmatrix}\]</div>
           <p class="small-text">All three joint variables are zero here. The tool’s home orientation is \(I\); its home pose is \(M=[I,\mathbf p_0;\mathbf0^T,1]\).</p>
@@ -283,13 +283,13 @@
     <section class="slide derivation-slide">
       <p class="slide-kicker">Custom 3R · 2 / 13 · Space-frame PoE</p>
       <h2 class="slide-title">Express forward kinematics as a product of exponentials</h2>
-      <p class="slide-subtitle">Each constant screw \(S_i=(\boldsymbol\omega_i,\mathbf v_i)\) describes joint \(i\) at home, expressed in the same fixed base frame.</p>
+      <p class="slide-subtitle">Each constant screw \({}^{0}S_i=({}^{0}\boldsymbol\omega_i,{}^{0}\mathbf v_i)\) describes joint \(i\) at home, expressed in the same fixed base frame.</p>
       <div class="equation compact boxed-result">\[{}^0T_{\mathrm{ee}}(\boldsymbol\theta)
-        =e^{[S_1]\theta_1}e^{[S_2]\theta_2}e^{[S_3]\theta_3}M,\qquad
-        [S_i]=\begin{bmatrix}[\boldsymbol\omega_i]_\times&\mathbf v_i\\\mathbf0^T&0\end{bmatrix}.\]</div>
-      <p>Choose a point \(\mathbf r_i\) on each home axis. For a revolute joint, \(\mathbf v_i=-\boldsymbol\omega_i\times\mathbf r_i\).</p>
+        =e^{[{}^{0}S_1]\theta_1}e^{[{}^{0}S_2]\theta_2}e^{[{}^{0}S_3]\theta_3}M,\qquad
+        [{}^{0}S_i]=\begin{bmatrix}[{}^{0}\boldsymbol\omega_i]_\times&{}^{0}\mathbf v_i\\\mathbf0^T&0\end{bmatrix}.\]</div>
+      <p>Choose a point \({}^{0}\mathbf r_i\) on each home axis. For a revolute joint, \({}^{0}\mathbf v_i=-{}^{0}\boldsymbol\omega_i\times{}^{0}\mathbf r_i\).</p>
       <table class="dh-table screw-table" aria-label="Home screw axes expressed in the base frame">
-        <thead><tr><th>Joint</th><th>\(\boldsymbol\omega_i\)</th><th>Point \(\mathbf r_i\) on the axis</th><th>\(\mathbf v_i\)</th></tr></thead>
+        <thead><tr><th>Joint</th><th>\({}^{0}\boldsymbol\omega_i\)</th><th>Point \({}^{0}\mathbf r_i\) on the axis</th><th>\({}^{0}\mathbf v_i\)</th></tr></thead>
         <tbody>
           <tr><td>1</td><td>\((0,0,1)\)</td><td>\((0,0,0)\)</td><td>\((0,0,0)\)</td></tr>
           <tr><td>2</td><td>\((0,1,0)\)</td><td>\((a_1,0,d_1)\)</td><td>\((-d_1,0,a_1)\)</td></tr>
@@ -308,11 +308,11 @@
         <div>
           <h3>Stack angular then linear components</h3>
           <div class="equation compact">\[
-            S_1=\begin{bmatrix}0\\0\\1\\0\\0\\0\end{bmatrix},\quad
-            S_2=\begin{bmatrix}0\\1\\0\\-1\\0\\1\end{bmatrix},\quad
-            S_3=\begin{bmatrix}0\\0\\1\\1.25\\-3\\0\end{bmatrix}.
+            {}^{0}S_1=\begin{bmatrix}0\\0\\1\\0\\0\\0\end{bmatrix},\quad
+            {}^{0}S_2=\begin{bmatrix}0\\1\\0\\-1\\0\\1\end{bmatrix},\quad
+            {}^{0}S_3=\begin{bmatrix}0\\0\\1\\1.25\\-3\\0\end{bmatrix}.
           \]</div>
-          <p>For example, \(-\mathbf e_y\times(1,0,1)=(-1,0,1)\) gives the linear part of \(S_2\).</p>
+          <p>For example, \(-\mathbf e_y\times(1,0,1)=(-1,0,1)\) gives the linear part of \({}^{0}S_2\).</p>
         </div>
         <div>
           <h3>Substitute the home tool pose</h3>
@@ -320,7 +320,7 @@
             1&0&0&4.5\\0&1&0&1.25\\0&0&1&1.75\\0&0&0&1
           \end{bmatrix}.\]</div>
           <div class="equation compact">\[\begin{bmatrix}\mathbf p(\boldsymbol\theta)\\1\end{bmatrix}
-            =e^{[S_1]\theta_1}e^{[S_2]\theta_2}e^{[S_3]\theta_3}
+            =e^{[{}^{0}S_1]\theta_1}e^{[{}^{0}S_2]\theta_2}e^{[{}^{0}S_3]\theta_3}
             \begin{bmatrix}4.5\\1.25\\1.75\\1\end{bmatrix}.\]</div>
         </div>
       </div>
@@ -330,7 +330,7 @@
     <section class="slide derivation-slide">
       <p class="slide-kicker">Custom 3R · 4 / 13 · Expand the position equations</p>
       <h2 class="slide-title">Expand PoE into \(c_1,s_1,c_2,s_2,c_3,s_3\)</h2>
-      <p class="slide-subtitle">Write \(c_i=\cos\theta_i\), \(s_i=\sin\theta_i\). A revolute exponential acts on a point as \(\mathbf r_i+R_{\omega_i}(\theta_i)(\mathbf p-\mathbf r_i)\).</p>
+      <p class="slide-subtitle">Write \(c_i=\cos\theta_i\), \(s_i=\sin\theta_i\). A revolute exponential acts on a point as \({}^{0}\mathbf r_i+R_{\omega_i}(\theta_i)(\mathbf p-{}^{0}\mathbf r_i)\).</p>
       <div class="equation compact">\[\mathbf p(\boldsymbol\theta)=R_z(\theta_1)
         \begin{bmatrix}
           1+(2+1.5c_3)c_2+0.75s_2\\

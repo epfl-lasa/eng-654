@@ -26,8 +26,25 @@
       <p class="eyebrow">ENG-654 · Lecture 05</p>
       <h1 class="course-title">Robot Singularities</h1>
       <p class="subtitle">From poses to motions: the Jacobian, its determinant, and the paths a robot can follow</p>
-      <p class="lecture-promise">Running examples: <code>custom_3R_new.urdf</code> for position kinematics and <code>custom_6R_new.urdf</code> for full-pose singularities.</p>
+      <p class="lecture-promise">Running examples: a spatial 3R robot for end-effector position and the ABB IRB 4600 for full-pose singularities.</p>
     </div>
+  </section>
+
+
+  <section class="slide l5-slide" id="robot-notation">
+    <p class="slide-kicker">Notation refresher · Start with the robot</p>
+    <h2 class="slide-title">Joint angles describe the posture; a point describes the end effector</h2>
+    <div class="l5-geometry-layout">
+      <figure class="l5-figure l5-schematic"><img src="../assets/svg/lecture05/robot-notation.svg" alt="Home posture of the three-joint robot, with joint angles, world frame, axis points and end-effector point labelled."><figcaption>URDF home posture: q₁ = q₂ = q₃ = 0. All vectors use world frame 0.</figcaption></figure>
+      <div class="l5-notation-list">
+        <p>\(\mathbf q=[q_1,q_2,q_3]^T\): joint angles [rad]. <strong>Joint velocity</strong> \(\dot{\mathbf q}\) is their time derivative [rad/s].</p>
+        <p><code>tool0</code> is the <strong>end-effector frame specified in the URDF</strong>, fixed to the final link. Its origin is the point tracked here.</p>
+        <p>\({}^0\mathbf p_t\): position of that origin [m]. The subscript t identifies the end-effector point; the left superscript 0 means coordinates in the world frame.</p>
+        <p>\({}^0\mathbf p_k\): a point on joint k’s axis. \({}^0\mathbf z_k\): the unit direction of that axis, even when the URDF local axis is y.</p>
+        <p><strong>End-effector linear velocity</strong> is \({}^0\dot{\mathbf p}_t\) [m/s]. A physical tool need not be attached.</p>
+      </div>
+    </div>
+    <div class="l5-takeaway">First we study a <strong>position task</strong> (three linear velocity components). Later, a full pose task also includes three angular velocity components.</div>
   </section>
 
   <section class="slide l5-slide" id="poses-to-motion">
@@ -35,22 +52,23 @@
     <h2 class="slide-title">We know where the robot can be. How can it move?</h2>
     <p class="slide-subtitle">Lectures 02–04 described poses and solved forward and inverse kinematics. Motion planning connects those poses through time.</p>
     <div class="l5-columns l5-roomy">
-      <div class="l5-card"><h3>So far: a configuration</h3><div class="equation">\[\mathbf q\longmapsto\mathbf p=f(\mathbf q)\]</div><p>Which tool position belongs to these joint angles?</p><p>Which joint configurations reach a given pose?</p></div>
-      <div class="l5-card red"><h3>Now: a motion</h3><div class="equation">\[\mathbf q(t)\longmapsto\mathbf p(t)\]</div><p>Which joint rates move the tool along a desired path?</p><p>Can the robot maintain that motion at every point?</p></div>
+      <div class="l5-card"><h3>So far: a configuration</h3><div class="equation">\[\mathbf q\longmapsto{}^0\mathbf p_t=f(\mathbf q)\]</div><p>Which end-effector position belongs to these joint angles?</p><p>Which joint configurations reach a given pose?</p></div>
+      <div class="l5-card red"><h3>Now: a motion</h3><div class="equation">\[\mathbf q(t)\longmapsto{}^0\mathbf p_t(t)\]</div><p>Which joint velocities move the end effector along a desired path?</p><p>Can the robot maintain that motion at every point?</p></div>
     </div>
     <div class="l5-flow l5-motion-flow"><span>pose</span><i>→</i><span>nearby pose</span><i>→</i><span>continuous path</span><i>→</i><span>motion through time</span></div>
-    <div class="l5-takeaway">The missing link is the relation between joint velocity and tool velocity.</div>
+    <div class="l5-takeaway">The missing link is the relation between joint velocity and end-effector linear velocity.</div>
   </section>
 
   <section class="slide l5-slide" id="position-to-velocity">
     <p class="slide-kicker">Position → differential → velocity</p>
     <h2 class="slide-title">Velocity is the time derivative of position</h2>
+    <p class="slide-subtitle">The position Jacobian \({}^0J_{t,v}(\mathbf q)=\partial{}^0\mathbf p_t/\partial\mathbf q\) maps joint velocity to end-effector linear velocity. Here v identifies the translational rows.</p>
     <div class="l5-derivation">
-      <div><span class="l5-step-label">Position</span><div class="equation">\[\mathbf p(t)=f(\mathbf q(t))\]</div></div>
-      <div><span class="l5-step-label">Differential</span><div class="equation">\[d\mathbf p=\underbrace{\frac{\partial f}{\partial\mathbf q}}_{J_p(\mathbf q)}\,d\mathbf q\]</div></div>
-      <div class="l5-emphasis"><span class="l5-step-label">Chain rule</span><div class="equation">\[\dot{\mathbf p}=\frac{d\mathbf p}{dt}=J_p(\mathbf q)\,\dot{\mathbf q}\]</div></div>
+      <div><span class="l5-step-label">Position</span><div class="equation">\[{}^0\mathbf p_t(t)=f(\mathbf q(t))\]</div></div>
+      <div><span class="l5-step-label">Differential</span><div class="equation">\[d{}^0\mathbf p_t=\underbrace{\frac{\partial f}{\partial\mathbf q}}_{{}^0J_{t,v}(\mathbf q)}\,d\mathbf q\]</div></div>
+      <div class="l5-emphasis"><span class="l5-step-label">Chain rule</span><div class="equation">\[\dot{{}^0\mathbf p_t}=\frac{d{}^0\mathbf p_t}{dt}={}^0J_{t,v}(\mathbf q)\,\dot{\mathbf q}\]</div></div>
     </div>
-    <div class="l5-takeaway">The Jacobian is the local linear map: \(\Delta\mathbf p\approx J_p(\mathbf q)\Delta\mathbf q\) for a small joint displacement. The velocity relation is exact at the current configuration.</div>
+    <div class="l5-takeaway">The argument \(\mathbf q\) is the robot’s posture: changing it changes the axes and lever arms. The subscript t identifies the tracked point, not a new argument. Locally, \(\Delta{}^0\mathbf p_t\approx {}^0J_{t,v}(\mathbf q)\Delta\mathbf q\) for a small joint displacement. The velocity relation is exact at the current configuration.</div>
   </section>
 
   <section class="slide l5-slide" id="planar-2r-derivation">
@@ -66,14 +84,14 @@
           <path d="M70 280L260 170L260 80" fill="none" stroke="#151515" stroke-width="11" stroke-linecap="round"/>
           <path d="M117 280A47 47 0 0 0 111 256 M298 148A44 44 0 0 0 260 126" fill="none" stroke="#ed1b2f" stroke-width="2.5"/>
           <g fill="white" stroke="#151515" stroke-width="3"><circle cx="70" cy="280" r="8"/><circle cx="260" cy="170" r="8"/></g><circle cx="260" cy="80" r="8" fill="#ed1b2f"/>
-          <g font-family="Arial,sans-serif" font-size="19" fill="#151515"><text x="345" y="306">x</text><text x="46" y="31">y</text><text x="145" y="209">l₁</text><text x="274" y="121">l₂</text><text x="121" y="268" fill="#c00020">q₁</text><text x="287" y="127" fill="#c00020">q₂</text><text x="276" y="76" fill="#c00020">p = (x, y)</text><text x="250" y="304">x</text><text x="46" y="88">y</text><text x="40" y="304">O</text></g>
+          <g font-family="Arial,sans-serif" font-size="19" fill="#151515"><text x="345" y="306">x</text><text x="46" y="31">y</text><text x="145" y="209">l₁</text><text x="236" y="119">l₂</text><text x="121" y="268" fill="#c00020">q₁</text><text x="294" y="133" fill="#c00020">q₂</text><text x="276" y="76" fill="#c00020">⁰pₜ = (x, y)</text><text x="250" y="304">x</text><text x="46" y="88">y</text><text x="40" y="304">O</text></g>
         </svg>
         <figcaption>Angles in radians; link lengths in metres.</figcaption>
       </figure>
       <div class="l5-derivation l5-compact-derivation">
         <div><span class="l5-step-label">Forward kinematics</span><div class="equation compact">\[\begin{aligned}x&=l_1\cos q_1+l_2\cos(q_1+q_2)\\y&=l_1\sin q_1+l_2\sin(q_1+q_2)\end{aligned}\]</div></div>
         <div><span class="l5-step-label">Differentiate in time</span><div class="equation compact">\[\begin{aligned}\dot x&=-l_1s_1\dot q_1-l_2s_{12}(\dot q_1+\dot q_2)\\\dot y&=l_1c_1\dot q_1+l_2c_{12}(\dot q_1+\dot q_2)\end{aligned}\]</div></div>
-        <div class="l5-emphasis"><span class="l5-step-label">Collect the joint rates</span><div class="equation compact">\[\begin{bmatrix}\dot x\\\dot y\end{bmatrix}=\underbrace{\begin{bmatrix}-l_1s_1-l_2s_{12}&-l_2s_{12}\\l_1c_1+l_2c_{12}&l_2c_{12}\end{bmatrix}}_{J_p(\mathbf q)}\begin{bmatrix}\dot q_1\\\dot q_2\end{bmatrix}\]</div></div>
+        <div class="l5-emphasis"><span class="l5-step-label">Collect the joint velocities</span><div class="equation compact">\[\begin{bmatrix}\dot x\\\dot y\end{bmatrix}=\underbrace{\begin{bmatrix}-l_1s_1-l_2s_{12}&-l_2s_{12}\\l_1c_1+l_2c_{12}&l_2c_{12}\end{bmatrix}}_{{}^0J_{t,v}(\mathbf q)}\begin{bmatrix}\dot q_1\\\dot q_2\end{bmatrix}\]</div></div>
       </div>
     </div>
     <p class="l5-footnote">\(s_1=\sin q_1,\ c_1=\cos q_1,\ s_{12}=\sin(q_1+q_2),\ c_{12}=\cos(q_1+q_2)\).</p>
@@ -82,7 +100,7 @@
   <section class="slide interactive-slide l5-slide" id="jacobian-motion-map">
     <p class="slide-kicker">The central object for robot motion</p>
     <h2 class="slide-title">The Jacobian is at the heart of motion planning</h2>
-    <p class="slide-subtitle">It tells us which tool velocities are possible and which joint rates produce them: \(\dot{\mathbf p}=\mathbf J_1\dot q_1+\mathbf J_2\dot q_2\).</p>
+    <p class="slide-subtitle">Write \({}^0\mathbf J_{t,v,k}\) for column k of the position Jacobian. Each column contributes to the end-effector velocity: \(\dot{{}^0\mathbf p_t}={}^0\mathbf J_{t,v,1}\dot q_1+{}^0\mathbf J_{t,v,2}\dot q_2\).</p>
     <div class="demo-prompt"><strong>Try it:</strong> change q₂ toward 0°. Watch the two velocity columns become parallel and the velocity ellipse flatten. Can the tool still move in every planar direction?</div>
     <div class="layout-full" data-singularity-lab="two-r"></div>
   </section>
@@ -90,9 +108,9 @@
   <section class="slide l5-slide" id="jacobian-units">
     <p class="slide-kicker">Read the units before reading the numbers</p>
     <h2 class="slide-title">A Jacobian entry converts one rate into another</h2>
-    <div class="equation boxed-result">\[[J_{ik}]=\frac{[\text{task velocity}_i]}{[\text{joint rate}_k]}\]</div>
-    <table class="l5-table l5-units"><thead><tr><th>Task component</th><th>Revolute rate [rad/s]</th><th>Prismatic rate [m/s]</th></tr></thead><tbody><tr><td>Linear velocity [m/s]</td><td>m/rad</td><td>m/m = 1</td></tr><tr><td>Angular velocity [rad/s]</td><td>rad/rad = 1</td><td>rad/m</td></tr></tbody></table>
-    <div class="l5-columns"><div class="l5-card"><h3>Planar 2R position task</h3><p>Every entry of \(J_p\) has units m/rad.</p><p>\(\det J_p\) has units m²/rad².</p></div><div class="l5-card red"><h3>Full 6R pose task</h3><p>Linear and angular rows have different units.</p><p>With radians treated as dimensionless, \(\det J\) has units m³.</p></div></div>
+    <div class="equation boxed-result">\[[J_{ik}]=\frac{[\text{task velocity}_i]}{[\text{joint velocity}_k]}\]</div>
+    <table class="l5-table l5-units"><thead><tr><th>Task component</th><th>Revolute velocity [rad/s]</th><th>Prismatic velocity [m/s]</th></tr></thead><tbody><tr><td>Linear velocity [m/s]</td><td>m/rad</td><td>m/m = 1</td></tr><tr><td>Angular velocity [rad/s]</td><td>rad/rad = 1</td><td>rad/m</td></tr></tbody></table>
+    <div class="l5-columns"><div class="l5-card"><h3>Planar 2R position task</h3><p>Every entry of \({}^0J_{t,v}\) has units m/rad.</p><p>\(\det {}^0J_{t,v}\) has units m²/rad².</p></div><div class="l5-card red"><h3>Full 6R pose task</h3><p>Linear and angular rows have different units.</p><p>With radians treated as dimensionless, \(\det J\) has units m³.</p></div></div>
     <div class="l5-takeaway">Radians are dimensionless in SI; we retain “rad” to show the conversion. Changing metres to millimetres changes determinant magnitudes, but zero remains zero.</div>
   </section>
 
@@ -100,88 +118,200 @@
     <p class="slide-kicker">One determinant value is decisive</p>
     <h2 class="slide-title">At det J = 0, independent motion directions collapse</h2>
     <div class="l5-derivation l5-compact-derivation">
-      <div><span class="l5-step-label">Expand the 2 × 2 determinant</span><div class="equation compact">\[\begin{aligned}\det J_p&=(-l_1s_1-l_2s_{12})l_2c_{12}+l_2s_{12}(l_1c_1+l_2c_{12})\\&=l_1l_2(s_{12}c_1-s_1c_{12})=l_1l_2\sin q_2.\end{aligned}\]</div></div>
+      <div><span class="l5-step-label">Expand the 2 × 2 determinant</span><div class="equation compact">\[\begin{aligned}\det {}^0J_{t,v}&=(-l_1s_1-l_2s_{12})l_2c_{12}+l_2s_{12}(l_1c_1+l_2c_{12})\\&=l_1l_2(s_{12}c_1-s_1c_{12})=l_1l_2\sin q_2.\end{aligned}\]</div></div>
     </div>
-    <div class="l5-columns l5-roomy"><div class="l5-card"><h3>For \(l_1,l_2&gt;0\)</h3><p>\(q_2=0\) or \(\pi\pmod{2\pi}\) makes the links collinear.</p><p>The area spanned by the two columns is zero. The velocity ellipse becomes a line.</p></div><div class="l5-card red"><h3>See the dependence at \(q_2=0\)</h3><div class="equation compact">\[J_p=\begin{bmatrix}-\sin q_1\\\cos q_1\end{bmatrix}\begin{bmatrix}l_1+l_2&l_2\end{bmatrix}\]</div><p>Both columns point along the same tangent: rank 1. Instantaneous radial tool motion is unavailable.</p></div></div>
+    <div class="l5-columns l5-roomy"><div class="l5-card"><h3>For \(l_1,l_2&gt;0\)</h3><p>\(q_2=0\) or \(\pi\pmod{2\pi}\) makes the links collinear.</p><p>The area spanned by the two columns is zero. The velocity ellipse becomes a line.</p></div><div class="l5-card red"><h3>See the dependence at \(q_2=0\)</h3><div class="equation compact">\[{}^0J_{t,v}=\begin{bmatrix}-\sin q_1\\\cos q_1\end{bmatrix}\begin{bmatrix}l_1+l_2&l_2\end{bmatrix}\]</div><p>Both columns point along the same tangent: rank 1. Instantaneous radial end-effector motion is unavailable.</p></div></div>
     <div class="l5-takeaway">For a square task Jacobian, \(\det J=0\iff\operatorname{rank}J\) is below the task dimension. We now seek this zero set; determinant magnitude alone is not a universal measure of conditioning.</div>
-  </section>
-
-  <section class="slide l5-slide" id="adjoint-determinant">
-    <p class="slide-kicker">Recall the adjoint · Lecture 02</p>
-    <h2 class="slide-title">Choose coordinates that make the determinant easy</h2>
-    <p class="slide-subtitle">To locate singularities, we need the zeros of the determinant. Rigid changes of twist coordinates preserve them—and preserve the determinant itself.</p>
-    <div class="l5-columns"><div class="l5-card"><h3>Recall angular-first screw coordinates</h3><div class="equation compact">\[\operatorname{Ad}_T=\begin{bmatrix}R&0\\{[\mathbf t]_\times R}&R\end{bmatrix}\]</div><div class="equation compact">\[\det\operatorname{Ad}_T=(\det R)^2=1\]</div></div><div class="l5-card red"><h3>For a full 6 × 6 twist Jacobian</h3><div class="equation compact">\[J'=\operatorname{Ad}_T J\quad\Longrightarrow\quad\det J'=\det J\]</div><p>The entries change; invertibility and rank do not.</p><p>Keep the same component order in both representations.</p></div></div>
-    <div class="l5-takeaway">For a 3 × 3 position Jacobian at the <em>same physical point</em>, rotating components gives \(J'_p=RJ_p\) and the same determinant. Moving that task point changes the position task; this is a different operation.</div>
-    <p class="l5-footnote">Next we build columns from axes and lever arms, then use a convenient frame and reference point for the full twist.</p>
   </section>
 
   <section class="slide l5-slide" id="screws-to-columns">
     <p class="slide-kicker">The intuitive construction · Geometric Jacobian</p>
     <h2 class="slide-title">Each column is a familiar screw acting at the tool</h2>
-    <p class="slide-subtitle">Recall the world-frame revolute screw from Lecture 02. At the current configuration, let \(\mathbf z_k\) be the unit axis and \(\mathbf p_k\) a point on it.</p>
-    <div class="l5-columns"><div class="l5-card"><h3>World-frame screw, angular first</h3><div class="equation compact">\[\boldsymbol\xi_k^W=\begin{bmatrix}\mathbf z_k\\\mathbf v_k^s\end{bmatrix},\qquad\mathbf v_k^s=-\mathbf z_k\times\mathbf p_k\]</div><p>\(\mathbf v_k^s\) describes the velocity field at the world origin; it is not generally the tool-point velocity.</p></div><div class="l5-card red"><h3>Evaluate that motion at \(\mathbf p\)</h3><div class="equation compact">\[\mathbf J_{p,k}=\mathbf v_k^s+\mathbf z_k\times\mathbf p=\mathbf z_k\times(\mathbf p-\mathbf p_k)\]</div><p>One joint rotating at unit rate produces a tangent velocity at the tool. That velocity is one Jacobian column.</p></div></div>
-    <div class="equation compact">\[\underbrace{J_k=\begin{bmatrix}\mathbf z_k\times(\mathbf p-\mathbf p_k)\\\mathbf z_k\end{bmatrix}}_{\text{revolute, linear first}}\qquad\underbrace{J_k=\begin{bmatrix}\mathbf z_k\\\mathbf0\end{bmatrix}}_{\text{prismatic, linear first}}\]</div>
-    <div class="l5-takeaway">Use axes at the <em>current</em> configuration. Lecture 02’s stored home screws must first be propagated through the preceding joint motions. Now apply this construction to the course 3R robot.</div>
+
+    <p class="slide-subtitle">World is frame 0. Write \({}^B\mathbf x_A\) for entity A expressed in frame B: the frame is a left superscript and the entity is a subscript.</p>
+    <div class="l5-geometry-layout"><figure class="l5-figure l5-schematic"><img src="../assets/svg/lecture05/axis-lever-arm.svg" alt="Joint axis, lever arm, tangent end-effector velocity and angular velocity, all in world frame 0."></figure><div><div class="l5-notation-list"><div class="l5-card"><h3>World-frame screw, angular first</h3><div class="equation compact">\[{}^0\boldsymbol\xi_k=\begin{bmatrix}{}^0\mathbf z_k\\{}^0\mathbf v_k\end{bmatrix},\qquad{}^0\mathbf v_k=-{}^0\mathbf z_k\times{}^0\mathbf p_k\]</div><p>\({}^0\mathbf p_k\) is a point on joint k’s axis. The screw’s linear component \({}^0\mathbf v_k\) describes its velocity field at the world origin.</p></div><div class="l5-card red"><h3>Evaluate that motion at the tool</h3><div class="equation compact">\[{}^0\mathbf J_{t,v,k}={}^0\mathbf v_k+{}^0\mathbf z_k\times{}^0\mathbf p_t\]</div><div class="equation compact">\[{}^0\mathbf J_{t,v,k}={}^0\mathbf z_k\times({}^0\mathbf p_t-{}^0\mathbf p_k)\]</div><p>This translational column is the end-effector velocity produced by unit joint velocity.</p></div></div>
+    <div class="equation compact">\[\underbrace{\begin{bmatrix}{}^0\mathbf z_k\times({}^0\mathbf p_t-{}^0\mathbf p_k)\\{}^0\mathbf z_k\end{bmatrix}}_{\text{revolute, linear first}}\qquad\underbrace{\begin{bmatrix}{}^0\mathbf z_k\\\mathbf0\end{bmatrix}}_{\text{prismatic, linear first}}\]</div>
+  </div></div>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act I · Read the course 3R model</p><h2 class="slide-title"><code>custom_3R_new.urdf</code> defines the complete position task</h2>
-    <div class="layout-40-60">
-      <div class="l5-card red"><h3>Selected chain</h3><p><code>base_link</code> → <code>link_1</code> → <code>link_2</code> → <code>link_3_d3</code> → <code>tool0</code></p><p>The first three joints are revolute; the final transform to <code>tool0</code> is fixed.</p></div>
+  <section class="slide l5-slide" id="course-3r-model">
+    <p class="slide-kicker">Act I · Read the course 3R model</p>
+    <h2 class="slide-title">Read the joint origins and axes from the URDF</h2>
+    <div class="l5-geometry-layout"><figure class="l5-figure l5-schematic"><img src="../assets/svg/lecture05/robot-notation.svg" alt="Three revolute joints at URDF home, showing each axis origin and the fixed end-effector point."></figure><div class="l5-model-data">
+      <div class="l5-card red"><h3>Selected chain</h3><p><code>base_link</code> → <code>link_1</code> → <code>link_2</code> → <code>link_3_d3</code> → <code>tool0</code></p><p>The three joints are revolute. <code>tool0</code> is the fixed end-effector frame, not a fourth movable joint.</p></div>
       <table class="l5-table"><thead><tr><th>joint</th><th>origin in parent [m]</th><th>local axis</th></tr></thead><tbody><tr><td>1</td><td>\((0,0,0.5)\)</td><td>\((0,0,1)\)</td></tr><tr><td>2</td><td>\((1,0,0.5)\)</td><td>\((0,1,0)\)</td></tr><tr><td>3</td><td>\((2,1.25,0)\)</td><td>\((0,0,1)\)</td></tr><tr><td>tool</td><td>\((1.5,0,0.75)\)</td><td>fixed</td></tr></tbody></table>
+    </div></div>
+    <p class="l5-footnote">Origins are relative to each parent link; all joint-origin rotations are zero. The sketch shows the resulting world positions at \(\mathbf q=\mathbf0\).</p>
+  </section>
+
+  <section class="slide l5-slide" id="course-3r-cross-products">
+    <p class="slide-kicker">Act I · Build the position Jacobian</p>
+    <h2 class="slide-title">One axis and one lever arm give each column</h2>
+    <div class="l5-geometry-layout">
+      <figure class="l5-figure l5-schematic"><img src="../assets/svg/lecture05/axis-lever-arm.svg" alt="A revolute axis and the directed lever arm to the end effector determine the tangent velocity."></figure>
+      <div>
+        <p class="slide-subtitle">URDF forward kinematics gives the end-effector position. Let \(L=2+1.5c_3\), \(B=1.25+1.5s_3\), where \(c_i=\cos q_i\), \(s_i=\sin q_i\).</p>
+        <div class="equation l5-position-expression">\[{}^0\mathbf p_t=\begin{bmatrix}c_1(1+Lc_2+0.75s_2)-s_1B\\s_1(1+Lc_2+0.75s_2)+c_1B\\1-Ls_2+0.75c_2\end{bmatrix}\]</div>
+        <div class="equation compact">\[{}^0\mathbf J_{t,v,k}={}^0\mathbf z_k\times({}^0\mathbf p_t-{}^0\mathbf p_k)\]</div>
+        <div class="equation compact">\[{}^0J_{t,v}=\begin{bmatrix}{}^0\mathbf J_{t,v,1}&{}^0\mathbf J_{t,v,2}&{}^0\mathbf J_{t,v,3}\end{bmatrix}\]</div>
+        <p class="l5-footnote">For each joint, locate its axis point \({}^0\mathbf p_k\) and direction \({}^0\mathbf z_k\), then draw the lever arm to this common end-effector point. All vectors use world coordinates; lengths are metres.</p>
+      </div>
     </div>
-    <div class="l5-takeaway">Every value in Act I is read from the course URDF; no substitute robot geometry is introduced in this model-specific construction.</div>
+    <div class="l5-takeaway">Column k is the end-effector linear velocity for \(\dot q_k=1\) rad/s and all other joint velocities zero. The coloured arrows will show this construction one joint at a time.</div>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act I · Build the position Jacobian</p><h2 class="slide-title">One cross product gives each column</h2>
-    <p class="slide-subtitle">Let \(\mathbf p\) be the current <code>tool0</code> position, \(\mathbf p_k\) a point on joint axis \(k\), and \(\mathbf z_k\) that axis expressed in the base frame.</p>
-    <div class="equation boxed-result">\[J_p(\mathbf q)=\begin{bmatrix}\mathbf J_{p,1}&\mathbf J_{p,2}&\mathbf J_{p,3}\end{bmatrix},\qquad \mathbf J_{p,k}=\mathbf z_k\times(\mathbf p-\mathbf p_k)\]</div>
-    <div class="l5-takeaway">As with Lecture 02’s world-frame screws, express every axis and point in one frame. Column \(k\) is the Cartesian velocity of <code>tool0</code> when \(\dot q_k=1\) and every other joint rate is zero.</div>
+  <section class="slide l5-slide l5-column-slide" id="course-3r-column-1">
+    <p class="slide-kicker">Act I · Symbolic column 1</p>
+    <h2 class="slide-title">Joint 1 sweeps the mechanism around its base axis</h2>
+    <p class="slide-subtitle">The picture shows home posture; the equations apply at any \(\mathbf q\). Use \(c_i=\cos q_i\), \(s_i=\sin q_i\); lengths are metres.</p>
+    <div class="l5-geometry-layout">
+      <figure class="l5-figure l5-schematic"><img src="../assets/svg/lecture05/column-1.svg" alt="Joint 1 at home, with its axis, directed lever arm to the end-effector point and resulting linear velocity."><figcaption>Blue: axis · ochre dashed: lever arm · red: end-effector velocity.</figcaption></figure>
+      <div class="l5-column-math">
+        <span class="l5-step-label">Locate the joint axis in world frame 0</span>
+        <div class="equation compact">\[{}^0\mathbf p_1=\begin{bmatrix}0\\0\\0.5\end{bmatrix},\quad{}^0\mathbf z_1=\begin{bmatrix}0\\0\\1\end{bmatrix}\]</div>
+        <span class="l5-step-label">Take the cross product and expand the column</span>
+        <div class="equation compact">\[{}^0\mathbf J_{t,v,1}={}^0\mathbf z_1\times({}^0\mathbf p_t-{}^0\mathbf p_1)\]</div>
+        <div class="equation l5-column-result">\[{}^0\mathbf J_{t,v,1}=\begin{bmatrix}-s_1[1+(2+1.5c_3)c_2+0.75s_2]-c_1(1.25+1.5s_3)\\c_1[1+(2+1.5c_3)c_2+0.75s_2]-s_1(1.25+1.5s_3)\\0\end{bmatrix}\]</div>
+      </div>
+    </div>
+    <div class="l5-takeaway">Check the sketch at \(\mathbf q=\mathbf0\): \({}^0\mathbf J_{t,v,1}(\mathbf0)=[-1.25,4.50,0]^T\) m/rad.</div>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act I · Column 1</p><h2 class="slide-title">Joint 1 sweeps the complete mechanism around its base axis</h2>
-    <div class="layout-two-column"><div class="l5-big-equation">\[\mathbf J_{p,1}=\mathbf z_1\times(\mathbf p-\mathbf p_1)\]</div><div class="l5-card red"><h3>At URDF home</h3><p>\(\mathbf z_1=[0,0,1]^T\)</p><p>\(\mathbf J_{p,1}=[-1.25,\;4.50,\;0]^T\)</p><p>The instantaneous motion is tangent to a circle about axis 1.</p></div></div>
+  <section class="slide l5-slide l5-column-slide" id="course-3r-column-2">
+    <p class="slide-kicker">Act I · Symbolic column 2</p>
+    <h2 class="slide-title">Joint 2 tilts every downstream point about its current axis</h2>
+    <p class="slide-subtitle">The picture shows home posture; the equations apply at any \(\mathbf q\). Use \(c_i=\cos q_i\), \(s_i=\sin q_i\); lengths are metres.</p>
+    <div class="l5-geometry-layout">
+      <figure class="l5-figure l5-schematic"><img src="../assets/svg/lecture05/column-2.svg" alt="Joint 2 at home, with its axis, directed lever arm to the end-effector point and resulting linear velocity."><figcaption>Blue: axis · ochre dashed: lever arm · red: end-effector velocity.</figcaption></figure>
+      <div class="l5-column-math">
+        <span class="l5-step-label">Locate the joint axis in world frame 0</span>
+        <div class="equation compact">\[{}^0\mathbf p_2=\begin{bmatrix}c_1\\s_1\\1\end{bmatrix},\quad{}^0\mathbf z_2=\begin{bmatrix}-s_1\\c_1\\0\end{bmatrix}\]</div>
+        <span class="l5-step-label">Take the cross product and expand the column</span>
+        <div class="equation compact">\[{}^0\mathbf J_{t,v,2}={}^0\mathbf z_2\times({}^0\mathbf p_t-{}^0\mathbf p_2)\]</div>
+        <div class="equation l5-column-result">\[{}^0\mathbf J_{t,v,2}=\begin{bmatrix}c_1[-(2+1.5c_3)s_2+0.75c_2]\\s_1[-(2+1.5c_3)s_2+0.75c_2]\\-(2+1.5c_3)c_2-0.75s_2\end{bmatrix}\]</div>
+      </div>
+    </div>
+    <div class="l5-takeaway">Check the sketch at \(\mathbf q=\mathbf0\): \({}^0\mathbf J_{t,v,2}(\mathbf0)=[0.75,0,-3.50]^T\) m/rad.</div>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act I · Column 2</p><h2 class="slide-title">Joint 2 tilts every downstream point about its current axis</h2>
-    <div class="layout-two-column"><div class="l5-big-equation">\[\mathbf J_{p,2}=\mathbf z_2\times(\mathbf p-\mathbf p_2)\]</div><div class="l5-card green"><h3>At URDF home</h3><p>\(\mathbf z_2=[0,1,0]^T\)</p><p>\(\mathbf J_{p,2}=[0.75,\;0,\;-3.50]^T\)</p><p>This column couples horizontal and vertical tool motion.</p></div></div>
-  </section>
-
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act I · Column 3</p><h2 class="slide-title">Joint 3 contributes the velocity generated by the final lever arm</h2>
-    <div class="layout-two-column"><div class="l5-big-equation">\[\mathbf J_{p,3}=\mathbf z_3\times(\mathbf p-\mathbf p_3)\]</div><div class="l5-card"><h3>At URDF home</h3><p>\(\mathbf z_3=[0,0,1]^T\)</p><p>\(\mathbf J_{p,3}=[0,\;1.50,\;0]^T\)</p><p>Its magnitude is the perpendicular distance from axis 3 to <code>tool0</code>.</p></div></div>
+  <section class="slide l5-slide l5-column-slide" id="course-3r-column-3">
+    <p class="slide-kicker">Act I · Symbolic column 3</p>
+    <h2 class="slide-title">Joint 3 moves the end effector through its final lever arm</h2>
+    <p class="slide-subtitle">The picture shows home posture; the equations apply at any \(\mathbf q\). Use \(c_i=\cos q_i\), \(s_i=\sin q_i\); lengths are metres.</p>
+    <div class="l5-geometry-layout">
+      <figure class="l5-figure l5-schematic"><img src="../assets/svg/lecture05/column-3.svg" alt="Joint 3 at home, with its axis, directed lever arm to the end-effector point and resulting linear velocity."><figcaption>Blue: axis · ochre dashed: lever arm · red: end-effector velocity.</figcaption></figure>
+      <div class="l5-column-math">
+        <span class="l5-step-label">Locate the joint axis in world frame 0</span>
+        <div class="equation compact">\[{}^0\mathbf p_3=\begin{bmatrix}c_1(1+2c_2)-1.25s_1\\s_1(1+2c_2)+1.25c_1\\1-2s_2\end{bmatrix},\quad{}^0\mathbf z_3=\begin{bmatrix}c_1s_2\\s_1s_2\\c_2\end{bmatrix}\]</div>
+        <span class="l5-step-label">Take the cross product and expand the column</span>
+        <div class="equation compact">\[{}^0\mathbf J_{t,v,3}={}^0\mathbf z_3\times({}^0\mathbf p_t-{}^0\mathbf p_3)\]</div>
+        <div class="equation l5-column-result">\[{}^0\mathbf J_{t,v,3}=\begin{bmatrix}-1.5(c_1c_2s_3+s_1c_3)\\1.5(c_1c_3-s_1c_2s_3)\\1.5s_2s_3\end{bmatrix}\]</div>
+      </div>
+    </div>
+    <div class="l5-takeaway">Check the sketch at \(\mathbf q=\mathbf0\): \({}^0\mathbf J_{t,v,3}(\mathbf0)=[0,1.50,0]^T\) m/rad.</div>
   </section>
 
   <section class="slide interactive-slide l5-slide">
     <p class="slide-kicker">Act I · Annotate the three columns</p><h2 class="slide-title">Read each axis, lever arm, and velocity directly on the robot</h2>
-    <p class="slide-subtitle">The course STL links follow <code>custom_3R_new.urdf</code>. Every \(\mathbf z_k\), \(\mathbf r_k=\mathbf p-\mathbf p_k\), and \(\mathbf J_{p,k}=\mathbf z_k\times\mathbf r_k\) can be controlled independently.</p>
+    <p class="slide-subtitle">The course STL links follow <code>custom_3R_new.urdf</code>. Every \({}^0\mathbf z_k\), \({}^0\mathbf r_{t,k}={}^0\mathbf p_t-{}^0\mathbf p_k\), and \({}^0\mathbf J_{t,v,k}={}^0\mathbf z_k\times{}^0\mathbf r_{t,k}\) can be controlled independently.</p>
     <div class="demo-prompt"><strong>Try it:</strong> activate one axis, its position vector, and its Jacobian column. Check the cross-product direction, then repeat for the other joints.</div>
     <div class="layout-full" data-singularity-lab="three-r"></div>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act I · Define singularity</p><h2 class="slide-title">The custom 3R robot is singular when its three velocity columns lose independence</h2>
-    <div class="layout-center"><div><div class="l5-box red l5-big-equation">\[J_p\in\mathbb R^{3\times3}:\qquad \boxed{\operatorname{rank}J_p&lt;3\iff\det J_p=0}\]</div><div class="l5-three reveal-children" style="margin-top:1rem"><div class="l5-card"><h3>Motion lost</h3><p>At the singularity, at least one Cartesian velocity direction cannot be produced.</p></div><div class="l5-card yellow"><h3>Solutions lose uniqueness</h3><p>Dependent columns create a joint-rate null direction.</p></div><div class="l5-card green"><h3>Near-singular amplification</h3><p>Approaching rank loss can require very large joint rates for a finite tool velocity.</p></div></div></div></div>
+  <section class="slide l5-slide" id="rank-loss">
+    <p class="slide-kicker">Act I · Define singularity</p>
+    <h2 class="slide-title">At a singularity, the three columns are no longer all independent</h2>
+    <div class="l5-geometry-layout">
+      <figure class="l5-figure l5-schematic"><img src="../assets/svg/lecture05/velocity-rank-loss.svg" alt="Three independent columns span space; three dependent columns may span a plane without all being parallel."></figure>
+      <div>
+        <div class="equation compact">\[\operatorname{rank}{}^0J_{t,v}&lt;3\iff\det{}^0J_{t,v}=0\]</div>
+        <p>The rank drops from 3 to 2 or lower. At rank 2, the columns span a plane; they need not all be parallel.</p>
+        <div class="l5-card red"><h3>A nonzero joint velocity can give zero end-effector velocity</h3><div class="equation compact">\[{}^0J_{t,v}\dot{\mathbf q}_{\rm null}=\mathbf0,\qquad\dot{\mathbf q}_{\rm null}\ne\mathbf0\]</div><p>This is an instantaneous joint velocity in the Jacobian’s null space. If the rank is r, that null space has dimension 3 − r.</p></div>
+      </div>
+    </div>
+    <div class="l5-takeaway">At least one Cartesian velocity direction is unavailable. Near a singularity, some desired end-effector velocities require very large joint velocities.</div>
+  </section>
+
+  <section class="slide l5-slide" id="urdf-offset-comparison">
+    <p class="slide-kicker">Act II · Compare the two course robots</p>
+    <h2 class="slide-title">An added end offset changes the lever arms</h2>
+    <p class="slide-subtitle">Same three joint origins and axes, same home posture. Only the fixed displacement to the end-effector point changes.</p>
+    <figure class="l5-figure l5-schematic"><img src="../assets/svg/lecture05/actual-model-comparison.svg" alt="Two matching home postures with end offsets h=0.25 metres and h=0.75 metres; joint geometry is unchanged."></figure>
+    <div class="l5-columns">
+      <div class="l5-card"><h3>No added end offset</h3><p>The baseline end frame has a fixed axial displacement \(h=0.25\) m from joint 3.</p></div>
+      <div class="l5-card red"><h3>Added end offset: 0.50 m</h3><p>The end frame now has \(h=0.75\) m. This is the robot used in the preceding column calculations.</p></div>
+    </div>
+    <div class="l5-takeaway">Both robots retain the same 1 m offset between the first two axes. Here h is the <strong>end offset along joint 3’s axis</strong>; increasing it changes columns 1 and 2, while column 3 stays the same.</div>
+  </section>
+
+  <section class="slide l5-slide l5-matrix-comparison" id="urdf-offset-jacobians">
+    <p class="slide-kicker">Act II · Full position Jacobians of the two robots</p>
+    <h2 class="slide-title">The end offset appears in columns 1 and 2</h2>
+    <p class="slide-subtitle">Define \(L=2+1.5c_3\), \(B=1.25+1.5s_3\), with \(c_i=\cos q_i\), \(s_i=\sin q_i\). Coloured terms contain h; all lengths are metres.</p>
+
+    <div class="l5-matrix-case">
+      <h3>Baseline end offset: \(h=0.25\) m</h3>
+      <div class="equation l5-comparison-equation">\[\left.{}^0J_{t,v}\right|_{h=0.25}=\begin{bmatrix}
+      -s_1(1+Lc_2+{\color{#1864ab}0.25s_2})-c_1B & c_1(-Ls_2+{\color{#1864ab}0.25c_2}) & -1.5(c_1c_2s_3+s_1c_3)\\
+      c_1(1+Lc_2+{\color{#1864ab}0.25s_2})-s_1B & s_1(-Ls_2+{\color{#1864ab}0.25c_2}) & 1.5(c_1c_3-s_1c_2s_3)\\
+      0 & -Lc_2-{\color{#1864ab}0.25s_2} & 1.5s_2s_3
+      \end{bmatrix}\]</div>
+      <div class="equation l5-comparison-det">\[\det\left({}^0J_{t,v}\big|_{h=0.25}\right)=1.5\left[Ls_3+(Lc_2+{\color{#1864ab}0.25s_2})(2s_3-1.25c_3)\right]\]</div>
+    </div>
+
+    <div class="l5-matrix-case">
+      <h3>Added end offset: \(h=0.75\) m</h3>
+      <div class="equation l5-comparison-equation">\[\left.{}^0J_{t,v}\right|_{h=0.75}=\begin{bmatrix}
+      -s_1(1+Lc_2+{\color{#c21835}0.75s_2})-c_1B & c_1(-Ls_2+{\color{#c21835}0.75c_2}) & -1.5(c_1c_2s_3+s_1c_3)\\
+      c_1(1+Lc_2+{\color{#c21835}0.75s_2})-s_1B & s_1(-Ls_2+{\color{#c21835}0.75c_2}) & 1.5(c_1c_3-s_1c_2s_3)\\
+      0 & -Lc_2-{\color{#c21835}0.75s_2} & 1.5s_2s_3
+      \end{bmatrix}\]</div>
+      <div class="equation l5-comparison-det">\[\det\left({}^0J_{t,v}\big|_{h=0.75}\right)=1.5\left[Ls_3+(Lc_2+{\color{#c21835}0.75s_2})(2s_3-1.25c_3)\right]\]</div>
+    </div>
+
+    <p class="l5-footnote">Each full matrix comes from \(\partial{}^0\mathbf p_t/\partial\mathbf q\), equivalently the three axis–lever-arm cross products. Determinants follow from \(\mathbf J_1\cdot(\mathbf J_2\times\mathbf J_3)\), where \(\mathbf J_k\) denotes column k of the matrix shown.</p>
   </section>
 
   <section class="slide l5-slide" id="offset-comparison">
-    <p class="slide-kicker">Act II · What changes the singularity set?</p>
-    <h2 class="slide-title">One axis offset changes where motion is lost</h2>
-    <p class="slide-subtitle">Compare two members of a symbolic 3R family: standard D–H \(a=(a_1,2,1.5)\) m, \(d=(d_1,1,0)\) m and \(\alpha=(\pi/2,\pi/2,\alpha_3)\). This comparison uses its own geometry.</p>
-    <div class="l5-columns l5-roomy">
-      <div class="l5-card red"><h3>Offset: \(a_1=1\) m</h3><div class="equation compact" data-symbolic-dh="threeROffset"></div><p class="l5-step-label">Zero-set equation</p><div class="equation compact">\[c_2(c_3-2s_3)=s_3\]</div><p>The offset couples the two angles: setting \(c_2=0\) alone no longer guarantees a singularity.</p></div>
-      <div class="l5-card"><h3>Intersecting first axes: \(a_1=0\)</h3><div class="equation compact" data-symbolic-dh="threeRIntersecting"></div><p class="l5-step-label">Two singularity families</p><div class="equation compact">\[c_2=0\quad\text{or}\quad c_3-2s_3=0\]</div><p>A complete pair of lines appears at \(q_2=\pm\pi/2\). The other family depends only on \(q_3\).</p></div>
+    <p class="slide-kicker">Act II · Isolate the offset between the first two axes</p>
+    <h2 class="slide-title">Intersecting or separated axes give different singularity sets</h2>
+    <p class="slide-subtitle">For the next comparison and contour map, use a separate D–H family: \(a=(a_1,2,1.5)\) m, \(d=(d_1,1,0)\) m, \(\alpha=(\pi/2,\pi/2,0)\). Its end point is the origin after row 3.</p>
+    <figure class="l5-figure l5-schematic"><img src="../assets/svg/lecture05/dh-base-offset.svg" alt="D–H robots with intersecting first two axes and with those axes separated by one metre."></figure>
+    <div class="l5-columns">
+      <div class="l5-card"><h3>No base offset: \(a_1=0\)</h3><div class="equation compact">\[\det{}^0J_{t,v}=\tfrac34(3c_3+4)c_2(c_3-2s_3)\]</div><p>Two families: \(c_2=0\) or \(c_3-2s_3=0\).</p></div>
+      <div class="l5-card red"><h3>Base offset: \(a_1=1\) m</h3><div class="equation compact">\[\det{}^0J_{t,v}=\tfrac34(3c_3+4)[c_2(c_3-2s_3){\color{#c21835}-s_3}]\]</div><p>The extra term couples q₂ and q₃. Setting \(c_2=0\) alone is no longer enough.</p></div>
     </div>
-    <div class="l5-takeaway">Since \(3c_3+4\ge1\), the common prefactor never vanishes. Only the bracket determines the zero set. The next plot shows this geometric change directly.</div>
-    <p class="l5-footnote">\(c_i=\cos q_i,\ s_i=\sin q_i\). These formulas belong to this D–H family; the course URDF uses its own position Jacobian.</p>
+    <p class="l5-footnote">\(c_i=\cos q_i,\ s_i=\sin q_i\). The sketches use q = 0. The height d₁ translates the whole arm and does not affect the Jacobian. The complete matrices follow.</p>
   </section>
+
+  <section class="slide l5-slide l5-matrix-comparison" id="offset-symbolic-jacobian">
+    <p class="slide-kicker">Act II · Full Jacobians of the base-offset comparison</p>
+    <h2 class="slide-title">Only column 1 acquires the base-offset contribution</h2>
+    <p class="slide-subtitle">For this D–H family, \(L=2+1.5c_3\), \(M=1+1.5s_3\), \(c_i=\cos q_i\), \(s_i=\sin q_i\). Each coloured term is the added a₁ contribution for a₁ = 1 m.</p>
+    <div class="l5-matrix-case">
+      <h3>No base offset: a₁ = 0</h3>
+      <div class="equation l5-comparison-equation">\[\left.{}^0J_{t,v}\right|_{a_1=0}=\begin{bmatrix}
+      -s_1Lc_2+c_1M&-c_1Ls_2&1.5(s_1c_3-c_1c_2s_3)\\
+      c_1Lc_2+s_1M&-s_1Ls_2&-1.5(c_1c_3+s_1c_2s_3)\\
+      0&Lc_2&-1.5s_2s_3\end{bmatrix}\]</div>
+      <div class="equation l5-comparison-det">\[\det{}^0J_{t,v}\big|_{a_1=0}=\tfrac34(3c_3+4)c_2(c_3-2s_3)\]</div>
+    </div>
+    <div class="l5-matrix-case">
+      <h3>Base offset: a₁ = 1 m</h3>
+      <div class="equation l5-comparison-equation">\[\left.{}^0J_{t,v}\right|_{a_1=1}=\begin{bmatrix}
+      -s_1Lc_2+c_1M{\color{#c21835}-s_1}&-c_1Ls_2&1.5(s_1c_3-c_1c_2s_3)\\
+      c_1Lc_2+s_1M{\color{#c21835}+c_1}&-s_1Ls_2&-1.5(c_1c_3+s_1c_2s_3)\\
+      0&Lc_2&-1.5s_2s_3\end{bmatrix}\]</div>
+      <div class="equation l5-comparison-det">\[\det{}^0J_{t,v}\big|_{a_1=1}=\tfrac34(3c_3+4)[c_2(c_3-2s_3){\color{#c21835}-s_3}]\]</div>
+    </div>
+    <div class="equation l5-comparison-expansion">\[\begin{aligned}\det J={}&J_{11}(J_{22}J_{33}-J_{23}J_{32})\\&-J_{12}(J_{21}J_{33}-J_{23}J_{31})+J_{13}(J_{21}J_{32}-J_{22}J_{31}).\end{aligned}\]</div>
+    <p class="l5-footnote">Expand along row 1 and collect terms. Since \(3c_3+4\ge1\), only the remaining factor can vanish.</p>
+  </section>
+
 
   <section class="slide l5-slide">
     <p class="slide-kicker">Act II · Think in configuration space</p><h2 class="slide-title">A spatial robot has a singularity set, not one bad posture</h2>
-    <div class="layout-center"><div><div class="l5-big-equation">\[\mathcal S=\{\mathbf q\in\mathcal C:D(q_2,q_3)=0\}\]</div><p class="lead">With full periodic revolute coordinates, the \((q_2,q_3)\) domain is a torus and the same curves lift across \(q_1\). Mechanical joint limits clip that torus to a bounded feasible domain.</p></div></div>
+    <div class="layout-center"><div><div class="l5-big-equation">\[\mathcal S=\{\mathbf q\in\mathcal C:D(q_2,q_3)=0\},\qquad D=\det{}^0J_{t,v}\]</div><p class="lead">Here \(\mathcal C\) is the space of joint configurations. With full periodic revolute coordinates, the \((q_2,q_3)\) domain is a torus and the same curves lift across \(q_1\). Mechanical joint limits clip that torus to a bounded feasible domain.</p></div></div>
   </section>
 
   <section class="slide interactive-slide l5-slide" id="singularity-contour-map">
@@ -192,158 +322,232 @@
     <div class="layout-full" data-singularity-lab="map-3r"></div>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Transition · Return to the exact course URDFs</p><h2 class="slide-title">The same column construction scales from position to pose</h2>
-    <div class="l5-columns reveal-children"><div class="l5-card green"><h3><code>custom_3R_new.urdf</code></h3><p>Three revolute joints map to the three-dimensional velocity of <code>tool0</code>.</p><p>Task Jacobian: \(J_p\in\mathbb R^{3\times3}\).</p></div><div class="l5-card red"><h3><code>custom_6R_new.urdf</code></h3><p>Six revolute joints map to the twist of <code>link_6</code>.</p><p>Geometric Jacobian: \(J\in\mathbb R^{6\times6}\).</p></div></div>
-    <div class="l5-takeaway">The model and task dimension change; the axis and lever-arm rule remains the same. From this point onward, geometric quantities again come from the exact course URDFs.</div>
+  <section class="slide l5-slide" id="video-no-theta1">
+    <h2 class="slide-title">Why the singularity equation does not depend on q₁</h2>
+
+    <figure class="l5-video"><video controls playsinline preload="metadata" aria-label="Joint one and the singularity set"><source src="../assets/videos/NoTheta1.mp4" type="video/mp4">Your browser cannot play this video. <a href="../assets/videos/NoTheta1.mp4">Open the video</a>.</video><figcaption>For this 3R family, q₁ rotates the world-expressed velocity columns together, preserving their determinant.</figcaption></figure>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act III · Read one revolute joint geometrically</p><h2 class="slide-title">An axis and a lever arm determine the point velocity</h2>
-    <p class="slide-subtitle">\(\mathbf z\): unit axis direction · \(\mathbf p_k\): any point on the axis · \(\mathbf p\): operational point · \(\mathbf r=\mathbf p-\mathbf p_k\).</p>
-    <div class="derivation-stack reveal-children"><div class="derivation-row"><span class="tag">1</span><p>\(\boldsymbol\omega=\dot q\,\mathbf z\)</p></div><div class="derivation-row"><span class="tag">2</span><p>\(\mathbf v=\boldsymbol\omega\times\mathbf r\)</p></div><div class="derivation-row"><span class="tag">3</span><p>\(\mathbf v=\dot q\,\mathbf z\times(\mathbf p-\mathbf p_k)\)</p></div></div>
+  <section class="slide l5-slide" id="video-torus-formation">
+    <h2 class="slide-title">Periodic joint angles form a torus</h2>
+
+    <figure class="l5-video"><video controls playsinline preload="metadata" aria-label="Formation of the joint-angle torus"><source src="../assets/videos/torus_formation.mp4" type="video/mp4">Your browser cannot play this video. <a href="../assets/videos/torus_formation.mp4">Open the video</a>.</video><figcaption>Identify opposite edges of the periodic (q₂, q₃) domain. The singularity curves live on this torus; joint limits restrict the feasible domain.</figcaption></figure>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act III · Fix the convention</p><h2 class="slide-title">This lecture stacks linear velocity above angular velocity</h2>
-    <div class="layout-two-column"><div class="l5-box red l5-big-equation">\[\boldsymbol\xi=\begin{bmatrix}\mathbf v\\\boldsymbol\omega\end{bmatrix}=J(\mathbf q)\dot{\mathbf q}\]</div><div><div class="equation">\[J_k=\begin{bmatrix}\mathbf z_k\times(\mathbf p-\mathbf p_k)\\\mathbf z_k\end{bmatrix}\]</div><p class="note">Some screw-theory books use \([\boldsymbol\omega;\mathbf v]\). We use <strong>linear first, angular second</strong>.</p></div></div>
+  <section class="slide l5-slide" id="position-to-pose">
+    <p class="slide-kicker">Transition · From the course 3R to the ABB 6R</p>
+    <h2 class="slide-title">The task selects the velocity components we keep</h2>
+    <div class="l5-geometry-layout">
+      <figure class="l5-figure l5-schematic"><img src="../assets/svg/lecture05/axis-lever-arm.svg" alt="A rotating joint produces both end-effector linear velocity and angular velocity about its axis."></figure>
+      <div class="l5-notation-list">
+        <div class="l5-card"><h3>Position task · three components</h3><div class="equation compact">\[{}^0\dot{\mathbf p}_t={}^0J_{t,v}\dot{\mathbf q}\]</div><p>The 3R position Jacobian is 3 × 3. It contains only the translational rows.</p></div>
+        <div class="l5-card red"><h3>Full pose task · six components</h3><div class="equation compact">\[\begin{bmatrix}{}^0\mathbf v_t\\{}^0\boldsymbol\omega_t\end{bmatrix}=\underbrace{\begin{bmatrix}{}^0J_{t,v}\\{}^0J_{t,\omega}\end{bmatrix}}_{{}^0J_t}\dot{\mathbf q}\]</div><p>Here \({}^0\mathbf v_t={}^0\dot{\mathbf p}_t\). The 6R geometric Jacobian is 6 × 6 and also includes angular velocity \({}^0\boldsymbol\omega_t\).</p></div>
+      </div>
+    </div>
+    <div class="l5-takeaway">Both matrices map <strong>joint velocity to the chosen task velocity</strong>. For the ABB example, we will track the wrist center O₅ and write \({}^0J_5\).</div>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act III · Stack joint-generated motions</p><h2 class="slide-title">The Jacobian is a catalogue of instantaneous screws</h2>
-    <div class="equation">\[J=\begin{bmatrix}|&|&&|\\\mathbf v_1&\mathbf v_2&\cdots&\mathbf v_n\\|&|&&|\\|&|&&|\\\boldsymbol\omega_1&\boldsymbol\omega_2&\cdots&\boldsymbol\omega_n\\|&|&&|\end{bmatrix}\]</div><div class="l5-takeaway">A column is not merely a derivative: it is the task-space motion produced by one unit joint rate.</div>
+  <section class="slide l5-slide" id="axis-lever-arm">
+    <p class="slide-kicker">Act III · Read one revolute joint geometrically</p>
+    <h2 class="slide-title">An axis and a lever arm determine the point velocity</h2>
+
+    <p class="slide-subtitle">For joint k, use the world axis \({}^0\mathbf z_k\), axis point \({}^0\mathbf p_k\), tool point \({}^0\mathbf p_t\), and lever arm \({}^0\mathbf r_{t,k}={}^0\mathbf p_t-{}^0\mathbf p_k\).</p>
+    <div class="l5-geometry-layout"><figure class="l5-figure l5-schematic"><img src="../assets/svg/lecture05/axis-lever-arm.svg" alt="Joint axis, lever arm, tangent end-effector velocity and angular velocity, all in world frame 0."></figure><div><div class="derivation-stack "><div class="derivation-row"><span class="tag">1</span><p>\({}^0\boldsymbol\omega_{t,k}=\dot q_k\,{}^0\mathbf z_k\)</p></div><div class="derivation-row"><span class="tag">2</span><p>\({}^0\mathbf v_{t,k}={}^0\boldsymbol\omega_{t,k}\times{}^0\mathbf r_{t,k}\)</p></div><div class="derivation-row"><span class="tag">3</span><p>\({}^0\mathbf v_{t,k}=\dot q_k\,{}^0\mathbf z_k\times({}^0\mathbf p_t-{}^0\mathbf p_k)\)</p></div></div>
+  </div></div>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act III · Verify on the custom 3R</p><h2 class="slide-title">Analytic and geometric position Jacobians coincide</h2>
-    <div class="layout-center"><div><div class="l5-big-equation">\[\underbrace{\frac{\partial\mathbf p}{\partial\mathbf q}}_{J_{\rm analytic}}=\underbrace{[\,\mathbf z_1\!\times(\mathbf p-\mathbf p_1)\;\mathbf z_2\!\times(\mathbf p-\mathbf p_2)\;\mathbf z_3\!\times(\mathbf p-\mathbf p_3)\,]}_{J_{\rm geometric,v}}\]</div><p class="l5-takeaway">Central finite differences provide an independent numerical check of the geometric columns at regular test configurations.</p></div></div>
+  <section class="slide l5-slide" id="linear-first-convention">
+    <p class="slide-kicker">Act III · Fix the convention</p>
+    <h2 class="slide-title">This lecture stacks linear velocity above angular velocity</h2>
+
+    <div class="l5-convention-note"><strong>Change of ordering:</strong> in previous lectures, we described screws as angular first, \([\boldsymbol\omega;\mathbf v]\). We now switch to \([\mathbf v;\boldsymbol\omega]\). Reordering coordinates preserves the screw’s physical motion, axis and pitch, and the rank of a consistently reordered Jacobian.</div>
+    <div class="layout-two-column"><div class="l5-big-equation">\[{}^0\boldsymbol\xi_t=\begin{bmatrix}{}^0\mathbf v_t\\{}^0\boldsymbol\omega_t\end{bmatrix}={}^0J_t\dot{\mathbf q}\]</div><div><div class="equation compact">\[{}^0\mathbf J_{t,k}=\begin{bmatrix}{}^0\mathbf z_k\times({}^0\mathbf p_t-{}^0\mathbf p_k)\\{}^0\mathbf z_k\end{bmatrix}\]</div></div></div>
+    <p class="l5-footnote">Apply the same permutation to all six-component vectors and transformations. The signed 6 × 6 determinant changes sign under the row swap; its zero set and rank remain unchanged.</p>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Transition · Move from position to pose</p><h2 class="slide-title">A 6R chain maps six joint rates to one twist</h2>
-    <div class="layout-two-column"><div class="l5-big-equation">\[\begin{bmatrix}\mathbf v_6\\\boldsymbol\omega_6\end{bmatrix}=J(\mathbf q)\dot{\mathbf q},\qquad J\in\mathbb R^{6\times6}\]</div><div class="l5-card red"><h3>Course-model axis sequence</h3><p>Local axes: \(z,y,z,x,z,x\)</p><p>Operational point: the <code>link_6</code> origin</p><p>All six joints are revolute.</p></div></div><div class="l5-takeaway">The separate <code>tool0</code> branch ends at link 3; the full six-joint pose task therefore uses <code>link_6</code>.</div>
+  <section class="slide l5-slide" id="jacobian-screw-columns">
+    <p class="slide-kicker">Act III · Stack joint-generated motions</p>
+    <h2 class="slide-title">The Jacobian is a catalogue of instantaneous screws</h2>
+
+    <div class="l5-geometry-layout"><figure class="l5-figure l5-schematic"><img src="../assets/svg/lecture05/axis-lever-arm.svg" alt="Joint axis, lever arm, tangent end-effector velocity and angular velocity, all in world frame 0."></figure><div><div class="equation">\[{}^0J_t=\left[\begin{array}{c|c|c|c}{}^0\mathbf J_{t,v,1}&{}^0\mathbf J_{t,v,2}&\cdots&{}^0\mathbf J_{t,v,n}\\{}^0\mathbf z_1&{}^0\mathbf z_2&\cdots&{}^0\mathbf z_n\end{array}\right]\]</div>
+    <div class="equation compact">\[\begin{bmatrix}{}^0\mathbf v_t\\{}^0\boldsymbol\omega_t\end{bmatrix}=\sum_{k=1}^{n}{}^0\mathbf J_{t,k}\dot q_k\]</div>
+    <p class="slide-subtitle">Shown for revolute joints: each column contains the linear and angular motion per unit joint velocity. Multiplying column k by \(\dot q_k\) gives that joint’s actual contribution. For a prismatic joint, the column is \([{}^0\mathbf z_k;\mathbf0]\).</p>
+  </div></div>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act III · Read the course 6R model</p><h2 class="slide-title">Build six columns at the <code>link_6</code> origin</h2>
-    <div class="equation">\[J_k=\begin{bmatrix}{}^0\mathbf z_k\times({}^0\mathbf p_6-{}^0\mathbf p_k)\\{}^0\mathbf z_k\end{bmatrix}\]</div><div class="l5-chain"><span>1</span><span>2</span><span>3</span><b>→</b><span>4</span><span>5</span><span>6</span></div><p class="l5-takeaway">All six physical columns are simple; their base-frame trigonometric components are not.</p>
+  <section class="slide l5-slide" id="analytic-geometric-distinction">
+    <p class="slide-kicker">Act III · Verify on the custom 3R</p>
+    <h2 class="slide-title">The matrix depends on pose coordinates; the physical motion does not</h2>
+
+    <div class="l5-columns"><div class="l5-card"><h3>Position-only task</h3><div class="equation compact">\[\frac{\partial{}^0\mathbf p_t}{\partial\mathbf q}={}^0J_{t,v}\]</div><p>Differentiating Cartesian position gives exactly the translational geometric Jacobian used for the custom 3R.</p></div><div class="l5-card red"><h3>Full pose task</h3><div class="equation compact">\[\mathbf x=\begin{bmatrix}{}^0\mathbf p_t\\\boldsymbol\phi\end{bmatrix},\quad\dot{\mathbf x}=J_{t,\mathrm A}\dot{\mathbf q}\]</div><p>The analytical Jacobian depends on the chosen rotation coordinates: Euler angles, rotation vectors or another representation.</p></div></div>
+    <div class="equation compact">\[{}^0\boldsymbol\omega_t=E(\boldsymbol\phi)\dot{\boldsymbol\phi},\qquad{}^0J_{t,\mathrm G}=\begin{bmatrix}I&0\\0&E(\boldsymbol\phi)\end{bmatrix}J_{t,\mathrm A}\]</div>
+    <div class="l5-box">At a fixed configuration, joint velocities produce the same physical motion. Changing orientation coordinates changes the matrix that reports that motion. We will write the conversion explicitly for roll–pitch–yaw.</div>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act III · Use the course wrist geometry</p><h2 class="slide-title">Axes 4, 5, and 6 intersect at one wrist center</h2>
-    <p class="slide-subtitle">In <code>custom_6R_new.urdf</code>, the joint-5 origin lies on the joint-4 and joint-6 axis lines.</p>
-    <div class="layout-two-column"><div class="l5-box red l5-big-equation">\[O_w=\text{origin of joint 5}\]</div><div class="l5-card"><h3>Why this matters</h3><p>Reduce every twist at \(O_w\).</p><p>Wrist columns 4 to 6 then have zero linear part.</p><p>The Jacobian becomes block triangular.</p></div></div>
-    <div class="l5-takeaway">This arm and wrist split follows from the course model’s axis lines, not from a generic 6R assumption.</div>
+  <section class="slide l5-slide" id="abb-model">
+    <p class="slide-kicker">Act III · Use the supplied industrial robot</p><h2 class="slide-title">One ABB model for the entire 6R derivation</h2>
+    <p class="slide-subtitle">ABB IRB 4600-40/2.55 · <a href="../assets/models/abb_irb/irb4600_40_255.urdf" download>Download the supplied URDF</a>. Set world frame 0 = <code>base_link</code>; the URDF’s <code>base</code> frame coincides with it.</p>
+    <div class="l5-columns l5-roomy"><div class="l5-card red"><h3>Read the axis lines at home</h3><table class="l5-table"><thead><tr><th>Joint</th><th>Origin in parent [m]</th><th>Local axis</th></tr></thead><tbody><tr><td>1</td><td>(0, 0, 0.495)</td><td>z</td></tr><tr><td>2</td><td>(0.175, 0, 0)</td><td>y</td></tr><tr><td>3</td><td>(0, 0, 1.095)</td><td>y</td></tr><tr><td>4</td><td>(0, 0, 0.175)</td><td>x</td></tr><tr><td>5</td><td>(1.270, 0, 0)</td><td>y</td></tr><tr><td>6</td><td>(0.135, 0, 0)</td><td>x</td></tr></tbody></table></div><div class="l5-card"><h3>Two useful geometric facts</h3><p>Axes 2 and 3 are parallel.</p><p>Axes 4, 5 and 6 meet at the origin of joint 5: the wrist center O₅.</p><p>All URDF joint-origin rotations are zero. Preserve each supplied joint direction and zero.</p><p>The visual DAE files supply the robot’s appearance; the URDF supplies its kinematics.</p></div></div>
+    <div class="l5-takeaway">We will derive the D–H table, build the full Jacobian at O₅ in world coordinates, and then simplify its representation.</div>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act III · Factor the singularity condition</p><h2 class="slide-title">The full determinant separates into arm and wrist factors</h2>
-    <div class="equation boxed-result">\[\det J=\underbrace{\det\!\begin{bmatrix}\mathbf z_1\!\times(\mathbf p_w-\mathbf p_1)&\mathbf z_2\!\times(\mathbf p_w-\mathbf p_2)&\mathbf z_3\!\times(\mathbf p_w-\mathbf p_3)\end{bmatrix}}_{D_{\rm arm}(q_2,q_3)}\underbrace{(-\sin q_5)}_{D_{\rm wrist}(q_5)}\]</div>
-    <div class="l5-columns"><div class="l5-card red"><h3>Arm singularity</h3><p>\(D_{\rm arm}(q_2,q_3)=0\)</p><p>The first three joints cannot move the wrist center in every Cartesian direction.</p></div><div class="l5-card yellow"><h3>Wrist singularity</h3><p>\(\sin q_5=0\)</p><p>Axes 4 and 6 align, so one independent angular velocity is lost.</p></div></div>
+  <section class="slide l5-slide" id="abb-dh-parameters">
+    <p class="slide-kicker">Act III · Derive standard D–H from the axis geometry</p><h2 class="slide-title">Keep measured lengths symbolic and joint zeros exact</h2>
+    <p class="slide-subtitle">Use \(A_i=R_z(\theta_i)T_z(d_i)T_x(a_i)R_x(\alpha_i)\), with \(z_{i-1}\) along joint i. Common normals set aᵢ; distances along the joint axes set dᵢ.</p>
+    <table class="l5-table l5-abb-dh"><thead><tr><th>i</th><th>θᵢ</th><th>dᵢ [m]</th><th>aᵢ [m]</th><th>αᵢ</th></tr></thead><tbody><tr><td>1</td><td>\(q_1\)</td><td>\(d_1=0.495\)</td><td>\(a_1=0.175\)</td><td>\(-\pi/2\)</td></tr><tr><td>2</td><td>\(q_2-\pi/2\)</td><td>0</td><td>\(a_2=1.095\)</td><td>0</td></tr><tr><td>3</td><td>\(q_3\)</td><td>0</td><td>\(a_3=0.175\)</td><td>\(-\pi/2\)</td></tr><tr><td>4</td><td>\(q_4\)</td><td>\(d_4=1.270\)</td><td>0</td><td>\(+\pi/2\)</td></tr><tr><td>5</td><td>\(q_5\)</td><td>0</td><td>0</td><td>\(-\pi/2\)</td></tr><tr><td>6</td><td>\(q_6\)</td><td>\(d_6=0.135\)</td><td>0</td><td>0</td></tr></tbody></table>
+    <div class="l5-columns"><div class="l5-card"><h3>Why the joint-2 offset?</h3><p>At URDF home, the upper arm points along +world z. With \(\alpha_1=-\pi/2\), choosing \(\theta_2=q_2-\pi/2\) places the positive a₂ direction there.</p></div><div class="l5-card red"><h3>Six symbolic lengths</h3><p>Retain a₁, a₂, a₃, d₁, d₄ and d₆ in the equations. Keep the displayed zeros and fixed right-angle twists to preserve the ABB axis geometry.</p></div></div>
+    <p class="l5-footnote">D–H frames are constructed frames. Frame 3 means the frame assigned after D–H row 3; it differs from URDF <code>link_3</code>. A fixed \({}^{6}R_{tool0}=R_z(\pi)\), with zero translation, recovers the supplied <code>tool0</code> convention. Although a₁ and a₃ both equal 0.175 m here, retain their distinct geometric roles.</p>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act III · Classify the course 6R singularities</p><h2 class="slide-title">Arm and wrist rank losses have different physical meanings</h2>
-    <div class="l5-three reveal-children"><div class="l5-card red"><h3>Arm</h3><p>\(D_{\rm arm}=0\)</p><p>Translation of \(O_w\) loses a direction.</p></div><div class="l5-card yellow"><h3>Wrist</h3><p>\(q_5=0\) or \(\pi\)</p><p>Axes 4 and 6 generate the same angular direction.</p></div><div class="l5-card green"><h3>Combined</h3><p>Both factors vanish.</p><p>Both block tests fail. Inspect the full Jacobian to count the independent motions lost; the coupling block matters.</p></div></div>
-    <div class="l5-takeaway">For this spherical-wrist factorization, the determinant is independent of \(q_1\), \(q_4\), and \(q_6\); only \(q_2,q_3,q_5\) determine its zero set.</div>
+  <section class="slide l5-slide" id="abb-wrist-center">
+    <p class="slide-kicker">Act III · Locate the wrist center by forward kinematics</p>
+    <h2 class="slide-title">Multiply the D–H transforms to obtain ⁰p₅</h2>
+    <p class="slide-subtitle">Let \(\psi=q_2+q_3\), \(c_i=\cos q_i\), and \(s_i=\sin q_i\). Each Aᵢ is the standard D–H transform from the table.</p>
+    <div class="equation compact">\[{}^0T_5={}^0T_1{}^1T_2{}^2T_3{}^3T_4{}^4T_5=A_1A_2A_3A_4A_5=\begin{bmatrix}{}^0R_5&{}^0\mathbf p_5\\\mathbf0^T&1\end{bmatrix}\]</div>
+    <div class="l5-columns"><div class="l5-card"><h3>1 · Select the product’s last column</h3><div class="equation compact">\[\begin{bmatrix}{}^0\mathbf p_5\\1\end{bmatrix}={}^0T_5\begin{bmatrix}0\\0\\0\\1\end{bmatrix}=\begin{bmatrix}c_1G\\s_1G\\d_1+H\\1\end{bmatrix}\]</div><p>The origin of frame 5 has coordinates (0, 0, 0) in its own frame. The homogeneous product gives that same point in world frame 0.</p></div><div class="l5-card red"><h3>2 · Expand the translation entries</h3><div class="equation compact">\[\begin{aligned}G&=a_1+a_2s_2+a_3s_\psi+d_4c_\psi,\\H&=a_2c_2+a_3c_\psi-d_4s_\psi.\end{aligned}\]</div><p>G collects the signed horizontal offset along the arm’s radial direction; d₁ + H is the height. We keep the shoulder factor’s name G throughout.</p></div></div>
+    <div class="equation compact">\[{}^0\mathbf e_r=[c_1,s_1,0]^T,\quad{}^0\mathbf e_t=[-s_1,c_1,0]^T,\quad{}^0\mathbf e_z=[0,0,1]^T\]</div>
+    <div class="l5-takeaway">At home, O₅ = (1.445, 0, 1.765) m. D–H origins O₄ and O₅ coincide at the spherical wrist center. Wrist rotations leave that point fixed; d₆ places the flange beyond it.</div>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act IV · Use two legal freedoms</p><h2 class="slide-title">Choose where the screw is reduced and where components live</h2>
-    <p class="slide-subtitle">Notation: in \({}^iJ_j\), left superscript \(i\) is the representation frame; right subscript \(j\) is the reference origin \(O_j\).</p>
-    <div class="l5-columns"><div class="l5-card red"><h3>Change point \(O_j\)</h3><p>Replace the moment arm endpoint without changing the joint’s screw.</p></div><div class="l5-card"><h3>Change basis \(F_i\)</h3><p>Rotate linear and angular components into a nearby frame.</p></div></div><div class="l5-takeaway"><strong>Preferential</strong> means strategically re-expressed—not weighted.</div>
+  <section class="slide l5-slide" id="abb-world-axes">
+    <p class="slide-kicker">Act III · Automate the geometric construction</p>
+    <h2 class="slide-title">Calculate every world axis by propagating its local direction</h2>
+
+    <p class="slide-subtitle">Joint k’s axis is \({}^0\mathbf z_k\). In the assigned D–H chain it is the z-axis of frame k − 1.</p>
+    <div class="l5-columns"><div class="l5-card"><h3>Automated D–H extraction</h3><div class="equation compact">\[{}^0T_{k-1}=A_1\cdots A_{k-1},\qquad{}^0\mathbf z_k={}^0R_{k-1}\begin{bmatrix}0\\0\\1\end{bmatrix}\]</div><p>Read the rotation block’s third column. Read the translation block for a point on that axis.</p></div><div class="l5-card red"><h3>Automated URDF extraction</h3><div class="equation compact">\[{}^0\mathbf z_k={}^0R_{J_k}\,{}^{J_k}\widehat{\mathbf a}_k\]</div><p>Propagate the URDF origin and preceding joint transforms to joint frame Jₖ, then rotate its local unit axis. A URDF axis can point along x, y or z.</p></div></div>
+    <div class="equation compact">\[{}^0\mathbf n=s_\psi{}^0\mathbf e_r+c_\psi{}^0\mathbf e_z,\qquad{}^0\mathbf k=c_\psi{}^0\mathbf e_r-s_\psi{}^0\mathbf e_z\]</div>
+    <div class="equation compact">\[\begin{aligned}{}^0\mathbf z_1&={}^0\mathbf e_z,&{}^0\mathbf z_2={}^0\mathbf z_3&={}^0\mathbf e_t,&{}^0\mathbf z_4&={}^0\mathbf k,\\{}^0\mathbf z_5&=c_4{}^0\mathbf e_t+s_4{}^0\mathbf n,&{}^0\mathbf z_6&=c_5{}^0\mathbf k+s_5(s_4{}^0\mathbf e_t-c_4{}^0\mathbf n).\end{aligned}\]</div>
   </section>
+
+  <section class="slide l5-slide" id="abb-world-linear">
+    <p class="slide-kicker">Act III · Calculate the world Jacobian at O₅, linear rows</p><h2 class="slide-title">Take cross products to calculate the linear Jacobian</h2>
+    <p class="slide-subtitle">Use \(U=a_3c_\psi-d_4s_\psi\) and \(V=a_3s_\psi+d_4c_\psi\), so \(H=a_2c_2+U\) and \(G=a_1+a_2s_2+V\).</p>
+    <div class="equation l5-abb-matrix">\[{}^0J_{5,v}=\begin{bmatrix}-s_1G&c_1H&c_1U&0&0&0\\c_1G&s_1H&s_1U&0&0&0\\0&-(a_2s_2+V)&-V&0&0&0\end{bmatrix}\]</div>
+    <div class="l5-three"><div class="l5-card"><h3>Column 1</h3><p>Rotates \(G\,{}^0\mathbf e_r\) about world z:</p><p>\({}^0\mathbf J_{5,v,1}=G\,{}^0\mathbf e_t\).</p></div><div class="l5-card"><h3>Columns 2 and 3</h3><p>Take \({}^0\mathbf z_k\times({}^0\mathbf p_5-{}^0\mathbf p_k)\) for k = 2, 3. The distinct axis origins give different lever arms.</p></div><div class="l5-card red"><h3>Columns 4–6</h3><p>Every wrist axis passes through O₅, so \({}^0\mathbf z_k\times({}^0\mathbf p_5-{}^0\mathbf p_k)=0\).</p></div></div>
+    <div class="l5-takeaway">These rows are in m/rad. The matrix has three zero columns because we chose the wrist center as the velocity reference point.</div>
+  </section>
+
+  <section class="slide l5-slide" id="abb-world-angular">
+    <p class="slide-kicker">Act III · Complete the world Jacobian at O₅</p><h2 class="slide-title">Stack the world angular axes below the linear rows</h2>
+    <p class="slide-subtitle">For readability, define \(X=c_5c_\psi-c_4s_5s_\psi\), \(Y=s_4s_5\), and \(Z=-c_5s_\psi-c_4s_5c_\psi\).</p>
+    <div class="equation l5-abb-matrix">\[{}^0J_5=\begin{bmatrix}-s_1G&c_1H&c_1U&0&0&0\\c_1G&s_1H&s_1U&0&0&0\\0&-(a_2s_2+V)&-V&0&0&0\\0&-s_1&-s_1&c_1c_\psi&c_1s_4s_\psi-s_1c_4&c_1X-s_1Y\\0&c_1&c_1&s_1c_\psi&s_1s_4s_\psi+c_1c_4&s_1X+c_1Y\\1&0&0&-s_\psi&s_4c_\psi&Z\end{bmatrix}\]</div>
+    <div class="equation compact">\[\begin{bmatrix}{}^0\dot{\mathbf p}_5\\{}^0\boldsymbol\omega_t\end{bmatrix}={}^0J_5\dot{\mathbf q},\qquad{}^0J_5\in\mathbb R^{6\times6}\]</div>
+    <div class="l5-takeaway">Every entry is now expressed in world coordinates. The upper three rows map joint velocities to wrist-center velocity; the lower three rows are the dimensionless angular axes. Both parts use the same joint order.</div>
+  </section>
+
+  <section class="slide l5-slide" id="abb-world-determinant">
+    <p class="slide-kicker">Act III · Calculate the determinant in world coordinates</p><h2 class="slide-title">The world calculation is correct, but still contains cancellations</h2>
+    <p class="slide-subtitle">The arm translation block is A₀ and the wrist angular block is W₀. The upper-right zero block gives \(\det({}^0J_5)=\det A_0\det W_0\).</p>
+    <div class="l5-derivation l5-compact-derivation"><div><span class="l5-step-label">Arm: expand the three linear columns</span><div class="equation compact">\[\det A_0=G\left[HV-U(a_2s_2+V)\right]\]</div></div><div><span class="l5-step-label">Wrist: take the scalar triple product of its axes</span><div class="equation compact">\[\det W_0={}^0\mathbf z_4\cdot({}^0\mathbf z_5\times{}^0\mathbf z_6)=-\sin q_5\]</div></div><div class="l5-emphasis"><div class="equation compact">\[\det({}^0J_5)=G s_5\left[U(a_2s_2+V)-HV\right]\]</div></div></div>
+    <div class="l5-takeaway">H, U and V contain q₂ + q₃. Could a better frame expose the remaining factors with less algebra? First, establish why changing this representation preserves the determinant.</div>
+  </section>
+
+  <section class="slide l5-slide" id="abb-home-jacobian">
+    <p class="slide-kicker">Act III · Check the calculated matrix against the actual model</p><h2 class="slide-title">At ABB home, the wrist columns already reveal rank loss</h2>
+    <div class="equation l5-abb-matrix">\[{}^0J_5(\mathbf0)=\begin{bmatrix}0&1.270&0.175&0&0&0\\1.445&0&0&0&0&0\\0&-1.270&-1.270&0&0&0\\0&0&0&1&0&1\\0&1&1&0&1&0\\1&0&0&0&0&0\end{bmatrix}\]</div>
+    <div class="l5-columns"><div class="l5-card"><h3>Linear block: rank 3</h3><p>The first three joints can move O₅ in three independent directions.</p></div><div class="l5-card red"><h3>Full matrix: rank 5</h3><p>Columns 4 and 6 coincide: \({}^0\mathbf J_{5,4}={}^0\mathbf J_{5,6}\). Opposite joint velocities cancel. Consequently, \(\det J=0\).</p></div></div>
+    <p class="l5-footnote">Lengths are substituted in metres; angles are radians. This is the supplied URDF zero configuration, without changing any joint signs or zeros.</p>
+  </section>
+
+  <!-- <section class="slide l5-slide" id="point-frame-symbols">
+    <p class="slide-kicker">Act IV · Define every symbol before using it</p>
+    <h2 class="slide-title">Read the rotation and point-shift operators</h2>
+
+    <div class="l5-three"><div class="l5-card"><h3>\({}^0R_i\): orientation of frame i</h3><p>Its columns are frame i’s axes expressed in world frame 0.</p><div class="equation compact">\[{}^0\mathbf u_A={}^0R_i\,{}^i\mathbf u_A\]</div></div><div class="l5-card"><h3>\({}^iR_0=({}^0R_i)^T\)</h3><p>This inverse rotation reports the same vector in frame i.</p><div class="equation compact">\[{}^i\mathbf u_A=({}^0R_i)^T{}^0\mathbf u_A\]</div></div><div class="l5-card"><h3>\({}^0\mathbf r_{PQ}\): point displacement</h3><p>The vector from reference point P to Q:</p><div class="equation compact">\[{}^0\mathbf r_{PQ}={}^0\mathbf p_Q-{}^0\mathbf p_P\]</div></div></div>
+    <div class="equation compact">\[[\mathbf r]_\times=\begin{bmatrix}0&-r_z&r_y\\r_z&0&-r_x\\-r_y&r_x&0\end{bmatrix},\qquad[\mathbf r]_\times\mathbf u=\mathbf r\times\mathbf u\]</div>
+    <div class="equation compact">\[\mathcal P(\mathbf r)=\begin{bmatrix}I&-[\mathbf r]_\times\\0&I\end{bmatrix},\qquad{}^0\mathbf v_Q={}^0\mathbf v_P+{}^0\boldsymbol\omega_t\times{}^0\mathbf r_{PQ}\]</div>
+    <p class="l5-footnote">\(I\) is the 3 × 3 identity; \(\mathcal P(\mathbf r)\) is a 6 × 6 point-shift operator in linear-first order. In its definition, all vectors share one basis. It shifts the reference of the same terminal-body velocity field.</p>
+  </section> -->
 
   <section class="slide l5-slide" id="reference-point-invariance">
-    <p class="slide-kicker">Act IV · Apply the adjoint freedom</p>
-    <h2 class="slide-title">Move the twist reference to the wrist center</h2>
-    <p class="slide-subtitle">For the same rigid-body motion, let \(\mathbf r=\mathbf p_{\rm new}-\mathbf p_{\rm old}\). We now use linear-first components.</p>
-    <div class="equation">\[\begin{bmatrix}\mathbf v_{\rm new}\\\boldsymbol\omega\end{bmatrix}=\underbrace{\begin{bmatrix}I&-[\mathbf r]_\times\\0&I\end{bmatrix}}_{P(\mathbf r)}\begin{bmatrix}\mathbf v_{\rm old}\\\boldsymbol\omega\end{bmatrix}\]</div>
-    <div class="l5-columns"><div class="l5-card"><h3>Shift, then rotate the components</h3><div class="equation compact">\[J'=\operatorname{diag}(R,R)P(\mathbf r)J\]</div><p>Both maps are invertible and have determinant 1.</p></div><div class="l5-card red"><h3>Same rank and determinant</h3><div class="equation compact">\[\det J'=\det J,\qquad\operatorname{rank}J'=\operatorname{rank}J\]</div><p>We may simplify the full 6 × 6 matrix before finding its zeros.</p></div></div>
-    <div class="l5-takeaway">Choose the wrist center to create zeros, then a nearby frame to simplify the remaining entries. These freedoms change the representation of a full twist.</div>
+    <p class="slide-kicker">Act IV · Recall the adjoint, with linear components first</p>
+    <h2 class="slide-title">The adjoint’s blocks follow the chosen twist ordering</h2>
+
+    <p class="slide-subtitle">Write \(R={}^0R_i\), so \(R^T={}^iR_0\), and \(\mathbf r={}^0\mathbf r_{PQ}\). First shift the point, then rotate into frame i.</p>
+    <div class="l5-columns"><div class="l5-card"><h3>Previous lectures: angular first</h3><div class="equation compact">\[\mathcal A_{\omega v}=\begin{bmatrix}R^T&0\\-R^T[\mathbf r]_\times&R^T\end{bmatrix}\]</div><p>Acts on \([{}^0\boldsymbol\omega_t;{}^0\mathbf v_P]\).</p></div><div class="l5-card red"><h3>This lecture: linear first</h3><div class="equation compact">\[\mathcal A_{v\omega}=\begin{bmatrix}R^T&-R^T[\mathbf r]_\times\\0&R^T\end{bmatrix}\]</div><p>Acts on \([{}^0\mathbf v_P;{}^0\boldsymbol\omega_t]\).</p></div></div>
+    <!-- <div class="equation compact">\[\Pi=\begin{bmatrix}0&I\\I&0\end{bmatrix},\qquad\mathcal A_{v\omega}=\Pi\mathcal A_{\omega v}\Pi^T\]</div> -->
+    <p class="l5-footnote">Reversing the component order swaps the adjoint’s block rows and columns. The same rigid-motion transformation is represented in a different ordering.</p>
+    <div class="equation compact">\[{}^iJ_Q=\underbrace{\begin{bmatrix}({}^0R_i)^T&0\\0&({}^0R_i)^T\end{bmatrix}}_{\det=1}\underbrace{\mathcal P({}^0\mathbf r_{PQ})}_{\det=1}{}^0J_P\]</div>
+    <div class="l5-takeaway">For the full square 6 × 6 geometric Jacobian in a consistent ordering: \(\det({}^iJ_Q)=\det({}^0J_P)\) and their ranks agree. Proper rotations and point shifts preserve the determinant.</div>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act IV · Generic symbolic comparison</p><h2 class="slide-title">A separate spherical-wrist family exposes the determinant structure</h2>
-    <p class="slide-subtitle">The following D–H family is a pedagogical symbolic model, not the parameter table of <code>custom_6R_new.urdf</code>. It isolates the block structure shared by wrist-partitioned robots.</p>
-    <div class="layout-two-column"><table class="l5-table"><thead><tr><th>parameter</th><th>rows 1 to 6</th></tr></thead><tbody><tr><td>\(a_i\)</td><td>\((a_1,a_2,a_3,0,0,a_6)\)</td></tr><tr><td>\(d_i\)</td><td>\((d_1,0,0,d_4,0,d_6)\)</td></tr><tr><td>\(\alpha_i\)</td><td>\((\pi/2,\alpha_2,\pi/2,\pi/2,\pi/2,0)\)</td></tr><tr><td>\(\theta_i\)</td><td>\((q_1,q_2,q_3,q_4,q_5,q_6)\)</td></tr></tbody></table><div class="l5-card red"><h3>Preferential choice</h3><p>Representation frame: \(F_3\)</p><p>Reference point: \(O_5\), the wrist point</p><div class="equation">\[{}^3J_5\]</div></div></div>
-    <div class="l5-takeaway">Within this generic family, \(a_1,a_2,a_3,a_6,d_1,d_4,d_6,\alpha_2\), and every \(q_i\) remain symbolic. Parameters beyond \(O_5\) disappear when the screws are reduced there; exact course-robot factors must still be generated from its own geometry.</div>
+  <section class="slide l5-slide" id="abb-frame3-procedure">
+    <p class="slide-kicker">Act IV · Choose a frame to simplify the algebra</p><h2 class="slide-title">To form ³J₅, keep O₅ and rotate into D–H frame 3</h2>
+    <p class="slide-subtitle">The subscript stays 5: the velocity reference remains the wrist center. The superscript changes 0 → 3: both linear and angular components rotate into frame 3.</p>
+    <div class="l5-columns"><div class="l5-card"><h3>1 · Calculate \({}^0R_3\) from the first three D–H rows</h3><div class="equation compact">\[{}^0R_3=\begin{bmatrix}c_1s_\psi&s_1&c_1c_\psi\\s_1s_\psi&-c_1&s_1c_\psi\\c_\psi&0&-s_\psi\end{bmatrix}\]</div><p>Its columns are \({}^0\mathbf n,-{}^0\mathbf e_t,{}^0\mathbf k\). Frame 3 is the D–H frame after the first three joint transforms. These directions follow the arm.</p></div><div class="l5-card red"><h3>2 · Rotate every column</h3><div class="equation compact">\[{}^3J_5=\begin{bmatrix}({}^0R_3)^T&0\\0&({}^0R_3)^T\end{bmatrix}{}^0J_5\]</div><p>P = Q = O₅, so r = 0. This step needs only a rotation of the two component blocks.</p></div></div>
+    <div class="l5-takeaway"><strong>Why frame 3?</strong> It removes the base rotation q₁ and aligns coordinates with the arm. More entries become zero or simple functions of q₃, making the determinant easier to factor.</div>
+    <p class="l5-footnote">These are absolute velocities expressed in a moving basis. Differentiating the moving-frame position coordinates would require additional transport terms. Frame 3 is the D–H frame derived above.</p>
+  </section>
+
+  <section class="slide l5-slide" id="abb-preferred-jacobian">
+    <p class="slide-kicker">Act IV · Carry out the rotation</p><h2 class="slide-title">The same Jacobian becomes sparse in frame 3</h2>
+    <div class="equation l5-abb-matrix">\[{}^3J_5=\begin{bmatrix}0&a_2s_3-d_4&-d_4&0&0&0\\-G&0&0&0&0&0\\0&a_2c_3+a_3&a_3&0&0&0\\c_\psi&0&0&0&s_4&-c_4s_5\\0&-1&-1&0&-c_4&-s_4s_5\\-s_\psi&0&0&1&0&c_5\end{bmatrix}\]</div>
+    <div class="l5-columns"><div class="l5-card"><h3>One column, explicitly rotated</h3><div class="equation compact">\[({}^0R_3)^T\begin{bmatrix}-s_1G\\c_1G\\0\end{bmatrix}=\begin{bmatrix}0\\-G\\0\end{bmatrix}\]</div></div><div class="l5-card red"><h3>Now the determinant is easy to expand</h3><p>The arm block’s second row has one nonzero entry. The wrist block’s first column also has one nonzero entry.</p><p>\(\det({}^3J_5)=\det({}^0J_5)\).</p></div></div>
   </section>
 
   <section class="slide l5-slide" id="wrist-block-matrix">
-    <p class="slide-kicker">Act IV · Read the full Jacobian</p><h2 class="slide-title">At the wrist center, a full block becomes zero</h2>
-    <div class="l5-block-equation"><span>\({}^3J_5=\)</span><div class="l5-block-matrix"><div class="l5-block-cell">\({}^3J_{5,v}^{\rm arm}\)<small>A</small></div><div class="l5-block-cell">\(\mathbf0_{3\times3}\)<small>0</small></div><div class="l5-block-cell">\({}^3J_{5,\omega}^{\rm arm}\)<small>B</small></div><div class="l5-block-cell">\({}^3J_{5,\omega}^{\rm wrist}\)<small>W</small></div></div></div>
-    <div class="l5-three"><div class="l5-card"><h3>A: arm translation</h3><p>Joints 1–3 move \(O_5\). Their angular contribution is B.</p></div><div class="l5-card yellow"><h3>0: no wrist translation</h3><p>Axes 4–6 pass through \(O_5\): their moment arms vanish.</p></div><div class="l5-card green"><h3>W: wrist rotation</h3><p>Joints 4–6 orient the tool while holding \(O_5\) fixed.</p></div></div>
-    <div class="equation compact">\[\begin{bmatrix}\dot{\mathbf p}_5\\\boldsymbol\omega\end{bmatrix}=\begin{bmatrix}A&0\\B&W\end{bmatrix}\begin{bmatrix}\dot{\mathbf q}_{a}\\\dot{\mathbf q}_{w}\end{bmatrix},\qquad\det J=\det A\,\det W\]</div>
-    <div class="l5-takeaway">The upper-right zero block forces the first three rows to use the arm columns in a determinant expansion. The remaining rows supply det W. Now inspect each block.</div>
+    <p class="slide-kicker">Act IV · Read the complete ABB matrix in blocks</p><h2 class="slide-title">The wrist-center choice separates arm and wrist factors</h2>
+    <div class="l5-block-equation"><span>\({}^3J_5=\)</span><div class="l5-block-matrix"><div class="l5-block-cell">\({}^3J_{5,v}^{\rm arm}\)<small>A</small></div><div class="l5-block-cell">\(\mathbf0_{3\times3}\)</div><div class="l5-block-cell">\({}^3J_{5,\omega}^{\rm arm}\)<small>B</small></div><div class="l5-block-cell">\({}^3J_{5,\omega}^{\rm wrist}\)<small>W</small></div></div></div>
+    <div class="equation compact">\[\begin{bmatrix}{}^3\mathbf v_5\\{}^3\boldsymbol\omega_t\end{bmatrix}=\begin{bmatrix}A&0\\B&W\end{bmatrix}\begin{bmatrix}\dot{\mathbf q}_a\\\dot{\mathbf q}_w\end{bmatrix},\qquad\det J=\det A\,\det W\]</div>
+    <div class="l5-three"><div class="l5-card"><h3>A: arm translation</h3><p>Joints 1–3 translate O₅; B contains their angular contributions.</p></div><div class="l5-card yellow"><h3>Zero block</h3><p>Wrist axes all pass through O₅, so joints 4–6 cannot translate it.</p></div><div class="l5-card green"><h3>W: wrist rotation</h3><p>With O₅ fixed, the last three joints generate orientation changes.</p></div></div>
+    <div class="l5-takeaway">The zero block was created by the choice of point. Frame 3 simplifies the remaining entries. Both choices preserve the full determinant.</div>
   </section>
 
   <section class="slide l5-slide" id="arm-rank-loss">
-    <p class="slide-kicker">Act IV · Analyze the red block A</p><h2 class="slide-title">Three arm columns must span three translation directions</h2>
-    <div class="l5-block-equation"><span>\({}^3J_5=\)</span><div class="l5-block-matrix"><div class="l5-block-cell l5-block-active">\({}^3J_{5,v}^{\rm arm}\)<small>A</small></div><div class="l5-block-cell">\(\mathbf0_{3\times3}\)<small>0</small></div><div class="l5-block-cell">\({}^3J_{5,\omega}^{\rm arm}\)<small>B</small></div><div class="l5-block-cell">\({}^3J_{5,\omega}^{\rm wrist}\)<small>W</small></div></div></div>
-    <div class="l5-columns"><div class="l5-card red"><h3>Ask for a wrist-point velocity</h3><div class="equation compact">\[\dot{\mathbf p}_5=A\dot{\mathbf q}_a\]</div><p>Wrist rates cannot help: columns 4–6 have zero linear part.</p><p>When A loses rank, its columns lie in a plane or a line.</p></div><div class="l5-card"><h3>Exhibit the missing direction</h3><div class="equation compact">\[\mathbf n^T A=0,\quad\mathbf n\ne0\quad\Longrightarrow\quad\mathbf n^T\dot{\mathbf p}_5=0\]</div><p>A desired velocity with a component along \(\mathbf n\) is impossible, regardless of the six joint rates.</p></div></div>
-    <div class="l5-takeaway">This is full-Jacobian rank loss: \([\mathbf n^T\;\mathbf0^T]J=0\). A Cartesian constraint has appeared. We will obtain det A by expanding its sparse second row.</div>
+    <p class="slide-kicker">Act IV · Analyze the red arm block</p>
+    <h2 class="slide-title">A missing wrist translation cannot be repaired by the wrist</h2>
+    <div class="l5-block-equation"><span>\({}^3J_5=\)</span><div class="l5-block-matrix"><div class="l5-block-cell l5-block-active">\({}^3J_{5,v}^{\rm arm}\)<small>A</small></div><div class="l5-block-cell">\(\mathbf0_{3\times3}\)</div><div class="l5-block-cell">\({}^3J_{5,\omega}^{\rm arm}\)<small>B</small></div><div class="l5-block-cell">\({}^3J_{5,\omega}^{\rm wrist}\)<small>W</small></div></div></div>
+    <div class="l5-columns"><div class="l5-card red"><h3>Shoulder case: G = 0</h3><p>O₅ lies on the base rotation axis. The whole second row of A vanishes:</p><div class="equation compact">\[A_{2,:}=[-G,0,0]=[0,0,0]\]</div><p>Translation along the frame 3 y direction is unavailable.</p></div><div class="l5-card"><h3>Elbow case: dependent arm columns</h3><p>When the remaining 2 × 2 minor is zero, columns 2 and 3 become dependent.</p><p>For either case, there is a nonzero \(\mathbf n\) with \(\mathbf n^TA=0\), hence \(\mathbf n^T{}^3\mathbf v_5=0\).</p></div></div>
   </section>
 
   <section class="slide l5-slide" id="wrist-rank-loss">
-    <p class="slide-kicker">Act IV · Analyze the red block W</p><h2 class="slide-title">Aligned wrist axes produce dependent full columns</h2>
-    <div class="l5-block-equation"><span>\({}^3J_5=\)</span><div class="l5-block-matrix"><div class="l5-block-cell">\({}^3J_{5,v}^{\rm arm}\)<small>A</small></div><div class="l5-block-cell">\(\mathbf0_{3\times3}\)<small>0</small></div><div class="l5-block-cell">\({}^3J_{5,\omega}^{\rm arm}\)<small>B</small></div><div class="l5-block-cell l5-block-active">\({}^3J_{5,\omega}^{\rm wrist}\)<small>W</small></div></div></div>
-    <div class="l5-columns"><div class="l5-card"><h3>W contains axes 4, 5 and 6</h3><div class="equation compact">\[W=\begin{bmatrix}0&s_4&c_4s_5\\0&-c_4&s_4s_5\\1&0&-c_5\end{bmatrix}\]</div><div class="equation compact">\[\det W=s_4^2s_5+c_4^2s_5=s_5\]</div><p>Expand along the first column; \(s_4^2+c_4^2=1\).</p></div><div class="l5-card red"><h3>At \(q_5=0\): \(J_6=-J_4\)</h3><p>Their angular parts are opposite; their linear parts are both zero. Equal rates of joints 4 and 6 cancel completely.</p><div class="equation compact">\[J\begin{bmatrix}0&0&0&1&0&1\end{bmatrix}^{T}=0\]</div><p>At \(q_5=\pi\), \(J_6=J_4\); opposite rates cancel. If A is regular, holding \(O_5\) fixed leaves only two independent angular directions.</p></div></div>
+    <p class="slide-kicker">Act IV · Analyze and expand the red wrist block</p><h2 class="slide-title">At sin q₅ = 0, wrist columns lose independence</h2>
+    <div class="l5-block-equation"><span>\({}^3J_5=\)</span><div class="l5-block-matrix"><div class="l5-block-cell">\({}^3J_{5,v}^{\rm arm}\)<small>A</small></div><div class="l5-block-cell">\(\mathbf0_{3\times3}\)</div><div class="l5-block-cell">\({}^3J_{5,\omega}^{\rm arm}\)<small>B</small></div><div class="l5-block-cell l5-block-active">\({}^3J_{5,\omega}^{\rm wrist}\)<small>W</small></div></div></div>
+    <div class="l5-columns"><div class="l5-card"><h3>Expand along the first column</h3><div class="equation compact">\[W=\begin{bmatrix}0&s_4&-c_4s_5\\0&-c_4&-s_4s_5\\1&0&c_5\end{bmatrix}\]</div><div class="equation compact">\[\det W=-s_4^2s_5-c_4^2s_5=-s_5\]</div></div><div class="l5-card red"><h3>Show the full-column dependence</h3><p>At q₅ = 0, \({}^3\mathbf J_{5,6}={}^3\mathbf J_{5,4}\). Opposite rates cancel:</p><div class="equation compact">\[{}^3J_5\begin{bmatrix}0&0&0&1&0&-1\end{bmatrix}^T=0\]</div><p>At q₅ = π, the columns are opposite and equal rates cancel. With a regular arm and O₅ held fixed, only two independent angular directions remain.</p></div></div>
   </section>
 
   <section class="slide l5-slide" id="arm-determinant-minors">
-    <p class="slide-kicker">Act IV · Derive det A, step 1</p><h2 class="slide-title">Expand along the row with a zero</h2>
-    <p class="slide-subtitle">Abbreviate \(F=d_4c_3-a_3s_3\), \(H=a_3c_3+d_4s_3\), \(L=a_1+a_2c_2\), and \(K=a_2+H\). Here \(s_\alpha=\sin\alpha_2\), \(c_\alpha=\cos\alpha_2\).</p>
-    <div class="equation compact">\[A=\begin{bmatrix}-s_\alpha(Ls_3+d_4c_2)&c_\alpha(a_2s_3+d_4)&d_4\\-c_\alpha(L+c_2H)-s_2F&-s_\alpha K&0\\s_\alpha(Lc_3+a_3c_2)&-c_\alpha(a_2c_3+a_3)&-a_3\end{bmatrix}\]</div>
-    <div class="equation compact l5-emphasis">\[\det A=-A_{21}M_{21}+A_{22}M_{22}\]</div>
-    <div class="l5-columns"><div class="l5-card"><h3>Delete row 2, column 1</h3><div class="equation compact">\[\begin{aligned}M_{21}&=-a_3A_{12}-d_4A_{32}\\&=c_\alpha a_2(d_4c_3-a_3s_3)\\&=c_\alpha a_2F\end{aligned}\]</div></div><div class="l5-card red"><h3>Delete row 2, column 2</h3><div class="equation compact">\[\begin{aligned}M_{22}&=-a_3A_{11}-d_4A_{31}\\&=s_\alpha L(a_3s_3-d_4c_3)\\&=-s_\alpha LF\end{aligned}\]</div></div></div>
-    <div class="l5-takeaway">Both minors contain F. The first arm singularity factor has emerged directly from the matrix.</div>
-  </section>
-
-  <section class="slide l5-slide" id="arm-determinant-factorization">
-    <p class="slide-kicker">Act IV · Derive det A, step 2</p><h2 class="slide-title">Collect the remaining terms into G</h2>
-    <p class="slide-subtitle">Continue with \(F=d_4c_3-a_3s_3\), \(H=a_3c_3+d_4s_3\), \(L=a_1+a_2c_2\), \(K=a_2+H\).</p>
-    <div class="l5-derivation l5-compact-derivation">
-      <div><span class="l5-step-label">Substitute the two minors</span><div class="equation compact">\[\begin{aligned}\det A&=-[-c_\alpha(L+c_2H)-s_2F](c_\alpha a_2F)+(-s_\alpha K)(-s_\alpha LF)\\&=F\left[c_\alpha^2a_2(L+c_2H)+c_\alpha a_2s_2F+s_\alpha^2LK\right].\end{aligned}\]</div></div>
-      <div><span class="l5-step-label">Use L, K and \(c_\alpha^2+s_\alpha^2=1\)</span><div class="equation compact">\[\begin{aligned}G&=a_2L+H(c_\alpha^2a_2c_2+s_\alpha^2L)+c_\alpha a_2s_2F\\&=a_1a_2+a_1s_\alpha^2H+a_2c_2(a_2+H)+a_2s_2c_\alpha F.\end{aligned}\]</div></div>
-      <div class="l5-emphasis"><span class="l5-step-label">Assemble the full determinant</span><div class="equation">\[\det J=\underbrace{FG}_{\det A}\;\underbrace{s_5}_{\det W}\]</div></div>
-    </div>
-    <div class="l5-takeaway">The arm contributes two factors; the wrist contributes one. The block B is absent because the full matrix is block triangular.</div>
+    <p class="slide-kicker">Act IV · Derive the arm determinant</p><h2 class="slide-title">One 2 × 2 minor reveals the ABB elbow factor</h2>
+    <div class="equation">\[A=\begin{bmatrix}0&a_2s_3-d_4&-d_4\\-G&0&0\\0&a_2c_3+a_3&a_3\end{bmatrix}\]</div>
+    <div class="l5-derivation l5-compact-derivation"><div><span class="l5-step-label">Expand along row 2, with cofactor sign −</span><div class="equation compact">\[\det A=G\begin{vmatrix}a_2s_3-d_4&-d_4\\a_2c_3+a_3&a_3\end{vmatrix}\]</div></div><div><span class="l5-step-label">Expand and cancel the opposite a₃d₄ terms</span><div class="equation compact">\[\det A=G\left[a_3(a_2s_3-d_4)+d_4(a_2c_3+a_3)\right]=a_2G(a_3s_3+d_4c_3)\]</div></div></div>
+    <div class="l5-takeaway">The nonzero elbow offset a₃ contributes a sine term. For this ABB, the elbow singularity is a₃ sin q₃ + d₄ cos q₃ = 0.</div>
   </section>
 
   <section class="slide l5-slide" id="three-singularity-factors">
-    <p class="slide-kicker">Act IV · Read the result geometrically</p><h2 class="slide-title">Three factors, three ways to lose rank</h2>
-    <div class="equation boxed-result" data-symbolic-dh="preferentialDet"></div>
-    <div class="equation micro" data-symbolic-dh="preferentialG"></div>
-    <div class="l5-three"><div class="l5-card red"><h3>F = 0</h3><p>\(d_4c_3-a_3s_3=0\)</p><p>Both arm minors vanish. The wrist-point translations lose a direction.</p></div><div class="l5-card"><h3>G = 0</h3><p>\(G(q_2,q_3)=0\)</p><p>The remaining arm terms cancel. Translation again loses a direction.</p></div><div class="l5-card yellow"><h3>\(s_5=0\)</h3><p>\(q_5=0\) or \(\pi\)</p><p>The wrist has two aligned axes and dependent columns.</p></div></div>
-    <div class="l5-takeaway">Each factor can be zero while the other two remain nonzero. Try those three cases separately in the next model.</div>
+    <p class="slide-kicker">Act IV · Assemble the simplified determinant</p><h2 class="slide-title">The ABB IRB 4600 has three determinant factors</h2>
+    <div class="equation boxed-result">\[\det({}^0J_5)=\det({}^3J_5)=-a_2\underbrace{(a_3s_3+d_4c_3)}_{F}\underbrace{(a_1+a_2s_2+a_3s_\psi+d_4c_\psi)}_{G}\underbrace{s_5}_{\rm wrist}\]</div>
+    <div class="l5-three"><div class="l5-card red"><h3>Elbow: F = 0</h3><p>\(a_3s_3+d_4c_3=0\)</p><p>Nominal q₃ ≈ −82.154° within the supplied joint limits. Two columns of the arm translation block A become dependent.</p></div><div class="l5-card"><h3>Shoulder: G = 0</h3><p>O₅ reaches the base axis. Rotation of joint 1 then gives no wrist-point translation.</p></div><div class="l5-card yellow"><h3>Wrist: sin q₅ = 0</h3><p>Axes 4 and 6 align. The full Jacobian has dependent wrist columns.</p></div></div>
+    <div class="l5-takeaway">a₂ is a fixed positive length. d₁ and d₆ do not affect this determinant: d₁ shifts the mechanism vertically, and d₆ lies beyond the chosen wrist point. Changing frame simplified J and exposed its factors without changing det J.</div>
   </section>
 
   <section class="slide interactive-slide l5-slide" id="three-factor-lab">
-    <p class="slide-kicker">Act IV · Explore the same symbolic 6R family</p><h2 class="slide-title">Select which determinant factor becomes zero</h2>
-    <p class="slide-subtitle">This model instantiates the D–H family just derived. Inspect F = d₄c₃ − a₃s₃, G and sin q₅ independently, with the full Jacobian and its rank.</p>
-    <div class="demo-prompt"><strong>Try it:</strong> choose each factor’s zero preset. Check that the other two factors stay nonzero. Then change the frame i and reference point j: the full determinant stays the same.</div>
-    <div class="layout-full" data-singularity-lab="preferential-6r"></div>
+    <p class="slide-kicker">Act IV · Verify on the supplied ABB geometry</p><h2 class="slide-title">The ABB IRB 4600 has three types of singularity</h2>
+    <p class="slide-subtitle">The DAE links follow the supplied URDF. Joint sliders retain its signs and zeros; the three presets isolate the derived elbow, shoulder and wrist factors.</p>
+    <div class="demo-prompt"><strong>Try it:</strong> start with the world-frame matrix at O₅. Select “Use frame 3 at O₅” to reveal the sparse entries. Then change the point and frame independently and compare the determinants.</div>
+    <div class="layout-full" data-singularity-lab="abb-6r"></div>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act IV · Choose strategically</p><h2 class="slide-title">Put the reference near the split between arm and wrist</h2>
-    <div class="l5-chain"><span>1</span><span>2</span><span>3</span><span class="cut">|</span><span>4</span><span>5</span><span>6</span></div><div class="l5-three reveal-children" style="margin-top:1rem"><div class="l5-card"><h3>\(i=3\)</h3><p>Nearby basis reduces propagated rotations.</p></div><div class="l5-card yellow"><h3>\(j=5\)</h3><p>\(O_5\) is the wrist center in the symbolic family just explored.</p></div><div class="l5-card green"><h3>Same rank</h3><p>More zero/simple entries; same singularity set.</p></div></div>
+  <section class="slide l5-slide" id="abb-simplification-takeaway">
+    <p class="slide-kicker">Act IV · The reason to change the representation</p><h2 class="slide-title">Choose the point for zeros and the frame for simple entries</h2>
+    <div class="l5-three l5-roomy"><div class="l5-card"><h3>1 · Build ⁰J₅ geometrically</h3><p>Read current axes and origins from the ABB chain. Stack point velocities above angular velocities.</p></div><div class="l5-card red"><h3>2 · Re-express as ³J₅</h3><p>Keep O₅. Rotate both blocks by \(({}^0R_3)^T\). The arm matrix becomes sparse.</p></div><div class="l5-card green"><h3>3 · Factor det J</h3><p>Two small determinant expansions expose elbow, shoulder and wrist singularities.</p></div></div>
+    <div class="equation">\[\det J=-a_2G(a_3\sin q_3+d_4\cos q_3)\sin q_5\]</div>
+    <div class="l5-takeaway">The purpose of changing frame is simpler algebra for the same physical motion. It cannot create or remove a singularity.</div>
   </section>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act IV · Keep the definitions separate</p><h2 class="slide-title">Analytic orientation rates are not angular velocity</h2>
-    <div class="l5-columns"><div class="l5-card"><h3>Analytic</h3><p>For \(\mathbf x=[\mathbf p;\boldsymbol\phi]\):</p><p>\(\dot{\mathbf x}=J_A(\mathbf q)\dot{\mathbf q}\)</p></div><div class="l5-card red"><h3>Geometric</h3><p>For a twist:</p><p>\([\mathbf v;\boldsymbol\omega]=J_G(\mathbf q)\dot{\mathbf q}\)</p></div></div><div class="equation">\[J_A=T(\boldsymbol\phi)J_G\]</div><div class="l5-takeaway">Rank equivalence requires the orientation-rate map \(T(\boldsymbol\phi)\) to be nonsingular. An Euler-angle chart singularity can make \(J_A\) singular even when the robot’s geometric Jacobian is regular. For the 3R Cartesian position task, the translational blocks coincide exactly.</div>
-  </section>
+  <section class="slide l5-slide" id="analytic-rate-conversion">
+    <p class="slide-kicker">Act IV · Geometric versus analytical Jacobians</p>
+    <h2 class="slide-title">Write the coordinate-rate conversion explicitly</h2>
 
-  <section class="slide l5-slide">
-    <p class="slide-kicker">Act V · Automate the pipeline</p><h2 class="slide-title">A URDF contains enough geometry to generate the Jacobian</h2>
-    <div class="l5-flow"><span>URDF</span><i>→</i><span>serial chain</span><i>→</i><span>axes + origins</span><i>→</i><span>screws</span><i>→</i><span>\({}^iJ_j\)</span><i>→</i><span>rank condition</span></div><p class="l5-takeaway">Meshes are optional. The mathematics needs topology, origins, axes, and joint types.</p>
+    <p class="slide-subtitle">Choose roll–pitch–yaw \(\boldsymbol\phi=[\phi,\theta,\psi]^T\) and \({}^0R_t=R_z(\psi)R_y(\theta)R_x(\phi)\), as in the earlier lectures.</p>
+    <div class="l5-columns"><div class="l5-card"><h3>Euler rates → world angular velocity</h3><div class="equation compact">\[{}^0\boldsymbol\omega_t=E(\boldsymbol\phi)\dot{\boldsymbol\phi}\]</div><div class="equation compact">\[E=\begin{bmatrix}c_\psi c_\theta&-s_\psi&0\\s_\psi c_\theta&c_\psi&0\\-s_\theta&0&1\end{bmatrix}\]</div></div><div class="l5-card red"><h3>World angular velocity → Euler rates</h3><div class="equation compact">\[\dot{\boldsymbol\phi}=E^{-1}{}^0\boldsymbol\omega_t\]</div><div class="equation compact">\[E^{-1}=\begin{bmatrix}c_\psi/c_\theta&s_\psi/c_\theta&0\\-s_\psi&c_\psi&0\\c_\psi\tan\theta&s_\psi\tan\theta&1\end{bmatrix}\]</div></div></div>
+    <div class="equation compact">\[T(\boldsymbol\phi)=\begin{bmatrix}I&0\\0&E^{-1}(\boldsymbol\phi)\end{bmatrix},\qquad J_{t,\mathrm A}=T(\boldsymbol\phi)\,{}^0J_{t,\mathrm G}\]</div>
+    <div class="l5-takeaway">\(\det E=\cos\theta\). Where \(\cos\theta\ne0\), T is invertible and both Jacobians have the same rank. At \(\cos\theta=0\), the Euler-rate conversion is undefined even if the geometric robot Jacobian is regular.</div>
+    <p class="l5-footnote">Here c and s abbreviate cosine and sine of the orientation angles. T is a 6 × 6 rate-conversion matrix. <a href="https://ethz.ch/content/dam/ethz/special-interest/mavt/robotics-n-intelligent-systems/rsl-dam/documents/RobotDynamics2016/RD2016script.pdf#page=27">Reference: ETH Robot Dynamics, Euler-rate mappings</a>.</p>
   </section>
 
   <section class="slide l5-slide">
     <p class="slide-kicker">Act V · Validate before trusting</p><h2 class="slide-title">Three consistency checks should agree at regular configurations</h2>
-    <div class="l5-three reveal-children"><div class="l5-card"><h3>Finite difference</h3><p>\((J_p)_{:,k}\approx[\mathbf p(q+\epsilon e_k)-\mathbf p(q-\epsilon e_k)]/(2\epsilon)\)</p></div><div class="l5-card green"><h3>Geometric</h3><p>Axis–lever-arm cross products generated from URDF.</p></div><div class="l5-card red"><h3>Representation</h3><p>Ordinary and preferential Jacobians preserve rank and determinant zero sets.</p></div></div><div class="l5-takeaway">If \(J\in\mathbb R^{6\times n}\) is non-square, stop saying “determinant”: use rank, \(\sigma_{\min}\), or a square task Jacobian.</div>
+    <div class="l5-three reveal-children"><div class="l5-card"><h3>Finite difference</h3><p>\(({}^0J_{t,v})_{:,k}\approx[{}^0\mathbf p_t(q+\epsilon e_k)-{}^0\mathbf p_t(q-\epsilon e_k)]/(2\epsilon)\)</p></div><div class="l5-card green"><h3>Geometric</h3><p>Axis–lever-arm cross products generated from URDF.</p></div><div class="l5-card red"><h3>Representation</h3><p>Ordinary and preferential Jacobians preserve rank and determinant zero sets.</p></div></div><div class="l5-takeaway">If \(J\in\mathbb R^{6\times n}\) is non-square, stop saying “determinant”: use rank, \(\sigma_{\min}\), or a square task Jacobian.</div>
   </section>
 
   <section class="slide l5-slide">
@@ -355,39 +559,14 @@
     <p class="slide-kicker">Motion-planning consequence</p><h2 class="slide-title">Near-singular paths amplify joint motion before rank is lost</h2>
     <div class="layout-two-column">
       <div class="l5-box red l5-big-equation">\[\sigma_{\min}(J)&gt;0:\qquad \|J^\dagger\|_2=\frac{1}{\sigma_{\min}(J)}\]</div>
-      <div class="l5-card"><h3>Conditioning matters</h3><p>As \(\sigma_{\min}\to0\), some task-velocity directions demand rapidly growing joint rates.</p><p>At \(\sigma_{\min}=0\), the Jacobian loses rank and exact local inversion fails.</p></div>
+      <div class="l5-card"><h3>Conditioning matters</h3><p>As \(\sigma_{\min}\to0\), some task-velocity directions demand rapidly growing joint velocities.</p><p>At \(\sigma_{\min}=0\), the Jacobian loses rank and exact local inversion fails.</p></div>
     </div>
-    <div class="l5-three reveal-children"><div class="l5-card"><h3>Path placement</h3><p>A translated or rotated workspace path can move closer to—or farther from—a singular locus.</p></div><div class="l5-card yellow"><h3>Branch continuation</h3><p>Branches may meet, terminate, or require a coordinated switch at rank loss.</p></div><div class="l5-card green"><h3>Planning metric</h3><p>Monitor rank and \(\sigma_{\min}\), then enforce joint-rate, limit, and collision margins.</p></div></div>
-  </section>
-
-  <section class="slide l5-slide" id="singularities-to-planning">
-    <p class="slide-kicker">Bridge to Lecture 06 · From local motion to global paths</p><h2 class="slide-title">A regular Jacobian answers a local question</h2>
-    <p class="slide-subtitle">It lets us continue a motion nearby. Planning a whole path also requires the global arrangement of singularities and IK solutions.</p>
-    <div class="l5-planning-layout">
-      <figure class="l5-figure l5-region-figure">
-        <svg viewBox="0 0 500 330" role="img" aria-labelledby="l5-region-title l5-region-desc">
-          <title id="l5-region-title">Schematic slice of configuration space</title><desc id="l5-region-desc">Red singularity curves separate regular regions. A green path stays inside one region; a dashed path crosses a singularity. This is a schematic, not a computed robot locus.</desc>
-          <path d="M50 35H450V280H50Z" fill="#f3f5f7" stroke="#bec4cb"/>
-          <path d="M190 35C120 115 260 210 195 280H355C410 200 295 125 360 35Z" fill="#e7f2ed"/>
-          <path d="M190 35C120 115 260 210 195 280 M360 35C295 125 410 200 355 280" fill="none" stroke="#dc1734" stroke-width="3.5"/>
-          <path d="M225 225C280 215 210 125 290 87" fill="none" stroke="#237b55" stroke-width="4"/>
-          <path d="M225 225L105 145" fill="none" stroke="#8a5660" stroke-width="2.5" stroke-dasharray="7 5"/>
-          <g fill="#237b55"><circle cx="225" cy="225" r="6"/><circle cx="290" cy="87" r="6"/></g>
-          <g font-family="Arial,sans-serif" font-size="17"><text x="52" y="20" fill="#64707a">Configuration-space slice (schematic)</text><text x="58" y="310">qₐ →</text><text x="8" y="50">qᵦ</text><text x="271" y="61" fill="#b4102c">det J = 0</text><text x="249" y="165" fill="#236246">regular</text><text x="249" y="186" fill="#236246">region</text><text x="78" y="121" fill="#7e3f4b">crossing</text><text x="221" y="252" fill="#236246">start</text><text x="300" y="93" fill="#236246">goal</text></g>
-        </svg>
-        <figcaption>Joint limits and collisions further restrict the available paths.</figcaption>
-      </figure>
-      <div class="l5-planning-steps">
-        <div class="l5-card red"><h3>1 · Find the singular set</h3><p>\(\mathcal S=\{\mathbf q:\det J(\mathbf q)=0\}\). At this set, local task inversion fails.</p></div>
-        <div class="l5-card green"><h3>2 · Follow regular configurations</h3><p>A connected component of \(\mathcal C\setminus\mathcal S\) is an <strong>aspect</strong>. Check conditioning along the entire path, not just its endpoints.</p></div>
-        <div class="l5-card"><h3>3 · Understand the IK solutions</h3><p>One aspect need not contain only one IK solution for a given pose. A local Jacobian alone cannot settle that global question.</p></div>
-      </div>
-    </div>
-    <div class="l5-takeaway"><strong>Next:</strong> can two different IK solutions for the same pose be connected without crossing a singularity? Lecture 06 studies aspects and cuspidal robots.</div>
+    <div class="l5-three reveal-children"><div class="l5-card"><h3>Path placement</h3><p>A translated or rotated workspace path can move closer to—or farther from—a singular locus.</p></div><div class="l5-card yellow"><h3>Branch continuation</h3><p>Branches may meet, terminate, or require a coordinated switch at rank loss.</p></div><div class="l5-card green"><h3>Planning metric</h3><p>Monitor rank and \(\sigma_{\min}\), then enforce joint-velocity, limit, and collision margins.</p></div></div>
   </section>
 
 </main>
 <script src="../js/deck/nav-runtime.js"></script>
+<script src="../js/deck/lecture-05-videos.js" defer></script>
 <script type="module" src="../js/main.js?v=20260831-1"></script>
 </body>
 </html>

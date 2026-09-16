@@ -218,3 +218,121 @@ test('reimport metadata covers source edits and preserves the full reusable defi
   assert.equal(sourceFingerprint(source.replace(/\n/g, '\r\n')), manifest.codeHash);
   assert.notEqual(sourceFingerprint(source.replace('return rotation(', 'return 2 * rotation(')), manifest.codeHash);
 });
+
+const matrixNode = (id, rows, columns, entries) => ({ id, type: 'matrix', params: { rows, columns, matrix: entries.map(String) } });
+const dag = (nodes, edges, bindings = {}) => ({ nodes, edges, bindings, angleUnit: 'rad' });
+
+test('cross products and stacked twists export a complete shared-input DAG exactly once', () => {
+  const example = dag([
+    matrixNode('point', 3, 1, ['a', 'b', '0']),
+    matrixNode('omega', 3, 1, [0, 0, 1]),
+    { id: 'v', type: 'cross', params: {} },
+    { id: 'twist', type: 'stack', params: {} }
+  ], [
+    { from: 'point', to: 'v', input: 'a' }, { from: 'omega', to: 'v', input: 'b' },
+    { from: 'omega', to: 'twist', input: 'a' }, { from: 'v', to: 'twist', input: 'b' }
+  ]);
+  const source = generatePython(example, 'twist', { functionName: 'SpaceTwist', scope: 'block' });
+  runModule(source, "assert namespace['SpaceTwist'](2, 3) == sp.Matrix([0, 0, 1, 3, -2, 0])");
+  const manifestLine = source.split('\n').find(line => line.startsWith(MANIFEST_PREFIX));
+  const definition = JSON.parse(Buffer.from(manifestLine.slice(MANIFEST_PREFIX.length), 'base64').toString()).definition;
+  assert.equal(definition.graph.nodes.length, 4);
+  assert.deepEqual(definition.graph.edges, example.edges);
+});
+
+test('selected columns preserve order, repeated sources, and one-based row slicing before determinant', () => {
+  const example = dag([
+    matrixNode('M', 3, 3, [99, 98, 97, 'a', 2, 3, 4, 5, 6]),
+    { id: 'choose', type: 'columns', params: { columns: [3, 1], rowStart: 2, rowCount: 2 } },
+    { id: 'det', type: 'determinant', params: {} }
+  ], [
+    { from: 'M', to: 'choose', input: 'c0' }, { from: 'M', to: 'choose', input: 'c1' },
+    { from: 'choose', to: 'det' }
+  ]);
+  runModule(generatePython(example, 'choose', { functionName: 'SelectedColumns' }), "assert namespace['SelectedColumns'](1) == sp.Matrix([[3, 1], [6, 4]])");
+  runModule(generatePython(example, 'det', { functionName: 'SelectedDeterminant' }), `
+a = sp.Symbol('a', real=True)
+assert namespace['SelectedDeterminant'](a) == 12 - 6*a
+assert namespace['SelectedDeterminant'](1) == 6
+`);
+});
+
+test('generic matrix composition multiplies without promoting vectors or treating matrices as rotations', () => {
+  const example = dag([
+    { id: 'R', type: 'rotation', params: { axis: ['0', '0', '1'], angle: 'pi/2' } },
+    matrixNode('column', 3, 1, [2, 0, 0]),
+    matrixNode('row', 1, 3, [1, 2, 3])
+  ], [{ from: 'R', to: 'column' }, { from: 'column', to: 'row' }]);
+  runModule(generatePython(example, 'row', { functionName: 'Product' }), "assert namespace['Product']() == sp.Matrix([[0, 0, 0], [2, 4, 6], [0, 0, 0]])");
+});
+
+test('saved generic matrix functions retain multiplication semantics and scalar functions remain scalar', () => {
+  const direction = { version: 1, id: 'direction', name: 'Direction', kind: 'matrix', parameters: ['a'], defaults: {}, angleUnit: 'rad', outputKind: 'matrix', matrix: [['a'], ['0'], ['0']] };
+  const example = dag([
+    { id: 'R', type: 'rotation', params: { axis: ['0', '0', '1'], angle: 'pi/2' } },
+    { id: 'd', type: 'function', params: { definition: direction, arguments: { a: 'b' } } }
+  ], [{ from: 'R', to: 'd' }]);
+  runModule(generatePython(example, 'd', { functionName: 'RotateDirection' }), "assert namespace['RotateDirection'](5) == sp.Matrix([0, 5, 0])");
+  const scalar = { ...direction, id: 'number', name: 'Number', outputKind: 'scalar', matrix: [['a*a']] };
+  runModule(exportFunction(scalar), "assert namespace['Number'](3) == 9");
+  const determinant = dag([
+    matrixNode('M', 2, 2, [1, 2, 3, 4]), { id: 'det', type: 'determinant', params: {} }, matrixNode('end', 1, 1, [2])
+  ], [{ from: 'M', to: 'det' }, { from: 'det', to: 'end' }]);
+  assert.throws(() => generatePython(determinant, 'end'), /scalar/);
+});
+
+test('new operations reject missing slots, cycles, and invalid dimensions', () => {
+  const example = dag([matrixNode('v', 3, 1, [1, 2, 3]), { id: 'cross', type: 'cross', params: {} }], [{ from: 'v', to: 'cross', input: 'a' }]);
+  assert.throws(() => generatePython(example, 'cross'), /every input/);
+  example.edges.push({ from: 'cross', to: 'cross', input: 'b' });
+  assert.throws(() => generatePython(example, 'cross'), /cycle/);
+  const invalid = dag([
+    matrixNode('row', 1, 3, [1, 2, 3]), matrixNode('column', 3, 1, [1, 2, 3]),
+    { id: 'cross', type: 'cross', params: {} }
+  ], [{ from: 'row', to: 'cross', input: 'a' }, { from: 'column', to: 'cross', input: 'b' }]);
+  const source = generatePython(invalid, 'cross', { functionName: 'BadCross' });
+  runModule(source, `
+try:
+    namespace['BadCross']()
+except ValueError as error:
+    assert '3 x 1' in str(error)
+else:
+    raise AssertionError('A row vector must not be accepted as a cross-product column')
+`);
+  const tooTall = dag([matrixNode('seven', 7, 1, [1,2,3,4,5,6,7]), {id:'stack',type:'stack',params:{}}],
+    [{from:'seven',to:'stack',input:'a'},{from:'seven',to:'stack',input:'b'}]);
+  runModule(generatePython(tooTall, 'stack', {functionName:'TooTall'}), `
+try:
+    namespace['TooTall']()
+except ValueError as error:
+    assert '12 rows' in str(error)
+else:
+    raise AssertionError('Python and the playground must use the same row limit')
+`);
+});
+
+test('exported determinant rejects rectangular matrices with their dimensions and preserves square 1 x 1 inputs', () => {
+  for (const [rows, columns] of [[1, 4], [4, 1], [2, 3]]) {
+    const example = dag([matrixNode('M', rows, columns, Array(rows * columns).fill('a')), { id: 'det', type: 'determinant', params: {} }], [{ from: 'M', to: 'det' }]);
+    runModule(generatePython(example, 'det', { functionName: 'RectangularDeterminant' }), `
+try:
+    namespace['RectangularDeterminant'](2)
+except ValueError as error:
+    assert 'square matrix' in str(error)
+    assert '${rows} x ${columns}' in str(error)
+else:
+    raise AssertionError('A rectangular matrix has no determinant')
+`);
+  }
+  const square = dag([matrixNode('M', 1, 1, ['a']), { id: 'det', type: 'determinant', params: {} }], [{ from: 'M', to: 'det' }]);
+  runModule(generatePython(square, 'det', { functionName: 'OneByOne' }), "assert namespace['OneByOne'](7) == 7");
+  square.nodes.push({ id: 'again', type: 'determinant', params: {} }); square.edges.push({ from: 'det', to: 'again' });
+  runModule(generatePython(square, 'again', { functionName: 'ScalarDeterminant' }), `
+try:
+    namespace['ScalarDeterminant'](7)
+except ValueError as error:
+    assert 'not a matrix' in str(error)
+else:
+    raise AssertionError('A scalar output must not be accepted as a matrix')
+`);
+});

@@ -4,9 +4,13 @@
   else root.KinematicsGraph = factory(root.KinematicsMath);
 })(typeof window !== 'undefined' ? window : globalThis, function (MathEngine) {
   'use strict';
-  const TYPES = new Set(['rotation', 'translation', 'transform', 'exponential', 'inverse', 'logarithm', 'function']);
+  const TYPES = new Set(['rotation', 'translation', 'transform', 'exponential', 'inverse', 'logarithm', 'function', 'matrix', 'cross', 'columns', 'stack', 'determinant']);
   const DEFAULT_LABELS = { rotation: 'Rotation', translation: 'Translation', transform: 'Transformation',
-    exponential: 'Screw exponential', inverse: 'Inverse', logarithm: 'Matrix to screw', function: 'Saved function' };
+    exponential: 'Screw exponential', inverse: 'Inverse', logarithm: 'Matrix to screw', function: 'Saved function',
+    matrix: 'Matrix', cross: 'Cross product', columns: 'Select columns', stack: 'Stack rows', determinant: 'Determinant' };
+  const EXPRESSION_KEYS = { rotation: ['axis', 'angle'], translation: ['vector'], transform: ['matrix'],
+    exponential: ['omega', 'v', 'theta'], matrix: ['matrix'] };
+  const INPUT_OPERATIONS = new Set(['inverse', 'logarithm', 'cross', 'columns', 'stack', 'determinant']);
   const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
   const SCREW_OUTPUT_MESSAGE = 'A screw result contains ω, v and θ. Enter these in an Exponential block to compose its motion.';
   const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -22,6 +26,25 @@
     if (!Array.isArray(value) || value.length !== length) throw new Error(label + ' needs ' + length + ' entries.');
     return value.map(entry => string(entry, label + ' entry'));
   }
+  function dimension(value, label) {
+    if (!Number.isInteger(value) || value < 1 || value > 12) throw new Error(label + ' must be an integer between 1 and 12.');
+    return value;
+  }
+  function inputPorts(node) {
+    if (node.type === 'cross' || node.type === 'stack') return ['a', 'b'];
+    if (node.type === 'columns') return (node.params.columns || []).map((_, index) => 'c' + index);
+    return ['input'];
+  }
+  function expressionParams(node) {
+    const params = node.params || {};
+    if (node.type === 'function') return Object.values(params.arguments || {});
+    return (EXPRESSION_KEYS[node.type] || []).flatMap(key => Array.isArray(params[key]) ? params[key] : [params[key]]);
+  }
+  function mapExpressionParams(node, fn) {
+    const params = { ...node.params };
+    for (const key of EXPRESSION_KEYS[node.type] || []) params[key] = Array.isArray(params[key]) ? params[key].map(fn) : fn(params[key]);
+    return params;
+  }
   function symbolName(name) {
     if (typeof name !== 'string' || !/^[A-Za-z_][A-Za-z_0-9]{0,79}$/.test(name) || DANGEROUS_KEYS.has(name) || name === 'pi') throw new Error('Invalid symbol name: ' + String(name));
     return name;
@@ -32,6 +55,15 @@
     if (type === 'rotation') return { axis: vector(params.axis, 'Rotation axis'), angle: string(params.angle, 'Angle') };
     if (type === 'translation') return { vector: vector(params.vector, 'Translation') };
     if (type === 'transform') return { matrix: vector(params.matrix, 'Transformation matrix', 16) };
+    if (type === 'matrix') {
+      const rows = dimension(params.rows, 'Rows'), columns = dimension(params.columns, 'Columns');
+      return { rows, columns, matrix: vector(params.matrix, 'Matrix', rows * columns) };
+    }
+    if (type === 'columns') {
+      if (!Array.isArray(params.columns) || params.columns.length < 1 || params.columns.length > 12) throw new Error('Select between 1 and 12 columns.');
+      return { columns: params.columns.map(column => dimension(column, 'Column number')),
+        rowStart: dimension(params.rowStart, 'First row'), rowCount: dimension(params.rowCount, 'Row count') };
+    }
     if (type === 'exponential') return { omega: vector(params.omega, 'Angular screw'), v: vector(params.v, 'Linear screw'), theta: string(params.theta, 'Screw parameter') };
     if (type === 'function') {
       const definition = cleanDefinition(params.definition, context, depth + 1);
@@ -50,8 +82,8 @@
   function cleanGraph(candidate, context, depth) {
     if (!object(candidate)) throw new Error('The file must contain a playground object.');
     if (candidate.version !== undefined && candidate.version !== 1) throw new Error('This playground file uses an unsupported version.');
-    if (!Array.isArray(candidate.nodes) || candidate.nodes.length > 40) throw new Error('A playground must contain a blocks array with at most 40 blocks.');
-    if (!Array.isArray(candidate.edges) || candidate.edges.length > 40) throw new Error('A playground must contain a connections array with at most 40 connections.');
+    if (!Array.isArray(candidate.nodes) || candidate.nodes.length > 120) throw new Error('A playground must contain a blocks array with at most 120 blocks.');
+    if (!Array.isArray(candidate.edges) || candidate.edges.length > 240) throw new Error('A playground must contain a connections array with at most 240 connections.');
     context.count += candidate.nodes.length;
     if (context.count > 200) throw new Error('Saved functions may contain at most 200 blocks in total.');
     const graph = { version: 1, name: candidate.name === undefined ? 'Untitled playground' : string(candidate.name, 'Playground name', 80),
@@ -74,22 +106,28 @@
         label: source.label === undefined ? DEFAULT_LABELS[source.type] : string(source.label, 'Block label', 80),
         params: cleanParams(source.type, source.params, context, depth), position: { x: position.x, y: position.y }, showMatrix: source.showMatrix === true });
     }
-    const parents = new Map();
+    const parents = new Map(), occupied = new Set(), nodesById = new Map(graph.nodes.map(node => [node.id, node]));
     for (const edge of candidate.edges) {
       if (!object(edge)) throw new Error('Each connection must be an object.');
       const from = id(edge.from), to = id(edge.to);
       if (!ids.has(from) || !ids.has(to)) throw new Error('A connection refers to a missing block.');
       if (nodeTypes.get(from) === 'logarithm') throw new Error(SCREW_OUTPUT_MESSAGE);
       if (from === to) throw new Error('A block cannot connect to itself.');
-      if (parents.has(to)) throw new Error('Each block accepts only one input connection.');
-      parents.set(to, from); graph.edges.push({ from, to });
+      const input = edge.input === undefined ? 'input' : edge.input;
+      if (!inputPorts(nodesById.get(to)).includes(input)) throw new Error('Unknown input port “' + String(input) + '” on ' + nodesById.get(to).label + '.');
+      const slot = to + ':' + input;
+      if (occupied.has(slot)) throw new Error('Each input port accepts only one input connection.');
+      occupied.add(slot);
+      if (!parents.has(to)) parents.set(to, []);
+      parents.get(to).push(from);
+      graph.edges.push(input === 'input' ? { from, to } : { from, to, input });
     }
     const complete = new Set(), visiting = new Set();
     function visit(nodeId) {
       if (complete.has(nodeId)) return;
       if (visiting.has(nodeId)) throw new Error('Connections cannot form a cycle.');
       visiting.add(nodeId);
-      if (parents.has(nodeId)) visit(parents.get(nodeId));
+      if (parents.has(nodeId)) parents.get(nodeId).forEach(visit);
       visiting.delete(nodeId); complete.add(nodeId);
     }
     ids.forEach(visit);
@@ -132,15 +170,22 @@
         const chain = ancestorChain(definition.graph, definition.outputId);
         if (chain.length !== definition.graph.nodes.length) throw new Error('A function definition must contain only its output chain.');
         if (chain.at(-1).type === 'logarithm') throw new Error('Save a rotation, translation, or transformation output as a function. A screw result is not a matrix operation.');
-        if (['inverse', 'logarithm'].includes(chain[0].type)) throw new Error('Include the input of an inverse or logarithm when saving a function.');
         for (const block of chain) {
-          const expressions = block.type === 'function' ? Object.values(block.params.arguments) : Object.values(block.params).flat();
+          if (INPUT_OPERATIONS.has(block.type) && inputPorts(block).some(input => !definition.graph.edges.some(edge => edge.to === block.id && (edge.input || 'input') === input))) {
+            throw new Error('Include the input of every operation when saving a function; “' + block.label + '” has an unconnected input.');
+          }
+          const expressions = expressionParams(block);
           for (const expression of expressions) MathEngine.parse(expression);
         }
         names = rawSymbols(definition.graph);
       } else if (definition.kind === 'matrix') {
-        const dimensions = { rotation: [3, 3], translation: [3, 1], transform: [4, 4] };
-        if (!Object.hasOwn(dimensions, candidate.outputKind)) throw new Error('A function output must be rotation, translation, or transform.');
+        const dimensions = { rotation: [3, 3], translation: [3, 1], transform: [4, 4], scalar: [1, 1] };
+        if (candidate.outputKind === 'matrix') {
+          const rows = dimension(candidate.matrix && candidate.matrix.length, 'Function matrix rows');
+          const columns = dimension(candidate.matrix && candidate.matrix[0] && candidate.matrix[0].length, 'Function matrix columns');
+          dimensions.matrix = [rows, columns];
+        }
+        if (!Object.hasOwn(dimensions, candidate.outputKind)) throw new Error('A function output must be a rotation, translation, transform, matrix, or scalar.');
         definition.outputKind = candidate.outputKind;
         const [rows, columns] = dimensions[definition.outputKind];
         if (!Array.isArray(candidate.matrix) || candidate.matrix.length !== rows) throw new Error('The function matrix has the wrong number of rows.');
@@ -158,7 +203,7 @@
   function rawSymbols(candidate) {
     const nodes = Array.isArray(candidate.nodes) ? candidate.nodes : [candidate], found = new Set();
     for (const node of nodes) {
-      const expressions = node.type === 'function' ? Object.values(node.params.arguments || {}) : Object.values(node.params || {}).flat();
+      const expressions = expressionParams(node);
       for (const expression of expressions) {
         try { for (const name of MathEngine.symbols(MathEngine.parse(expression))) found.add(name); }
         catch (_) { /* Incomplete parameter drafts remain editable. */ }
@@ -167,16 +212,27 @@
     return [...found].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
   }
   function ancestorChain(graph, nodeId) {
-    const nodes = new Map(graph.nodes.map(node => [node.id, node])), parents = new Map(graph.edges.map(edge => [edge.to, edge.from]));
+    const nodes = new Map(graph.nodes.map(node => [node.id, node])), parents = new Map();
+    for (const edge of graph.edges) {
+      if (!parents.has(edge.to)) parents.set(edge.to, []);
+      parents.get(edge.to).push(edge.from);
+    }
     if (!nodes.has(nodeId)) throw new Error('Choose an existing output block.');
-    const chain = [];
-    for (let current = nodeId; current !== undefined; current = parents.get(current)) chain.unshift(nodes.get(current));
+    const chain = [], visited = new Set();
+    function visit(current) {
+      if (visited.has(current)) return;
+      visited.add(current);
+      (parents.get(current) || []).forEach(visit);
+      chain.push(nodes.get(current));
+    }
+    visit(nodeId);
     return chain;
   }
   function selectedChain(graph, selectedIds) {
     if (!Array.isArray(selectedIds) || !selectedIds.length) throw new Error('Select at least one block to combine.');
     const selected = new Set(selectedIds), nodes = graph.nodes.filter(node => selected.has(node.id));
     if (nodes.length !== selected.size) throw new Error('The selection contains a missing block.');
+    if (nodes.some(node => ['cross', 'columns', 'stack'].includes(node.type))) throw new Error('Save the output as a function to include every operand of a multi-input calculation. Combining a selection requires a single chain.');
     const parents = new Map(graph.edges.map(edge => [edge.to, edge.from]));
     const starts = nodes.filter(node => !selected.has(parents.get(node.id)));
     if (starts.length !== 1) throw new Error('Select one connected chain of blocks to combine.');
@@ -192,6 +248,7 @@
     if (graph.edges.some(edge => selected.has(edge.from) && !selected.has(edge.to) && edge.from !== chain.at(-1).id)) throw new Error('Only the last selected block may connect to blocks outside the selection.');
     if (['inverse', 'logarithm'].includes(chain[0].type)) throw new Error('Include the input of an inverse or logarithm when saving a function.');
     if (parents.has(chain[0].id) && chain.some(node => node.type === 'inverse')) throw new Error('Include the complete input chain before combining an inverse; it acts on that whole input.');
+    if (parents.has(chain[0].id) && chain.some(node => node.type === 'determinant')) throw new Error('Include the complete input chain before combining a determinant; it acts on that whole input.');
     return chain;
   }
   function definitionFromChain(graph, chain, options = {}) {
@@ -221,19 +278,19 @@
       params: { definition, arguments: Object.fromEntries(definition.parameters.map(name => [name, name])) },
       position: { ...chain[0].position }, showMatrix: false };
     const nodes = graph.nodes.flatMap(node => node.id === chain[0].id ? [combined] : selected.has(node.id) ? [] : [node]);
-    const edges = graph.edges.filter(edge => !(selected.has(edge.from) && selected.has(edge.to))).map(edge => ({
+    const edges = graph.edges.filter(edge => !(selected.has(edge.from) && selected.has(edge.to))).map(edge => ({ ...edge,
       from: selected.has(edge.from) ? nodeId : edge.from, to: selected.has(edge.to) ? nodeId : edge.to }));
     return { graph: validateGraph({ ...graph, nodes, edges }), nodeId, definition };
   }
-  function replacementEdges(graph, from, to) {
-    return [...graph.edges.filter(edge => edge.to !== to).map(edge => ({ from: edge.from, to: edge.to })), { from, to }];
+  function replacementEdges(graph, from, to, input) {
+    return [...graph.edges.filter(edge => edge.to !== to || (edge.input || 'input') !== input), input === 'input' ? { from, to } : { from, to, input }];
   }
-  function connect(graph, from, to) {
+  function connect(graph, from, to, input = 'input') {
     const clean = validateGraph(graph);
-    return validateGraph({ ...clean, edges: replacementEdges(clean, from, to) }).edges;
+    return validateGraph({ ...clean, edges: replacementEdges(clean, from, to, input) }).edges;
   }
-  function canConnect(graph, from, to) {
-    try { connect(graph, from, to); return null; }
+  function canConnect(graph, from, to, input = 'input') {
+    try { connect(graph, from, to, input); return null; }
     catch (error) { return error.message; }
   }
   function substitute(expression, replacements) {
@@ -261,7 +318,7 @@
       const ast = substitute(expression, replacements);
       return numeric ? MathEngine.num(MathEngine.evaluate(ast, bindings)) : ast;
     };
-    return Object.fromEntries(Object.entries(node.params).map(([key, value]) => [key, Array.isArray(value) ? value.map(scalar) : scalar(value)]));
+    return mapExpressionParams(node, scalar);
   }
   function evaluateFunction(node, replacements, bindings, numeric) {
     const definition = node.params.definition, argumentsByName = {};
@@ -272,7 +329,7 @@
     if (definition.kind === 'matrix') {
       const matrix = definition.matrix.map(row => row.map(entry => substitute(entry, argumentsByName)));
       const value = { kind: definition.outputKind, matrix };
-      MathEngine.validateRigid(MathEngine.toHomogeneous(value), bindings, numeric);
+      if (!['matrix', 'scalar'].includes(value.kind)) MathEngine.validateRigid(MathEngine.toHomogeneous(value), bindings, numeric);
       return value;
     }
     const results = evaluateCleanGraph(definition.graph, { numeric, replacements: argumentsByName, bindings });
@@ -286,22 +343,33 @@
   }
   function evaluateCleanGraph(graph, { numeric, replacements, bindings }) {
     const nodes = new Map(graph.nodes.map(node => [node.id, node]));
-    const parents = new Map(graph.edges.map(edge => [edge.to, edge.from]));
+    const parents = new Map();
+    for (const edge of graph.edges) {
+      if (!parents.has(edge.to)) parents.set(edge.to, []);
+      parents.get(edge.to).push(edge);
+    }
     const results = new Map();
     function evaluateNode(nodeId) {
       if (results.has(nodeId)) return results.get(nodeId);
       const node = nodes.get(nodeId), result = { value: null, ownValue: null, error: null };
-      const parentId = parents.get(nodeId), parent = parentId === undefined ? null : evaluateNode(parentId);
+      const incoming = parents.get(nodeId) || [], inputs = {};
+      for (const edge of incoming) inputs[edge.input || 'input'] = evaluateNode(edge.from);
+      const parent = inputs.input;
       try {
         // Substitute before choosing an operation's formula. In particular,
         // a symbolic angular screw that becomes zero is a prismatic screw.
         // Numeric evaluation also avoids expanding a large symbolic product.
         const block = node.type === 'function' ? node : { ...node, params: preparedParams(node, replacements, bindings, numeric) };
         if (node.type === 'function') result.ownValue = evaluateFunction(node, replacements, bindings, numeric);
-        else if (node.type !== 'inverse' && node.type !== 'logarithm') result.ownValue = MathEngine.computeBlock(block, null, bindings, graph.angleUnit);
-        if (parent && parent.error) throw new Error('Fix the input from “' + nodes.get(parentId).label + '” first. ' + parent.error);
-        if (node.type === 'inverse' || node.type === 'logarithm') {
-          result.value = MathEngine.computeBlock(block, parent ? parent.value : null, bindings, graph.angleUnit);
+        else if (!INPUT_OPERATIONS.has(node.type)) result.ownValue = MathEngine.computeBlock(block, null, bindings, graph.angleUnit);
+        for (const edge of incoming) {
+          const upstream = inputs[edge.input || 'input'];
+          if (upstream.error) throw new Error('Fix the input from “' + nodes.get(edge.from).label + '” first. ' + upstream.error);
+        }
+        if (INPUT_OPERATIONS.has(node.type)) {
+          const operand = ['cross', 'columns', 'stack'].includes(node.type)
+            ? Object.fromEntries(Object.entries(inputs).map(([input, upstream]) => [input, upstream.value])) : parent ? parent.value : null;
+          result.value = MathEngine.computeBlock(block, operand, bindings, graph.angleUnit);
           result.ownValue = result.value;
         } else result.value = MathEngine.compose(parent ? parent.value : null, result.ownValue);
       } catch (error) { result.error = error.message || 'This block could not be calculated.'; }
@@ -317,7 +385,8 @@
     if (definition.kind !== 'graph') throw new Error('An imported matrix function has no internal canvas blocks to expand.');
     const parent = graph.edges.find(edge => edge.to === nodeId), chain = ancestorChain(definition.graph, definition.outputId);
     if (parent && chain.some(block => block.type === 'inverse')) throw new Error('Disconnect this function’s input before expanding its inverse operation.');
-    if (graph.nodes.length - 1 + chain.length > 40) throw new Error('Expanding this function would exceed the 40-block canvas limit.');
+    if (parent && chain.some(block => ['cross', 'columns', 'stack', 'determinant'].includes(block.type))) throw new Error('Disconnect this function’s input before expanding its multi-input or determinant calculation.');
+    if (graph.nodes.length - 1 + chain.length > 120) throw new Error('Expanding this function would exceed the 120-block canvas limit.');
     const used = new Set(graph.nodes.map(block => block.id)), remap = new Map();
     for (const block of chain) {
       let suffix = 1, fresh = (nodeId + '_' + block.id).slice(0, 55);
@@ -332,7 +401,7 @@
       if (block.type === 'function') params = { definition: block.params.definition,
         arguments: Object.fromEntries(Object.entries(block.params.arguments).map(([name, value]) => [name, source(value)])) };
       else {
-        params = Object.fromEntries(Object.entries(block.params).map(([name, value]) => [name, Array.isArray(value) ? value.map(source) : source(value)]));
+        params = mapExpressionParams(block, source);
         if (definition.angleUnit !== graph.angleUnit) {
           let angular = block.type === 'rotation' ? 'angle' : block.type === 'exponential' ? 'theta' : null;
           if (block.type === 'exponential') {
@@ -350,11 +419,11 @@
     const firstId = nodes[0].id, outputId = remap.get(definition.outputId);
     const edges = graph.edges.filter(edge => edge.to !== nodeId && edge.from !== nodeId);
     if (parent) edges.push({ from: parent.from, to: firstId });
-    for (const edge of graph.edges.filter(edge => edge.from === nodeId)) edges.push({ from: outputId, to: edge.to });
-    edges.push(...definition.graph.edges.map(edge => ({ from: remap.get(edge.from), to: remap.get(edge.to) })));
+    for (const edge of graph.edges.filter(edge => edge.from === nodeId)) edges.push({ ...edge, from: outputId });
+    edges.push(...definition.graph.edges.map(edge => ({ ...edge, from: remap.get(edge.from), to: remap.get(edge.to) })));
     return { graph: validateGraph({ ...graph, nodes: graph.nodes.flatMap(block => block.id === nodeId ? nodes : [block]), edges }),
       nodeIds: nodes.map(block => block.id), outputId };
   }
-  return { validateGraph, evaluateGraph, canConnect, connect, validateDefinition, rawSymbols,
+  return { validateGraph, evaluateGraph, canConnect, connect, inputPorts, validateDefinition, rawSymbols,
     captureFunction, functionFromOutput, groupSelection, expandFunction };
 });

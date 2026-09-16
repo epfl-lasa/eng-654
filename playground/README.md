@@ -11,6 +11,60 @@ python3 -m http.server 8000
 
 Then visit `http://localhost:8000/playground/building_blocks.html`.
 
+## Save and share operations
+
+**Download operations** saves the canvas, connections, symbolic values, selected
+output, and all reusable operations in **My blocks** as one JSON file.
+**Upload operations** restores it. Older graph JSON files still open. Uploading
+keeps existing saved blocks and adds imported definitions; undo restores the
+previous graph and library if needed. Invalid files leave the current work intact.
+
+Use **Download blocks** and **Upload blocks** to share My blocks on its own.
+An individual saved block's menu also offers **Download block (.json)**.
+
+## Cross products, column selection, and determinants
+
+- **Row vector / Column vector:** add a 1 × n or m × 1 vector, then choose its
+  length and enter its components in the inspector.
+- **Matrix:** choose m rows and n columns (1–12 each), then enter values directly
+  in the m × n grid. Resizing preserves entries in the overlapping cells.
+  Entries can be numbers or symbolic expressions. A general matrix connection
+  multiplies the actual matrix dimensions.
+- **Cross product:** choose two 3 × 1 outputs as **A** and **B**, either in the
+  inspector or using the labelled ports. The result is **A × B**.
+- **Select columns:** choose a source output and column number for each output
+  column. Set a common first row and number of rows. Columns may come from
+  different blocks and can repeat. All row/column indices start at 1. The live
+  output's **Select columns** button starts with that output already connected.
+  For a transform's position, choose column 4, first row 1, and 3 rows.
+- **Stack rows:** place A above B. For an angular-first twist, choose ω as A and
+  v as B, producing the six-component column `(ω; v)`.
+- **Determinant:** connect a square matrix. The result is a scalar; a rectangular
+  matrix displays an error with its dimensions. Symbolic expressions and numeric evaluation are
+  supported, including singular matrices and small nonzero determinants.
+
+The live output starts minimized to give the canvas more space. Choose
+**Expand output** to inspect the result and **Minimize output** to collapse it.
+An invalid operation shows **Show error** while the panel is minimized.
+
+Each input port accepts one source; one output may feed several input ports.
+Use **Go to a block** to navigate larger calculations. To save a calculation
+with several inputs as a reusable function, select its final output block;
+**Save as function** includes all upstream operands.
+
+## Exercise 1 · KUKA iiwa 7 twists
+
+Choose **Load example** or download the
+[uploadable worked graph](examples/exercise-01-iiwa7-twists.json) and open it with
+**Upload operations**. The file derives the seven world-frame home screws from
+the exercise's KUKA iiwa 7 URDF using joint-origin transforms, column extraction,
+`v = p × ω`, and stacking. It includes the home tool transform M and a square
+minor determinant. It needs no further model upload.
+
+The final result is the 6 × 7 matrix of angular-first screws. The
+[derivation guide](examples/README.md) explains the frames, units, expected
+values, and how to enter the results in Exercise 1.
+
 ## custom_3R student templates
 
 Choose either custom_3R preset under **Templates & examples**. Both use the exact
@@ -37,7 +91,7 @@ Here `d1 = 1` includes both 0.5 m URDF origin heights. Intermediate D-H frames
 differ from the URDF link frames, while the final frame is exactly `tool0`.
 Open the **template guide** in the inspector for the formula and starting
 parameters. Change the joint values, expand the operations, or save the final
-output as a reusable FK function. **Save graph** downloads an editable copy;
+output as a reusable FK function. **Download operations** keeps an editable copy;
 reselecting a preset restores the starting template.
 
 ## Build a composition
@@ -52,7 +106,7 @@ reselecting a preset restores the starting template.
   provide a numeric evaluation and a draggable coordinate-frame preview.
 - Right-click a block to edit it, save a reusable function, or expose its
   commented Python functions.
-- Save graph downloads editable JSON; Open restores it. The latest graph is also
+- Download operations saves editable JSON; Upload operations restores it. The latest graph is also
   saved in this browser’s local storage. Undo/redo includes edits and connections.
 
 The palette includes inverse and matrix-to-screw operations. The exponential
@@ -87,8 +141,8 @@ use one finger to orbit or two fingers to pan and pinch. Reset restores the view
 - **Save function** adds the selected chain to **My blocks**. With one block
   selected, it includes that block's upstream operations. Click or drag a saved
   function onto the canvas to create another instance with its own arguments.
-  My blocks is stored in this browser. Export a function as Python to share it;
-  graph JSON also includes the definitions used by its placed function blocks.
+  My blocks is stored in this browser. Download it as JSON or export a function
+  as Python to share it; workspace JSON also includes all saved definitions.
 
 Delete removes the selection; Ctrl/Cmd+Z undoes a change. Right-click a connection
 to disconnect it. Matrix-to-screw results remain terminal coordinates and cannot
@@ -195,7 +249,7 @@ This is a symbolic matrix extractor, with these boundaries:
 Run the math, graph, and reusable-function checks with Node.js:
 
 ```sh
-node --test playground/tests/math.test.cjs playground/tests/graph.test.cjs playground/tests/functions.test.cjs playground/tests/presets.test.cjs
+node --test playground/tests/math.test.cjs playground/tests/graph.test.cjs playground/tests/functions.test.cjs playground/tests/presets.test.cjs playground/tests/files.test.cjs playground/tests/iiwa-twists.test.cjs
 ```
 
 The Python export and import checks execute Python and require `python3`, SymPy,
@@ -215,7 +269,15 @@ ORBIT_BASE_URL=http://localhost:8000 ORBIT_CDP_PORT=9222 node playground/tests/o
 These checks cover preview orbit/pan/zoom/pinch and the lecture URDF editor's
 frame-drag interaction with the actual Three.js OrbitControls.
 
+The operations browser check uses a disposable browser context and verifies the
+KUKA example, input connections, column selection, determinants, and JSON
+download/upload through the interface:
+
+```sh
+OPERATIONS_BASE_URL=http://localhost:8000 OPERATIONS_CDP_PORT=9222 node playground/tests/operations.browser.cjs
+```
+
 Files are separated into the expression/matrix engine (`math.js`), graph and
-function model (`graph.js`), custom_3R templates (`presets.js`), Python generator (`python.js`), Python importer
+function model (`graph.js`), JSON persistence (`files.js`), custom_3R templates (`presets.js`), Python generator (`python.js`), Python importer
 (`python-import.js`), canvas/inspector UI (`app.js`), and SVG coordinate preview
 (`preview.js`).

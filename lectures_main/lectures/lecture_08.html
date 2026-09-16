@@ -1,70 +1,251 @@
 <!doctype html>
-<html lang="en"><head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Path Planning for Redundant Robots | ENG-654</title>
-  <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/layouts.css"><link rel="stylesheet" href="../css/components.css"><link rel="stylesheet" href="../css/reveal.css"><link rel="stylesheet" href="../css/navigation.css"><link rel="stylesheet" href="../css/viz.css"><link rel="stylesheet" href="../css/lecture-08.css">
-  <script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']],displayMath:[['\\[','\\]']]}};</script><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Redundancy Resolution in Motion Planning | ENG-654</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/layouts.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/reveal.css">
+  <link rel="stylesheet" href="../css/navigation.css">
+  <link rel="stylesheet" href="../css/viz.css">
+  <link rel="stylesheet" href="../css/lecture-08.css?v=20260915-self-motion-2">
+  <link rel="stylesheet" href="../css/lecture-08-labs.css?v=20260915-self-motion-2">
+  <script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']],displayMath:[['\\[','\\]']]}};</script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <script type="importmap">{"imports":{"three":"../vendor/three/build/three.module.js","three/addons/":"../vendor/three/examples/jsm/"}}</script>
-</head><body class="mode-deck narrative-lecture lecture-08"><main id="deck" class="deck">
+</head>
+<body class="mode-deck narrative-lecture lecture-08">
+<main id="deck" class="deck">
 
-<section class="slide title-slide l8-slide"><div class="title-slide-content"><p class="eyebrow">ENG-654 · Lecture 08</p><h1 class="course-title">Path Planning for Redundant Robots</h1><p class="subtitle">One workspace motion, many joint-space lifts</p><p class="lecture-promise">KUKA LBR iiwa 7 · null-space self-motion · minimum-jerk path · sampled fixed-\(q_3\) lift families.</p></div></section>
+  <section class="slide title-slide l8-slide">
+    <div class="title-slide-content">
+      <p class="eyebrow">ENG-654 · Lecture 08</p>
+      <h1 class="course-title">Redundancy Resolution in Motion Planning</h1>
+      <p class="subtitle">KUKA iiwa 7 · one supplied workspace motion, many joint motions</p>
+      <p class="lecture-promise">Understand the null space, compare cost functions, and explore numerical and analytical strategies on the same rectangular path.</p>
+    </div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">The planning problem</p><h2 class="slide-title">A path in task space does not determine a unique robot motion</h2><div class="l8-flow reveal-children"><div><b>Geometric path</b><span>\(T(s)\in SE(3)\)</span></div><div><b>Timing law</b><span>\(s=s(t)\)</span></div><div><b>IK lift</b><span>\(f(q(t))=T(s(t))\)</span></div><div><b>Selection</b><span>limits · clearance · effort</span></div></div><div class="l8-takeaway">For a redundant robot, planning includes choosing which point of the inverse image to use at every instant.</div></section>
+  <section class="slide l8-slide">
+    <p class="slide-kicker">Our planning problem</p>
+    <h2 class="slide-title">The workspace command is given; we choose the joint motion</h2>
+    <p class="slide-subtitle">As in Lecture 07, a precomputed trajectory or a real-time policy supplies the desired motion. Here we study how redundancy changes the planning problem.</p>
+    <div class="l8-flow">
+      <div><b>Given motion</b><span>Tool pose \({}^{0}T_{e,d}(s)\)</span></div>
+      <div><b>Primary task</b><span>Follow its position and orientation</span></div>
+      <div><b>Extra freedom</b><span>Choose how the arm moves internally</span></div>
+      <div><b>Whole path</b><span>Check continuity, limits, and singularities</span></div>
+    </div>
+    <div class="l8-takeaway">Our example is a rectangular path with fixed tool orientation. Path progress \(s\in[0,1]\) identifies where we are on the supplied command.</div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">KUKA iiwa 7</p><h2 class="slide-title">A reachable regular pose has a locally one-dimensional IK set</h2><div class="layout-two-column"><div class="l8-big-eq red">\[f:\mathbb R^7\rightarrow SE(3),\qquad f(q)=T_d\]</div><div class="l8-cards" style="grid-template-columns:1fr"><div class="l8-card"><h3>Regular solution</h3><p>If \(T_d\) is reachable and \(\operatorname{rank}J(q)=6\), the local inverse image near \(q\) has dimension \(7-6=1\).</p></div><div class="l8-card green"><h3>Physical meaning</h3><p>Infinitesimally, the tool pose can remain fixed while an internal combination of joints moves.</p></div></div></div><div class="l8-takeaway">This is a local statement. Singular, unreachable, limited, or colliding configurations require separate analysis.</div></section>
+  <section class="slide l8-slide">
+    <p class="slide-kicker">Seven joints, six task velocities</p>
+    <h2 class="slide-title">At a regular pose, the iiwa has one instantaneous internal freedom</h2>
+    <div class="layout-two-column">
+      <div class="l8-big-eq red">\[{}^{0}\mathcal V_e=\begin{bmatrix}{}^{0}\dot{\mathbf p}_e\\{}^{0}\boldsymbol\omega_e\end{bmatrix}={}^0J_e(\mathbf q)\dot{\mathbf q}\]<p>\({}^0J_e\in\mathbb R^{6\times7}\), with linear velocity first.</p></div>
+      <div class="l8-stack">
+        <div class="l8-card"><h3>Rank counts independent task velocities</h3><p>If \(\operatorname{rank}J=6\), every infinitesimal tool velocity can be produced locally.</p></div>
+        <div class="l8-card red"><h3>Nullity counts internal velocity directions</h3><div class="equation">\[\dim\ker J=7-\operatorname{rank}J=1\]</div><p>A nonzero combination of joint rates can leave the tool velocity equal to zero.</p></div>
+      </div>
+    </div>
+    <div class="l8-takeaway">There is a continuous family of IKs near a regular solution. Joint limits and singularities can restrict this family and its connections along the path.</div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">Kinematic chain</p><h2 class="slide-title">Transform every URDF joint axis into the base frame</h2><div class="layout-two-column"><div class="l8-derivation reveal-children"><div class="l8-step"><span class="tag">1</span><p>Compose each joint’s URDF origin transform and motion transform to obtain its base-frame joint origin \(p_i\).</p></div><div class="l8-step"><span class="tag">2</span><p>If the URDF specifies local unit axis \(\hat a_i\), transform it as \(a_i={}^0R_{J_i}\hat a_i\). It need not be the local z-axis.</p></div><div class="l8-step"><span class="tag">3</span><p>For a revolute joint, form \(J_i=[a_i\times(p_e-p_i);\,a_i]\). Stack all seven columns in chain order.</p></div></div><div class="l8-big-eq red">\[J_G(q)=\begin{bmatrix}a_1\!\times(p_e-p_1)&\cdots&a_7\!\times(p_e-p_7)\\a_1&\cdots&a_7\end{bmatrix}\in\mathbb R^{6\times7}\]</div></div><div class="l8-takeaway">The geometric Jacobian satisfies \([\dot p_e^T\;\omega_e^T]^T=J_G(q)\dot q\). Each column is the joint screw expressed in base coordinates and reduced at the tool origin.</div></section>
+  <section class="slide l8-slide">
+    <p class="slide-kicker">Build the geometric Jacobian</p>
+    <h2 class="slide-title">Every joint contributes a screw evaluated at the tool point</h2>
+    <div class="l8-cards">
+      <div class="l8-card"><h3>1 · Locate the axis</h3><p>Multiply the URDF transforms along the chain to obtain a point \({}^{0}\mathbf p_i\) on joint axis \(i\) and the joint-frame rotation \({}^{0}R_{J_i}\).</p></div>
+      <div class="l8-card"><h3>2 · Express it in the world frame</h3><div class="equation">\[{}^{0}\mathbf a_i={}^0R_{J_i}\,{}^{J_i}\hat{\mathbf a}_i\]</div><p>Transform the axis written in the URDF into the same frame as the tool point.</p></div>
+      <div class="l8-card red"><h3>3 · Take the cross product</h3><div class="equation">\[{}^0J_{e,i}=\begin{bmatrix}{}^0\mathbf a_i\times({}^0\mathbf p_e-{}^0\mathbf p_i)\\{}^0\mathbf a_i\end{bmatrix}\]</div><p>Stack all seven columns in joint order.</p></div>
+    </div>
+    <div class="l8-big-eq">\[{}^0J_e=\begin{bmatrix}{}^0J_{e,1}&{}^0J_{e,2}&\cdots&{}^0J_{e,7}\end{bmatrix}\]</div>
+    <div class="l8-takeaway">We use angular velocity, not Euler-angle rates. The robot models and the analytical IK are checked against the same native KUKA iiwa 7 geometry.</div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">Geometric versus analytical</p><h2 class="slide-title">An analytical Jacobian differentiates chosen pose coordinates</h2><div class="layout-two-column"><div><div class="l8-big-eq">\[x=\begin{bmatrix}p\\\phi\\\theta\\\psi\end{bmatrix},\qquad \dot x=J_A(q)\dot q\]</div><p>For \(R=R_z(\psi)R_y(\theta)R_x(\phi)\), angular velocity and Euler rates obey \(\omega=E(\phi,\theta,\psi)\dot\eta\).</p></div><div class="l8-big-eq">\[E=\begin{bmatrix}c_\psi c_\theta&-s_\psi&0\\s_\psi c_\theta&c_\psi&0\\-s_\theta&0&1\end{bmatrix},\quad J_A=\begin{bmatrix}I&0\\0&E^{-1}\end{bmatrix}J_G\]</div></div><div class="l8-takeaway">Away from the Euler representation singularity \(\det E=\cos\theta=0\), the left factor is invertible, so \(\ker J_A=\ker J_G\). The self-motion is physical; only its coordinate description changes.</div></section>
+  <section class="slide l8-slide">
+    <p class="slide-kicker">What is the null space?</p>
+    <h2 class="slide-title">Different joint-rate vectors can create the same tool velocity</h2>
+    <div class="layout-two-column">
+      <div class="l8-stack">
+        <div class="l8-big-eq">\[J\dot{\mathbf q}_a=\mathcal V_d,\qquad J\dot{\mathbf q}_b=\mathcal V_d\]</div>
+        <div class="l8-big-eq red">\[J(\dot{\mathbf q}_b-\dot{\mathbf q}_a)=\mathbf0\]</div>
+      </div>
+      <div class="l8-stack">
+        <div class="l8-card"><h3>Subtract the two solutions</h3><p>Their difference is an internal motion: its joint contributions cancel at the tool.</p></div>
+        <div class="l8-card red"><h3>Add any such motion</h3><div class="equation">\[\dot{\mathbf q}=\dot{\mathbf q}_p+\mathbf n\nu,\qquad J\mathbf n=\mathbf0\]</div><p>At full row rank, one scalar \(\nu\) selects the velocity along the iiwa's local self-motion direction.</p></div>
+      </div>
+    </div>
+    <div class="l8-takeaway">A null-space direction usually moves several joints together. It is not a single joint that can be moved independently while keeping the tool fixed.</div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">Null-space derivation</p><h2 class="slide-title">Separate the primary velocity from first-order internal motion</h2><div class="l8-derivation reveal-children"><div class="l8-step"><span class="tag">1</span><p>All solutions of \(J\dot q=\dot x_d\) equal one particular solution plus a homogeneous solution.</p></div><div class="l8-step"><span class="tag">2</span><p>The Moore–Penrose solution \(J^+\dot x_d\) has minimum Euclidean norm.</p></div><div class="l8-step"><span class="tag">3</span><p>\(N=I-J^+J\) is an orthogonal projector: \(N^2=N\), \(N^T=N\), and \(JN=0\).</p></div></div><div class="l8-big-eq red">\[\boxed{\dot q=J^+\dot x_d+Nz},\qquad \dot x_d=0\Rightarrow\dot q=Nz\in\ker J\]</div><div class="l8-takeaway">At a regular iiwa solution, \(\dim\ker J=1\). A null velocity predicts zero task velocity only to first order; finite motion must be re-solved and validated.</div></section>
+  <section class="slide l8-slide">
+    <p class="slide-kicker">Separate primary and secondary motion</p>
+    <h2 class="slide-title">The pseudoinverse follows the task; the projector selects internal motion</h2>
+    <div class="l8-cards">
+      <div class="l8-card"><h3>One particular solution</h3><div class="equation">\[J^+=J^T(JJ^T)^{-1}\]</div><p>For rank six, \(J^+\mathcal V_d\) is the solution with minimum Euclidean joint-rate norm.</p></div>
+      <div class="l8-card"><h3>Project into the null space</h3><div class="equation">\[N=I-J^+J\]</div><p>\(JN=0\), \(N^2=N\), and \(N^T=N\). For one redundant degree, \(N=\mathbf n\mathbf n^T\) if \(\|\mathbf n\|=1\).</p></div>
+      <div class="l8-card red"><h3>All instantaneous solutions</h3><div class="equation">\[\boxed{\dot{\mathbf q}=J^+\mathcal V_d+N\mathbf z}\]</div><p>The free vector \(\mathbf z\) expresses our secondary preference.</p></div>
+    </div>
+    <div class="l8-takeaway">These identities describe the exact pseudoinverse. Damped least squares improves numerical conditioning, but its associated matrix is generally not an exact null-space projector.</div>
+  </section>
 
-<section class="slide interactive-slide l8-slide"><p class="slide-kicker">Fixed-pose experiment</p><h2 class="slide-title">Change \(q_3\); re-solve the other six joints to preserve the pose</h2><p class="slide-subtitle">The complete tool frame—not only position—is constrained. The viewer uses a mathematical free-joint URDF for continuation; physical iiwa limits are checked separately.</p><div class="l8-lab" data-l8-lab="null-motion"></div></section>
+  <section class="slide interactive-slide l8-slide">
+    <p class="slide-kicker">Experiment · hold the complete tool pose</p>
+    <h2 class="slide-title">Change the redundant angle and watch the arm reconfigure</h2>
+    <p class="slide-subtitle">Hold the tool at the rectangle’s centre, \({}^0\mathbf p_e=(0.45,0,0.60)\) m, with its orientation fixed. This pose has eight continuous IK branches over \(q_3=-170^\circ\) to \(+170^\circ\). Follow the other six joint angles; grey portions exceed joint limits.</p>
+    <div class="redundancy-lab" data-redundancy-lab="null-motion"></div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">Geometry of redundancy</p><h2 class="slide-title">The slider traces one chart of the self-motion manifold</h2><div class="layout-two-column"><div class="l8-big-eq red">\[\mathcal M(T_d)=\{q\in\mathcal C\mid f(q)=T_d\}\]</div><div class="l8-derivation reveal-children"><div class="l8-step"><span class="tag">1</span><p>Each point on \(\mathcal M\) is a different posture with the same tool pose.</p></div><div class="l8-step"><span class="tag">2</span><p>The tangent space is \(T_q\mathcal M=\ker J(q)\).</p></div><div class="l8-step"><span class="tag">3</span><p>A chosen coordinate such as \(q_3\) is only a local parameter; folds may require another chart.</p></div></div></div><div class="l8-takeaway">Joint limits, singularities, and collisions cut the ideal curve into feasible intervals.</div></section>
+  <section class="slide l8-slide">
+    <p class="slide-kicker">Choose a secondary cost</p>
+    <h2 class="slide-title">Different objectives choose different internal motions</h2>
+    <p class="slide-subtitle">Let \(q_{i,c}=(q_{i,\max}+q_{i,\min})/2\), \(r_i=(q_{i,\max}-q_{i,\min})/2\), and \(u_i=(q_i-q_{i,c})/r_i\). The reference posture is the selected starting IK.</p>
+    <p class="slide-subtitle"><strong>Interpret \(u_i\):</strong> it is the joint’s dimensionless position relative to the centre of its allowed range. \(u_i=0\) is the centre, \(u_i=-1\) is the lower limit, and \(u_i=1\) is the upper limit. Thus \(|u_i|&gt;1\) means the joint is outside its limits; this normalization lets us compare joints with different ranges.</p>
+    <table class="l8-table l8-cost-table">
+      <thead><tr><th>Dropdown strategy</th><th>Cost to minimize</th><th>What the arm prefers</th></tr></thead>
+      <tbody>
+        <tr><th>No secondary cost</th><td>\(\mathbf z=\mathbf0\)</td><td>Minimum joint-rate norm at each step; no explicit joint-limit avoidance.</td></tr>
+        <tr><th>Joint centering</th><td>\(h_c=\tfrac12\sum_i u_i^2\)</td><td>Stay near the centres of the joint ranges.</td></tr>
+        <tr><th>Joint-limit barrier</th><td>\(h_b=-\sum_i\log(1-u_i^2)\)</td><td>Increasingly penalize approach to a physical stop, for \(|u_i|&lt;1\).</td></tr>
+        <tr><th>Reference posture</th><td>\(h_r=\tfrac12\|\mathbf q-\mathbf q_{\mathrm{ref}}\|^2\)</td><td>Remain close to the selected starting posture.</td></tr>
+      </tbody>
+    </table>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">Secondary optimization</p><h2 class="slide-title">Project a descent direction into the instantaneous null space</h2><div class="l8-big-eq red">\[\dot q=J^+\dot x_d-\alpha N(q)\nabla h(q)\]</div><div class="l8-cards reveal-children"><div class="l8-card"><h3>Joint centering</h3><p>\(h_L=\tfrac12\sum_i((q_i-q_{i,c})/r_i)^2\) penalizes distance from joint-range centers. It is a quadratic preference, not a barrier at the limits.</p></div><div class="l8-card green"><h3>Short joint motion</h3><p>\(h_T=\tfrac12\|W(q-q_{ref})\|^2\), so \(\nabla h_T=W^TW(q-q_{ref})\).</p></div><div class="l8-card red"><h3>Obstacle barrier</h3><p>\(h_O=\sum_m\rho(d_m(q))\), with \(\rho(d)=\tfrac12(1/d-1/d_0)^2\) for \(d&lt;d_0\).</p></div></div><div class="l8-takeaway">The projected direction is first-order. Integrate cautiously, re-solve the pose constraint, and recheck limits and collisions.</div></section>
+  <section class="slide l8-slide">
+    <p class="slide-kicker">Project the descent direction</p>
+    <h2 class="slide-title">The secondary cost acts only through the available null direction</h2>
+    <div class="l8-big-eq red">\[\boxed{\dot{\mathbf q}=J^+\mathcal V_d-\alpha N\nabla h(\mathbf q)},\qquad\alpha\ge0\]</div>
+    <div class="layout-two-column">
+      <div class="l8-card"><h3>Hold the task fixed</h3><div class="equation">\[\mathcal V_d=0\quad\Rightarrow\quad\dot h=-\alpha\nabla h^TN\nabla h=-\alpha\|N\nabla h\|^2\le0\]</div><p>The exact projected gradient decreases the cost unless its projection vanishes.</p></div>
+      <div class="l8-card"><h3>Move along the prescribed path</h3><div class="equation">\[\dot h=\nabla h^TJ^+\mathcal V_d-\alpha\|N\nabla h\|^2\]</div><p>The primary task may increase the cost faster than the secondary motion can reduce it.</p></div>
+    </div>
+    <div class="l8-takeaway">A cost function is a preference, not a guarantee. The null-space direction may offer no escape from a joint limit imposed by the primary task.</div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">Objective gradients</p><h2 class="slide-title">Project the gradient; then verify the finite motion</h2><div class="layout-two-column"><div class="l8-big-eq">\[\nabla_q h_O=\sum_m\frac{\partial\rho}{\partial d_m}\underbrace{\frac{\partial d_m}{\partial p_m}}_{\text{surface normal}}\underbrace{\frac{\partial p_m}{\partial q}}_{J_{p_m}}\]</div><div class="l8-derivation reveal-children"><div class="l8-step"><span class="tag">1</span><p>Compute a task-space repulsive direction at the closest robot point.</p></div><div class="l8-step"><span class="tag">2</span><p>Pull it back to joint space with that point’s translational Jacobian.</p></div><div class="l8-step"><span class="tag">3</span><p>Project with \(N\), integrate a small step, and recheck pose, limits, and collision.</p></div></div></div><div class="l8-takeaway">Null-space projection is an instantaneous guarantee. Curvature of the manifold creates second-order task drift unless the pose is corrected after integration.</div></section>
+  <section class="slide l8-slide">
+    <p class="slide-kicker">Numerical path planning</p>
+    <h2 class="slide-title">Predict with the Jacobian, correct the pose, then check the step</h2>
+    <div class="l8-derivation">
+      <div class="l8-step"><span class="tag">1</span><p>Select one legal starting IK from the map and choose the null-space objective and its gain.</p></div>
+      <div class="l8-step"><span class="tag">2</span><p>Compute the required tool displacement and the current Jacobian. Add the projected secondary motion to the pseudoinverse prediction.</p></div>
+      <div class="l8-step"><span class="tag">3</span><p>Correct the finite-step position and orientation error. A first-order null prediction alone drifts away from a curved self-motion manifold.</p></div>
+      <div class="l8-step"><span class="tag">4</span><p>Validate joint limits, full-Jacobian rank, pose accuracy, and continuity along the step. Stop and report the first failed check.</p></div>
+    </div>
+    <div class="l8-big-eq">\[\mathbf q_{k+1}^{\mathrm{pred}}=\mathbf q_k+J_k^+\Delta\mathbf x_k-\alpha\Delta s\,N_k\nabla h(\mathbf q_k)\]</div>
+    <div class="l8-takeaway">Here \(\Delta\mathbf x_k=[\Delta\mathbf p_k;\,\operatorname{Log}(R_{k+1}R_k^T)^\vee]\) is a small geometric pose increment, with both components expressed in the world frame.</div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">From geometry to motion</p><h2 class="slide-title">Parameterize every edge with a scalar minimum-jerk clock</h2><div class="layout-two-column"><div class="l8-big-eq">\[p(t)=p_a+s(t)(p_b-p_a)\]</div><div class="l8-big-eq">\[R(t)=R_a\exp\!\big(s(t)\operatorname{Log}(R_a^TR_b)\big)\]</div></div><div class="l8-takeaway">Use the principal matrix logarithm—or equivalent quaternion slerp—to follow the shortest rotation. At a relative rotation of exactly \(\pi\), that shortest axis is not unique and must be chosen consistently.</div></section>
+  <section class="slide interactive-slide l8-slide">
+    <p class="slide-kicker">Experiment · numerical redundancy resolution</p>
+    <h2 class="slide-title">Follow the same rectangle with different starting IKs and costs</h2>
+    <p class="slide-subtitle">Select a starting point at \(s=0\), choose the null-space cost, and build the numerical path. The default rectangle includes a starting solution that completes the path within the joint limits.</p>
+    <div class="redundancy-lab" data-redundancy-lab="numerical"></div>
+  </section>
 
-<section class="slide interactive-slide l8-slide"><p class="slide-kicker">Path before lift</p><h2 class="slide-title">Inspect the complete pose path before choosing a redundancy schedule</h2><p class="slide-subtitle">The plot shows the translational projection; orientation remains part of every pose. This is the workspace command that all candidate joint-space lifts must reproduce.</p><div class="l8-lab" data-l8-lab="path-preview"></div></section>
+  <section class="slide l8-slide">
+    <p class="slide-kicker">Analytical IK for a redundant robot</p>
+    <h2 class="slide-title">Fixing the redundant angle turns a continuous family into discrete candidates</h2>
+    <div class="layout-two-column">
+      <div class="l8-stack">
+        <div class="l8-big-eq">\[\mathcal M_s=\{\mathbf q:f(\mathbf q)={}^0T_{e,d}(s)\}\]</div>
+        <div class="l8-big-eq red">\[\mathcal S_s(\lambda)=\mathcal M_s\cap\{q_3=\lambda\}\]</div>
+      </div>
+      <div class="l8-stack">
+        <div class="l8-card"><h3>Before fixing \(q_3\)</h3><p>A reachable regular pose has a locally one-dimensional inverse image.</p></div>
+        <div class="l8-card red"><h3>After fixing \(q_3=\lambda\)</h3><p>The iiwa model generically has up to eight isolated analytical IK roots. A particular pose and angle can have fewer roots, and some roots violate joint limits.</p></div>
+      </div>
+    </div>
+    <div class="l8-takeaway">“Eight IKs” refers to a fixed-angle slice. It does not mean that the redundant robot has only eight configurations for a tool pose.</div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">Calculus of variations</p><h2 class="slide-title">Perturb the trajectory and require zero first variation</h2><div class="layout-two-column"><div><div class="l8-big-eq red">\[\mathcal J[s]=\frac12\int_0^T(s^{(3)})^2dt,\qquad s_\varepsilon=s+\varepsilon\eta\]</div><p>The admissible perturbation preserves the six endpoint constraints, so \(\eta=\dot\eta=\ddot\eta=0\) at \(t=0,T\).</p></div><div class="l8-big-eq">\[\delta\mathcal J=\left.\frac{d}{d\varepsilon}\mathcal J[s_\varepsilon]\right|_{0}=\int_0^T s^{(3)}\eta^{(3)}dt\]</div></div><div class="l8-takeaway">We are minimizing jerk over an entire function, not differentiating a cost with respect to six coefficients yet.</div></section>
+  <section class="slide l8-slide">
+    <p class="slide-kicker">How the analytical candidates are constructed</p>
+    <h2 class="slide-title">Solve the arm geometry, then the wrist orientation</h2>
+    <div class="l8-cards">
+      <div class="l8-card"><h3>1 · Two elbow choices</h3><p>Let \(\mathbf w\) run from the shoulder to the wrist centre. The two arm lengths are \(a=b=0.4\) m.</p><div class="equation">\[c_4=\frac{\|\mathbf w\|^2-a^2-b^2}{2ab}\]</div><div class="equation">\[q_4=\pm\arccos c_4\]</div></div>
+      <div class="l8-card"><h3>2 · Two shoulder choices</h3><p>With \(q_3=\lambda\), set \(A=a+bc_4\) and \(B=-bs_4\cos\lambda\).</p><div class="equation">\[w_z=A\cos q_2-B\sin q_2\]</div><p>This gives two generic \(q_2\) roots. Then use the horizontal wrist coordinates to recover \(q_1\).</p></div>
+      <div class="l8-card red"><h3>3 · Two wrist choices</h3><p>Remove the arm rotation from the desired tool rotation:</p><div class="equation">\[W=({}^0R_4)^T{}^0R_{e,d}\]</div><p>Resolve this spherical-wrist rotation into two generic \((q_5,q_6,q_7)\) solutions.</p></div>
+    </div>
+    <div class="l8-big-eq">\[2\times2\times2=8\ \text{generic fixed-angle branches}\]</div>
+    <div class="l8-takeaway">The three ± signs label fixed-angle algebraic roots; they are not global SEW classes for the redundant robot. Each root is checked by forward kinematics and native joint limits before planning its continuation.</div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">Three integrations by parts</p><h2 class="slide-title">The Euler–Poisson equation is sixth order</h2><div class="l8-derivation reveal-children"><div class="l8-step"><span class="tag">1</span><p>\(\int s^{(3)}\eta^{(3)}dt=[s^{(3)}\eta^{(2)}]_0^T-\int s^{(4)}\eta^{(2)}dt\).</p></div><div class="l8-step"><span class="tag">2</span><p>Repeat twice. Every boundary term vanishes because \(\eta,\dot\eta,\ddot\eta\) vanish at both ends.</p></div><div class="l8-step"><span class="tag">3</span><p>\(\delta\mathcal J=-\int_0^T s^{(6)}(t)\eta(t)dt=0\) for every admissible \(\eta\).</p></div></div><div class="l8-big-eq red">\[\boxed{s^{(6)}(t)=0}\quad\Longrightarrow\quad s(t)=a_0+a_1t+\cdots+a_5t^5\]</div><div class="l8-takeaway">The fundamental lemma of the calculus of variations forces the integrand coefficient \(s^{(6)}\) to vanish everywhere.</div></section>
+  <section class="slide l8-slide">
+    <p class="slide-kicker">Read the path–redundancy map</p>
+    <h2 class="slide-title">Every dot is an IK evaluation at one path position and redundant angle</h2>
+    <div class="l8-cards">
+      <div class="l8-card"><h3>Horizontal · path progress</h3><p>\(s\in[0,1]\) moves around the rectangle. The same position and orientation command applies to every candidate.</p></div>
+      <div class="l8-card"><h3>Vertical · redundant angle</h3><p>\(\lambda=q_3\) selects a fixed-angle IK slice. Inspect each of the eight branches separately or show all branches.</p></div>
+      <div class="l8-card green"><h3>Green and grey dots</h3><p><strong>Green:</strong> a real root passes the implemented pose, joint-limit, and full-rank checks. <strong>Grey:</strong> no such admissible root at that sample.</p></div>
+    </div>
+    <div class="l8-takeaway">A row keeps \(q_3\) constant. A curve through the map changes redundancy along the path. Green dots certify local samples; the connections between them must also be checked.</div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">Boundary-value system</p><h2 class="slide-title">Write the six endpoint conditions as \(A a=b\)</h2><div class="l8-matrix-row"><div class="l8-big-eq">\[\underbrace{\begin{bmatrix}1&0&0&0&0&0\\0&1&0&0&0&0\\0&0&2&0&0&0\\1&1&1&1&1&1\\0&1&2&3&4&5\\0&0&2&6&12&20\end{bmatrix}}_{A}\underbrace{\begin{bmatrix}a_0\\a_1\\a_2\\a_3\\a_4\\a_5\end{bmatrix}}_{a}=\underbrace{\begin{bmatrix}0\\0\\0\\1\\0\\0\end{bmatrix}}_{b}\]</div><div><p>Rows 1–3 impose \(s(0),s'(0),s''(0)\).</p><p>Rows 4–6 impose \(s(1),s'(1),s''(1)\).</p><p>Normalized time \(\tau=t/T\) removes powers of \(T\) from the matrix.</p></div></div></section>
+  <section class="slide interactive-slide l8-slide">
+    <p class="slide-kicker">Experiment · see all eight fixed-angle branches</p>
+    <h2 class="slide-title">Click a starting IK on the map and compare its possible futures</h2>
+    <p class="slide-subtitle">Green and grey dots come from analytical IK evaluations. Select a legal dot at \(s=0\), then follow it numerically with your chosen null-space cost. Edit the rectangle and rebuild the map to explore a different command.</p>
+    <div class="redundancy-lab" data-redundancy-lab="global-map"></div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">Solve the coefficients</p><h2 class="slide-title">The unique minimum-jerk clock is quintic</h2><div class="layout-two-column"><div class="l8-big-eq">\[a=A^{-1}b=\begin{bmatrix}0&0&0&10&-15&6\end{bmatrix}^T\]</div><div class="l8-big-eq red">\[\boxed{s(\tau)=10\tau^3-15\tau^4+6\tau^5}\]</div></div><div class="l8-cards"><div class="l8-card"><h3>Velocity</h3><p>\(s'(\tau)=30\tau^2(1-\tau)^2\), hence zero at both ends.</p></div><div class="l8-card green"><h3>Acceleration</h3><p>\(s''(\tau)=60\tau(1-\tau)(1-2\tau)\), also zero at both ends.</p></div><div class="l8-card red"><h3>Physical time</h3><p>\(\dot s=s'/T\), \(\ddot s=s''/T^2\), and \(\dddot s=s'''/T^3\).</p></div></div></section>
+  <section class="slide l8-slide">
+    <p class="slide-kicker">Analytical path planning</p>
+    <h2 class="slide-title">Search connected IK candidates across the whole rectangle</h2>
+    <div class="l8-cards">
+      <div class="l8-card"><h3>Nodes</h3><div class="equation">\[\mathbf q_k^{(b,r)}\in\mathcal S_{s_k}(\lambda_r)\]</div><p>At each path layer, enumerate the analytical roots for every sampled redundancy angle.</p></div>
+      <div class="l8-card"><h3>Edges</h3><p>Connect nearby configurations in adjacent layers only after checking continuous joint motion, pose tracking, limits, and singularity margin.</p><p>Proximity on the 2D plot alone is insufficient.</p></div>
+      <div class="l8-card red"><h3>Whole-path strategy</h3><p>Search from the selected starting IK to the final layer. Compare joint travel and clearance from joint limits across complete candidate paths.</p></div>
+    </div>
+    <div class="l8-takeaway">Analytical planning evaluates the global candidate structure. Numerical continuation resolves motion locally. A failed search on a finite grid does not prove that no continuous path exists.</div>
+  </section>
 
-<section class="slide interactive-slide l8-slide"><p class="slide-kicker">Inspect the timing law</p><h2 class="slide-title">Independent minimum-jerk edges come to rest at every waypoint</h2><p class="slide-subtitle">Applying the quintic independently to each edge forces zero velocity and acceleration at every corner; non-stop traversal needs blending or a globally smooth spline. The bands show \(s\), \(ds/d\tau\), and signed \(d^2s/d\tau^2\).</p><div class="l8-lab" data-l8-lab="timing"></div></section>
+  <section class="slide interactive-slide l8-slide">
+    <p class="slide-kicker">Experiment · analytical planning over the map</p>
+    <h2 class="slide-title">Choose a redundancy schedule using information from the entire path</h2>
+    <p class="slide-subtitle">With the default rectangle and \(q_3=-30^\circ\), try IK 4: numerical joint centering stops, but global planning finds a complete route. Compare the joint-travel and joint-limit objectives, then play their redundancy schedules.</p>
+    <div class="redundancy-lab" data-redundancy-lab="analytical"></div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">Time discretization</p><h2 class="slide-title">The continuous curve becomes a finite sequence of pose requests</h2><div class="l8-flow reveal-children"><div><b>Choose \(T_e\)</b><span>duration of edge \(e\)</span></div><div><b>Sample \(t_k\)</b><span>\(t_k=k\Delta t\)</span></div><div><b>Evaluate \(T_k\)</b><span>\(T(s(t_k))\)</span></div><div><b>Continue IK</b><span>seed with \(q_{k-1}\)</span></div></div><div class="l8-big-eq">\[T_k=T\!\left(10\tau_k^3-15\tau_k^4+6\tau_k^5\right),\qquad \tau_k=\frac{k\Delta t}{T_e}\]</div><div class="l8-takeaway">Smaller \(\Delta t\) improves continuation reliability but increases solve and collision-check cost.</div></section>
+  <section class="slide l8-slide">
+    <p class="slide-kicker">A chart boundary is not always a robot singularity</p>
+    <h2 class="slide-title">Check the full 6 × 7 Jacobian before declaring a lost task direction</h2>
+    <div class="layout-two-column">
+      <div class="l8-card"><h3>Fixed-angle chart</h3><div class="equation">\[\bar J=J_{[:,\,1,2,4,5,6,7]}\in\mathbb R^{6\times6}\]</div><p>\(\det\bar J=0\) means that holding \(q_3\) fixed prevents local inversion of the remaining six joints. The robot may still have full task rank.</p></div>
+      <div class="l8-card red"><h3>Full redundant robot</h3><div class="equation">\[\operatorname{rank}J&lt;6\quad\Longleftrightarrow\quad\sigma_{\min}(\widehat J)=0\]</div><p>The full robot then loses an independent instantaneous task velocity. The redundant coordinate may need to change before this boundary is reached.</p></div>
+    </div>
+    <div class="l8-takeaway"><strong>Concrete iiwa example:</strong> \(\mathbf q=(20,-35,30,50,-40,0,60)^\circ\) is within the joint limits. The full scaled Jacobian has \(\sigma_{\min}=0.0477\) m and rank six; removing the \(q_3\) column gives rank five. Here \(q_3\) fails as a local parameter while the tool retains all six instantaneous velocity directions.</div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">Inverse image of the path</p><h2 class="slide-title">Each reachable regular path pose has a locally one-dimensional IK set</h2><div class="layout-two-column"><div class="l8-big-eq red">\[\mathcal M_k=f^{-1}(T_k)=\{q\in\mathcal C:f(q)=T_k\}\]</div><div class="l8-derivation reveal-children"><div class="l8-step"><span class="tag">1</span><p>Near a rank-six solution, \(\mathcal M_k\) is locally a one-dimensional self-motion curve.</p></div><div class="l8-step"><span class="tag">2</span><p>As \(k\) advances, local curves can sweep a two-dimensional solution surface over path progress and redundancy.</p></div><div class="l8-step"><span class="tag">3</span><p>A robot trajectory is a continuous, validated curve drawn on that surface.</p></div></div></div><div class="l8-takeaway">Unreachable poses have no inverse image; singularities can change its local dimension or topology. Independent solves do not preserve connectivity.</div></section>
+  <section class="slide l8-slide">
+    <p class="slide-kicker">Try different strategies</p>
+    <h2 class="slide-title">Change one choice at a time and inspect the complete joint path</h2>
+    <div class="l8-derivation">
+      <div class="l8-step"><span class="tag">1</span><p>Keep the rectangle fixed. At one redundant angle, inspect all eight analytical roots and identify the legal starting IKs.</p></div>
+      <div class="l8-step"><span class="tag">2</span><p>Keep the start fixed. Compare no secondary cost, joint centering, the joint-limit barrier, and reference-posture attraction.</p></div>
+      <div class="l8-step"><span class="tag">3</span><p>Compare numerical continuation with an analytical graph search. Inspect how the chosen redundant angle changes along the path.</p></div>
+      <div class="l8-step"><span class="tag">4</span><p>Move or enlarge the rectangle. Rebuild the maps and investigate which starts and strategies still complete the command.</p></div>
+    </div>
+    <div class="l8-takeaway">For a closed workspace loop, compare the final and initial joint configurations. Following the same tool loop need not return a redundant arm to the same posture.</div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">Fixed-redundancy slice</p><h2 class="slide-title">Fixing \(q_3=\lambda\) usually intersects the IK curve in finitely many points</h2><div class="layout-two-column"><div class="l8-big-eq">\[\mathcal S_k(\lambda)=\mathcal M_k\cap\{q:q_3=\lambda\}\]</div><div class="l8-big-eq red">\[\bar q_{b,k}(\lambda),\quad b=1,\ldots,m(k,\lambda)\]</div></div><div class="l8-derivation reveal-children"><div class="l8-step"><span class="tag">1</span><p>For the supplied iiwa analytical model, a generic fixed-\(q_3\) slice can have up to eight isolated transverse roots; a particular pose may have fewer or none.</p></div><div class="l8-step"><span class="tag">2</span><p>At a tangent intersection, the reduced Jacobian can become singular even when this is a fold of the chosen \(q_3\) chart rather than rank loss of the full 7R map.</p></div><div class="l8-step"><span class="tag">3</span><p>Track every recovered candidate across neighboring poses and validate it; a numerical root search does not prove completeness.</p></div></div></section>
+  <section class="slide l8-slide">
+    <p class="slide-kicker">The global idea</p>
+    <h2 class="slide-title">Redundancy resolution chooses a continuous route through the IK family</h2>
+    <div class="l8-cards">
+      <div class="l8-card"><h3>Understand the freedom</h3><p>The null space identifies instantaneous internal motion that preserves the task velocity.</p></div>
+      <div class="l8-card"><h3>Choose a local preference</h3><p>A projected cost gradient selects how numerical planning uses that internal freedom.</p></div>
+      <div class="l8-card red"><h3>Check the global connections</h3><p>The analytical path–angle maps expose alternative starts and redundancy schedules. Validate the entire connection before accepting a plan.</p></div>
+    </div>
+    <div class="l8-takeaway">These demonstrations check kinematic tracking, native joint limits, and singularity margins. Collision checking, dynamics, and a physically smooth time law are additional requirements for execution on hardware.</div>
+  </section>
 
-<section class="slide l8-slide"><p class="slide-kicker">Two complementary levels</p><h2 class="slide-title">Use global candidate structure to guide local continuation</h2><div class="l8-cards"><div class="l8-card red"><h3>Lecture demos · numerical</h3><p>Find distinct fixed-\(q_3\) seeds, continue each locally, and reject violations. The result is evidence, not exhaustive enumeration.</p></div><div class="l8-card green"><h3>Exercise · supplied analytical IK</h3><p>Use the supplied iiwa model to enumerate branch candidates over path placement and redundant angle, then compare with continuation.</p></div><div class="l8-card"><h3>Planning question</h3><p>If no constant slice survives, can a continuous \(q_3(k)\) schedule weave through the sampled feasible set?</p></div></div><div class="l8-takeaway">Analytical structure broadens the search; numerical continuation refines a local lift; validation remains mandatory.</div></section>
-
-<section class="slide interactive-slide l8-slide"><p class="slide-kicker">Part I · choose the redundancy coordinate</p><h2 class="slide-title">Set \(q_3=30^\circ\), then find distinct start-pose IK candidates</h2><p class="slide-subtitle">Each recovered candidate is continued numerically over the same minimum-jerk pose sequence with joint 3 fixed. Fewer candidates may be found; duplicates are not added to reach a target count.</p><div class="l8-lab" data-l8-lab="enumerate"></div></section>
-
-<section class="slide interactive-slide l8-slide"><p class="slide-kicker">Reduced-Jacobian diagnostic</p><h2 class="slide-title">Use determinant sign as a warning—not as a branch identifier</h2><p class="slide-subtitle">With \(q_3\) fixed, remove column 3 and monitor \(\det\bar J\). A sign change crosses a reduced-coordinate singularity, but equal signs do not prove connectivity; \(\det\bar J=0\) may also mark a fold of the fixed-\(q_3\) chart.</p><div class="l8-lab" data-l8-lab="aspects"></div></section>
-
-<section class="slide interactive-slide l8-slide"><p class="slide-kicker">Feasibility filter</p><h2 class="slide-title">Retain only candidates that pass every implemented check</h2><p class="slide-subtitle">Each continuation is tested against separately supplied physical iiwa limits, a reduced-Jacobian threshold, sample continuity, pose residual, and an elbow-clearance proxy. The free-joint URDF itself does not encode those physical limits.</p><div class="l8-lab" data-l8-lab="filter"></div></section>
-
-<section class="slide l8-slide"><p class="slide-kicker">Part II · sampled global view</p><h2 class="slide-title">Map path progress and redundancy onto a sampled feasibility plane</h2><div class="layout-two-column"><div class="l8-big-eq red">\[\widehat{\mathcal F}_b(s_j,\lambda_\ell)\in\{0,1\}\]</div><div class="l8-derivation reveal-children"><div class="l8-step"><span class="tag">1</span><p>Sample the complete pose path and a bounded range of \(q_3\).</p></div><div class="l8-step"><span class="tag">2</span><p>Numerically continue one recovered candidate across neighboring samples and interpolate between sparse anchors.</p></div><div class="l8-step"><span class="tag">3</span><p>Mark cells using pose residual, supplied limits, and a reduced-determinant threshold; then search for a corridor through neighboring green cells.</p></div></div></div><div class="l8-takeaway">This sampled and interpolated map is planning evidence, not a certificate of root completeness, continuous-time feasibility, collision freedom, or global connectivity.</div></section>
-
-<section class="slide interactive-slide l8-slide"><p class="slide-kicker">Sampled feasibility map</p><h2 class="slide-title">Green cells show where one continued candidate passed the sampled checks</h2><p class="slide-subtitle">Choose a recovered numerical candidate. Refining the path and redundancy grids, re-solving every interpolated pose, and performing exact collision checks may change the apparent corridor.</p><div class="l8-lab" data-l8-lab="global-map"></div></section>
-
-<section class="slide l8-slide"><p class="slide-kicker">Plan through the sampled green set</p><h2 class="slide-title">Modulate \(q_3\) to connect locally feasible cells</h2><div class="layout-two-column"><div class="l8-big-eq">\[\lambda_{j+1}\in\operatorname{Nbr}(\lambda_j)\]</div><div class="l8-big-eq red">\[\min_{\lambda_{0:N}}\sum_j w_1|\Delta\lambda_j|^2+w_2h(\bar q_{b,j}(\lambda_j))\quad\text{s.t. }\widehat{\mathcal F}_b=1\]</div></div><div class="l8-takeaway">A horizontal corridor suggests a constant redundancy value; a winding corridor suggests modulation. A grey barrier shows failure only for this candidate, sampled range, resolution, interpolation, and implemented checks—it is not an impossibility proof.</div></section>
-
-<section class="slide interactive-slide l8-slide"><p class="slide-kicker">Equations in motion</p><h2 class="slide-title">Animate one numerically continued lift and inspect its diagnostics</h2><p class="slide-subtitle">The readout reports normalized edge time \(\tau_k\), minimum-jerk progress \(s_k\), pose residual, reduced determinant, and proxy clearance. Determinant sign is displayed only as a diagnostic.</p><div class="l8-lab" data-l8-lab="play"></div></section>
-
-<section class="slide l8-slide"><p class="slide-kicker">Selection after feasibility</p><h2 class="slide-title">Rank surviving paths by the objective that matters</h2><table class="l8-table"><thead><tr><th>Objective</th><th>Discrete cost</th><th>Effect</th></tr></thead><tbody><tr><th>Joint travel</th><td>\(\sum_k\|W(q_{k+1}-q_k)\|^2\)</td><td>short, quiet joint motion</td></tr><tr><th>Clearance</th><td>\(\sum_k\phi(d_{min}(q_k))\)</td><td>distance from obstacles and self-collision</td></tr><tr><th>Conditioning</th><td>\(\sum_k1/\sigma_{min}(J(q_k))^2\)</td><td>distance from singularity</td></tr><tr><th>Effort proxy</th><td>\(\sum_k\|u_k\|^2\Delta t\)</td><td>reduced actuator input</td></tr></tbody></table><div class="l8-takeaway">Feasibility is a hard filter; optimization chooses among the survivors.</div></section>
-
-<section class="slide l8-slide"><p class="slide-kicker">Complete pipeline</p><h2 class="slide-title">Kinematics-grounded planning combines global insight with local computation</h2><div class="l8-flow reveal-children"><div><b>1 · Path</b><span>define complete poses and timing</span></div><div><b>2 · Global view</b><span>enumerate or sample candidate families</span></div><div><b>3 · Local lift</b><span>continue and correct a chosen trajectory</span></div><div><b>4 · Validate</b><span>limits, residual, singularity, collision, dynamics</span></div></div><div class="l8-takeaway"><strong>Core idea:</strong> analytical structure reveals alternatives a local solver may miss; numerical methods efficiently track and refine a selected lift. Neither replaces explicit whole-path validation.</div></section>
-
-</main><script src="../js/deck/nav-runtime.js"></script><script type="module" src="../js/main.js?v=20260831-1"></script></body></html>
+</main>
+<script src="../js/deck/nav-runtime.js"></script>
+<script type="module" src="../js/main.js?revision=20260915-self-motion-2"></script>
+</body>
+</html>

@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createSceneControlPanel, createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
 import { parseStlGeometry } from './frameDHPlayground.js';
 import { createDeterminantMap } from './determinantMap.js';
+import { setupAbbIrbLab } from './abbIrbLab.js';
 
 const DEG = Math.PI / 180;
 const COLORS = [0xff2020, 0x2d73d5, 0x68a84f, 0xd79b00, 0x9673a6, 0x00a0a0];
@@ -11,8 +12,8 @@ const BUILT_INS = {
   'custom 6R': new URL('../../assets/models/custom_6R/custom_6R_new.urdf', import.meta.url)
 };
 const SYMBOLIC_DH = {
-  threeROffset: String.raw`\det J_p=\frac{3}{4}(3c_3+4)\left[c_2(c_3-2s_3)-s_3\right]`,
-  threeRIntersecting: String.raw`\det J_p=\frac{3}{4}(3c_3+4)c_2(c_3-2s_3)`,
+  threeROffset: String.raw`\det({}^0J_{t,v})=\frac{3}{4}(3c_3+4)\left[c_2(c_3-2s_3)-s_3\right]`,
+  threeRIntersecting: String.raw`\det({}^0J_{t,v})=\frac{3}{4}(3c_3+4)c_2(c_3-2s_3)`,
   preferentialLinear: String.raw`{}^3J_{5,v}=\begin{bmatrix}
   -s_\alpha(a_1s_3+a_2c_2s_3+d_4c_2)&c_\alpha(a_2s_3+d_4)&d_4&0&0&0\\
   -c_\alpha(a_1+a_2c_2+a_3c_2c_3+d_4c_2s_3)+s_2(a_3s_3-d_4c_3)&-s_\alpha(a_2+a_3c_3+d_4s_3)&0&0&0&0\\
@@ -69,7 +70,7 @@ function create2RLab(host) {
     <div class="sing-metric"><span>|det(J)|</span><strong data-abs></strong></div>
     <label class="sing-toggle"><input type="checkbox" data-ellipse checked> velocity ellipse</label>
     <div class="sing-formula" data-matrix></div><p>Threshold shown: near singular when |det J| &lt; 0.08 m².</p>
-    <div class="sing-legend"><span><i style="background:#ff2020"></i>J₁</span><span><i style="background:#2d73d5"></i>J₂</span></div></aside>`;
+    <div class="sing-legend"><span><i style="background:#ff2020"></i>⁰Jₜ,ᵥ,₁</span><span><i style="background:#2d73d5"></i>⁰Jₜ,ᵥ,₂</span></div></aside>`;
   const canvas = host.querySelector('canvas');
   const ctx = canvas.getContext('2d');
   const controls = host.querySelector('.sing-controls');
@@ -92,11 +93,11 @@ function create2RLab(host) {
     const elbow = {x:state.l1*Math.cos(state.q1),y:state.l1*Math.sin(state.q1)}, ee = point();
     const pts = [{x:0,y:0},elbow,ee].map(xy); ctx.strokeStyle='#151515'; ctx.lineWidth=12; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(...pts[0]); ctx.lineTo(...pts[1]); ctx.lineTo(...pts[2]); ctx.stroke();
     pts.forEach((p,i) => { ctx.beginPath(); ctx.arc(...p,i===2?9:7,0,Math.PI*2); ctx.fillStyle=i===2?'#ff2020':'#fff'; ctx.fill(); ctx.strokeStyle='#111'; ctx.lineWidth=3; ctx.stroke(); });
-    const J = jac(), det = determinant(J); drawVector(ctx,pts[2],[J[0][0],-J[1][0]],COLORS[0],scale*.42,'J₁'); drawVector(ctx,pts[2],[J[0][1],-J[1][1]],COLORS[1],scale*.42,'J₂');
+    const J = jac(), det = determinant(J); drawVector(ctx,pts[2],[J[0][0],-J[1][0]],COLORS[0],scale*.42,'⁰Jₜ,ᵥ,₁'); drawVector(ctx,pts[2],[J[0][1],-J[1][1]],COLORS[1],scale*.42,'⁰Jₜ,ᵥ,₂');
     if (host.querySelector('[data-ellipse]').checked) drawEllipse(ctx, pts[2], J, scale*.34);
     host.querySelector('[data-det]').textContent = signed(det,4); host.querySelector('[data-abs]').textContent = Math.abs(det).toFixed(4);
     host.querySelectorAll('.sing-metric').forEach((e) => e.classList.toggle('near',Math.abs(det)<.08));
-    host.querySelector('[data-matrix]').textContent = matrixText(J,3);
+    host.querySelector('[data-matrix]').textContent = `⁰Jₜ,ᵥ · end-effector linear velocity in world frame 0\n${matrixText(J,3)}`;
   }
   host.querySelector('[data-ellipse]').addEventListener('change',draw);
   let dragging=false;
@@ -133,6 +134,7 @@ function createThreeLab(host, mode) {
   else if(mode==='three-r') setup=setupUrdfJacobianLab(kit,'custom 3R');
   else if(mode==='six-r') setup=setupUrdfJacobianLab(kit,'custom 6R');
   else if(mode==='preferential-6r') setup=setupPreferential6RLab(kit);
+  else if(mode==='abb-6r') setup=setupAbbIrbLab(kit,{addRange,makeSelect,matrixText,signed,sphere,addTextLabel,clearGroup,addAxisLine,addArrow,COLORS});
   else setup=Promise.resolve();
   setup.catch((error)=>{panel.querySelector('.sing-status').textContent=error.message; panel.querySelector('.sing-status').classList.add('error'); console.error(error);});
   return kit;
@@ -175,7 +177,7 @@ function setupScrewLab(kit) {
   const dynamic=new THREE.Group();world.add(dynamic); const ray=new THREE.Raycaster(),mouse=new THREE.Vector2(),plane=new THREE.Plane(new THREE.Vector3(0,0,1),-state.pz); let dragging=false;
   kit.renderer.domElement.addEventListener('pointerdown',(e)=>{dragging=true;kit.controls.enabled=false;kit.renderer.domElement.setPointerCapture(e.pointerId);drag(e);});kit.renderer.domElement.addEventListener('pointermove',(e)=>{if(dragging)drag(e);});kit.renderer.domElement.addEventListener('pointerup',()=>{dragging=false;kit.controls.enabled=true;});
   function drag(e){const r=kit.renderer.domElement.getBoundingClientRect();mouse.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mouse,kit.camera);const hit=new THREE.Vector3();plane.constant=-state.pz;if(ray.ray.intersectPlane(plane,hit)){state.px=hit.x;state.py=hit.y;update();}}
-  function update(){clearGroup(dynamic);const z=new THREE.Vector3(Math.sin(state.angle),0,Math.cos(state.angle)).normalize(),pk=new THREE.Vector3(0,0,.4),p=new THREE.Vector3(state.px,state.py,state.pz),r=p.clone().sub(pk),v=z.clone().cross(r); addAxisLine(dynamic,pk,z,4,COLORS[1]);addArrow(dynamic,pk,z,1.25,COLORS[1]);addArrow(dynamic,pk,r,1,COLORS[3]);addArrow(dynamic,p,v,1,COLORS[0]);dynamic.add(sphere(p,.11,COLORS[0]));panel.querySelector('[data-matrix]').textContent=`Jₖ = [ v ; ω ]\n   = [ ${vec(v)} ; ${vec(z)} ]`;panel.querySelector('.sing-status').textContent='Move p: the moment v = z × (p − pₖ) changes; the angular part ω = z does not.';kit.render();}
+  function update(){clearGroup(dynamic);const z=new THREE.Vector3(Math.sin(state.angle),0,Math.cos(state.angle)).normalize(),pk=new THREE.Vector3(0,0,.4),p=new THREE.Vector3(state.px,state.py,state.pz),r=p.clone().sub(pk),v=z.clone().cross(r); addAxisLine(dynamic,pk,z,4,COLORS[1]);addArrow(dynamic,pk,z,1.25,COLORS[1]);addArrow(dynamic,pk,r,1,COLORS[3]);addArrow(dynamic,p,v,1,COLORS[0]);dynamic.add(sphere(p,.11,COLORS[0]));panel.querySelector('[data-matrix]').textContent=`⁰Jₜ,ₖ = [ ⁰vₜ,ₖ ; ⁰ωₖ ]\n      = [ ${vec(v)} ; ${vec(z)} ]`;panel.querySelector('.sing-status').textContent='Move ⁰pₜ: the linear part ⁰vₜ,ₖ = ⁰zₖ × (⁰pₜ − ⁰pₖ) changes; the angular part ⁰ωₖ = ⁰zₖ does not.';kit.render();}
   update(); return Promise.resolve();
 }
 
@@ -187,7 +189,7 @@ async function setupDhLab(kit) {
   const factor=document.createElement('div');factor.className='sing-formula sing-factor';panel.insertBefore(factor,panel.querySelector('[data-matrix]'));
   canvas.addEventListener('pointerdown',(e)=>{dragging=true;kit.controls.enabled=false;canvas.setPointerCapture(e.pointerId);const kin=dhKinematics(state);target.copy(kin.end);plane.setFromNormalAndCoplanarPoint(kit.camera.getWorldDirection(new THREE.Vector3()),target);drag(e);});canvas.addEventListener('pointermove',(e)=>{if(dragging)drag(e);});canvas.addEventListener('pointerup',()=>{dragging=false;kit.controls.enabled=true;});
   function drag(e){const r=canvas.getBoundingClientRect();mouse.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mouse,kit.camera);if(ray.ray.intersectPlane(plane,target)){for(let n=0;n<18;n++){const kin=dhKinematics(state),err=target.clone().sub(kin.end);if(err.length()<1e-3)break;const J=positionJacobian(kin.axes,kin.points,kin.end);const dq=dampedStep(J,err,.08);state.q=state.q.map((q,i)=>q+clamp(dq[i],-.16,.16));}syncRanges(controls,{q1:state.q[0],q2:state.q[1],q3:state.q[2]});update();}}
-  function update(){clearGroup(dynamic);const kin=dhKinematics(state);drawSkeleton(dynamic,kin.points,kin.end,kin.axes);const J=positionJacobian(kin.axes,kin.points,kin.end),det=determinant(J);panel.querySelector('[data-det]').textContent=signed(det,5);panel.querySelector('[data-det]').parentElement.classList.toggle('near',Math.abs(det)<.08);factor.textContent=formatDh3Factorization(state.rows);panel.querySelector('[data-matrix]').textContent=`Jₚ(q) at the current configuration\n${matrixText(J,3)}`;panel.querySelector('.sing-status').textContent=`p = ${vec(kin.end)} m · the displayed determinant is simplified symbolically after every D–H edit.`;kit.render();}
+  function update(){clearGroup(dynamic);const kin=dhKinematics(state);drawSkeleton(dynamic,kin.points,kin.end,kin.axes);const J=positionJacobian(kin.axes,kin.points,kin.end),det=determinant(J);panel.querySelector('[data-det]').textContent=signed(det,5);panel.querySelector('[data-det]').parentElement.classList.toggle('near',Math.abs(det)<.08);factor.textContent=formatDh3Factorization(state.rows);panel.querySelector('[data-matrix]').textContent=`⁰Jₜ,ᵥ(q) · end-effector linear velocity in world frame 0\n${matrixText(J,3)}`;panel.querySelector('.sing-status').textContent=`⁰pₜ = ${vec(kin.end)} m · the displayed determinant is simplified symbolically after every D–H edit.`;kit.render();}
   update();
 }
 
@@ -257,7 +259,7 @@ async function setupPreferential6RLab(kit) {
   }));
   const selects=panel.querySelector('.sing-selects');
   selects.append(
-    makeSelect('frame i',rangeOptions(0,6,'F'),3,value=>{state.i=+value;update();}),
+    makeSelect('frame i',rangeOptions(0,6,'frame '),3,value=>{state.i=+value;update();}),
     makeSelect('point j',rangeOptions(0,6,'O'),5,value=>{state.j=+value;update();}),
     makeSelect('column k',rangeOptions(1,6,'J'),1,value=>{state.k=+value-1;update();})
   );
@@ -292,14 +294,14 @@ async function setupPreferential6RLab(kit) {
     });
     panel.querySelector('[data-product]').textContent=
       `F × G × sin q₅ = ${signed(product,6)} m³\ndirect det J  = ${signed(direct,6)} m³\nrank J: ${rank}/6 · arm: ${armRank}/3 · wrist: ${wristRank}/3`;
-    panel.querySelector('[data-matrix]').textContent=`J at O${state.j}, expressed in F${state.i}\n${matrixText(J,3)}`;
+    panel.querySelector('[data-matrix]').textContent=`${superscript(state.i)}J${subscript(state.j)} · at O${subscript(state.j)}, expressed in frame ${state.i}\n${matrixText(J,3)}`;
     const message=zeros.length>1?'Multiple factors vanish: the losses can overlap. Read the computed rank to count independent motions.':
       zeros[0]==='F'?'F = 0: q₃ makes the three wrist-center velocity arrows coplanar. The arm loses one translation; the wrist still supplies three independent rotations.':
       zeros[0]==='G'?'G = 0: this q₂–q₃ alignment also makes the wrist-center velocity arrows coplanar. Their common normal is an unavailable translation.':
-      zeros[0]==='wrist'?'sin q₅ = 0: wrist axes 4 and 6 are collinear. At O₅ their full columns are dependent, so two joint rates produce the same rotation direction.':
+      zeros[0]==='wrist'?'sin q₅ = 0: wrist axes 4 and 6 are collinear. At O₅ their full columns are dependent, so two joint velocities produce the same rotation direction.':
       'Regular: three independent arm translations and three independent wrist rotations give six instantaneous task motions. Select a factor to see which freedom disappears.';
     panel.querySelector('.sing-status').textContent=message;
-    kit.hud.textContent=`Spherical-wrist D–H family · rank ${rank}/6 · geometry in F₀`;
+    kit.hud.textContent=`Spherical-wrist D–H family · rank ${rank}/6 · geometry in world frame 0`;
     drawSkeleton(dynamic,kin.points,kin.end,kin.axes);
     const wrist=framePoint(kin,5);
     dynamic.add(sphere(wrist,.14,0x151515));
@@ -315,7 +317,7 @@ async function setupPreferential6RLab(kit) {
       columns.forEach((column,k)=>{
         addArrow(dynamic,wrist,column,.42,COLORS[k]);
         const labelPoint=wrist.clone().addScaledVector(column,.46).add(new THREE.Vector3(0,0,(1-k)*.22));
-        addTextLabel(dynamic,labelPoint,`v${k+1}`,COLORS[k]).scale.multiplyScalar(.65);
+        addTextLabel(dynamic,labelPoint,`⁰J₅,ᵥ,${subscript(k+1)}`,COLORS[k]).scale.multiplyScalar(.65);
       });
       if(armRank===2) {
         // Choose the most stable pair to visualize the missing translation.
@@ -339,13 +341,13 @@ async function setupPreferential6RLab(kit) {
 }
 
 async function setupUrdfJacobianLab(kit,builtin) {
-  const six=builtin.includes('6R'),panel=kit.panel;panel.querySelector('h3').textContent=six?'custom_6R_new.urdf singularities':'custom_3R_new.urdf Jacobian';kit.hud.textContent=six?'Reading custom_6R_new.urdf':'Reading custom_3R_new.urdf';
+  const six=builtin.includes('6R'),panel=kit.panel;panel.querySelector('h3').textContent=six?'custom_6R_new.urdf singularities':'3R end-effector position Jacobian';kit.hud.textContent=six?'Reading custom_6R_new.urdf':'Reading custom_3R_new.urdf';
   const response=await fetch(BUILT_INS[builtin]);if(!response.ok)throw new Error(`Could not load ${builtin} URDF.`);const urdfText=await response.text(),model=parseUrdf(urdfText); const end=six?'link_6':'tool0', chain=findChain(model,model.roots[0],end); if(!chain)throw new Error(`No serial chain to ${end}.`); const movable=chain.filter(j=>j.type!=='fixed');const state={q:six?[20,-30,40,15,35,-20].map(v=>v*DEG):movable.map(()=>0),i:0,j:six?5:movable.length,k:0,labels:true,meshes:true,focus:-1,axes:[true,true,true],positions:[false,false,false],columns:[true,true,true]};
   const meshVisuals=await loadUrdfStlVisuals(kit.world,urdfText,new URL('.',BUILT_INS[builtin]));kit.sceneControls.registerStlRoot(meshVisuals.group);kit.hud.textContent+=` · ${meshVisuals.count} STL links`;
   const controls=panel.querySelector('.sing-controls');state.q.forEach((q,n)=>addRange(controls,`q${n+1}`,-180,180,1,q/DEG,(v)=>{state.q[n]=v*DEG;update();}));
   if(six){
     const selects=panel.querySelector('.sing-selects');
-    selects.append(makeSelect('frame i',rangeOptions(0,6,'F'),0,(v)=>{state.i=+v;update();}),makeSelect('point j',rangeOptions(0,6,'O'),5,(v)=>{state.j=+v;update();}),makeSelect('column k',rangeOptions(1,6,'J'),1,(v)=>{state.k=+v-1;update();}));
+    selects.append(makeSelect('frame i',rangeOptions(0,6,'frame '),0,(v)=>{state.i=+v;update();}),makeSelect('point j',rangeOptions(0,6,'O'),5,(v)=>{state.j=+v;update();}),makeSelect('column k',rangeOptions(1,6,'J'),1,(v)=>{state.k=+v-1;update();}));
     const b=document.createElement('button');b.textContent='Use wrist-center choice i=3, j=5';b.addEventListener('click',()=>{state.i=3;state.j=5;selects.querySelectorAll('select').forEach((s,n)=>{if(n===0)s.value='3';if(n===1)s.value='5';});update();});panel.insertBefore(b,panel.querySelector('.sing-metric'));
     const cases=document.createElement('div');cases.className='sing-case-buttons';cases.innerHTML='<button data-case="regular">regular</button><button data-case="arm">arm singular</button><button data-case="wrist">wrist singular</button>';panel.insertBefore(cases,panel.querySelector('.sing-metric'));
     cases.addEventListener('click',(event)=>{const which=event.target.dataset.case;if(!which)return;if(which==='regular')state.q=[20,-30,40,15,35,-20].map(v=>v*DEG);if(which==='arm'){state.q[1]=-Math.atan(6);state.q[2]=0;state.q[4]=35*DEG;}if(which==='wrist')state.q[4]=0;syncJointRanges(controls,state.q);update();});
@@ -360,8 +362,8 @@ async function setupUrdfJacobianLab(kit,builtin) {
   const dynamic=new THREE.Group();kit.world.add(dynamic); const status=panel.querySelector('.sing-status');if(six){kit.camera.position.set(12,9,8);kit.controls.target.set(3.4,1.1,-1.1);kit.controls.update();}
   function update(){clearGroup(dynamic);const kin=chainKinematics(chain,state.q);meshVisuals.update(linkMatricesForChain(model.roots[0],chain,state.q));meshVisuals.group.visible=state.meshes;drawSkeleton(dynamic,kin.points,kin.end,kin.axes,{links:false,axes:false});let J;
     if(six){J=screwJacobian(kin,state.j,state.i);const ordinary=screwJacobian(kin,movable.length,0),d0=determinant(ordinary),dp=determinant(J),pW=kin.points[4],Jarm=positionJacobian(kin.axes.slice(0,3),kin.points.slice(0,3),pW),dArm=determinant(Jarm),wristAxes=kin.axes.slice(3,6),Jwrist=Array.from({length:3},(_,r)=>wristAxes.map(z=>z.getComponent(r))),dWrist=determinant(Jwrist);panel.querySelector('[data-det]').textContent=signed(dp,5);panel.querySelector('[data-det]').parentElement.classList.toggle('near',Math.abs(dp)<1e-4);const armMetric=panel.querySelector('[data-factor="arm"]'),wristMetric=panel.querySelector('[data-factor="wrist"]');armMetric.querySelector('strong').textContent=signed(dArm,5);wristMetric.querySelector('strong').textContent=signed(dWrist,5);armMetric.classList.toggle('near',Math.abs(dArm)<1e-4);wristMetric.classList.toggle('near',Math.abs(dWrist)<1e-4);const pk=kin.points[state.k],pRef=framePoint(kin,state.j),axis=kin.axes[state.k],lever=pRef.clone().sub(pk),v=axis.clone().cross(lever);addAxisLine(dynamic,pk,axis,4,COLORS[state.k]);addArrow(dynamic,pk,lever,1,COLORS[3]);addArrow(dynamic,pRef,v,1,COLORS[0]);addTextLabel(dynamic,pk.clone().addScaledVector(axis,1.15),`z${state.k+1}`,COLORS[state.k]);addTextLabel(dynamic,pk.clone().addScaledVector(lever,.52),`r${state.k+1},${state.j}`,COLORS[3]);addTextLabel(dynamic,pRef.clone().addScaledVector(v,.55),`J${state.k+1} at O${state.j}`,COLORS[0]);addTextLabel(dynamic,pRef.clone().add(new THREE.Vector3(0,0,.3)),`O${state.j}`,0x111111);const kind=Math.abs(dArm)<1e-4&&Math.abs(dWrist)<1e-4?'combined arm and wrist singularity':Math.abs(dArm)<1e-4?'arm singularity':Math.abs(dWrist)<1e-4?'wrist singularity':'regular configuration';status.textContent=`${kind} · det J = D_arm D_wrist · ordinary ${signed(d0,4)} · preferential ${signed(dp,4)}.`;}
-    else {J=positionJacobian(kin.axes,kin.points,kin.end);const det=determinant(J);panel.querySelector('[data-det]').textContent=signed(det,5);panel.querySelector('[data-det]').parentElement.classList.toggle('near',Math.abs(det)<.08);for(let c=0;c<3;c++){const column=new THREE.Vector3(J[0][c],J[1][c],J[2][c]),r=kin.end.clone().sub(kin.points[c]);if(state.axes[c]){addAxisLine(dynamic,kin.points[c],kin.axes[c],3.2,COLORS[c]);addArrow(dynamic,kin.points[c],kin.axes[c],1.05,COLORS[c]);if(state.labels)addTextLabel(dynamic,kin.points[c].clone().addScaledVector(kin.axes[c],1.15),`z${c+1}`,COLORS[c]);}if(state.positions[c]){addArrow(dynamic,kin.points[c],r,1,0xd79b00);if(state.labels)addTextLabel(dynamic,kin.points[c].clone().addScaledVector(r,.52),`r${c+1} = p - p${c+1}`,0xd79b00);}if(state.columns[c]){addArrow(dynamic,kin.end,column,.45,COLORS[c]);if(state.labels)addTextLabel(dynamic,kin.end.clone().addScaledVector(column,.45),`Jp,${c+1} = z${c+1} × r${c+1}`,COLORS[c]);}}if(state.labels)addTextLabel(dynamic,kin.end.clone().add(new THREE.Vector3(0,0,.35)),'p = tool0',0x111111);const meanings=['tangent to the base-axis sweep','tool velocity from tilting about joint 2','tool velocity from the final joint offset'];panel.querySelector('.sing-column-readout').innerHTML=[0,1,2].map(c=>`<div class="${state.columns[c]?'active':''}" style="border-color:#${new THREE.Color(COLORS[c]).getHexString()}"><strong>J<sub>p,${c+1}</sub></strong><span>z<sub>${c+1}</sub> × r<sub>${c+1}</sub> · ${meanings[c]}</span><code>${vec(new THREE.Vector3(J[0][c],J[1][c],J[2][c]),3)}</code></div>`).join('');status.textContent=`${model.name} · rank ${numericRank(J)} · toggle zₖ, rₖ, and Jp,k independently to reconstruct each cross product.`;}
-    panel.querySelector('[data-matrix]').textContent=matrixText(J,3);kit.render();}
+    else {J=positionJacobian(kin.axes,kin.points,kin.end);const det=determinant(J);panel.querySelector('[data-det]').textContent=signed(det,5);panel.querySelector('[data-det]').parentElement.classList.toggle('near',Math.abs(det)<.08);for(let c=0;c<3;c++){const column=new THREE.Vector3(J[0][c],J[1][c],J[2][c]),r=kin.end.clone().sub(kin.points[c]);if(state.axes[c]){addAxisLine(dynamic,kin.points[c],kin.axes[c],3.2,COLORS[c]);addArrow(dynamic,kin.points[c],kin.axes[c],1.05,COLORS[c]);if(state.labels)addTextLabel(dynamic,kin.points[c].clone().addScaledVector(kin.axes[c],1.15),`⁰z${subscript(c+1)}`,COLORS[c]);}if(state.positions[c]){addArrow(dynamic,kin.points[c],r,1,0xd79b00);if(state.labels)addTextLabel(dynamic,kin.points[c].clone().addScaledVector(r,.52),`⁰rₜ,${subscript(c+1)} = ⁰pₜ − ⁰p${subscript(c+1)}`,0xd79b00);}if(state.columns[c]){addArrow(dynamic,kin.end,column,.45,COLORS[c]);if(state.labels)addTextLabel(dynamic,kin.end.clone().addScaledVector(column,.45),`⁰Jₜ,ᵥ,${subscript(c+1)} = ⁰z${subscript(c+1)} × ⁰rₜ,${subscript(c+1)}`,COLORS[c]);}}if(state.labels)addTextLabel(dynamic,kin.end.clone().add(new THREE.Vector3(0,0,.35)),'⁰pₜ · end effector (tool0)',0x111111);const meanings=['tangent to the base-axis sweep','end-effector velocity from tilting about joint 2','end-effector velocity from the final joint offset'];panel.querySelector('.sing-column-readout').innerHTML=[0,1,2].map(c=>`<div class="${state.columns[c]?'active':''}" style="border-color:#${new THREE.Color(COLORS[c]).getHexString()}"><strong><sup>0</sup>J<sub>t,v,${c+1}</sub></strong><span><sup>0</sup>z<sub>${c+1}</sub> × <sup>0</sup>r<sub>t,${c+1}</sub> · ${meanings[c]}</span><code>${vec(new THREE.Vector3(J[0][c],J[1][c],J[2][c]),3)}</code></div>`).join('');status.textContent=`${model.name} · rank ${numericRank(J)} · toggle ⁰zₖ, ⁰rₜ,ₖ, and ⁰Jₜ,ᵥ,ₖ independently to reconstruct each cross product.`;}
+    panel.querySelector('[data-matrix]').textContent=`${six ? `${superscript(state.i)}J${subscript(state.j)}` : '⁰Jₜ,ᵥ'} · expressed in frame ${six ? state.i : 0}\n${matrixText(J,3)}`;kit.render();}
   update();
 }
 
@@ -428,7 +430,7 @@ function dh3FactorCoefficients(rows){
     fc:[[a1*a3*sA2*cA1*cA2-a2*a3*sA1,'s₃c₃'],[-a1*d3*sA2*sA2*cA1+a2*d2*sA1*sA2,'c₃'],[-a2*a2*sA1,'s₃'],[a3*d2*sA1*sA2,'c₃²']]
   };
 }
-function formatDh3Factorization(rows){const c=dh3FactorCoefficients(rows),term=(terms)=>{const kept=terms.filter(([v])=>Math.abs(v)>1e-9);if(!kept.length)return'0';return kept.map(([v,x],i)=>`${i?(v>=0?' + ':' − '):(v<0?'−':'')}${Math.abs(v).toFixed(3)}${x}`).join('');};return`trig-simplified and factorized\ndet(Jₚ) = ${c.a3.toFixed(3)} [ F₀ + s₂Fₛ + c₂F꜀ ]\nF₀ = ${term(c.f0)}\nFₛ = ${term(c.fs)}\nF꜀ = ${term(c.fc)}\n(independent of q₁, d₁, α₃)`;}
+function formatDh3Factorization(rows){const c=dh3FactorCoefficients(rows),term=(terms)=>{const kept=terms.filter(([v])=>Math.abs(v)>1e-9);if(!kept.length)return'0';return kept.map(([v,x],i)=>`${i?(v>=0?' + ':' − '):(v<0?'−':'')}${Math.abs(v).toFixed(3)}${x}`).join('');};return`trig-simplified and factorized\ndet(⁰Jₜ,ᵥ) = ${c.a3.toFixed(3)} [ F₀ + s₂Fₛ + c₂F꜀ ]\nF₀ = ${term(c.f0)}\nFₛ = ${term(c.fs)}\nF꜀ = ${term(c.fc)}\n(independent of q₁, d₁, α₃)`;}
 function dh3FactoredValue(q,rows){const c=dh3FactorCoefficients(rows),s2=Math.sin(q[1]),c2=Math.cos(q[1]),s3=Math.sin(q[2]),c3=Math.cos(q[2]),evalTerms=(terms)=>terms.reduce((sum,[v,x])=>sum+v*({'s₃':s3,'c₃':c3,'s₃c₃':s3*c3,'c₃²':c3*c3,'s₃²':s3*s3}[x]),0);return c.a3*(evalTerms(c.f0)+s2*evalTerms(c.fs)+c2*evalTerms(c.fc));}
 
 function determinant(A){if(!A.length||A.length!==A[0].length)return NaN;const M=A.map(r=>r.slice());let d=1;for(let i=0;i<M.length;i++){let p=i;for(let r=i+1;r<M.length;r++)if(Math.abs(M[r][i])>Math.abs(M[p][i]))p=r;if(Math.abs(M[p][i])<1e-12)return 0;if(p!==i){[M[p],M[i]]=[M[i],M[p]];d=-d;}const pivot=M[i][i];d*=pivot;for(let r=i+1;r<M.length;r++){const f=M[r][i]/pivot;for(let c=i+1;c<M.length;c++)M[r][c]-=f*M[i][c];}}return d;}
@@ -442,14 +444,16 @@ function sphere(p,r,color){const m=new THREE.Mesh(new THREE.SphereGeometry(r,18,
 function addAxisLine(group,p,z,length,color){const a=p.clone().addScaledVector(z,-length/2),b=p.clone().addScaledVector(z,length/2),g=new THREE.BufferGeometry().setFromPoints([a,b]),m=new THREE.LineBasicMaterial({color,transparent:true,opacity:.8});group.add(new THREE.Line(g,m));}
 function addArrow(group,p,v,scale,color){const len=v.length()*scale;if(len<1e-6)return;group.add(new THREE.ArrowHelper(v.clone().normalize(),p,len,color,Math.min(.22,len*.25),Math.min(.11,len*.14)));}
 function addTextLabel(group,position,text,color=0x111111){const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');ctx.font='700 27px Arial';canvas.width=Math.max(112,Math.ceil(ctx.measureText(text).width+26));canvas.height=52;ctx.fillStyle='rgba(255,255,255,.94)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.strokeStyle=`#${new THREE.Color(color).getHexString()}`;ctx.lineWidth=4;ctx.strokeRect(2,2,canvas.width-4,canvas.height-4);ctx.fillStyle='#111';ctx.font='700 27px Arial';ctx.textBaseline='middle';ctx.fillText(text,13,26);const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false}));sprite.position.copy(position);sprite.scale.set(canvas.width/125,canvas.height/125,1);sprite.renderOrder=20;sprite.userData.isCourseLabel=true;let owner=group;while(owner&&owner.userData.courseLabelsVisible==null)owner=owner.parent;sprite.visible=owner?.userData.courseLabelsVisible??true;group.add(sprite);return sprite;}
-function clearGroup(group){while(group.children.length){const o=group.children.pop();o.geometry?.dispose();const dispose=(m)=>{m?.map?.dispose();m?.dispose();};if(Array.isArray(o.material))o.material.forEach(dispose);else dispose(o.material);}}
+function clearGroup(group){for(const child of [...group.children]){group.remove(child);child.traverse(o=>{o.geometry?.dispose();const dispose=m=>{m?.map?.dispose();m?.dispose();};if(Array.isArray(o.material))o.material.forEach(dispose);else dispose(o.material);});}}
 
 function addRange(host,label,min,max,step,value,onInput,suffix='°'){const row=document.createElement('label');row.className='sing-control';row.innerHTML=`<span>${label}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${value}"><output>${Number(value).toFixed(step<1?2:0)}${suffix}</output>`;const input=row.querySelector('input'),out=row.querySelector('output');input.dataset.key=label;input.addEventListener('input',()=>{out.value=`${Number(input.value).toFixed(step<1?2:0)}${suffix}`;onInput(Number(input.value));});host.append(row);return input;}
 function syncRanges(host,state){host.querySelectorAll('input[type=range]').forEach(input=>{const key=input.dataset.key;let value=state[key];if(value==null)return;if(key.startsWith('q'))value/=DEG;input.value=value;input.nextElementSibling.value=`${Number(value).toFixed(0)}°`;});}
 function syncJointRanges(host,q){syncRanges(host,Object.fromEntries(q.map((value,index)=>[`q${index+1}`,value])));}
-function vectorToggleMarkup(state){const row=(key,title,symbol)=>`<div><strong>${title}</strong>${state[key].map((checked,index)=>`<label><input type="checkbox" data-vector="${key}" data-index="${index}" ${checked?'checked':''}><span>${symbol}<sub>${index+1}</sub></span></label>`).join('')}</div>`;return row('axes','joint axes','z')+row('positions','position vectors','r')+row('columns','Jacobian columns','Jp,');}
+function vectorToggleMarkup(state){const row=(key,title,symbol)=>`<div><strong>${title}</strong>${state[key].map((checked,index)=>`<label><input type="checkbox" data-vector="${key}" data-index="${index}" ${checked?'checked':''}><span>${symbol}<sub>${index+1}</sub></span></label>`).join('')}</div>`;return row('axes','joint axes','<sup>0</sup>z')+row('positions','lever arms','<sup>0</sup>rₜ,')+row('columns','Jacobian columns','<sup>0</sup>Jₜ,ᵥ,');}
 function syncVectorToggles(host,state){host.querySelectorAll('input[data-vector]').forEach(input=>{input.checked=state[input.dataset.vector][+input.dataset.index];});}
 function makeSelect(label,options,value,onChange){const wrap=document.createElement('label');const select=document.createElement('select');options.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;select.append(o);});select.value=value;select.addEventListener('change',()=>onChange(select.value));wrap.append(label,select);return wrap;}
+function superscript(value){return [...String(value)].map(digit=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[+digit]).join('');}
+function subscript(value){return [...String(value)].map(digit=>'₀₁₂₃₄₅₆₇₈₉'[+digit]).join('');}
 function rangeOptions(a,b,prefix){return Array.from({length:b-a+1},(_,n)=>[String(a+n),`${prefix}${a+n}`]);}
 function matrixText(A,d=3){return A.map(r=>'[ '+r.map(x=>(Number.isFinite(x)?signed(x,d):'—').padStart(d+4)).join(' ')+' ]').join('\n');}
 function vec(v,d=2){return `[${v.toArray().map(x=>signed(x,d)).join(', ')}]`;}

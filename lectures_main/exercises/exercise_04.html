@@ -1,173 +1,84 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Exercise 04 · Global IK Feasibility for a Redundant Path | ENG-654</title>
-  <link rel="stylesheet" href="../css/base.css">
-  <link rel="stylesheet" href="../css/layouts.css">
-  <link rel="stylesheet" href="../css/components.css">
-  <link rel="stylesheet" href="../css/reveal.css">
-  <link rel="stylesheet" href="../css/navigation.css">
-  <link rel="stylesheet" href="../css/viz.css">
-  <link rel="stylesheet" href="../css/exercises.css">
-  <script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']],displayMath:[['\\[','\\]']]}};</script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Exercise 04 · Choose a complete robot path | ENG-654</title>
+  <link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/layouts.css">
+  <link rel="stylesheet" href="../css/components.css"><link rel="stylesheet" href="../css/reveal.css">
+  <link rel="stylesheet" href="../css/navigation.css"><link rel="stylesheet" href="../css/viz.css">
+  <link rel="stylesheet" href="../css/exercises.css"><link rel="stylesheet" href="../css/exercise-01-answers.css">
+  <link rel="stylesheet" href="../css/exercise-04.css?v=20260915-2">
+  <script type="importmap">{"imports":{"three":"../vendor/three/build/three.module.js","three/addons/":"../vendor/three/examples/jsm/"}}</script>
 </head>
-<body class="mode-deck narrative-lecture exercise-deck exercise-04">
-<main id="deck" class="deck">
+<body class="mode-scroll narrative-lecture exercise-deck exercise-04">
+<header class="answer-toolbar" aria-label="Exercise responses">
+  <a class="answer-home" href="../">ENG-654</a><strong>Exercise 04</strong>
+  <div class="answer-actions"><button id="download-responses" type="button">Download responses</button><label class="answer-upload">Load saved responses<input id="load-responses" type="file" accept=".json,application/json"></label><button id="check-all" type="button">Check all responses</button></div>
+  <p id="file-status" class="answer-status" role="status">Metres · joint-angle selections shown in degrees · saved in this browser</p>
+</header>
+<noscript><p class="answer-noscript">Enable JavaScript to calculate inverse kinematics and animate the robots.</p></noscript>
+<main id="deck" class="deck" data-default-mode="mode-scroll" data-interactive-exercise="exercise_04">
+<section class="slide title-slide exercise-slide">
+  <div class="title-slide-content"><p class="eyebrow">ENG-654 · Exercise 04</p><h1 class="course-title">Choose a complete robot path</h1>
+  <p class="subtitle">One supplied task-space path can have several joint-space paths.<br>Find which starting solutions survive the whole motion.</p>
+  <div class="exercise-tags"><span>ABB CRB · path height</span><span>iiwa 7 · redundancy</span><span>analytical and numerical planning</span></div>
+  <p class="exercise-answer-intro">Investigate first, then submit your choices. Green feedback means the computed path passes the checks; red feedback explains a failed check. Download your responses to continue later.</p>
+  <p class="ex04-note">The tool moves in an x–y plane with <strong>constant orientation</strong>. Position changes along the path. This exercise checks joint limits, pose tracking, continuity and kinematic singularities; collision and dynamic feasibility are outside this exercise.</p>
+  <a class="ex04-button" href="#slide-2">Start the CRB experiment →</a></div>
+</section>
+<section class="slide exercise-slide" id="crb-experiment">
+  <p class="ex-kicker">01 · ABB CRB · investigate the height</p><h2 class="slide-title">Follow the same rectangle from every starting IK</h2>
+  <p class="ex-subtitle">Move the supplied rectangle vertically. At the default height, at most four starting IKs complete it. Find three distinct heights with <strong>at least six complete joint-space paths</strong> each.</p>
+  <div id="crb-spec" class="ex04-spec"></div>
+  <div class="ex04-controls"><label>Height z [m] <input id="crb-height" type="number" step="0.01" min="-0.2" max="1" value="0.2"></label><button id="crb-build" class="primary" type="button">Calculate all paths</button><button id="crb-default" type="button">Default height</button><label><input id="crb-all" type="checkbox"> Show all starting IKs</label><progress id="crb-progress" max="1" value="0" aria-label="CRB path calculation"></progress></div>
+  <div class="ex04-lab"><div id="crb-scene" class="ex04-scene" aria-label="ABB CRB robot animation"></div><div class="ex04-plot"><svg id="crb-plot" aria-label="Supplied x-y rectangle and followed path"></svg></div></div>
+  <div id="crb-branches" class="ex04-branches" aria-label="Select an ABB CRB starting solution"></div>
+  <div id="crb-playback" class="ex04-controls"><button data-play type="button" disabled>Play</button><button data-reset type="button" disabled>Reset</button><input data-scrub type="range" min="0" max="1" step="0.001" value="0" aria-label="CRB path progress" disabled><output data-readout></output></div>
+  <p id="crb-status" class="ex04-status" role="status">Loading the robot and calculating the default experiment…</p>
+  <p class="ex04-note">Count complete paths, not just IKs at the first point. A branch can stop at a physical joint limit while the number of IKs in the workspace stays unchanged. Angles are continued through their actual joint coordinates.</p>
+</section>
+<section class="slide exercise-slide">
+  <p class="ex-kicker">02 · Record your three path placements</p><h2 class="slide-title">Submit three different heights</h2>
+  <p>Each entry is checked by recomputing all starting solutions and following the entire rectangle. Heights must differ by at least 0.01 m.</p>
+  <div id="crb-answer-rows" class="ex04-height-answers"></div>
+  <button id="check-heights" class="primary" type="button">Check the three heights</button><p id="height-status" role="status"></p>
+  <label class="ex04-reflection">Explain why an IK count at one point cannot certify a complete path.<textarea data-answer="crb.explanation" rows="3" maxlength="4000" placeholder="Use one observed stop and one complete path as evidence."></textarea></label>
+</section>
+<section class="slide exercise-slide">
+  <p class="ex-kicker">03 · KUKA iiwa 7 · choose redundancy</p><h2 class="slide-title">Give each IK set two successful starting angles</h2>
+  <p class="ex-subtitle">The circular path and tool orientation are fixed. For <strong>each of the eight algebraic IK sets</strong>, choose two distinct starting q₃ values from the supplied selection. A choice is correct when the analytical or numerical planner completes the path from that selected start.</p>
+  <div id="iiwa-spec" class="ex04-spec"></div>
+  <p class="ex04-note">These sets label the fixed-q₃ algebraic roots. They are local labels, not eight globally disconnected components. Your chosen q₃ specifies the starting posture; both planners may change q₃ along the path. The analytical planner connects exact IK candidates across redundant angles and sets, refining a failed coarse search. Completing the task-space loop does not require returning to the initial redundant posture.</p>
+  <div class="ex04-map-panel">
+    <h3>Explore the full path–redundancy map</h3>
+    <p class="ex04-note">Each dot tests one path pose and one q₃ value. <span class="ex04-map-key"><i class="valid"></i>Green: a real IK within joint limits with full Jacobian rank.</span> <span class="ex04-map-key"><i></i>Grey: no valid IK.</span> <strong>Green dots alone do not guarantee a continuous complete path.</strong></p>
+    <div class="ex04-controls"><label><input id="iiwa-show-all-maps" type="checkbox"> Show all eight IK sets</label><progress id="iiwa-map-progress" max="1" value="0" aria-label="Path–redundancy map calculation"></progress></div>
+    <p class="ex04-map-instruction">Choose your starting q₃ by clicking the <strong>first column, s = 0</strong>. Clicking elsewhere inspects that individual pose. The map shows feasibility only; choose a start, calculate, then play to discover the motion.</p>
+    <div id="iiwa-feasibility-maps" class="ex04-feasibility-maps" aria-label="Path progress versus redundant joint angle for the iiwa IK sets"></div>
+    <p id="iiwa-map-status" class="ex04-map-status" role="status">Calculating the green and grey dots along the complete circle…</p>
+  </div>
+  <div class="ex04-controls"><label>IK set <select id="iiwa-branch" aria-label="iiwa IK set"></select></label><label>Starting q₃ <select id="iiwa-angle" aria-label="iiwa starting angle"></select></label><button id="iiwa-build" class="primary" type="button">Calculate both planners</button><label>Animate <select id="iiwa-method"><option value="analytical">Analytical</option><option value="numerical">Numerical</option></select></label><progress id="iiwa-progress" max="1" value="0" aria-label="iiwa planning progress"></progress></div>
+  <div class="ex04-lab"><div id="iiwa-scene" class="ex04-scene" aria-label="KUKA iiwa 7 path animation"></div><div class="ex04-plot"><svg id="iiwa-plot" aria-label="iiwa supplied circle and motion followed so far"></svg></div></div>
+  <div id="iiwa-playback" class="ex04-controls"><button data-play type="button" disabled>Play</button><button data-reset type="button" disabled>Reset</button><input data-scrub type="range" min="0" max="1" step="0.001" value="0" aria-label="iiwa path progress" disabled><output data-readout></output></div>
+  <p id="iiwa-status" class="ex04-status" role="status">Choose an IK set and starting angle, then calculate both continuations.</p>
+  <details><summary>What do the two planners check?</summary><p id="iiwa-method-description">The analytical planner searches validated connections between exact IK candidates. The numerical planner uses the geometric Jacobian and a null-space joint-limit cost, then corrects the pose. Both preserve native joint limits and check continuous joint motion.</p></details>
+</section>
+<section class="slide exercise-slide">
+  <p class="ex-kicker">04 · Verify all eight sets</p><h2 class="slide-title">Two angles per set · two planners per angle</h2>
+  <p>Use a row’s <strong>Try</strong> button to inspect the selected start. <strong>Check set</strong> runs both planners for each choice. A choice is correct if either method completes the full path within joint limits and without a full-Jacobian singularity. A missing or illegal root does not count as a path.</p>
+  <div class="ex04-controls"><button id="restore-iiwa-choices" type="button" hidden>Restore saved choices</button><span>Choose both starting angles yourself. These menus open without a selected angle.</span></div>
+  <div class="ex04-table-wrap"><table class="ex04-table"><thead><tr><th>IK set</th><th>First q₃</th><th>Second q₃</th><th>Verify both</th></tr></thead><tbody id="iiwa-answer-rows"></tbody></table></div>
+  <p id="iiwa-answer-status" role="status"></p>
+  <label class="ex04-reflection">Compare the analytical and numerical redundant motions.<textarea data-answer="iiwa.explanation" rows="3" maxlength="4000" placeholder="Do they use the same q₃ schedule? What does a local failure tell you about global feasibility?"></textarea></label>
+</section>
 
-  <section class="slide title-slide exercise-slide">
-    <div class="title-slide-content">
-      <p class="eyebrow">ENG-654 · Exercise 04 · Part I Culmination</p>
-      <h1 class="course-title">Plan Through the Global IK Map</h1>
-      <p class="subtitle">Evaluate every fixed-redundancy branch of the KUKA LBR iiwa 7 along a workspace path, then measure how path placement changes feasibility.</p>
-      <div class="exercise-tags"><span>7R analytical IK</span><span>8 branches</span><span>350 redundancy samples</span><span>path placement</span></div>
-      <p class="exercise-promise">Your maps should expose where a branch exists, where constraints remove it, and where a changing redundancy schedule may pass through the remaining feasible set.</p>
-    </div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Learning objective and course files</p>
-    <h2 class="slide-title">Convert one workspace path into a family of joint-space paths</h2>
-    <div class="ex-objective">
-      <div class="ex-question">
-        <strong>For which path samples, redundancy angles, and IK branches is the complete pose feasible?</strong>
-        <p>Use the course analytical iiwa IK model. Do not replace branch enumeration with one seed-dependent numerical solve.</p>
-      </div>
-      <div class="ex-card black">
-        <h3>Reference assets</h3>
-        <p><a class="ex-file" href="../assets/models/iiwa7/iiwa7.urdf">assets/models/iiwa7/iiwa7.urdf</a></p>
-        <p><a class="ex-file" href="../assets/data/path/kuka_iiwa7_rectangle_workspace_path_500_quaternion.csv">assets/data/path/kuka_iiwa7_rectangle_workspace_path_500_quaternion.csv</a></p>
-        <p><a class="ex-file" href="../assets/data/null/iiwa7_IK_q3_030deg.csv">assets/data/null/iiwa7_IK_q3_030deg.csv</a></p>
-        <p class="ex-small">The \(q_3=30^\circ\) table is a branch-label/reference check. It is not a substitute for evaluating the full redundancy grid.</p>
-        <div class="ex-divider">path preparation</div>
-        <p class="ex-small">Parse \(N\) complete poses, normalize every quaternion, confirm its component order, and store \(T_k=[R_k,p_k]\) for \(k=0,\ldots,N-1\). Inspect corners and pose continuity before solving IK.</p>
-      </div>
-    </div>
-    <div class="ex-takeaway">Determine \(N\) from the file; the current course CSV has \(N=500\) data rows. If you resample, interpolate translation in \(\mathbb R^3\), use sign-consistent quaternion slerp for orientation, and document the new \(N\). A finite path grid can miss a narrow infeasible interval.</div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Construct the redundancy grid</p>
-    <h2 class="slide-title">Use exactly 175 negative and 175 positive angles</h2>
-    <div class="ex-grid-2">
-      <div class="ex-equation red">
-        \[
-        \Lambda=\{\lambda^-_1,\ldots,\lambda^-_{175},\lambda^+_1,\ldots,\lambda^+_{175}\},
-        \quad \lambda^-_i<0<\lambda^+_i,
-        \quad |\Lambda|=350
-        \]
-      </div>
-      <div class="ex-card black">
-        <h3>Sampling contract</h3>
-        <ul>
-          <li>Use the negative and positive bounds defined in the assignment data.</li>
-          <li>Sort the final vector monotonically and record units.</li>
-          <li>Do not silently add \(0\): zero is not in the 350-sample baseline.</li>
-          <li>If the assignment data explicitly requests a zero row, add it and report \(N_\lambda=351\).</li>
-        </ul>
-      </div>
-    </div>
-    <div class="ex-takeaway">Choose the stated redundancy coordinate consistently—e.g. \(\lambda=q_3\). A coordinate is a chart of the self-motion family, not a claim that the family is globally one-to-one.</div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Evaluate all branches</p>
-    <h2 class="slide-title">Every grid cell requests up to eight labelled branch candidates</h2>
-    <div class="ex-equation red">
-      \[q_{b,k,j}=\operatorname{IK}_b(T_k;\lambda_j),\qquad b=1,\ldots,8,\quad k=0,\ldots,N-1,\quad j=0,\ldots,349\]
-    </div>
-    <div class="ex-dimensions">
-      <div><b>Joint tensor</b><span>\(Q\in\mathbb R^{8\times N\times350\times7}\). For the current \(N=500\) file: 9,800,000 joint scalars.</span></div>
-      <div><b>Feasibility mask</b><span>\(V\in\{0,1\}^{8\times N\times350}\). For \(N=500\): 1,400,000 branch/sample/angle decisions.</span></div>
-      <div><b>One branch image</b><span>350 redundancy rows × \(N\) path columns. Produce eight comparable maps.</span></div>
-    </div>
-    <div class="ex-grid-2" style="flex:0 0 auto;margin-top:.55rem">
-      <div class="ex-card green"><h3>Preserve eight slots</h3><p>Track all eight analytical branch labels even when a candidate is absent or non-real. Array order alone is not a stable branch label.</p></div>
-      <div class="ex-card yellow"><h3>Represent failure</h3><p>Store invalid joint vectors as missing values plus a reason code; never replace them with zeros or a neighbouring solution.</p></div>
-    </div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Validate and classify each cell</p>
-    <h2 class="slide-title">Feasibility is the intersection of several tests</h2>
-    <div class="ex-grid-4 reveal-children">
-      <div class="ex-card red"><h3>Pose closure</h3><p>Require finite real joints and verify position/orientation FK residuals against \(T_k\).</p></div>
-      <div class="ex-card green"><h3>Joint limits</h3><p>Test the physical iiwa limits after resolving angle periodicity consistently.</p></div>
-      <div class="ex-card yellow"><h3>Regularity</h3><p>Record both full-Jacobian \(\sigma_{\min}\) and any fixed-\(\lambda\) reduced determinant used by the analytical chart.</p></div>
-      <div class="ex-card black"><h3>Continuity and collision</h3><p>Run the course collision checker when available. Store wrapped \(\Delta q\) tests on transitions between chosen neighbouring cells.</p></div>
-    </div>
-    <div class="ex-equation compact">\[V^{cell}_{b,k,j}=V_{FK}\land V_{limit}\land V_{regular}\land V_{collision},\qquad E_{b,(k,j)\to(k+1,j')}=V^{cell}_{b,k,j}V^{cell}_{b,k+1,j'}\,\mathbf 1[\|\operatorname{wrap}(\Delta q)\|\le\tau_q]\]</div>
-    <div class="ex-caveat">Continuity is an edge property: use \(j'=j\) for a constant-\(\lambda\) path, or state which \(j\to j'\) moves are allowed for a varying schedule. A reduced-chart fold and full \(6\times7\) rank loss are different events; report them separately.</div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Build the eight feasibility maps</p>
-    <h2 class="slide-title">Plot redundancy angle against path progress—and keep the reason for every gap</h2>
-    <div class="ex-grid-2">
-      <div class="ex-card red">
-        <h3>Required plot</h3>
-        <ul>
-          <li>Horizontal axis: path sample \(k=0,\ldots,N-1\).</li>
-          <li>Vertical axis: the 350 ordered values of \(\lambda\).</li>
-          <li>One panel per branch with identical axes and colour rules.</li>
-          <li>Distinguish limit, singular/chart, discontinuity, collision, and IK-loss failures.</li>
-        </ul>
-      </div>
-      <div class="ex-card green">
-        <h3>Questions to answer</h3>
-        <ul>
-          <li>Does any constant-\(\lambda\) row remain feasible for the complete path?</li>
-          <li>Is there a connected corridor for a varying schedule \(\lambda(k)\)?</li>
-          <li>Which branch has the widest margin to limits and singularities?</li>
-          <li>Where do branches appear, merge, or terminate?</li>
-        </ul>
-      </div>
-    </div>
-    <div class="ex-takeaway">A continuous-looking pixel corridor is a candidate schedule. Recover its joint sequence and revalidate the actual transitions before calling it a path.</div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Path-placement experiment</p>
-    <h2 class="slide-title">Translate and rotate the command—not the robot meshes</h2>
-    <div class="ex-grid-2">
-      <div>
-        <div class="ex-equation red">\[T'_k=T_\Delta T_k,\qquad p'_k=R_\Delta p_k+t_\Delta,\qquad R'_k=R_\Delta R_k\]</div>
-        <p class="ex-subtitle">Left multiplication places the complete path in a new base-frame pose. Record \(T_\Delta\) for every trial so the experiment is reproducible.</p>
-      </div>
-      <div class="ex-card black">
-        <h3>Compare placements quantitatively</h3>
-        <ul>
-          <li>Feasible-cell fraction per branch.</li>
-          <li>Number and width of complete-path corridors.</li>
-          <li>Minimum joint-limit, singularity, and clearance margins.</li>
-          <li>Best candidate’s total wrapped joint travel.</li>
-        </ul>
-      </div>
-    </div>
-    <div class="ex-caveat"><strong>Path placement is not mesh placement.</strong> \(T_\Delta\) changes desired workspace poses and therefore IK feasibility. Editing a URDF visual origin changes only how an STL is drawn on its link.</div>
-  </section>
-
-  <section class="slide exercise-slide">
-    <p class="ex-kicker">Submission checklist</p>
-    <h2 class="slide-title">Separate sampled evidence from a mathematical proof</h2>
-    <div class="ex-grid-2">
-      <div class="ex-checklist reveal-children">
-        <div class="ex-check"><span>✓</span><p>Path parser and pose-continuity report for all \(N\) samples.</p></div>
-        <div class="ex-check"><span>✓</span><p>Documented 350-angle vector: 175 negative plus 175 positive values.</p></div>
-        <div class="ex-check"><span>✓</span><p>All eight branch maps, reason masks, tensor dimensions, and FK residual summary.</p></div>
-        <div class="ex-check"><span>✓</span><p>Baseline plus translated/rotated placements with quantitative comparison.</p></div>
-      </div>
-      <div class="ex-question">
-        <strong>Required conclusion</strong>
-        <p>State exactly what your grid demonstrates and what it cannot prove. A missing sampled corridor may result from true infeasibility, finite angular/path resolution, a chart fold, numerical tolerance, or an unavailable collision check.</p>
-      </div>
-    </div>
-    <div class="ex-deliverable"><strong>Deliverables:</strong> code, \(\Lambda\), branch-labelled result tensor or streamed equivalent, validation masks, eight maps per placement, placement transforms, candidate trajectories, and evidence-based conclusions.</div>
-  </section>
+<section class="slide exercise-slide">
+  <p class="ex-kicker">05 · Explain your planning decisions</p><h2 class="slide-title">From a feasible pose to a complete motion</h2>
+  <p>Use your experiments to answer these 15 questions. Some questions accept several choices; select every correct statement where indicated.</p>
+  <div id="exercise04-quiz"></div>
+</section>
 
 </main>
 <script src="../js/deck/nav-runtime.js"></script>
-</body>
-</html>
+<script type="module" src="../js/exercises/exercise-04.js?v=20260916-1"></script>
+</body></html>

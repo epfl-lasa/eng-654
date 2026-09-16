@@ -1,0 +1,2213 @@
+{
+  "schemaVersion": 1,
+  "exercise": "exercise_04",
+  "model": "abb_crb_15000_and_iiwa7",
+  "purpose": "instructor_reference_answer_key",
+  "units": {
+    "length": "m",
+    "angle": "deg"
+  },
+  "answers": {
+    "crb.height.1": "0.35",
+    "crb.height.2": "0.4",
+    "crb.height.3": "0.45",
+    "crb.explanation": "The default path has eight geometric IKs at every sampled pose but only three complete joint paths. Some legal starting branches reach q2 = ±180 degrees. A count at one point does not establish continuity, joint-limit clearance or nonsingularity along the entire path. Repositioning the rectangle changes the native joint trajectories and can avoid these stops.",
+    "iiwa.0.1": "-70",
+    "iiwa.0.2": "70",
+    "iiwa.1.1": "-120",
+    "iiwa.1.2": "120",
+    "iiwa.2.1": "-110",
+    "iiwa.2.2": "110",
+    "iiwa.3.1": "-50",
+    "iiwa.3.2": "50",
+    "iiwa.4.1": "-110",
+    "iiwa.4.2": "110",
+    "iiwa.5.1": "-110",
+    "iiwa.5.2": "110",
+    "iiwa.6.1": "-70",
+    "iiwa.6.2": "70",
+    "iiwa.7.1": "-70",
+    "iiwa.7.2": "70",
+    "iiwa.explanation": "Each green map dot verifies one sampled pose, native joint limits and full 6×7 Jacobian rank for the selected algebraic set and q3. It does not guarantee the whole path. The chosen q3 fixes the starting posture; both planners may vary it. The analytical graph connects exact IK roots over redundant angles and all eight sets, refining a failed coarse search. The numerical right pseudoinverse adds a joint-limit barrier in the null space. Either validated complete path earns credit, and the final redundant posture may differ. For example, IK1 at −80 degrees completes with both methods once the analytical search is allowed to vary q3. IK7 at −150 degrees still reaches the +175-degree q7 stop near s = 0.045 under this local numerical strategy. A local stop or failed sampled graph search is not proof of global infeasibility.",
+    "quiz.urdf": [
+      "axis-local",
+      "visual-separate",
+      "pose-units"
+    ],
+    "quiz.dh": "standard",
+    "quiz.tool-twist": [
+      "point-shift",
+      "rotation-rank"
+    ],
+    "quiz.general-6r": "sixteen",
+    "quiz.elimination": [
+      "half-angle",
+      "reconstruct",
+      "extraneous"
+    ],
+    "quiz.paden-kahan": "one-axis",
+    "quiz.jacobian-types": [
+      "angular-velocity",
+      "representation"
+    ],
+    "quiz.rectangular-rank": "rank-six",
+    "quiz.null-space": [
+      "projection",
+      "costs"
+    ],
+    "quiz.redundant-family": "one",
+    "quiz.iiwa-parameter": [
+      "eight-branches",
+      "limits-filter",
+      "parameter-failure"
+    ],
+    "quiz.cuspidality": "nonsingular-change",
+    "quiz.critical-values": [
+      "fold-pair",
+      "cusp-triple",
+      "full-preimage"
+    ],
+    "quiz.path-feasibility": "continuous",
+    "quiz.planning-strategies": [
+      "hybrid",
+      "global"
+    ]
+  },
+  "verification": {
+    "crb": {
+      "path": {
+        "center": [
+          0.4,
+          0.2
+        ],
+        "width": 0.18,
+        "height": 0.16,
+        "verticesXY": [
+          [
+            0.31,
+            0.12
+          ],
+          [
+            0.49,
+            0.12
+          ],
+          [
+            0.49,
+            0.28
+          ],
+          [
+            0.31,
+            0.28
+          ],
+          [
+            0.31,
+            0.12
+          ]
+        ],
+        "rotation": [
+          [
+            0.4333369261237031,
+            0.05935977472642823,
+            0.8992749999872608
+          ],
+          [
+            0.13404681954446868,
+            0.9824842006783263,
+            -0.12944591761613314
+          ],
+          [
+            -0.8912073600614354,
+            0.1766386496831817,
+            0.4177896944760956
+          ]
+        ],
+        "rotationExpression": "Rz(0.3) Ry(1.1) Rx(0.4)",
+        "defaultZ": 0.2,
+        "zRange": [
+          0.05,
+          0.9
+        ],
+        "perimeter": 0.68,
+        "intervals": 408,
+        "minDet": 1e-05,
+        "maxJointStep": 0.08,
+        "subdivisions": 8
+      },
+      "default": {
+        "z": 0.2,
+        "sampleCount": 409,
+        "resolved": true,
+        "geometricStartCount": 8,
+        "legalStartCount": 6,
+        "completeCount": 3,
+        "rootCountRange": [
+          8,
+          8
+        ],
+        "legalCountRange": [
+          6,
+          8
+        ],
+        "tracks": [
+          {
+            "index": 1,
+            "complete": false,
+            "reason": "A joint limit is reached: q2 = 180° at s = 0.2137.",
+            "pointCount": 88,
+            "minDet": 0.020482550073559223,
+            "minLimitMargin": 0.000731679755149095,
+            "maxPositionError": 4.5541855308043944e-11,
+            "maxRotationError": 2.656560921763013e-10,
+            "stop": {
+              "kind": "joint-limit",
+              "joint": 1,
+              "limit": 3.141592653589793,
+              "range": [
+                -3.141592653589793,
+                3.141592653589793
+              ],
+              "lastSafe": 3.140860973834644,
+              "attempted": 3.1445425595856005,
+              "boundaryQ": [
+                -2.916179445881122,
+                3.141592653589552,
+                0.833966661539943,
+                2.3856015333175193,
+                0.4971395390168771,
+                0.7277855795540132
+              ],
+              "position": [
+                0.4553308952444399,
+                0.12000000000000142,
+                0.1999999999999913
+              ],
+              "progress": 0.21372190477125644,
+              "attemptProgress": 0.21568627450980393,
+              "wrappedEquivalent": true
+            },
+            "startQ": [
+              -2.824041365620216,
+              2.76502112973316,
+              1.1522973216508596,
+              2.1630317566696693,
+              0.5082422110159506,
+              0.9058259814069185
+            ],
+            "endQ": [
+              -2.9160149892252765,
+              3.140860973834644,
+              0.8347118817860957,
+              2.3853487070299995,
+              0.4972252072927472,
+              0.7279346568816893
+            ],
+            "maxJointStep": 0.005252129346163592
+          },
+          {
+            "index": 2,
+            "complete": true,
+            "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+            "pointCount": 409,
+            "minDet": 0.03583974481689557,
+            "minLimitMargin": 0.188482561155646,
+            "maxPositionError": 6.375465719984578e-11,
+            "maxRotationError": 1.4341141436827456e-10,
+            "stop": null,
+            "startQ": [
+              -2.649587082683267,
+              -0.8240521385463655,
+              -3.7385082557656695,
+              -2.540356000247784,
+              -1.8796062083320635,
+              0.10259614340642287
+            ],
+            "endQ": [
+              -2.6495870828935844,
+              -0.8240521384972457,
+              -3.7385082558315954,
+              -2.5403560004545302,
+              -1.8796062084046943,
+              0.10259614331960755
+            ],
+            "maxJointStep": 0.005535128969311742
+          },
+          {
+            "index": 3,
+            "complete": false,
+            "reason": "Starting configuration violates limits or the singularity margin.",
+            "pointCount": 1,
+            "minDet": 0.02514687830238866,
+            "minLimitMargin": -0.7898505868295587,
+            "maxPositionError": 3.0404709722440583e-16,
+            "maxRotationError": 6.118829799797332e-16,
+            "stop": null,
+            "startQ": [
+              -2.584802143577976,
+              -0.23639600357839186,
+              2.273380451024739,
+              0.6263764109178034,
+              1.6316321069490485,
+              3.043013170156655
+            ],
+            "endQ": [
+              -2.584802143577976,
+              -0.23639600357839186,
+              2.273380451024739,
+              0.6263764109178034,
+              1.6316321069490485,
+              3.043013170156655
+            ],
+            "maxJointStep": 0
+          },
+          {
+            "index": 4,
+            "complete": false,
+            "reason": "A joint limit is reached: q2 = 180° at s = 0.0202.",
+            "pointCount": 9,
+            "minDet": 0.019682640788471633,
+            "minLimitMargin": 0.0007474640269142796,
+            "maxPositionError": 1.0094980896317869e-10,
+            "maxRotationError": 2.1978772928322615e-10,
+            "stop": {
+              "kind": "joint-limit",
+              "joint": 1,
+              "limit": 3.141592653589793,
+              "range": [
+                -3.141592653589793,
+                3.141592653589793
+              ],
+              "lastSafe": 3.140845189562879,
+              "attempted": 3.1437239500323377,
+              "boundaryQ": [
+                -2.4734478460605924,
+                3.1415926535893406,
+                1.2293653062196708,
+                -0.9717971233577113,
+                -0.923309702294199,
+                -2.6366412840223785
+              ],
+              "position": [
+                0.3237659774906866,
+                0.12000000000002586,
+                0.20000000000008103
+              ],
+              "progress": 0.020244084545707895,
+              "attemptProgress": 0.022058823529411787,
+              "wrappedEquivalent": true
+            },
+            "startQ": [
+              -2.4377490281314547,
+              3.117761342047043,
+              1.2518931821825312,
+              -1.0111546043389268,
+              -0.9326170856116995,
+              -2.627088399430611
+            ],
+            "endQ": [
+              -2.472371338478336,
+              3.140845189562879,
+              1.2300885865026618,
+              -0.9729801113663572,
+              -0.9235939075267772,
+              -2.6363616739487976
+            ],
+            "maxJointStep": 0.004956098326807323
+          },
+          {
+            "index": 5,
+            "complete": false,
+            "reason": "Starting configuration violates limits or the singularity margin.",
+            "pointCount": 1,
+            "minDet": 0.013603600626287897,
+            "minLimitMargin": -0.8489816696551529,
+            "maxPositionError": 3.188872858294072e-16,
+            "maxRotationError": 1.5011924514119149e-15,
+            "stop": null,
+            "startQ": [
+              0.2494557261543111,
+              -2.7708947738835024,
+              2.332511533850333,
+              -1.633866660679101,
+              0.35558763220976175,
+              1.6625051879211838
+            ],
+            "endQ": [
+              0.2494557261543111,
+              -2.7708947738835024,
+              2.332511533850333,
+              -1.633866660679101,
+              0.35558763220976175,
+              1.6625051879211838
+            ],
+            "maxJointStep": 0
+          },
+          {
+            "index": 6,
+            "complete": true,
+            "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+            "pointCount": 409,
+            "minDet": 0.029297821104214725,
+            "minLimitMargin": 0.39452430534660365,
+            "maxPositionError": 5.835514697351218e-11,
+            "maxRotationError": 2.1767065468521467e-10,
+            "stop": null,
+            "startQ": [
+              0.41615061511205553,
+              0.8232810167844811,
+              1.0890055588485765,
+              0.6884085918479084,
+              -2.2804845649790817,
+              0.4320371822496085
+            ],
+            "endQ": [
+              0.41615061499125094,
+              0.8232810167400888,
+              1.0890055588340348,
+              0.6884085915798528,
+              -2.280484565142261,
+              0.43203718200385816
+            ],
+            "maxJointStep": 0.005519706886018438
+          },
+          {
+            "index": 7,
+            "complete": true,
+            "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+            "pointCount": 409,
+            "minDet": 0.022945553597705715,
+            "minLimitMargin": 0.18377842314307968,
+            "maxPositionError": 1.1166464507534431e-10,
+            "maxRotationError": 9.180644885047772e-11,
+            "stop": null,
+            "startQ": [
+              0.6311996412007765,
+              0.23761734522454425,
+              1.2997514408944575,
+              -2.3777842984319824,
+              1.9777844920179035,
+              -2.9713734880350255
+            ],
+            "endQ": [
+              0.631199640842242,
+              0.23761734513946448,
+              1.2997514410521005,
+              -2.377784298785298,
+              1.9777844921216972,
+              -2.971373488046216
+            ],
+            "maxJointStep": 0.005606204097010847
+          },
+          {
+            "index": 8,
+            "complete": false,
+            "reason": "A joint limit is reached: q2 = -180° at s = 0.0244.",
+            "pointCount": 10,
+            "minDet": 0.0197991076073062,
+            "minLimitMargin": 0.0027078644685225584,
+            "maxPositionError": 5.740725865114748e-11,
+            "maxRotationError": 1.370424359480663e-10,
+            "stop": {
+              "kind": "joint-limit",
+              "joint": 1,
+              "limit": -3.141592653589793,
+              "range": [
+                -3.141592653589793,
+                3.141592653589793
+              ],
+              "lastSafe": -3.1388847891212706,
+              "attempted": -3.1416996772983508,
+              "boundaryQ": [
+                0.7277732301779236,
+                -3.1415926535892296,
+                -3.7910354363188743,
+                1.6013611528026908,
+                -0.7686730224235001,
+                -1.8780460239421854
+              ],
+              "position": [
+                0.3266032857680692,
+                0.11999999999999988,
+                0.19999999999999998
+              ],
+              "progress": 0.02441659671774901,
+              "attemptProgress": 0.024509803921568624,
+              "wrappedEquivalent": true
+            },
+            "startQ": [
+              0.765149070751658,
+              -3.1135129659627285,
+              -3.818083140889051,
+              1.5771842777618073,
+              -0.798426819310194,
+              -1.875804926015844
+            ],
+            "endQ": [
+              0.731253080257081,
+              -3.1388847891212706,
+              -3.793701273431137,
+              1.5991293293680395,
+              -0.7714420522366721,
+              -1.8778684625311588
+            ],
+            "maxJointStep": 0.0038885911776331827
+          }
+        ]
+      },
+      "exampleHeights": [
+        {
+          "z": 0.35,
+          "sampleCount": 409,
+          "resolved": true,
+          "geometricStartCount": 8,
+          "legalStartCount": 6,
+          "completeCount": 6,
+          "rootCountRange": [
+            8,
+            8
+          ],
+          "legalCountRange": [
+            6,
+            8
+          ],
+          "tracks": [
+            {
+              "index": 1,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.028655487606470218,
+              "minLimitMargin": 0.059699060936427184,
+              "maxPositionError": 5.095274739000369e-11,
+              "maxRotationError": 1.0940013151194695e-10,
+              "stop": null,
+              "startQ": [
+                -2.719331264187688,
+                -3.081893592650034,
+                1.2046475069579987,
+                2.4645827696891836,
+                0.8895240755670581,
+                0.4052092006318322
+              ],
+              "endQ": [
+                -2.7193312643293828,
+                -3.081893592653366,
+                1.204647506991223,
+                2.464582769855338,
+                0.8895240755572611,
+                0.40520920060062954
+              ],
+              "maxJointStep": 0.005955736676141576
+            },
+            {
+              "index": 2,
+              "complete": false,
+              "reason": "Starting configuration violates limits or the singularity margin.",
+              "pointCount": 1,
+              "minDet": 0.025004054199951234,
+              "minLimitMargin": -0.8137264856131967,
+              "maxPositionError": 2.5438405243138006e-16,
+              "maxRotationError": 1.041504629335608e-15,
+              "stop": null,
+              "startQ": [
+                -2.6834580091592413,
+                0.374245004841967,
+                2.297256349808377,
+                0.6252016075099789,
+                1.0715464764104148,
+                2.7255107676530557
+              ],
+              "endQ": [
+                -2.6834580091592413,
+                0.374245004841967,
+                2.297256349808377,
+                0.6252016075099789,
+                1.0715464764104148,
+                2.7255107676530557
+              ],
+              "maxJointStep": 0
+            },
+            {
+              "index": 3,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.03226146839881835,
+              "minLimitMargin": 0.09841166042513017,
+              "maxPositionError": 8.491788726703151e-11,
+              "maxRotationError": 1.4268850402815905e-10,
+              "stop": null,
+              "startQ": [
+                -2.587672578789599,
+                -0.2878549285731751,
+                -3.8285791564164917,
+                -2.518277400381371,
+                -1.5254840508276448,
+                -0.1732766590690762
+              ],
+              "endQ": [
+                -2.5876725790625636,
+                -0.2878549285239286,
+                -3.8285791565621112,
+                -2.5182774006572752,
+                -1.5254840507643574,
+                -0.1732766590124396
+              ],
+              "maxJointStep": 0.005421217309936388
+            },
+            {
+              "index": 4,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.02440655387227149,
+              "minLimitMargin": 0.22096999908636028,
+              "maxPositionError": 1.1280013842753347e-10,
+              "maxRotationError": 1.4523614068714612e-10,
+              "stop": null,
+              "startQ": [
+                -2.55547046367988,
+                -2.5470185713606055,
+                1.2625598650151826,
+                -0.6674481715332874,
+                -1.3598312886484436,
+                -3.1395594896441157
+              ],
+              "endQ": [
+                -2.5554704640787245,
+                -2.5470185713873255,
+                1.26255986510882,
+                -0.6674481712452276,
+                -1.3598312888191881,
+                -3.1395594895114947
+              ],
+              "maxJointStep": 0.006221624895478062
+            },
+            {
+              "index": 5,
+              "complete": false,
+              "reason": "Starting configuration violates limits or the singularity margin.",
+              "pointCount": 1,
+              "minDet": 0.02143603910494793,
+              "minLimitMargin": -0.8680822668647306,
+              "maxPositionError": 2.3592239273284576e-16,
+              "maxRotationError": 9.046146325204653e-16,
+              "stop": null,
+              "startQ": [
+                0.3372427411885166,
+                3.079514480853611,
+                2.3516121310599107,
+                -0.9024676213896043,
+                0.5642256471292555,
+                0.8007099307129728
+              ],
+              "endQ": [
+                0.3372427411885166,
+                3.079514480853611,
+                2.3516121310599107,
+                -0.9024676213896043,
+                0.5642256471292555,
+                0.8007099307129728
+              ],
+              "maxJointStep": 0
+            },
+            {
+              "index": 6,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.03182724366269711,
+              "minLimitMargin": 0.30863056463170935,
+              "maxPositionError": 6.496294990559281e-11,
+              "maxRotationError": 7.464161848613731e-11,
+              "stop": null,
+              "startQ": [
+                0.48608254362858716,
+                0.2880273876620283,
+                1.174899299490301,
+                0.6036090520883057,
+                -1.913749469248243,
+                0.12835332822466938
+              ],
+              "endQ": [
+                0.48608254341151363,
+                0.288027387625038,
+                1.1748992995634708,
+                0.6036090518661028,
+                -1.9137494692988344,
+                0.12835332819646508
+              ],
+              "maxJointStep": 0.005370469205281891
+            },
+            {
+              "index": 7,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.02666192083146609,
+              "minLimitMargin": 0.1997647408332497,
+              "maxPositionError": 8.189278077252436e-11,
+              "maxRotationError": 2.53634007354192e-10,
+              "stop": null,
+              "startQ": [
+                0.5265716234098523,
+                -0.3744189432586218,
+                1.28376512331673,
+                -2.5385223155054124,
+                1.4626650902751912,
+                2.9437148848296264
+              ],
+              "endQ": [
+                0.526571623116142,
+                -0.37441894326627756,
+                1.2837651233619305,
+                -2.538522315779472,
+                1.4626650901235083,
+                2.943714884956662
+              ],
+              "maxJointStep": 0.006040774379260538
+            },
+            {
+              "index": 8,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.019340265242114817,
+              "minLimitMargin": 0.026511118340028617,
+              "maxPositionError": 1.873910029174988e-10,
+              "maxRotationError": 2.796717481134269e-10,
+              "stop": null,
+              "startQ": [
+                0.6803817880907292,
+                2.549928759464949,
+                -3.900479698391166,
+                2.2253924236569596,
+                -0.9972377408498314,
+                -2.7539947453543494
+              ],
+              "endQ": [
+                0.6803817875461774,
+                2.549928759480365,
+                -3.900479698647213,
+                2.2253924241165324,
+                -0.9972377409770099,
+                -2.7539947453596803
+              ],
+              "maxJointStep": 0.007864474486281026
+            }
+          ]
+        },
+        {
+          "z": 0.4,
+          "sampleCount": 409,
+          "resolved": true,
+          "geometricStartCount": 8,
+          "legalStartCount": 7,
+          "completeCount": 7,
+          "rootCountRange": [
+            8,
+            8
+          ],
+          "legalCountRange": [
+            7,
+            8
+          ],
+          "tracks": [
+            {
+              "index": 1,
+              "complete": false,
+              "reason": "Starting configuration violates limits or the singularity margin.",
+              "pointCount": 1,
+              "minDet": 0.025318051251036224,
+              "minLimitMargin": -0.8637610181503508,
+              "maxPositionError": 4.494775313252278e-16,
+              "maxRotationError": 1.5528866292705522e-15,
+              "stop": null,
+              "startQ": [
+                -2.714095507977591,
+                0.49931568792493586,
+                2.347290882345531,
+                0.6678279349199112,
+                0.9145004785301154,
+                2.626803424976016
+              ],
+              "endQ": [
+                -2.714095507977591,
+                0.49931568792493586,
+                2.347290882345531,
+                0.6678279349199112,
+                0.9145004785301154,
+                2.626803424976016
+              ],
+              "maxJointStep": 0
+            },
+            {
+              "index": 2,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.03140687074283509,
+              "minLimitMargin": 0.24442178398946668,
+              "maxPositionError": 5.890758201149689e-11,
+              "maxRotationError": 4.8179097570582735e-11,
+              "stop": null,
+              "startQ": [
+                -2.6911147684733017,
+                -2.8971708695692735,
+                1.1929918064865301,
+                2.507550784553863,
+                1.0306688514192714,
+                0.2824877692615768
+              ],
+              "endQ": [
+                -2.691114768643067,
+                -2.8971708696003264,
+                1.1929918065462586,
+                2.507550784717608,
+                1.0306688514454114,
+                0.28248776926983665
+              ],
+              "maxJointStep": 0.005614413364520399
+            },
+            {
+              "index": 3,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.0275270357620739,
+              "minLimitMargin": 0.27208758652584053,
+              "maxPositionError": 9.790218877908796e-11,
+              "maxRotationError": 1.8089637835752613e-10,
+              "stop": null,
+              "startQ": [
+                -2.5807182647219795,
+                -2.341768700866732,
+                1.2114422776040108,
+                -0.631031415732723,
+                -1.4881077104326383,
+                3.0567263458857408
+              ],
+              "endQ": [
+                -2.5807182650506295,
+                -2.341768700908196,
+                1.2114422776693397,
+                -0.6310314154991739,
+                -1.4881077106003755,
+                3.056726346061394
+              ],
+              "maxJointStep": 0.006236929253351509
+            },
+            {
+              "index": 4,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.031670901398513134,
+              "minLimitMargin": 0.10948393474769968,
+              "maxPositionError": 8.47188180455741e-11,
+              "maxRotationError": 1.960482309585174e-10,
+              "stop": null,
+              "startQ": [
+                -2.561621055033009,
+                -0.11775873124860858,
+                -3.817506882064901,
+                -2.484207459930043,
+                -1.3899278612861234,
+                -0.295460672591366
+              ],
+              "endQ": [
+                -2.5616210552864622,
+                -0.11775873116664781,
+                -3.8175068822395417,
+                -2.484207460183139,
+                -1.3899278611230381,
+                -0.2954606725285069
+              ],
+              "maxJointStep": 0.005307989265191271
+            },
+            {
+              "index": 5,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.025212423784288528,
+              "minLimitMargin": 0.01685893530787963,
+              "maxPositionError": 4.9284387075517024e-11,
+              "maxRotationError": 7.069967660674228e-11,
+              "stop": null,
+              "startQ": [
+                0.3746156917814041,
+                2.8957782271828965,
+                -3.910131881666988,
+                -0.785129724984186,
+                0.6891709273843176,
+                0.6191681293108608
+              ],
+              "endQ": [
+                0.37461569168165565,
+                2.8957782272134,
+                -3.9101318816793618,
+                -0.7851297248533018,
+                0.6891709273053843,
+                0.6191681292931601
+              ],
+              "maxJointStep": 0.006851562092500152
+            },
+            {
+              "index": 6,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.028891826534251243,
+              "minLimitMargin": 0.2514553210557817,
+              "maxPositionError": 7.404567541218916e-11,
+              "maxRotationError": 2.3224182949890045e-10,
+              "stop": null,
+              "startQ": [
+                0.49961240656912764,
+                -0.49983768834901987,
+                1.2320745431197615,
+                -2.542253244447582,
+                1.3061152416430897,
+                2.8573058921887053
+              ],
+              "endQ": [
+                0.49961240632658893,
+                -0.4998376883091139,
+                1.2320745431393985,
+                -2.5422532447059134,
+                1.3061152414492099,
+                2.857305892374786
+              ],
+              "maxJointStep": 0.0060365186442454255
+            },
+            {
+              "index": 7,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.03300970409772165,
+              "minLimitMargin": 0.31795796860425773,
+              "maxPositionError": 7.233088832388055e-11,
+              "maxRotationError": 9.529521548451888e-11,
+              "stop": null,
+              "startQ": [
+                0.5110776890805973,
+                0.11827214105165496,
+                1.1655718954911016,
+                0.5989333731036366,
+                -1.7687136073444085,
+                0.019126430824353946
+              ],
+              "endQ": [
+                0.5110776888475194,
+                0.11827214098923422,
+                1.1655718955909224,
+                0.5989333728693923,
+                -1.768713607339497,
+                0.019126430828391473
+              ],
+              "maxJointStep": 0.00532584102203737
+            },
+            {
+              "index": 8,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.022573163723160337,
+              "minLimitMargin": 0.06806659871440601,
+              "maxPositionError": 1.672723512566117e-10,
+              "maxRotationError": 3.412460111109371e-10,
+              "stop": null,
+              "startQ": [
+                0.6481418893382962,
+                2.3435295380383554,
+                -3.858924218096192,
+                2.331256758970408,
+                -1.1012082408922694,
+                -2.9017551621164905
+              ],
+              "endQ": [
+                0.648141888869757,
+                2.3435295380959733,
+                -3.8589242182728354,
+                2.331256759164493,
+                -1.1012082410090551,
+                -2.9017551619158435
+              ],
+              "maxJointStep": 0.00749929395850657
+            }
+          ]
+        },
+        {
+          "z": 0.45,
+          "sampleCount": 409,
+          "resolved": true,
+          "geometricStartCount": 8,
+          "legalStartCount": 8,
+          "completeCount": 8,
+          "rootCountRange": [
+            8,
+            8
+          ],
+          "legalCountRange": [
+            8,
+            8
+          ],
+          "tracks": [
+            {
+              "index": 1,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.025475855646649736,
+              "minLimitMargin": 0.05483133970689291,
+              "maxPositionError": 7.706937980055944e-11,
+              "maxRotationError": 4.3011762053785466e-10,
+              "stop": null,
+              "startQ": [
+                -2.7434692645271443,
+                0.5842671337677707,
+                -3.8721594772803485,
+                0.7262686865081562,
+                0.7819594852627052,
+                2.528943024673257
+              ],
+              "endQ": [
+                -2.743469264705385,
+                0.5842671337235411,
+                -3.872159477222194,
+                0.7262686861585619,
+                0.7819594847292496,
+                2.5289430250069986
+              ],
+              "maxJointStep": 0.006164643503637102
+            },
+            {
+              "index": 2,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.03430997850255767,
+              "minLimitMargin": 0.2729686469370951,
+              "maxPositionError": 6.768267566907633e-11,
+              "maxRotationError": 5.643424629606899e-11,
+              "stop": null,
+              "startQ": [
+                -2.6669946092202403,
+                -2.7070818606103995,
+                1.1640512089263044,
+                2.5311696002318964,
+                1.1624802038699755,
+                0.17814921727153177
+              ],
+              "endQ": [
+                -2.6669946094079124,
+                -2.707081860648769,
+                1.164051209005856,
+                2.5311696003946387,
+                1.1624802039315243,
+                0.17814921730414066
+              ],
+              "maxJointStep": 0.005301138654978832
+            },
+            {
+              "index": 3,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.030827682367580097,
+              "minLimitMargin": 0.3405578116219623,
+              "maxPositionError": 8.74693557008666e-11,
+              "maxRotationError": 1.8359841909231063e-10,
+              "stop": null,
+              "startQ": [
+                -2.59881008285382,
+                -2.1579897659190177,
+                1.1429720525251277,
+                -0.61310512720212,
+                -1.5868821747559654,
+                2.996556078735342
+              ],
+              "endQ": [
+                -2.598810083138914,
+                -2.157989765970995,
+                1.1429720525732179,
+                -0.6131051269754122,
+                -1.5868821749384137,
+                2.9965560789419468
+              ],
+              "maxJointStep": 0.006212287527012528
+            },
+            {
+              "index": 4,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.03146414372227574,
+              "minLimitMargin": 0.14243898041346625,
+              "maxPositionError": 7.867903606878995e-11,
+              "maxRotationError": 2.6850033683320605e-10,
+              "stop": null,
+              "startQ": [
+                -2.5341280946176346,
+                0.031556097193853105,
+                -3.7845518363856065,
+                -2.433441882582512,
+                -1.2615838480928723,
+                -0.4307113661748758
+              ],
+              "endQ": [
+                -2.5341280948158285,
+                0.03155609731403471,
+                -3.784551836573775,
+                -2.4334418827433106,
+                -1.2615838478292927,
+                -0.4307113661686368
+              ],
+              "maxJointStep": 0.005144464462772724
+            },
+            {
+              "index": 5,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.02914136356175216,
+              "minLimitMargin": 0.05124881714782692,
+              "maxPositionError": 4.294725877108271e-11,
+              "maxRotationError": 4.9652815970888724e-11,
+              "stop": null,
+              "startQ": [
+                0.40533502400462496,
+                2.706273366152711,
+                -3.87574199980385,
+                -0.7103676346760928,
+                0.812780401219694,
+                0.4798605638688258
+              ],
+              "endQ": [
+                0.4053350238850103,
+                2.7062733661868,
+                -3.8757419998394145,
+                -0.7103676345553869,
+                0.8127804012025085,
+                0.4798605638746826
+              ],
+              "maxJointStep": 0.006489046718175517
+            },
+            {
+              "index": 6,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.03106937919576823,
+              "minLimitMargin": 0.31838753017045707,
+              "maxPositionError": 6.98457702135815e-11,
+              "maxRotationError": 2.1959135911147585e-10,
+              "stop": null,
+              "startQ": [
+                0.475952971026981,
+                -0.5851457935628392,
+                1.1651423340232547,
+                -2.5321244412251787,
+                1.1701215901498472,
+                2.7821707502071824
+              ],
+              "endQ": [
+                0.47595297082134586,
+                -0.5851457935058753,
+                1.1651423340247231,
+                -2.5321244414986785,
+                1.1701215898951567,
+                2.7821707504426008
+              ],
+              "maxJointStep": 0.006020391004720016
+            },
+            {
+              "index": 7,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.03435322263253173,
+              "minLimitMargin": 0.34721682625993133,
+              "maxPositionError": 7.576532557202629e-11,
+              "maxRotationError": 1.4416518960194893e-10,
+              "stop": null,
+              "startQ": [
+                0.5356619401152667,
+                -0.03067368505303314,
+                1.1363130378123323,
+                0.6079856381897271,
+                -1.6269824044093149,
+                -0.09023162466485424
+              ],
+              "endQ": [
+                0.5356619398830977,
+                -0.030673685149733305,
+                1.1363130379352488,
+                0.6079856379600497,
+                -1.6269824043341656,
+                -0.09023162464519
+              ],
+              "maxJointStep": 0.005269746183535706
+            },
+            {
+              "index": 8,
+              "complete": true,
+              "reason": "The selected branch follows the full path within the tested joint-limit and nonsingularity margins.",
+              "pointCount": 409,
+              "minDet": 0.026245555543270724,
+              "minLimitMargin": 0.13166821985595023,
+              "maxPositionError": 1.4193710269688594e-10,
+              "maxRotationError": 3.130461715945033e-10,
+              "stop": null,
+              "startQ": [
+                0.6252301411888457,
+                2.159121952276722,
+                -3.795322596991298,
+                2.3928136381661114,
+                -1.1872709866062294,
+                -2.9949171786613666
+              ],
+              "endQ": [
+                0.6252301407865241,
+                2.1591219523561174,
+                -3.795322597131291,
+                2.3928136382942395,
+                -1.1872709866960742,
+                -2.9949171784309745
+              ],
+              "maxJointStep": 0.00701784688373186
+            }
+          ]
+        }
+      ]
+    },
+    "iiwa": {
+      "task": "iiwa-redundancy",
+      "pathRevision": "iiwa-circle-v2",
+      "path": {
+        "kind": "circle",
+        "center": [
+          0.5,
+          0,
+          0.55
+        ],
+        "radius": 0.12,
+        "startAngle": -1.5707963267948966,
+        "R": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            0,
+            -1
+          ]
+        ]
+      },
+      "pathExpression": "p(s) = (0.50 + 0.12 sin(2πs), −0.12 cos(2πs), 0.55) m; R = diag(1,−1,−1); 0 ≤ s ≤ 1.",
+      "angleOptions": [
+        -170,
+        -160,
+        -150,
+        -140,
+        -130,
+        -120,
+        -110,
+        -100,
+        -90,
+        -80,
+        -70,
+        -60,
+        -50,
+        -40,
+        -30,
+        -20,
+        -10,
+        0,
+        10,
+        20,
+        30,
+        40,
+        50,
+        60,
+        70,
+        80,
+        90,
+        100,
+        110,
+        120,
+        130,
+        140,
+        150,
+        160,
+        170
+      ],
+      "answers": [
+        [
+          -70,
+          70
+        ],
+        [
+          -120,
+          120
+        ],
+        [
+          -110,
+          110
+        ],
+        [
+          -50,
+          50
+        ],
+        [
+          -110,
+          110
+        ],
+        [
+          -110,
+          110
+        ],
+        [
+          -70,
+          70
+        ],
+        [
+          -70,
+          70
+        ]
+      ],
+      "solutions": [
+        {
+          "branchIndex": 0,
+          "set": 1,
+          "label": "E+ S+ W+",
+          "angleDegrees": -70,
+          "startQ": [
+            -1.038171060022389,
+            1.0940799911387202,
+            -1.221730476396031,
+            1.390775564744061,
+            2.01468378212434,
+            1.9618209540098945,
+            -2.6140321878364148
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.0346869587973786,
+            "minSigma": 0.1379393715350517,
+            "maxPoseError": 3.565967964337838e-15,
+            "maxStep": 0.00651258277900151,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 1.9874163432339753
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.13257414838330073,
+            "minSigma": 0.13532216002748013,
+            "maxPoseError": 1.8261216271295793e-10,
+            "maxStep": 0.0033454120204602245,
+            "closure": 0.26224099493144526,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 7.595939174904257
+          }
+        },
+        {
+          "branchIndex": 0,
+          "set": 1,
+          "label": "E+ S+ W+",
+          "angleDegrees": 70,
+          "startQ": [
+            0.5670810985806618,
+            1.0940799911387202,
+            1.221730476396031,
+            1.390775564744061,
+            -2.01468378212434,
+            1.9618209540098945,
+            2.1429422263946876
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.0346869587973786,
+            "minSigma": 0.13793937153505162,
+            "maxPoseError": 3.284848167572983e-15,
+            "maxStep": 0.00651258277900151,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 1.9874163432339753
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.13257414838330073,
+            "minSigma": 0.1357239664869569,
+            "maxPoseError": 1.981621095103643e-10,
+            "maxStep": 0.0034168925467165877,
+            "closure": 0.564940205673207,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 7.595939174904257
+          }
+        },
+        {
+          "branchIndex": 1,
+          "set": 2,
+          "label": "E+ S+ W−",
+          "angleDegrees": -120,
+          "startQ": [
+            -0.9601007127251862,
+            0.4580317057781276,
+            -2.094395102393195,
+            1.390775564744061,
+            -0.3936525483582187,
+            -1.5138409570137288,
+            0.062400182415331074
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.3263726381411325,
+            "minSigma": 0.09972092327500308,
+            "maxPoseError": 3.4175069643544845e-15,
+            "maxStep": 0.0060243253723733505,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 18.69977471403733
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.32637263814113293,
+            "minSigma": 0.04690925776515819,
+            "maxPoseError": 1.9957870458024272e-10,
+            "maxStep": 0.00840965524943747,
+            "closure": 0.03917373356492761,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 18.699774714037357
+          }
+        },
+        {
+          "branchIndex": 1,
+          "set": 2,
+          "label": "E+ S+ W−",
+          "angleDegrees": 120,
+          "startQ": [
+            0.48901075128345894,
+            0.4580317057781276,
+            2.094395102393195,
+            1.390775564744061,
+            0.3936525483582187,
+            -1.5138409570137288,
+            -0.5334901438570565
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.3263726381411325,
+            "minSigma": 0.09972092327500306,
+            "maxPoseError": 3.422912751786647e-15,
+            "maxStep": 0.0060243253723733505,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 18.69977471403733
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.32637263814113293,
+            "minSigma": 0.041303145222670146,
+            "maxPoseError": 1.971508254440154e-10,
+            "maxStep": 0.006776462255808784,
+            "closure": 2.3722815047299295,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 18.699774714037357
+          }
+        },
+        {
+          "branchIndex": 2,
+          "set": 3,
+          "label": "E+ S− W+",
+          "angleDegrees": -110,
+          "startQ": [
+            -2.5745115550091313,
+            -1.0940799911387202,
+            -1.919862177193762,
+            1.390775564744061,
+            -2.01468378212434,
+            1.9618209540098945,
+            2.1429422263946876
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.0346869587973786,
+            "minSigma": 0.13793937153505167,
+            "maxPoseError": 3.1248751817078626e-15,
+            "maxStep": 0.006512582779000377,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 1.9874163432339753
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.13257414838330073,
+            "minSigma": 0.13493686233395188,
+            "maxPoseError": 1.9870231727587338e-10,
+            "maxStep": 0.0038215150125622973,
+            "closure": 0.7237106258864988,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 7.595939174904257
+          }
+        },
+        {
+          "branchIndex": 2,
+          "set": 3,
+          "label": "E+ S− W+",
+          "angleDegrees": 110,
+          "startQ": [
+            2.103421593567404,
+            -1.0940799911387202,
+            1.919862177193762,
+            1.390775564744061,
+            2.01468378212434,
+            1.9618209540098945,
+            -2.614032187836414
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.0346869587973786,
+            "minSigma": 0.13793937153505173,
+            "maxPoseError": 3.096174032530385e-15,
+            "maxStep": 0.006512582779000377,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 1.9874163432339753
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.13257414838330073,
+            "minSigma": 0.1346001882879554,
+            "maxPoseError": 1.9244482142327863e-10,
+            "maxStep": 0.0036256225516752756,
+            "closure": 0.41440716385761606,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 7.595939174904257
+          }
+        },
+        {
+          "branchIndex": 3,
+          "set": 4,
+          "label": "E+ S− W−",
+          "angleDegrees": -50,
+          "startQ": [
+            -2.7506740799599028,
+            -0.39972035513610393,
+            -0.8726646259971638,
+            1.390775564744061,
+            0.3037507892642193,
+            -1.4895370727802293,
+            -0.46650678577908344
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.16338006320825293,
+            "minSigma": 0.13085617030230065,
+            "maxPoseError": 3.0318381595920973e-15,
+            "maxStep": 0.004980082851780045,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 9.360988078413513
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.17816271619248658,
+            "minSigma": 0.039450357557337244,
+            "maxPoseError": 1.9876381646519198e-10,
+            "maxStep": 0.009739037064826485,
+            "closure": 0.3884093427870689,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 10.207971704416574
+          }
+        },
+        {
+          "branchIndex": 3,
+          "set": 4,
+          "label": "E+ S− W−",
+          "angleDegrees": 50,
+          "startQ": [
+            2.2795841185181764,
+            -0.39972035513610393,
+            0.8726646259971638,
+            1.390775564744061,
+            -0.3037507892642193,
+            -1.4895370727802293,
+            -0.004583175662641992
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.16338006320825116,
+            "minSigma": 0.1308561703023006,
+            "maxPoseError": 3.1735787848356625e-15,
+            "maxStep": 0.004980082851778623,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 9.360988078413412
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.18729095618691138,
+            "minSigma": 0.07166418876344476,
+            "maxPoseError": 1.996567183077131e-10,
+            "maxStep": 0.0063358044089994155,
+            "closure": 0.18191088954505394,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 10.730981330479636
+          }
+        },
+        {
+          "branchIndex": 4,
+          "set": 5,
+          "label": "E− S+ W+",
+          "angleDegrees": -110,
+          "startQ": [
+            0.5670810985806618,
+            1.0940799911387202,
+            -1.919862177193762,
+            -1.390775564744061,
+            1.126908871465453,
+            1.9618209540098945,
+            2.1429422263946876
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.0346869587973786,
+            "minSigma": 0.13793937153505167,
+            "maxPoseError": 3.317232236726804e-15,
+            "maxStep": 0.00651258277900151,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 1.9874163432339753
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.13257414838330073,
+            "minSigma": 0.13431883054303764,
+            "maxPoseError": 1.970413359252676e-10,
+            "maxStep": 0.004038180856319926,
+            "closure": 0.9290041347637854,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 7.595939174904257
+          }
+        },
+        {
+          "branchIndex": 4,
+          "set": 5,
+          "label": "E− S+ W+",
+          "angleDegrees": 110,
+          "startQ": [
+            -1.038171060022389,
+            1.0940799911387202,
+            1.919862177193762,
+            -1.390775564744061,
+            -1.126908871465453,
+            1.9618209540098945,
+            -2.614032187836414
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.0346869587973786,
+            "minSigma": 0.1379393715350517,
+            "maxPoseError": 2.8498100352536283e-15,
+            "maxStep": 0.00651258277900151,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 1.9874163432339753
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.13257414838330073,
+            "minSigma": 0.13389304398043717,
+            "maxPoseError": 1.9733350401461927e-10,
+            "maxStep": 0.0037657457741597554,
+            "closure": 0.5934360668995716,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 7.595939174904257
+          }
+        },
+        {
+          "branchIndex": 5,
+          "set": 6,
+          "label": "E− S+ W−",
+          "angleDegrees": -110,
+          "startQ": [
+            0.5670810985806618,
+            1.0940799911387202,
+            -1.919862177193762,
+            -1.390775564744061,
+            -2.01468378212434,
+            -1.9618209540098945,
+            -0.9986504271951056
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.0346869587973786,
+            "minSigma": 0.1379393715350517,
+            "maxPoseError": 3.3617613470246188e-15,
+            "maxStep": 0.00651258277900151,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 1.9874163432339753
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.13257414838330073,
+            "minSigma": 0.1347412616134498,
+            "maxPoseError": 1.9881267201334279e-10,
+            "maxStep": 0.003936966091442072,
+            "closure": 0.8683720539455486,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 7.595939174904257
+          }
+        },
+        {
+          "branchIndex": 5,
+          "set": 6,
+          "label": "E− S+ W−",
+          "angleDegrees": 110,
+          "startQ": [
+            -1.038171060022389,
+            1.0940799911387202,
+            1.919862177193762,
+            -1.390775564744061,
+            2.01468378212434,
+            -1.9618209540098945,
+            0.5275604657533783
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.0346869587973786,
+            "minSigma": 0.1379393715350517,
+            "maxPoseError": 3.753427025018391e-15,
+            "maxStep": 0.00651258277900151,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 1.9874163432339753
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.13257414838330073,
+            "minSigma": 0.13408570368711945,
+            "maxPoseError": 1.9513377122622657e-10,
+            "maxStep": 0.003735827353676469,
+            "closure": 0.558988423167864,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 7.595939174904257
+          }
+        },
+        {
+          "branchIndex": 6,
+          "set": 7,
+          "label": "E− S− W+",
+          "angleDegrees": -70,
+          "startQ": [
+            2.103421593567404,
+            -1.0940799911387202,
+            -1.221730476396031,
+            -1.390775564744061,
+            -1.126908871465453,
+            1.9618209540098945,
+            -2.614032187836414
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.0346869587973786,
+            "minSigma": 0.13793937153505162,
+            "maxPoseError": 3.237705814962443e-15,
+            "maxStep": 0.006512582779000377,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 1.9874163432339753
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.13257414838330073,
+            "minSigma": 0.13453224408401415,
+            "maxPoseError": 1.9894976818880852e-10,
+            "maxStep": 0.0036382262376328843,
+            "closure": 0.4925619440602391,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 7.595939174904257
+          }
+        },
+        {
+          "branchIndex": 6,
+          "set": 7,
+          "label": "E− S− W+",
+          "angleDegrees": 70,
+          "startQ": [
+            -2.5745115550091313,
+            -1.0940799911387202,
+            1.221730476396031,
+            -1.390775564744061,
+            1.126908871465453,
+            1.9618209540098945,
+            2.1429422263946876
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.0346869587973786,
+            "minSigma": 0.13793937153505167,
+            "maxPoseError": 2.917168466262061e-15,
+            "maxStep": 0.006512582779000377,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 1.9874163432339753
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.13257414838330073,
+            "minSigma": 0.1348728375193731,
+            "maxPoseError": 1.9770762550270917e-10,
+            "maxStep": 0.0038354335712648367,
+            "closure": 0.834093385215637,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 7.595939174904257
+          }
+        },
+        {
+          "branchIndex": 7,
+          "set": 8,
+          "label": "E− S− W−",
+          "angleDegrees": -70,
+          "startQ": [
+            2.103421593567404,
+            -1.0940799911387202,
+            -1.221730476396031,
+            -1.390775564744061,
+            2.01468378212434,
+            -1.9618209540098954,
+            0.5275604657533783
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.0346869587973786,
+            "minSigma": 0.13793937153505162,
+            "maxPoseError": 2.9767843090843646e-15,
+            "maxStep": 0.006512582779000377,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 1.9874163432339753
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.13257414838329984,
+            "minSigma": 0.134729387058048,
+            "maxPoseError": 1.991954744483135e-10,
+            "maxStep": 0.0036100041308408325,
+            "closure": 0.46903424068400945,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 7.595939174904207
+          }
+        },
+        {
+          "branchIndex": 7,
+          "set": 8,
+          "label": "E− S− W−",
+          "angleDegrees": 70,
+          "startQ": [
+            -2.5745115550091313,
+            -1.0940799911387202,
+            1.221730476396031,
+            -1.390775564744061,
+            -2.01468378212434,
+            -1.9618209540098954,
+            -0.9986504271951056
+          ],
+          "analytical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.0346869587973786,
+            "minSigma": 0.13793937153505156,
+            "maxPoseError": 2.5537089124134123e-15,
+            "maxStep": 0.006512582779000377,
+            "closure": 0,
+            "samples": 961,
+            "minLimitMarginDegrees": 1.9874163432339753
+          },
+          "numerical": {
+            "complete": true,
+            "reason": null,
+            "minLimitMargin": 0.13257414838329984,
+            "minSigma": 0.13525164120490302,
+            "maxPoseError": 1.9959313016364315e-10,
+            "maxStep": 0.0037360806582682846,
+            "closure": 0.7794544954556565,
+            "lastProgress": 1,
+            "samples": 1201,
+            "minLimitMarginDegrees": 7.595939174904207
+          }
+        }
+      ],
+      "policy": {
+        "analytical": "Your q3 selection fixes the starting posture. Exact analytical IK connects candidates over the full redundant-angle range and all eight sets; q3 may change. Failed coarse searches are refined, with every connection checked for continuity, joint limits and full Jacobian rank.",
+        "numerical": "Right pseudoinverse with joint-limit barrier in the null space, gain 0.8; q3 may change while the tool follows the given pose path.",
+        "validity": "Native joint limits, full 6×7 Jacobian rank and tool position/orientation are checked at dense intermediate samples. This is sampled kinematic validation; a failed finite graph search does not prove global infeasibility.",
+        "acceptance": "A choice is correct when either planner completes the entire pose path with all validity checks satisfied."
+      },
+      "feasibilityMap": {
+        "samples": 121,
+        "angles": 35,
+        "sets": 8,
+        "progressRange": [
+          0,
+          1
+        ],
+        "angleRangeDegrees": [
+          -170,
+          170
+        ],
+        "angleStepDegrees": 10,
+        "stats": {
+          "evaluations": 33880,
+          "roots": 33192,
+          "valid": 16098,
+          "limits": 17094,
+          "singular": 0,
+          "unreachable": 688,
+          "branchValid": [
+            1567,
+            2678,
+            1511,
+            2464,
+            2362,
+            1772,
+            2028,
+            1716
+          ]
+        },
+        "definition": "A green cell is a real fixed-q3 IK satisfying the target pose, all native joint limits and full 6×7 Jacobian rank at that sampled progress only. Grey cells fail these tests or lack a real root. Cells do not predict a numerical joint trajectory or certify continuity between samples."
+      },
+      "failureExamples": [
+        {
+          "branchIndex": 6,
+          "set": 7,
+          "angleDegrees": -150,
+          "startQ": [
+            2.5133637799001924,
+            -0.32944162131359356,
+            -2.617993877991495,
+            -1.390775564744061,
+            -0.16340394340330633,
+            1.464372412016182,
+            3.030875184004433
+          ],
+          "startValid": true,
+          "startLimitMargin": 0.023451006985643286,
+          "numerical": {
+            "complete": false,
+            "reason": "joint-limit",
+            "lastValidProgress": 0.0425,
+            "failProgress": 0.045,
+            "lastValidQ": [
+              2.601763978491572,
+              -0.40279258986415306,
+              -2.6716829038852166,
+              -1.2890824278834259,
+              -0.1790198552010112,
+              1.4907409252217148,
+              3.0533064243672015
+            ],
+            "failedQ": [
+              2.6076149762847196,
+              -0.406755635177452,
+              -2.675641680618768,
+              -1.2831754218157518,
+              -0.179253856519589,
+              1.492306532414572,
+              3.054487863550443
+            ],
+            "exceeded": [
+              {
+                "joint": 7,
+                "value": 3.054487863550443,
+                "limit": 3.0543261909900763,
+                "overshoot": 0.0001616725603668101
+              }
+            ],
+            "minSigma": 0.16728913390741038,
+            "maxPoseError": 1.2188674863988501e-11,
+            "maxStep": 0.003395238586157157
+          },
+          "interpretation": "This joint-limit-barrier local run reaches a native physical joint stop. It does not prove that the given circle or every redundancy schedule from this start is impossible. Other verified starting angles in this same algebraic set complete both planners."
+        },
+        {
+          "branchIndex": 4,
+          "set": 5,
+          "angleDegrees": 30,
+          "startQ": [
+            -0.6282288736896007,
+            0.32944162131359356,
+            0.5235987755982983,
+            -1.390775564744061,
+            -0.16340394340330633,
+            1.464372412016182,
+            3.030875184004433
+          ],
+          "startValid": true,
+          "startLimitMargin": 0.023451006985643286,
+          "numerical": {
+            "complete": false,
+            "reason": "joint-limit",
+            "lastValidProgress": 0.0525,
+            "failProgress": 0.055,
+            "lastValidQ": [
+              -0.5075721898443424,
+              0.41674836722125236,
+              0.44059134912522196,
+              -1.2655595330037521,
+              -0.17398868628078842,
+              1.496317490864625,
+              3.0541642829434186
+            ],
+            "failedQ": [
+              -0.5017064221309718,
+              0.4205936677953036,
+              0.43657639573304746,
+              -1.2597271024679793,
+              -0.1739827225035493,
+              1.4978850387105498,
+              3.0553545139142444
+            ],
+            "exceeded": [
+              {
+                "joint": 7,
+                "value": 3.0553545139142444,
+                "limit": 3.0543261909900763,
+                "overshoot": 0.0010283229241681013
+              }
+            ],
+            "minSigma": 0.16609512202047588,
+            "maxPoseError": 1.3235844589276807e-11,
+            "maxStep": 0.003434943718201944
+          },
+          "interpretation": "This joint-limit-barrier local run reaches a native physical joint stop. It does not prove that the given circle or every redundancy schedule from this start is impossible. Other verified starting angles in this same algebraic set complete both planners."
+        }
+      ],
+      "validation": {
+        "testedCandidateCount": 70,
+        "allSixteenBothMethodsComplete": true,
+        "minNativeLimitMarginRadians": 0.0346869587973786,
+        "minScaledJacobianSigma": 0.039450357557337244,
+        "maxPoseError": 1.996567183077131e-10,
+        "maxJointStepRadians": 0.009739037064826485,
+        "scope": "Dense sampled kinematic checks; configurations are never wrapped through physical stops. Either validated complete method earns credit. Tool loops need not close in joint space. A finite graph search is not a proof of global infeasibility.",
+        "choiceAudit": {
+          "legalStartingChoices": 136,
+          "numericalComplete": 127,
+          "analyticalCompleteForEveryNumericalSuccess": true,
+          "verifiedConstantAngleCorridors": 38,
+          "verifiedExpandedGraphCorridors": 89,
+          "analyticalMisses": 0,
+          "scope": "All supplied starting choices with a successful numerical result; this finite exercise audit does not establish completeness of the sampled graph for arbitrary tasks."
+        }
+      },
+      "redundantConnectionRegression": {
+        "branch": 0,
+        "angle": -80,
+        "accepted": true,
+        "startValid": true,
+        "startMargin": 0.2772110447073204,
+        "analytical": {
+          "complete": true,
+          "reason": null,
+          "minLimitMargin": 0.058231357783841364,
+          "minSigma": 0.13689334171034845,
+          "maxPoseError": 3.565967964337838e-15,
+          "maxStep": 0.03722183548154615,
+          "closure": 0.34395666384351653,
+          "lastProgress": 1,
+          "samples": 961
+        },
+        "numerical": {
+          "complete": true,
+          "reason": null,
+          "minLimitMargin": 0.23239216255135786,
+          "minSigma": 0.13438159411522793,
+          "maxPoseError": 8.33952908733637e-11,
+          "maxStep": 0.0031211860564403127,
+          "closure": 0.06920423947305974,
+          "lastProgress": 1,
+          "samples": 1201
+        },
+        "analyticalAttempts": [
+          {
+            "nProgress": 121,
+            "nAngles": 1,
+            "complete": false
+          },
+          {
+            "nProgress": 121,
+            "nAngles": 35,
+            "complete": true
+          }
+        ],
+        "interpretation": "The formerly fixed-q3 analytical search stopped. Searching connections over the full redundant-angle range now completes independently with exact analytical roots; the numerical run also completes."
+      },
+      "analyticalOnlyRegressions": [
+        {
+          "branch": 4,
+          "angle": 0,
+          "accepted": true,
+          "analytical": true,
+          "numerical": false,
+          "attempts": [
+            {
+              "nProgress": 121,
+              "nAngles": 1,
+              "complete": false
+            },
+            {
+              "nProgress": 121,
+              "nAngles": 35,
+              "complete": true
+            }
+          ],
+          "last": 1
+        },
+        {
+          "branch": 4,
+          "angle": -20,
+          "accepted": true,
+          "analytical": true,
+          "numerical": false,
+          "attempts": [
+            {
+              "nProgress": 121,
+              "nAngles": 1,
+              "complete": false
+            },
+            {
+              "nProgress": 121,
+              "nAngles": 35,
+              "complete": true
+            }
+          ],
+          "last": 1
+        },
+        {
+          "branch": 4,
+          "angle": 30,
+          "accepted": true,
+          "analytical": true,
+          "numerical": false,
+          "attempts": [
+            {
+              "nProgress": 121,
+              "nAngles": 1,
+              "complete": false
+            },
+            {
+              "nProgress": 121,
+              "nAngles": 35,
+              "complete": true
+            }
+          ],
+          "last": 1
+        }
+      ]
+    },
+    "quiz": {
+      "questionCount": 15,
+      "multipleAnswerCount": 8,
+      "singleAnswerCount": 7,
+      "grading": "Square checkboxes require the exact set of correct options; round radio options require one correct choice.",
+      "explanations": {
+        "quiz.urdf": "Joint origins and axes define the motion. Visual geometry has separate placement; its shape does not define a joint axis. URDF uses metres and radians.",
+        "quiz.dh": "Standard D–H first rotates and translates along zᵢ₋₁, then translates and rotates along xᵢ. This matrix maps coordinates in frame i into frame i−1. Transform order and the chosen convention matter.",
+        "quiz.tool-twist": "A rigid tool has one angular velocity; its linear velocity depends on the reference point. A frame rotation is invertible and therefore preserves Jacobian rank.",
+        "quiz.general-6r": "A general 6R mechanism can attain 16 isolated real pose solutions. Special geometry can lower the maximum; many targets have fewer, and singular targets can have non-isolated families.",
+        "quiz.elimination": "Elimination produces candidates, not automatically valid real IKs. Recover missing chart cases, reconstruct all variables, and check the original equations before applying joint limits.",
+        "quiz.paden-kahan": "PK1 is point registration using one axis. Feasibility requires equal axial projections and equal orbit radii; with a nonzero radius, a feasible angle is unique modulo 2π.",
+        "quiz.jacobian-types": "Angular velocity is a physical vector; orientation-coordinate rates depend on the selected chart. At a regular chart the rate mapping is invertible. A chart singularity and a physical kinematic singularity are different issues.",
+        "quiz.rectangular-rank": "A 6 × 7 matrix has no determinant and cannot have rank 7. Full row rank six means every six-component tool velocity is locally attainable.",
+        "quiz.null-space": "The projector supplies internal motion while preserving the current task velocity. A secondary cost expresses a local preference; it does not guarantee global feasibility or eliminate the need for path validation.",
+        "quiz.redundant-family": "The local dimension is 7 − rank(J) = 1 at rank six. Finite branch counts arise after selecting a redundancy parameter; they do not describe the entire unfixed 7R IK family.",
+        "quiz.iiwa-parameter": "Eight is a model-specific maximum for the parameterized solve, not a universal 7R count. Holding q₃ can remove a needed local direction even when changing q₃ would retain full tool mobility.",
+        "quiz.cuspidality": "Cuspidality concerns a nonsingular change of solution. Several IKs at one task value, or a determinant sign at one configuration, do not establish that global connection.",
+        "quiz.critical-values": "A critical value has at least one singular preimage, not necessarily only singular preimages. A fold merges two branches; a cusp merges three. These are multiplicities of merging branches, not the total number of distinct configurations remaining.",
+        "quiz.path-feasibility": "Pose-wise existence does not establish branch continuity. A selected branch can hit a joint limit or singularity while other IKs remain available at the same workspace point.",
+        "quiz.planning-strategies": "Local continuation follows a selected branch; global branch information helps compare alternatives. One failed run is not a proof of global infeasibility, and damping cannot restore a missing physical velocity direction."
+      },
+      "references": {
+        "quiz.urdf": "lecture_02.html · Joint origin and axis define one kinematic edge",
+        "quiz.dh": "lecture_01.html · Denavit–Hartenberg convention",
+        "quiz.tool-twist": "lecture_02.html · Twist at the tool point; lecture_07.html · Evaluate the twist at the tool",
+        "quiz.general-6r": "lecture_07.html · ABB CRB degree-16 IK and slice with 16 real IKs",
+        "quiz.elimination": "lecture_03.html · Ordered-elimination algorithm; lecture_07.html · Reconstruct and verify IK",
+        "quiz.paden-kahan": "lecture_03.html · Paden–Kahan subproblem 1: point registration",
+        "quiz.jacobian-types": "lecture_05.html · Geometric versus analytical Jacobian",
+        "quiz.rectangular-rank": "lecture_08.html · Check the full 6 × 7 Jacobian",
+        "quiz.null-space": "lecture_08.html · Separate primary and secondary motion; Choose a secondary cost",
+        "quiz.redundant-family": "lecture_08.html · What is the null space?",
+        "quiz.iiwa-parameter": "lecture_08.html · Parameter singularity versus full-Jacobian rank",
+        "quiz.cuspidality": "lecture_06.html · Nonsingular change of solution; lecture_07.html · Cuspidal 3R paths",
+        "quiz.critical-values": "lecture_06.html · Aspects and critical values; Exercise 03 · Boundaries, folds and cusps",
+        "quiz.path-feasibility": "lecture_07.html · Compare every starting IK along one path",
+        "quiz.planning-strategies": "lecture_07.html · Numerical, analytical and hybrid path planning"
+      }
+    }
+  },
+  "notes": [
+    "Example solutions; other responses are accepted when recomputation satisfies the same criteria.",
+    "Joint configurations in verification records use radians. UI answer selections use degrees.",
+    "Dense kinematic sampling checks pose, continuity, native joint limits and rank; it does not certify collision or dynamic feasibility."
+  ],
+  "pathRevision": "iiwa-circle-v2",
+  "planningRevision": "iiwa-redundant-graph-v3"
+}

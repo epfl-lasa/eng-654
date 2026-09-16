@@ -68,11 +68,11 @@ export function createDeterminantMap(host, determinantAt) {
         <label><span>q₂</span><input type="range" data-angle="q2" min="${-PI}" max="${PI}" step="0.001" aria-label="Joint angle q2 in radians"><output></output></label>
         <label><span>q₃</span><input type="range" data-angle="q3" min="${-PI}" max="${PI}" step="0.001" aria-label="Joint angle q3 in radians"><output></output></label>
       </div>
-      <div class="sing-metric"><span>det Jₚ <small>[m³]</small></span><strong data-det></strong></div>
+      <div class="sing-metric"><span>det ⁰Jₜ,ᵥ <small>[m³]</small></span><strong data-det></strong></div>
       <p class="sing-map-coordinate" data-coordinate></p>
-      <div class="sing-map-legend"><span class="sing-map-zero-key"></span><strong>det Jₚ = 0</strong><span>Exact singularity curve</span></div>
+      <div class="sing-map-legend"><span class="sing-map-zero-key"></span><strong>det ⁰Jₜ,ᵥ = 0</strong><span>Exact singularity curve</span></div>
       <div class="sing-map-equation"><strong>Zero-set equation</strong><span data-zero-equation></span></div>
-      <button type="button" data-snap>Place the point on det Jₚ = 0</button>
+      <button type="button" data-snap>Place the point on det ⁰Jₜ,ᵥ = 0</button>
       <p class="sing-status" role="status" aria-live="polite"></p>
       <p class="sing-map-help">Click or drag in the plot. Arrow keys move the focused point; Shift gives finer steps. Both cases use the same color scale. Angles are in radians.</p>
     </aside>`;
@@ -165,7 +165,7 @@ export function createDeterminantMap(host, determinantAt) {
     svg.append(element('text', { transform: `translate(${left - 52},${top + side / 2}) rotate(-90)`, 'text-anchor': 'middle', class: 'sing-map-axis-label' }, 'q₃ [rad]'));
 
     const barX = right + 28, barY = top + 24, barHeight = side - 48;
-    svg.append(element('text', { x: barX - 2, y: top + 3, class: 'sing-map-color-label' }, 'det Jₚ [m³]'));
+    svg.append(element('text', { x: barX - 2, y: top + 3, class: 'sing-map-color-label' }, 'det ⁰Jₜ,ᵥ [m³]'));
     svg.append(element('rect', { x: barX, y: barY, width: 16, height: barHeight, fill: `url(#${id}-gradient)`, stroke: '#bdc3cb', 'stroke-width': .7 }));
     [-14, -7, 0, 7, 14].forEach(value => {
       const y = barY + (LIMIT - value) / (2 * LIMIT) * barHeight;
@@ -212,7 +212,7 @@ export function createDeterminantMap(host, determinantAt) {
     const onCurve = Math.abs(value) < 1e-9;
     cursor.setAttribute('transform', `translate(${x},${y})`);
     crosshair.setAttribute('d', `M${geometry.left},${y}H${geometry.left + geometry.side}M${x},${geometry.top}V${geometry.top + geometry.side}`);
-    const description = `q₂ = ${state.q2.toFixed(3)} rad; q₃ = ${state.q3.toFixed(3)} rad; det Jₚ = ${onCurve ? '0' : signedValue(value)} m³`;
+    const description = `q₂ = ${state.q2.toFixed(3)} rad; q₃ = ${state.q3.toFixed(3)} rad; det ⁰Jₜ,ᵥ = ${onCurve ? '0' : signedValue(value)} m³`;
     pointTitle.textContent = description;
     hitArea.setAttribute('aria-label', `${description}. Use arrow keys to move; Shift gives finer steps.`);
     host.querySelector('[data-det]').textContent = onCurve ? '0.0000' : signedValue(value);
@@ -220,8 +220,8 @@ export function createDeterminantMap(host, determinantAt) {
     host.querySelector('[data-coordinate]').textContent = `q₂ = ${state.q2.toFixed(3)} rad · q₃ = ${state.q3.toFixed(3)} rad`;
     host.querySelector('[data-zero-equation]').textContent = state.a1 ? 'c₂(c₃ − 2s₃) − s₃ = 0' : 'c₂(c₃ − 2s₃) = 0';
     host.querySelector('.sing-status').textContent = onCurve
-      ? 'On the singularity curve: rank Jₚ < 3. At least one Cartesian velocity direction is lost.'
-      : `${value < 0 ? 'Negative' : 'Positive'} determinant: rank Jₚ = 3 here. Reach a black curve to see rank loss.`;
+      ? 'On the singularity curve: rank ⁰Jₜ,ᵥ < 3. At least one Cartesian velocity direction is lost.'
+      : `${value < 0 ? 'Negative' : 'Positive'} determinant: rank ⁰Jₜ,ᵥ = 3 here. Reach a black curve to see rank loss.`;
     host.querySelectorAll('[data-angle]').forEach(input => {
       input.value = state[input.dataset.angle];
       input.nextElementSibling.value = `${state[input.dataset.angle].toFixed(2)} rad`;

@@ -1,0 +1,1039 @@
+{
+  "version": 1,
+  "name": "Exercise 01 · KUKA iiwa 7 · world twists at home",
+  "angleUnit": "rad",
+  "nodes": [
+    {
+      "id": "world_base",
+      "type": "transform",
+      "label": "^worldT_0 · fixed base",
+      "params": {
+        "matrix": [
+          "cos(0)*cos(0)",
+          "cos(0)*sin(0)*sin(0)-sin(0)*cos(0)",
+          "cos(0)*sin(0)*cos(0)+sin(0)*sin(0)",
+          "0",
+          "sin(0)*cos(0)",
+          "sin(0)*sin(0)*sin(0)+cos(0)*cos(0)",
+          "sin(0)*sin(0)*cos(0)-cos(0)*sin(0)",
+          "0",
+          "-sin(0)",
+          "cos(0)*sin(0)",
+          "cos(0)*cos(0)",
+          "0",
+          "0",
+          "0",
+          "0",
+          "1"
+        ]
+      },
+      "position": {
+        "x": 10,
+        "y": 20
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "world_joint_1",
+      "type": "transform",
+      "label": "^worldT_J1(0)",
+      "params": {
+        "matrix": [
+          "cos(0)*cos(0)",
+          "cos(0)*sin(0)*sin(0)-sin(0)*cos(0)",
+          "cos(0)*sin(0)*cos(0)+sin(0)*sin(0)",
+          "0",
+          "sin(0)*cos(0)",
+          "sin(0)*sin(0)*sin(0)+cos(0)*cos(0)",
+          "sin(0)*sin(0)*cos(0)-cos(0)*sin(0)",
+          "0",
+          "-sin(0)",
+          "cos(0)*sin(0)",
+          "cos(0)*cos(0)",
+          "0.15",
+          "0",
+          "0",
+          "0",
+          "1"
+        ]
+      },
+      "position": {
+        "x": 350,
+        "y": 20
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "omega_1",
+      "type": "columns",
+      "label": "^worldω_1 · axis = column 3",
+      "params": {
+        "columns": [
+          3
+        ],
+        "rowStart": 1,
+        "rowCount": 3
+      },
+      "position": {
+        "x": 350,
+        "y": 340
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "point_1",
+      "type": "columns",
+      "label": "^worldp_J1 · point = column 4",
+      "params": {
+        "columns": [
+          4
+        ],
+        "rowStart": 1,
+        "rowCount": 3
+      },
+      "position": {
+        "x": 350,
+        "y": 660
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "linear_1",
+      "type": "cross",
+      "label": "^worldv_1 = ^worldp_J1 × ^worldω_1",
+      "params": {},
+      "position": {
+        "x": 350,
+        "y": 980
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "twist_1",
+      "type": "stack",
+      "label": "^worldξ_1 = [^worldω_1; ^worldv_1]",
+      "params": {},
+      "position": {
+        "x": 350,
+        "y": 1300
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "world_joint_2",
+      "type": "transform",
+      "label": "^worldT_J2(0)",
+      "params": {
+        "matrix": [
+          "cos(pi)*cos(0)",
+          "cos(pi)*sin(0)*sin(pi/2)-sin(pi)*cos(pi/2)",
+          "cos(pi)*sin(0)*cos(pi/2)+sin(pi)*sin(pi/2)",
+          "0",
+          "sin(pi)*cos(0)",
+          "sin(pi)*sin(0)*sin(pi/2)+cos(pi)*cos(pi/2)",
+          "sin(pi)*sin(0)*cos(pi/2)-cos(pi)*sin(pi/2)",
+          "0",
+          "-sin(0)",
+          "cos(0)*sin(pi/2)",
+          "cos(0)*cos(pi/2)",
+          "0.19",
+          "0",
+          "0",
+          "0",
+          "1"
+        ]
+      },
+      "position": {
+        "x": 690,
+        "y": 20
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "omega_2",
+      "type": "columns",
+      "label": "^worldω_2 · axis = column 3",
+      "params": {
+        "columns": [
+          3
+        ],
+        "rowStart": 1,
+        "rowCount": 3
+      },
+      "position": {
+        "x": 690,
+        "y": 340
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "point_2",
+      "type": "columns",
+      "label": "^worldp_J2 · point = column 4",
+      "params": {
+        "columns": [
+          4
+        ],
+        "rowStart": 1,
+        "rowCount": 3
+      },
+      "position": {
+        "x": 690,
+        "y": 660
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "linear_2",
+      "type": "cross",
+      "label": "^worldv_2 = ^worldp_J2 × ^worldω_2",
+      "params": {},
+      "position": {
+        "x": 690,
+        "y": 980
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "twist_2",
+      "type": "stack",
+      "label": "^worldξ_2 = [^worldω_2; ^worldv_2]",
+      "params": {},
+      "position": {
+        "x": 690,
+        "y": 1300
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "world_joint_3",
+      "type": "transform",
+      "label": "^worldT_J3(0)",
+      "params": {
+        "matrix": [
+          "cos(pi)*cos(0)",
+          "cos(pi)*sin(0)*sin(pi/2)-sin(pi)*cos(pi/2)",
+          "cos(pi)*sin(0)*cos(pi/2)+sin(pi)*sin(pi/2)",
+          "0",
+          "sin(pi)*cos(0)",
+          "sin(pi)*sin(0)*sin(pi/2)+cos(pi)*cos(pi/2)",
+          "sin(pi)*sin(0)*cos(pi/2)-cos(pi)*sin(pi/2)",
+          "0.21",
+          "-sin(0)",
+          "cos(0)*sin(pi/2)",
+          "cos(0)*cos(pi/2)",
+          "0",
+          "0",
+          "0",
+          "0",
+          "1"
+        ]
+      },
+      "position": {
+        "x": 1030,
+        "y": 20
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "omega_3",
+      "type": "columns",
+      "label": "^worldω_3 · axis = column 3",
+      "params": {
+        "columns": [
+          3
+        ],
+        "rowStart": 1,
+        "rowCount": 3
+      },
+      "position": {
+        "x": 1030,
+        "y": 340
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "point_3",
+      "type": "columns",
+      "label": "^worldp_J3 · point = column 4",
+      "params": {
+        "columns": [
+          4
+        ],
+        "rowStart": 1,
+        "rowCount": 3
+      },
+      "position": {
+        "x": 1030,
+        "y": 660
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "linear_3",
+      "type": "cross",
+      "label": "^worldv_3 = ^worldp_J3 × ^worldω_3",
+      "params": {},
+      "position": {
+        "x": 1030,
+        "y": 980
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "twist_3",
+      "type": "stack",
+      "label": "^worldξ_3 = [^worldω_3; ^worldv_3]",
+      "params": {},
+      "position": {
+        "x": 1030,
+        "y": 1300
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "world_joint_4",
+      "type": "transform",
+      "label": "^worldT_J4(0)",
+      "params": {
+        "matrix": [
+          "cos(0)*cos(0)",
+          "cos(0)*sin(0)*sin(pi/2)-sin(0)*cos(pi/2)",
+          "cos(0)*sin(0)*cos(pi/2)+sin(0)*sin(pi/2)",
+          "0",
+          "sin(0)*cos(0)",
+          "sin(0)*sin(0)*sin(pi/2)+cos(0)*cos(pi/2)",
+          "sin(0)*sin(0)*cos(pi/2)-cos(0)*sin(pi/2)",
+          "0",
+          "-sin(0)",
+          "cos(0)*sin(pi/2)",
+          "cos(0)*cos(pi/2)",
+          "0.19",
+          "0",
+          "0",
+          "0",
+          "1"
+        ]
+      },
+      "position": {
+        "x": 1370,
+        "y": 20
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "omega_4",
+      "type": "columns",
+      "label": "^worldω_4 · axis = column 3",
+      "params": {
+        "columns": [
+          3
+        ],
+        "rowStart": 1,
+        "rowCount": 3
+      },
+      "position": {
+        "x": 1370,
+        "y": 340
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "point_4",
+      "type": "columns",
+      "label": "^worldp_J4 · point = column 4",
+      "params": {
+        "columns": [
+          4
+        ],
+        "rowStart": 1,
+        "rowCount": 3
+      },
+      "position": {
+        "x": 1370,
+        "y": 660
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "linear_4",
+      "type": "cross",
+      "label": "^worldv_4 = ^worldp_J4 × ^worldω_4",
+      "params": {},
+      "position": {
+        "x": 1370,
+        "y": 980
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "twist_4",
+      "type": "stack",
+      "label": "^worldξ_4 = [^worldω_4; ^worldv_4]",
+      "params": {},
+      "position": {
+        "x": 1370,
+        "y": 1300
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "world_joint_5",
+      "type": "transform",
+      "label": "^worldT_J5(0)",
+      "params": {
+        "matrix": [
+          "cos(0)*cos(pi)",
+          "cos(0)*sin(pi)*sin(-pi/2)-sin(0)*cos(-pi/2)",
+          "cos(0)*sin(pi)*cos(-pi/2)+sin(0)*sin(-pi/2)",
+          "0",
+          "sin(0)*cos(pi)",
+          "sin(0)*sin(pi)*sin(-pi/2)+cos(0)*cos(-pi/2)",
+          "sin(0)*sin(pi)*cos(-pi/2)-cos(0)*sin(-pi/2)",
+          "0.21",
+          "-sin(pi)",
+          "cos(pi)*sin(-pi/2)",
+          "cos(pi)*cos(-pi/2)",
+          "0",
+          "0",
+          "0",
+          "0",
+          "1"
+        ]
+      },
+      "position": {
+        "x": 1710,
+        "y": 20
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "omega_5",
+      "type": "columns",
+      "label": "^worldω_5 · axis = column 3",
+      "params": {
+        "columns": [
+          3
+        ],
+        "rowStart": 1,
+        "rowCount": 3
+      },
+      "position": {
+        "x": 1710,
+        "y": 340
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "point_5",
+      "type": "columns",
+      "label": "^worldp_J5 · point = column 4",
+      "params": {
+        "columns": [
+          4
+        ],
+        "rowStart": 1,
+        "rowCount": 3
+      },
+      "position": {
+        "x": 1710,
+        "y": 660
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "linear_5",
+      "type": "cross",
+      "label": "^worldv_5 = ^worldp_J5 × ^worldω_5",
+      "params": {},
+      "position": {
+        "x": 1710,
+        "y": 980
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "twist_5",
+      "type": "stack",
+      "label": "^worldξ_5 = [^worldω_5; ^worldv_5]",
+      "params": {},
+      "position": {
+        "x": 1710,
+        "y": 1300
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "world_joint_6",
+      "type": "transform",
+      "label": "^worldT_J6(0)",
+      "params": {
+        "matrix": [
+          "cos(0)*cos(0)",
+          "cos(0)*sin(0)*sin(pi/2)-sin(0)*cos(pi/2)",
+          "cos(0)*sin(0)*cos(pi/2)+sin(0)*sin(pi/2)",
+          "0",
+          "sin(0)*cos(0)",
+          "sin(0)*sin(0)*sin(pi/2)+cos(0)*cos(pi/2)",
+          "sin(0)*sin(0)*cos(pi/2)-cos(0)*sin(pi/2)",
+          "0.06070",
+          "-sin(0)",
+          "cos(0)*sin(pi/2)",
+          "cos(0)*cos(pi/2)",
+          "0.19",
+          "0",
+          "0",
+          "0",
+          "1"
+        ]
+      },
+      "position": {
+        "x": 2050,
+        "y": 20
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "omega_6",
+      "type": "columns",
+      "label": "^worldω_6 · axis = column 3",
+      "params": {
+        "columns": [
+          3
+        ],
+        "rowStart": 1,
+        "rowCount": 3
+      },
+      "position": {
+        "x": 2050,
+        "y": 340
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "point_6",
+      "type": "columns",
+      "label": "^worldp_J6 · point = column 4",
+      "params": {
+        "columns": [
+          4
+        ],
+        "rowStart": 1,
+        "rowCount": 3
+      },
+      "position": {
+        "x": 2050,
+        "y": 660
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "linear_6",
+      "type": "cross",
+      "label": "^worldv_6 = ^worldp_J6 × ^worldω_6",
+      "params": {},
+      "position": {
+        "x": 2050,
+        "y": 980
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "twist_6",
+      "type": "stack",
+      "label": "^worldξ_6 = [^worldω_6; ^worldv_6]",
+      "params": {},
+      "position": {
+        "x": 2050,
+        "y": 1300
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "world_joint_7",
+      "type": "transform",
+      "label": "^worldT_J7(0)",
+      "params": {
+        "matrix": [
+          "cos(0)*cos(pi)",
+          "cos(0)*sin(pi)*sin(-pi/2)-sin(0)*cos(-pi/2)",
+          "cos(0)*sin(pi)*cos(-pi/2)+sin(0)*sin(-pi/2)",
+          "0",
+          "sin(0)*cos(pi)",
+          "sin(0)*sin(pi)*sin(-pi/2)+cos(0)*cos(-pi/2)",
+          "sin(0)*sin(pi)*cos(-pi/2)-cos(0)*sin(-pi/2)",
+          "0.081",
+          "-sin(pi)",
+          "cos(pi)*sin(-pi/2)",
+          "cos(pi)*cos(-pi/2)",
+          "0.06070",
+          "0",
+          "0",
+          "0",
+          "1"
+        ]
+      },
+      "position": {
+        "x": 2390,
+        "y": 20
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "omega_7",
+      "type": "columns",
+      "label": "^worldω_7 · axis = column 3",
+      "params": {
+        "columns": [
+          3
+        ],
+        "rowStart": 1,
+        "rowCount": 3
+      },
+      "position": {
+        "x": 2390,
+        "y": 340
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "point_7",
+      "type": "columns",
+      "label": "^worldp_J7 · point = column 4",
+      "params": {
+        "columns": [
+          4
+        ],
+        "rowStart": 1,
+        "rowCount": 3
+      },
+      "position": {
+        "x": 2390,
+        "y": 660
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "linear_7",
+      "type": "cross",
+      "label": "^worldv_7 = ^worldp_J7 × ^worldω_7",
+      "params": {},
+      "position": {
+        "x": 2390,
+        "y": 980
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "twist_7",
+      "type": "stack",
+      "label": "^worldξ_7 = [^worldω_7; ^worldv_7]",
+      "params": {},
+      "position": {
+        "x": 2390,
+        "y": 1300
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "home_M",
+      "type": "transform",
+      "label": "M = ^worldT_ee(0)",
+      "params": {
+        "matrix": [
+          "cos(0)*cos(0)",
+          "cos(0)*sin(0)*sin(0)-sin(0)*cos(0)",
+          "cos(0)*sin(0)*cos(0)+sin(0)*sin(0)",
+          "0",
+          "sin(0)*cos(0)",
+          "sin(0)*sin(0)*sin(0)+cos(0)*cos(0)",
+          "sin(0)*sin(0)*cos(0)-cos(0)*sin(0)",
+          "0",
+          "-sin(0)",
+          "cos(0)*sin(0)",
+          "cos(0)*cos(0)",
+          "0.045",
+          "0",
+          "0",
+          "0",
+          "1"
+        ]
+      },
+      "position": {
+        "x": 2730,
+        "y": 20
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "six_column_minor",
+      "type": "columns",
+      "label": "Selected square matrix · columns 1–6",
+      "params": {
+        "columns": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "rowStart": 1,
+        "rowCount": 6
+      },
+      "position": {
+        "x": 1710,
+        "y": 1660
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "minor_determinant",
+      "type": "determinant",
+      "label": "det(columns 1–6) = 0 at home",
+      "params": {},
+      "position": {
+        "x": 2050,
+        "y": 1660
+      },
+      "showMatrix": false
+    },
+    {
+      "id": "space_screws",
+      "type": "columns",
+      "label": "^worldJ_s(0) = [^worldξ_1 … ^worldξ_7]",
+      "params": {
+        "columns": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "rowStart": 1,
+        "rowCount": 6
+      },
+      "position": {
+        "x": 1370,
+        "y": 1660
+      },
+      "showMatrix": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "world_base",
+      "to": "world_joint_1"
+    },
+    {
+      "from": "world_joint_1",
+      "to": "omega_1",
+      "input": "c0"
+    },
+    {
+      "from": "world_joint_1",
+      "to": "point_1",
+      "input": "c0"
+    },
+    {
+      "from": "point_1",
+      "to": "linear_1",
+      "input": "a"
+    },
+    {
+      "from": "omega_1",
+      "to": "linear_1",
+      "input": "b"
+    },
+    {
+      "from": "omega_1",
+      "to": "twist_1",
+      "input": "a"
+    },
+    {
+      "from": "linear_1",
+      "to": "twist_1",
+      "input": "b"
+    },
+    {
+      "from": "world_joint_1",
+      "to": "world_joint_2"
+    },
+    {
+      "from": "world_joint_2",
+      "to": "omega_2",
+      "input": "c0"
+    },
+    {
+      "from": "world_joint_2",
+      "to": "point_2",
+      "input": "c0"
+    },
+    {
+      "from": "point_2",
+      "to": "linear_2",
+      "input": "a"
+    },
+    {
+      "from": "omega_2",
+      "to": "linear_2",
+      "input": "b"
+    },
+    {
+      "from": "omega_2",
+      "to": "twist_2",
+      "input": "a"
+    },
+    {
+      "from": "linear_2",
+      "to": "twist_2",
+      "input": "b"
+    },
+    {
+      "from": "world_joint_2",
+      "to": "world_joint_3"
+    },
+    {
+      "from": "world_joint_3",
+      "to": "omega_3",
+      "input": "c0"
+    },
+    {
+      "from": "world_joint_3",
+      "to": "point_3",
+      "input": "c0"
+    },
+    {
+      "from": "point_3",
+      "to": "linear_3",
+      "input": "a"
+    },
+    {
+      "from": "omega_3",
+      "to": "linear_3",
+      "input": "b"
+    },
+    {
+      "from": "omega_3",
+      "to": "twist_3",
+      "input": "a"
+    },
+    {
+      "from": "linear_3",
+      "to": "twist_3",
+      "input": "b"
+    },
+    {
+      "from": "world_joint_3",
+      "to": "world_joint_4"
+    },
+    {
+      "from": "world_joint_4",
+      "to": "omega_4",
+      "input": "c0"
+    },
+    {
+      "from": "world_joint_4",
+      "to": "point_4",
+      "input": "c0"
+    },
+    {
+      "from": "point_4",
+      "to": "linear_4",
+      "input": "a"
+    },
+    {
+      "from": "omega_4",
+      "to": "linear_4",
+      "input": "b"
+    },
+    {
+      "from": "omega_4",
+      "to": "twist_4",
+      "input": "a"
+    },
+    {
+      "from": "linear_4",
+      "to": "twist_4",
+      "input": "b"
+    },
+    {
+      "from": "world_joint_4",
+      "to": "world_joint_5"
+    },
+    {
+      "from": "world_joint_5",
+      "to": "omega_5",
+      "input": "c0"
+    },
+    {
+      "from": "world_joint_5",
+      "to": "point_5",
+      "input": "c0"
+    },
+    {
+      "from": "point_5",
+      "to": "linear_5",
+      "input": "a"
+    },
+    {
+      "from": "omega_5",
+      "to": "linear_5",
+      "input": "b"
+    },
+    {
+      "from": "omega_5",
+      "to": "twist_5",
+      "input": "a"
+    },
+    {
+      "from": "linear_5",
+      "to": "twist_5",
+      "input": "b"
+    },
+    {
+      "from": "world_joint_5",
+      "to": "world_joint_6"
+    },
+    {
+      "from": "world_joint_6",
+      "to": "omega_6",
+      "input": "c0"
+    },
+    {
+      "from": "world_joint_6",
+      "to": "point_6",
+      "input": "c0"
+    },
+    {
+      "from": "point_6",
+      "to": "linear_6",
+      "input": "a"
+    },
+    {
+      "from": "omega_6",
+      "to": "linear_6",
+      "input": "b"
+    },
+    {
+      "from": "omega_6",
+      "to": "twist_6",
+      "input": "a"
+    },
+    {
+      "from": "linear_6",
+      "to": "twist_6",
+      "input": "b"
+    },
+    {
+      "from": "world_joint_6",
+      "to": "world_joint_7"
+    },
+    {
+      "from": "world_joint_7",
+      "to": "omega_7",
+      "input": "c0"
+    },
+    {
+      "from": "world_joint_7",
+      "to": "point_7",
+      "input": "c0"
+    },
+    {
+      "from": "point_7",
+      "to": "linear_7",
+      "input": "a"
+    },
+    {
+      "from": "omega_7",
+      "to": "linear_7",
+      "input": "b"
+    },
+    {
+      "from": "omega_7",
+      "to": "twist_7",
+      "input": "a"
+    },
+    {
+      "from": "linear_7",
+      "to": "twist_7",
+      "input": "b"
+    },
+    {
+      "from": "world_joint_7",
+      "to": "home_M"
+    },
+    {
+      "from": "space_screws",
+      "to": "six_column_minor",
+      "input": "c0"
+    },
+    {
+      "from": "space_screws",
+      "to": "six_column_minor",
+      "input": "c1"
+    },
+    {
+      "from": "space_screws",
+      "to": "six_column_minor",
+      "input": "c2"
+    },
+    {
+      "from": "space_screws",
+      "to": "six_column_minor",
+      "input": "c3"
+    },
+    {
+      "from": "space_screws",
+      "to": "six_column_minor",
+      "input": "c4"
+    },
+    {
+      "from": "space_screws",
+      "to": "six_column_minor",
+      "input": "c5"
+    },
+    {
+      "from": "six_column_minor",
+      "to": "minor_determinant"
+    },
+    {
+      "from": "twist_1",
+      "to": "space_screws",
+      "input": "c0"
+    },
+    {
+      "from": "twist_2",
+      "to": "space_screws",
+      "input": "c1"
+    },
+    {
+      "from": "twist_3",
+      "to": "space_screws",
+      "input": "c2"
+    },
+    {
+      "from": "twist_4",
+      "to": "space_screws",
+      "input": "c3"
+    },
+    {
+      "from": "twist_5",
+      "to": "space_screws",
+      "input": "c4"
+    },
+    {
+      "from": "twist_6",
+      "to": "space_screws",
+      "input": "c5"
+    },
+    {
+      "from": "twist_7",
+      "to": "space_screws",
+      "input": "c6"
+    }
+  ],
+  "bindings": {}
+}

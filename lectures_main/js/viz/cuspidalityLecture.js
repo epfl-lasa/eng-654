@@ -2,6 +2,11 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createSceneControlPanel, createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
 import { parseStlGeometry } from './frameDHPlayground.js';
+import { searchAspectPath } from './cuspidalPathPlanner.js';
+import { createCuspidalityAtlas } from './cuspidalityAtlas.js';
+import { loadAbbIrbVisuals } from './abbIrbVisuals.js';
+import { ABB_PARAMETERS, abbUrdfTransforms, abbDHKinematics, abbJacobian, abbFactors, abbPreset, numericRank } from './abbIrbKinematics.js';
+import { buildFixedOrientationPath, custom6RArmDeterminant, custom6RWristSolutions, matrixDeterminant } from './fixedOrientationPath.js';
 
 const PI = Math.PI;
 const DEG = PI / 180;
@@ -12,6 +17,7 @@ const MODEL_SPECS = {
   '3r-offset': { label: 'offset-axis course 3R', urdf: '../../assets/models/custom_3R/custom_3R_new.urdf', mesh: '../../assets/models/custom_3R/', end: 'tool0', q: [25,-35,55], camera: [10,9,8], target: [2,1,.7] },
   'custom-6r': { label: 'course wrist-partitioned 6R', urdf: '../../assets/models/custom_6R/custom_6R_new.urdf', mesh: '../../assets/models/custom_6R/', end: 'link_6', q: [-60,20,120,35,-50,70], camera: [14,12,10], target: [3,1.4,1], frameScale: .7 },
   puma: { label: 'PUMA 560', urdf: '../../assets/models/puma/puma560_robot.urdf', mesh: '../../assets/models/puma/', end: 'link7', q: [30,-35,45,40,-50,60], camera: [2.4,2.1,1.7], target: [.1,0,.65], frameScale: .11 },
+  abb: { label: 'ABB IRB 4600', end: 'tool0', q: [0,15,-35,25,35,-20], camera: [4.8,4.2,3.5], target: [.5,0,1.05], frameScale: .23 },
   iiwa: { label: 'KUKA iiwa 7', urdf: '../../assets/models/iiwa7/iiwa7_free_joints.urdf', mesh: '../../assets/models/iiwa7/', end: 'iiwa_link_ee', q: [20,-35,30,50,-40,45,60], camera: [1.7,1.5,1.25], target: [.1,0,.62], frameScale: .11 },
   fanuc: { label: 'FANUC CRX-10iA/L', urdf: '../../assets/models/fanuc_crx10ia_support/crx10ial.urdf', mesh: '../../assets/models/fanuc_crx10ia_support/', end: 'link_6', q: [15,-30,55,20,40,-25], camera: [2.7,2.4,2.1], target: [.3,0,.7], frameScale: .16 }
 };
@@ -36,8 +42,10 @@ export function initCuspidalityLecture() {
       else if (mode === 'atlas-3r') createAtlas3R(host);
       else if (mode === 'nscs-3r') createNscsLab(host).catch((error)=>fail(host,error));
       else if (mode === 'custom-6r') createCustom6RLab(host);
-      else if (mode === 'puma-6r') createPartitioned6RLab(host,'puma').catch((error)=>fail(host,error));
+      else if (mode === 'abb-6r') createAbbAspectLab(host).catch((error)=>fail(host,error));
+      else if (mode === 'abb-factors') createAbbFactorsLab(host).catch((error)=>fail(host,error));
       else if (mode === 'fanuc-16') createFanuc16Lab(host).catch((error)=>fail(host,error));
+      else throw new Error(`Unknown cuspidality visualization: ${mode}`);
     } catch (error) { fail(host,error); }
   };
   const observer = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) ensure(entry.target); }), { threshold: .02, rootMargin: '100px' });
@@ -79,77 +87,366 @@ function create2RAspectLab(host) {
   draw();
 }
 
-function createAtlas3R(host, options={}) {
-  host.className += ' cusp-lab cusp-atlas';
-  host.innerHTML = '<div class="cusp-plot-row"><div class="cusp-plot"><h3>joint space · q₂,q₃ ∈ [−π,π]</h3><canvas data-joint></canvas></div><div class="cusp-plot"><h3>workspace critical values · ρ,z</h3><canvas data-work></canvas></div></div><div class="cusp-controls"><div><div class="cusp-presets"><button data-preset="noncuspidal">idealized 3R · a₁=0</button><button data-preset="cuspidal" class="active">idealized 3R · a₁=1</button></div><div class="cusp-iks" data-iks></div></div><div class="cusp-control-grid" data-params></div><div><div class="cusp-formula" data-formula></div><div class="cusp-status" data-status>Click the workspace plot to solve IK.</div></div></div>';
-  const jc=host.querySelector('[data-joint]'),wc=host.querySelector('[data-work]'),paramsHost=host.querySelector('[data-params]'),state={p:{...PRESETS.cuspidal},solutions:[],target:null,map:null,cache:null};
-  const controls=[['a₁','a1',0,2,.1],['a₂','a2',.4,3,.1],['a₃','a3',.4,3,.1],['d₂','d2',0,2,.1],['d₃','d3',0,1.5,.1],['α₁','A1',-180,180,5],['α₂','A2',-180,180,5],['α₃','A3',-180,180,5]];
-  controls.forEach(([label,key,min,max,step])=>{const el=document.createElement('label');el.innerHTML=`${label}<input type="number" min="${min}" max="${max}" step="${step}" data-key="${key}">`;el.querySelector('input').addEventListener('change',(e)=>{state.p[key]=Number(e.target.value)*(key[0]==='A'?DEG:1);host.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));rebuild();});paramsHost.append(el);});
-  const syncInputs=()=>paramsHost.querySelectorAll('input').forEach((input)=>{const v=state.p[input.dataset.key];input.value=(input.dataset.key[0]==='A'?v/DEG:v).toFixed(input.dataset.key[0]==='A'?0:2);});
-  host.querySelectorAll('[data-preset]').forEach((button)=>button.addEventListener('click',()=>{state.p={...PRESETS[button.dataset.preset]};host.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('active',b===button));syncInputs();rebuild();}));
-  const pair=resizeCanvases([jc,wc],draw); syncInputs();
-  function rebuild(){state.cache=buildSingularityCache(state.p);state.target=sliceFk([-10*DEG,-170*DEG],state.p);state.solutions=solveIkSlice(state.target,state.p);host.querySelector('[data-iks]').innerHTML=state.solutions.map((q,i)=>`<button style="border-color:${COLORS[i%COLORS.length]}">IK ${i+1}</button>`).join('');host.querySelector('[data-formula]').textContent=factorText(state.p);host.querySelector('[data-status]').textContent=`Example target loaded · ${state.solutions.length} regular IK solutions. Click anywhere in the workspace slice to solve again.`;draw();}
-  function draw(){if(!pair.ready()||!state.cache)return;const [jctx,wctx]=pair.contexts,[js,ws]=pair.sizes;clear(jctx,js);clear(wctx,ws);const jm=plotMap(js,[-PI,PI],[-PI,PI],{x:'q₂',y:'q₃'}),wm=plotMap(ws,state.cache.rhoRange,state.cache.zRange,{x:'ρ',y:'z'});state.map=wm;axes(jctx,jm);axes(wctx,wm);drawSegments(jctx,state.cache.singularSegments,jm,'#e00000',2);state.cache.criticalBranches.forEach(branch=>polyline(wctx,branch,wm,'#e00000',2));if(state.target)dot(wctx,wm.toPx(...state.target),'#111',7,'#fff');state.solutions.forEach((q,i)=>dot(jctx,jm.toPx(q[0],q[1]),COLORS[i%COLORS.length],7,'#111'));}
-  wc.addEventListener('pointerdown',(event)=>{const rect=wc.getBoundingClientRect(),p=state.map.fromPx(event.clientX-rect.left,event.clientY-rect.top);state.target=[Math.max(0,p[0]),p[1]];state.solutions=solveIkSlice(state.target,state.p);const pills=host.querySelector('[data-iks]');pills.innerHTML=state.solutions.map((q,i)=>`<button style="border-color:${COLORS[i%COLORS.length]}">IK ${i+1}</button>`).join('');host.querySelector('[data-status]').textContent=state.solutions.length?`${state.solutions.length} regular IK solutions found · colored points are plotted in joint space.`:'No regular IK solution at this point.';draw();});
-  rebuild();
-  return { state, rebuild, draw };
+function createAtlas3R(host) {
+  return createCuspidalityAtlas(host, { PRESETS, det3, sliceFk, solveIkSlice, factorText });
 }
 
 async function createNscsLab(host) {
   host.className += ' cusp-lab cusp-nscs';
-  host.innerHTML='<div class="cusp-nscs-panels"><div class="cusp-plot"><h3>joint space</h3><canvas data-joint></canvas></div><div class="cusp-plot"><h3>closed FK loop · ρ,z</h3><canvas data-work></canvas></div><div class="cusp-stage" data-stage><div class="hud">custom_3R_new.urdf · course STL geometry</div></div></div><div class="cusp-nscs-controls"><div class="cusp-iks" data-iks></div><div class="cusp-status" data-status>Loading the Lecture 03 IK solver.</div><div><button data-build disabled>Build path</button> <button data-play disabled>Play</button></div></div>';
-  const jc=host.querySelector('[data-joint]'),wc=host.querySelector('[data-work]'),status=host.querySelector('[data-status]'),buildButton=host.querySelector('[data-build]'),playButton=host.querySelector('[data-play]'),state={p:{...CUSTOM_3R_URDF_DH},cache:null,target:null,solutions:[],selected:[],path:[],fullPath:[],trace:[],map:null,playing:false,solving:false};
-  state.cache=buildSingularityCache(state.p);const pair=resizeCanvases([jc,wc],draw),[viewer,ikModule]=await Promise.all([createModelViewer(host.querySelector('[data-stage]'),'3r-offset',{embedded:true}),import(`./custom3rIk.js?v=${MODULE_REVISION}`)]);
-  const solvePosition=async(position)=>ikModule.solveCustom3RPositionIk(position),solveFullIk=async(target)=>solvePosition([target[0],0,target[1]]);
-  function clearPath(){state.selected=[];state.path=[];state.fullPath=[];state.trace=[];buildButton.disabled=true;playButton.disabled=true;}
-  function constructPath(){if(state.selected.length!==2)return[];const qa=state.solutions[state.selected[0]],qb=state.solutions[state.selected[1]],slicePath=planAspectPath(qa.slice(1),qb.slice(1),state.p);if(!slicePath.length)return[];state.path=slicePath;state.fullPath=slicePath.map((slice,i)=>[angleLerp(qa[0],qb[0],i/Math.max(1,slicePath.length-1)),slice[0],slice[1]]);refresh3DMotion();return slicePath;}
-  function refresh3DMotion(){if(!state.fullPath.length)return;const points=state.fullPath.map(q=>viewer.point(q));state.trace=points.map(p=>[Math.hypot(p.x,p.y),p.z]);viewer.setGhost(state.fullPath[0]);viewer.update(state.fullPath[0]);viewer.setTrace(points);}
-  async function setTarget(target,chooseExample=false){state.solving=true;state.target=target;clearPath();status.textContent='Solving position IK with the Lecture 03 custom 3R solver.';draw();await new Promise(resolve=>setTimeout(resolve,0));state.solutions=(await solveFullIk(target)).filter(q=>Math.abs(det3(q,state.p))>1e-6);state.solving=false;if(chooseExample){outer:for(let i=0;i<state.solutions.length;i+=1)for(let j=i+1;j<state.solutions.length;j+=1){state.selected=[i,j];if(constructPath().length)break outer;state.selected=[];}}renderPills();buildButton.disabled=state.selected.length!==2;playButton.disabled=!state.fullPath.length;status.textContent=state.fullPath.length?`Ready example · IK ${state.selected[0]+1} and IK ${state.selected[1]+1} share one aspect. Their FK path starts and ends at the selected point.`:`${state.solutions.length} full position-IK solutions found at x = ρ, y = 0. Select two endpoints.`;draw();}
-  function draw(){if(!pair.ready())return;const [jctx,wctx]=pair.contexts,[js,ws]=pair.sizes;clear(jctx,js);clear(wctx,ws);const jm=plotMap(js,[-PI,PI],[-PI,PI],{x:'q₂',y:'q₃'}),wm=plotMap(ws,state.cache.rhoRange,state.cache.zRange,{x:'ρ',y:'z'});state.map=wm;axes(jctx,jm);axes(wctx,wm);drawSegments(jctx,state.cache.singularSegments,jm,'#e00000',1.8);state.cache.criticalBranches.forEach(branch=>polyline(wctx,branch,wm,'#e00000',1.8));if(state.path.length)polylineTorus(jctx,state.path,jm,'#111',3);if(state.trace.length)polyline(wctx,state.trace,wm,'#2474d2',3);if(state.target)dot(wctx,wm.toPx(...state.target),'#111',7,'#fff');state.solutions.forEach((q,i)=>dot(jctx,jm.toPx(q[1],q[2]),COLORS[i%COLORS.length],state.selected.includes(i)?9:6,'#111'));}
-  wc.addEventListener('pointerdown',async(event)=>{if(state.playing||state.solving)return;const rect=wc.getBoundingClientRect(),p=state.map.fromPx(event.clientX-rect.left,event.clientY-rect.top);await setTarget([Math.max(0,p[0]),p[1]]);});
-  function renderPills(){const h=host.querySelector('[data-iks]');h.innerHTML=state.solutions.map((q,i)=>`<button data-i="${i}" class="${state.selected.includes(i)?'selected':''}" style="border-color:${COLORS[i%COLORS.length]}">IK ${i+1}</button>`).join('');h.querySelectorAll('button').forEach((b)=>b.addEventListener('click',()=>{const i=+b.dataset.i;if(state.selected.includes(i))state.selected=state.selected.filter(x=>x!==i);else if(state.selected.length<2)state.selected.push(i);state.path=[];state.fullPath=[];state.trace=[];renderPills();buildButton.disabled=state.selected.length!==2;playButton.disabled=true;draw();}));}
-  buildButton.addEventListener('click',async()=>{const path=constructPath();if(!path.length){status.textContent='These IKs are not connected in the sampled aspect. Choose another pair.';playButton.disabled=true;draw();return;}buildButton.disabled=true;status.textContent='Checking the FK path against the Lecture 03 IK solver.';draw();const check=await verifyFullIkContinuation(state.fullPath,viewer,solvePosition),min=Math.min(...state.path.map(q=>Math.abs(det3([0,...q],state.p)))),closure=distance2(state.trace[0],state.trace.at(-1));status.textContent=`Closed FK loop · endpoint error ${closure.toExponential(2)} m · min |det J| ${min.toFixed(3)} · IK continuation ${check?'verified':'needs finer sampling'}.`;buildButton.disabled=false;playButton.disabled=false;draw();});
-  playButton.addEventListener('click',()=>{if(!state.fullPath.length||state.playing)return;refresh3DMotion();state.playing=true;let start=performance.now();const duration=Math.max(4000,state.fullPath.length*55);const step=(now)=>{const u=Math.min(1,(now-start)/duration),x=u*(state.fullPath.length-1),i=Math.min(state.fullPath.length-2,Math.floor(x)),t=x-i,q=state.fullPath[i].map((v,k)=>angleLerp(v,state.fullPath[i+1][k],t));viewer.update(q);if(u<1)requestAnimationFrame(step);else state.playing=false;};requestAnimationFrame(step);});
-  const seed=sliceFk([-10*DEG,-170*DEG],state.p);await setTarget(seed,true);
+  host.innerHTML = '<div class="cusp-nscs-panels"><div class="cusp-plot"><h3>joint path · q₂, q₃</h3><canvas data-joint></canvas></div><div class="cusp-plot"><h3>y = 0 slice · actual x, z</h3><canvas data-work></canvas></div><div class="cusp-stage" data-stage><div class="hud">custom_3R_new.urdf · discrete joint configurations</div></div></div><div class="cusp-nscs-controls"><div class="cusp-iks" data-iks></div><div class="cusp-status" data-status>Loading the Lecture 03 IK solver.</div><div><button data-build disabled>Build path</button> <button data-play disabled>Play</button> <button data-reset disabled>Reset to start</button></div></div>';
+  const jc = host.querySelector('[data-joint]'), wc = host.querySelector('[data-work]');
+  const status = host.querySelector('[data-status]'), buildButton = host.querySelector('[data-build]'), playButton = host.querySelector('[data-play]'), resetButton = host.querySelector('[data-reset]');
+  const state = { p: { ...CUSTOM_3R_URDF_DH }, cache: null, target: null, solutions: [], selected: [], path: [], fullPath: [], trace: [], map: null, playing: false, busy: false, version: 0, progress: 0 };
+  state.cache = buildSingularityCache(state.p);
+  const pair = resizeCanvases([jc, wc], draw);
+  const [viewer, ikModule, { createJointPathPlayback }] = await Promise.all([
+    createModelViewer(host.querySelector('[data-stage]'), '3r-offset', { embedded: true }),
+    import(`./custom3rIk.js?v=${MODULE_REVISION}`),
+    import(`./jointPathPlayback.js?v=${MODULE_REVISION}`)
+  ]);
+  const determinant = (slice) => det3([0, ...slice], state.p);
+  const playback = createJointPathPlayback({
+    canPlay: () => !state.busy && state.fullPath.length > 1,
+    isVisible: () => !document.hidden && (!host.closest('.slide') || host.closest('.slide').classList.contains('active')),
+    duration: () => Math.max(6000, state.fullPath.length * 15),
+    onFrame: progress => {
+      state.progress = progress;
+      const index = Math.round(progress * (state.fullPath.length - 1));
+      viewer.update(state.fullPath[index]);
+      host.dataset.sampleIndex = String(index);
+      draw();
+    },
+    onState: ({ progress, playing }) => { state.progress = progress; state.playing = playing; controls(); }
+  });
+  function controls() {
+    buildButton.disabled = state.busy || state.selected.length !== 2;
+    playButton.disabled = state.busy || state.fullPath.length < 2;
+    resetButton.disabled = state.busy || state.fullPath.length < 2;
+    playButton.textContent = state.playing ? 'Pause' : state.progress >= 1 ? 'Replay' : state.progress > 0 ? 'Resume' : 'Play';
+    host.querySelectorAll('[data-iks] button').forEach((button) => { button.disabled = state.busy; });
+    host.dataset.playing = String(state.playing);
+    host.dataset.pathPoints = String(state.fullPath.length);
+    host.dataset.progress = state.progress.toFixed(4);
+  }
+  function pause() { playback.pause(); }
+  function clearPath() {
+    playback.reset(); state.version += 1; state.path = []; state.fullPath = []; state.trace = []; state.progress = 0;
+    delete host.dataset.minAbsDet; delete host.dataset.maxSliceError;
+    delete host.dataset.sampleIndex;
+    viewer.setTrace([]); viewer.setGhost(null); controls();
+  }
+  function renderPills() {
+    const pills = host.querySelector('[data-iks]');
+    pills.innerHTML = state.solutions.map((q, i) => `<button data-i="${i}" class="${state.selected.includes(i) ? 'selected' : ''}" style="border-color:${COLORS[i % COLORS.length]}" title="q = (${q.map(v => (v / DEG).toFixed(1)).join(', ')}) degrees">IK ${i + 1}</button>`).join('');
+    pills.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => {
+      if (state.busy) return;
+      clearPath(); const i = Number(button.dataset.i);
+      if (state.selected.includes(i)) state.selected = state.selected.filter(k => k !== i);
+      else if (state.selected.length < 2) state.selected.push(i);
+      else state.selected = [state.selected[1], i];
+      viewer.update(state.solutions[i]); renderPills();
+      status.textContent = state.selected.length === 2 ? 'Endpoints selected. Build path searches one regular aspect and checks every interpolated edge.' : 'Select two IK configurations at the same (x, 0, z) target.';
+      controls(); draw();
+    }));
+  }
+  async function setTarget(target, chooseExample = false) {
+    clearPath(); const version = state.version; state.target = target; state.selected = []; state.solutions = []; state.busy = true;
+    renderPills(); controls(); status.textContent = 'Solving the actual URDF position IK at (x, 0, z).'; draw();
+    try {
+      const solutions = await ikModule.solveCustom3RPositionIk([target[0], 0, target[1]]);
+      if (version !== state.version) return;
+      state.solutions = solutions.filter(q => Math.abs(determinant(q.slice(1))) > 1e-6);
+      if (chooseExample) {
+        outer: for (let i = 0; i < state.solutions.length; i += 1) for (let j = i + 1; j < state.solutions.length; j += 1) {
+          if (determinant(state.solutions[i].slice(1)) * determinant(state.solutions[j].slice(1)) > 0) { state.selected = [i, j]; break outer; }
+        }
+      }
+      if (state.solutions.length) viewer.update(state.solutions[state.selected[0] ?? 0]);
+      status.textContent = `${state.solutions.length} regular position IKs at (${target[0].toFixed(3)}, 0, ${target[1].toFixed(3)}) m. ${state.selected.length === 2 ? 'Two endpoints selected: press Build path.' : 'Select two endpoints.'}`;
+    } catch (error) { if (version === state.version) status.textContent = `IK could not be solved: ${error.message}`; }
+    finally { if (version === state.version) { state.busy = false; renderPills(); controls(); draw(); } }
+  }
+  // q1 is reconstructed from the URDF at every dense waypoint. Thus the
+  // displayed discrete joint configurations lie on y=0, including negative x.
+  function configuration(slice, previous) {
+    const p0 = new THREE.Vector3().setFromMatrixPosition(viewer.model.pose([0, ...slice]));
+    const q1 = (state.target[0] < 0 ? PI : 0) - Math.atan2(p0.y, p0.x);
+    return [previous == null ? q1 : previous + wrap(q1 - previous), ...slice];
+  }
+  async function buildPath() {
+    if (state.busy || state.selected.length !== 2) return;
+    clearPath(); const version = state.version, selected = state.selected.slice(); state.busy = true; controls();
+    status.textContent = 'Searching a periodic joint grid with A*: checking determinant sign and clearance along each edge.';
+    await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+    try {
+      const qa = state.solutions[selected[0]], qb = state.solutions[selected[1]];
+      const clearance = Math.min(.03, .1 * Math.abs(determinant(qa.slice(1))), .1 * Math.abs(determinant(qb.slice(1))));
+      const result = searchAspectPath(qa.slice(1), qb.slice(1), { determinant, clearance, resolution: 144, maxStep: .012 });
+      if (version !== state.version) return;
+      if (!result.found) { status.textContent = result.reason; return; }
+      let previous = qa[0];
+      const fullPath = result.path.map(slice => { const q = configuration(slice, previous); previous = q[0]; return q; });
+      const points = fullPath.map(q => new THREE.Vector3().setFromMatrixPosition(viewer.model.pose(q)));
+      const maxSliceError = Math.max(...points.map(p => Math.abs(p.y)));
+      const endpointError = Math.max(points[0].distanceTo(new THREE.Vector3(state.target[0], 0, state.target[1])), points.at(-1).distanceTo(new THREE.Vector3(state.target[0], 0, state.target[1])));
+      const jointError = Math.max(...fullPath[0].map((v, i) => Math.abs(wrap(v - qa[i]))), ...fullPath.at(-1).map((v, i) => Math.abs(wrap(v - qb[i]))));
+      // Check the independent URDF Jacobian at the actual complete waypoints.
+      let minDet = Infinity, valid = maxSliceError < 1e-8 && endpointError < 1e-6 && jointError < 1e-5;
+      const sign = Math.sign(determinant(qa.slice(1)));
+      for (const q of fullPath) {
+        const columns = viewer.model.geometricJacobian(q).columns.map(c => new THREE.Vector3(...c.slice(0, 3)));
+        const d = columns[0].dot(columns[1].clone().cross(columns[2]));
+        minDet = Math.min(minDet, Math.abs(d)); valid &&= Number.isFinite(d) && sign * d > clearance;
+      }
+      if (!valid) { status.textContent = 'The URDF endpoint, slice or Jacobian check failed. This path cannot be played.'; return; }
+      state.path = result.path; state.fullPath = fullPath; state.trace = points.map(p => [p.x, p.z]);
+      viewer.setGhost(fullPath[0]); viewer.setTrace(points); viewer.update(fullPath[0]);
+      host.dataset.sampleIndex = '0';
+      host.dataset.minAbsDet = String(minDet); host.dataset.maxSliceError = String(maxSliceError);
+      status.textContent = `A* + checked shortcuts → ${fullPath.length} discrete joint samples. min |det J| = ${minDet.toFixed(3)}; endpoint error ${endpointError.toExponential(1)} m. q₁ keeps each sample on y = 0. Press Play.`;
+    } catch (error) { if (version === state.version) status.textContent = `Path search failed: ${error.message}`; }
+    finally { if (version === state.version) { state.busy = false; controls(); draw(); } }
+  }
+  function draw() {
+    if (!pair.ready() || !state.cache) return;
+    const [jctx, wctx] = pair.contexts, [js, ws] = pair.sizes; clear(jctx, js); clear(wctx, ws);
+    const xmax = state.cache.rhoRange[1], jm = plotMap(js, [-PI, PI], [-PI, PI], { x: 'q₂ (rad)', y: 'q₃ (rad)' });
+    const wm = plotMap(ws, [-xmax, xmax], state.cache.zRange, { x: 'x (m), y = 0', y: 'z (m)' }); state.map = wm;
+    axes(jctx, jm); axes(wctx, wm); drawSegments(jctx, state.cache.singularSegments, jm, '#e00000', 1.8);
+    state.cache.criticalBranches.forEach(branch => { polyline(wctx, branch, wm, '#e00000', 1.8); polyline(wctx, branch.map(([x, z]) => [-x, z]), wm, '#e00000', 1.8); });
+    if (state.path.length) polylineTorus(jctx, state.path.map(q => q.map(wrap)), jm, '#111', 3);
+    if (state.trace.length) polyline(wctx, state.trace, wm, '#2474d2', 3);
+    if (state.target) dot(wctx, wm.toPx(...state.target), '#111', 7, '#fff');
+    state.solutions.forEach((q, i) => dot(jctx, jm.toPx(q[1], q[2]), COLORS[i % COLORS.length], state.selected.includes(i) ? 9 : 6, '#111'));
+    if (state.fullPath.length) {
+      const i = Math.round(state.progress * (state.fullPath.length - 1)), q = state.fullPath[i];
+      dot(jctx, jm.toPx(wrap(q[1]), wrap(q[2])), '#fff', 5, '#111'); dot(wctx, wm.toPx(...state.trace[i]), '#fff', 5, '#111');
+    }
+  }
+  wc.addEventListener('pointerdown', (event) => {
+    if (state.busy || !state.map) return;
+    const rect = wc.getBoundingClientRect(), target = state.map.fromPx(event.clientX - rect.left, event.clientY - rect.top);
+    if (target[0] < state.map.xr[0] || target[0] > state.map.xr[1] || target[1] < state.map.yr[0] || target[1] > state.map.yr[1]) return;
+    setTarget(target);
+  });
+  buildButton.addEventListener('click', buildPath);
+  playButton.addEventListener('click', () => {
+    if (state.playing) { pause(); return; }
+    playback.play();
+  });
+  resetButton.addEventListener('click', () => playback.reset());
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+  window.addEventListener('hashchange', () => { if (state.playing) pause(); });
+  await setTarget(sliceFk([-10 * DEG, -170 * DEG], state.p), true);
 }
 
 function createCustom6RLab(host) {
   createPartitioned6RLab(host,'custom-6r').catch((error)=>fail(host,error));
 }
 
-async function createPartitioned6RLab(host,key){
-  host.className+=' cusp-lab cusp-partitioned';host.innerHTML='<div class="cusp-partition-panels"><div class="cusp-plot"><h3>positional singularities · q₂,q₃</h3><canvas data-joint></canvas></div><div class="cusp-plot"><h3>workspace slice · ρ,z</h3><canvas data-work></canvas></div><div class="cusp-stage" data-stage><div class="hud">fixed orientation · RGB ee frame · O<sub>w</sub>=(ρ,0,z)</div></div></div><div class="cusp-partition-controls"><div class="cusp-iks" data-iks></div><div class="cusp-status" data-status>Loading the course URDF and STL files.</div><label class="cusp-toggle"><input type="checkbox" data-autoplay> cycle through IK solutions</label></div>';
-  if(key==='puma')host.querySelector('.hud').innerHTML='downward ee orientation · RGB frame · O<sub>w</sub>=(ρ,0,z)';
-  const jc=host.querySelector('[data-joint]'),wc=host.querySelector('[data-work]'),status=host.querySelector('[data-status]'),state={solutions:[],selected:0,target:null,jmap:null,wmap:null,cache:null,lastCycle:0};let viewer;
-  try{viewer=await createModelViewer(host.querySelector('[data-stage]'),key,{embedded:true,showEeFrame:true});}catch(error){fail(host,error);return;}
-  const model=viewer.model,reference=MODEL_SPECS[key].q.map(v=>v*DEG),fixedRotation=key==='puma'?[[1,0,0],[0,-1,0],[0,0,-1]]:rotationOnly(model.pose(reference));
-  const armFromSlice=(slice)=>{const p0=model.wrist([0,slice[0],slice[1],0,0,0]),q1=-Math.atan2(p0.y,p0.x);return[q1,slice[0],slice[1]];};
-  const mapFn=(slice)=>{const p=model.wrist([...armFromSlice(slice),0,0,0]);return[Math.hypot(p.x,p.y),p.z];};
-  const numericalDet=(slice)=>{const h=2e-5,f=mapFn(slice),a=mapFn([slice[0]+h,slice[1]]),b=mapFn([slice[0],slice[1]+h]);return((a[0]-f[0])*(b[1]-f[1])-(b[0]-f[0])*(a[1]-f[1]))/(h*h);};
-  const pumaFactors=key==='puma'?{
-    shoulder:(slice)=>.4318*Math.cos(slice[0])+.0203*Math.sin(slice[0])+.4331*Math.sin(slice[0]+slice[1]),
-    elbow:(slice)=>.4318*Math.cos(slice[1])-.0203*Math.sin(slice[1])
-  }:null;
-  const detFn=pumaFactors?(slice)=>pumaFactors.shoulder(slice)*pumaFactors.elbow(slice):numericalDet;
-  state.cache=pumaFactors?buildFactoredMapCache(mapFn,pumaFactors,401):buildNumericalMapCache(mapFn,detFn,241);state.target=mapFn([reference[1],reference[2]]);
+async function createPartitioned6RLab(host,key) {
+  const canPlan = key === 'custom-6r';
+  host.className += ` cusp-lab cusp-partitioned${canPlan?' has-path':''}`;
+  host.innerHTML = '<div class="cusp-partition-panels"><div class="cusp-plot"><h3>positional singularities · q₂,q₃</h3><canvas data-joint></canvas></div><div class="cusp-plot"><h3>y = 0 · wrist-center workspace slice</h3><canvas data-work></canvas></div><div class="cusp-stage" data-stage><div class="hud">fixed tool orientation · RGB tool frame</div></div></div><div class="cusp-partition-controls"><div class="cusp-iks" data-iks></div><div class="cusp-status" data-status role="status">Loading the course URDF and STL files.</div><div data-actions></div></div>';
+  const actions = host.querySelector('[data-actions]');
+  actions.innerHTML = canPlan
+    ? '<div class="cusp-path-controls"><label>Start <select data-start aria-label="Starting IK"></select></label><label>Goal <select data-goal aria-label="Goal IK"></select></label><button data-build disabled>Build path</button><button data-play disabled>Play</button><label>Path <input data-progress type="range" min="0" max="1" step=".001" value="0" disabled></label></div>'
+    : '<label class="cusp-toggle"><input type="checkbox" data-autoplay> cycle through IK solutions</label>';
+  const jc=host.querySelector('[data-joint]'), wc=host.querySelector('[data-work]'), status=host.querySelector('[data-status]');
+  const state={solutions:[],selected:0,start:0,goal:1,target:null,jmap:null,wmap:null,cache:null,path:[],trace:[],progress:0,playing:false,frame:0,busy:false,version:0};
+  const viewer=await createModelViewer(host.querySelector('[data-stage]'),key,{embedded:true,showEeFrame:true});
+  const model=viewer.model,reference=MODEL_SPECS[key].q.map(v=>v*DEG);
+  const fixedRotation=rotationOnly(model.pose(reference));
+  const armFromSlice=slice=>{const p0=model.wrist([0,...slice,0,0,0]);return[-Math.atan2(p0.y,p0.x),...slice];};
+  const mapFn=slice=>{const p=model.wrist([...armFromSlice(slice),0,0,0]);return[Math.hypot(p.x,p.y),p.z];};
+  const detFn=custom6RArmDeterminant;
+  state.cache=buildNumericalMapCache(mapFn,detFn,241);
+  state.target=mapFn(reference.slice(1,3));
   const pair=resizeCanvases([jc,wc],draw);
-  function solveTarget(){const armSlices=solveMapIk(state.target,mapFn,detFn).slice(0,4),solutions=[];for(const slice of armSlices){const arm=armFromSlice(slice),wrists=solveWristOrientations(model,arm,fixedRotation).slice(0,2);wrists.forEach(w=>{const q=[...arm,...w];if(!solutions.some(s=>jointDistance(s,q)<3e-2))solutions.push(q);});}state.solutions=solutions;state.selected=0;renderIks();if(solutions.length)viewer.update(solutions[0]);const poseError=solutions.length?Math.max(...solutions.map(q=>rotationMatrixResidual(rotationOnly(model.pose(q)),fixedRotation))):Infinity;status.textContent=`${solutions.length} complete 6R IK solutions · fixed orientation · max R error ${Number.isFinite(poseError)?poseError.toExponential(1):'n/a'} · O_w=(${state.target[0].toFixed(3)}, 0, ${state.target[1].toFixed(3)}) m.`;draw();}
-  function renderIks(){const h=host.querySelector('[data-iks]');h.innerHTML=state.solutions.map((q,i)=>`<button data-i="${i}" class="${i===state.selected?'selected':''}" style="border-color:${COLORS[i%COLORS.length]}">IK ${i+1}</button>`).join('');h.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>select(+b.dataset.i)));}
-  function select(i){if(!state.solutions.length)return;state.selected=(i+state.solutions.length)%state.solutions.length;viewer.update(state.solutions[state.selected]);renderIks();draw();}
-  function draw(){if(!pair.ready()||!state.cache)return;const [a,b]=pair.contexts,[as,bs]=pair.sizes;clear(a,as);clear(b,bs);const jm=plotMap(as,[-PI,PI],[-PI,PI],{x:'q₂',y:'q₃'}),wm=plotMap(bs,state.cache.rhoRange,state.cache.zRange,{x:'ρ',y:'z'});state.jmap=jm;state.wmap=wm;axes(a,jm);axes(b,wm);if(state.cache.factorGroups){state.cache.factorGroups.forEach(group=>{drawSegments(a,group.singularSegments,jm,group.color,2.2);drawSegments(b,group.criticalSegments,wm,group.color,2.2);});drawFactorLegend(a,jm);drawFactorLegend(b,wm);}else{drawSegments(a,state.cache.singularSegments,jm,'#e00000',1.8);drawSegments(b,state.cache.criticalSegments,wm,'#e00000',1.8);}state.solutions.forEach((q,i)=>dot(a,jm.toPx(q[1],q[2]),COLORS[i%COLORS.length],i===state.selected?8:5,'#111'));if(state.target){dot(b,wm.toPx(...state.target),'#fff',7,'#111');ring(b,wm.toPx(...state.target),COLORS[state.selected%COLORS.length],10,3);}}
-  wc.addEventListener('pointerdown',(event)=>{const rect=wc.getBoundingClientRect(),p=state.wmap.fromPx(event.clientX-rect.left,event.clientY-rect.top);state.target=[clamp(p[0],state.wmap.xr[0],state.wmap.xr[1]),clamp(p[1],state.wmap.yr[0],state.wmap.yr[1])];status.textContent='Solving arm branches and wrist orientation in the background.';setTimeout(solveTarget,0);});
-  const cycle=(time)=>{if(host.querySelector('[data-autoplay]').checked&&state.solutions.length&&time-state.lastCycle>1700){state.lastCycle=time;select(state.selected+1);}requestAnimationFrame(cycle);};requestAnimationFrame(cycle);solveTarget();
+  function syncControls() {
+    if(!canPlan)return;
+    host.querySelector('[data-build]').disabled=state.busy||state.solutions.length<2||state.start===state.goal;
+    const play=host.querySelector('[data-play]');play.disabled=state.busy||state.path.length<2;
+    play.textContent=state.playing?'Pause':state.progress>=1?'Replay':state.progress>0?'Resume':'Play';
+    const slider=host.querySelector('[data-progress]');slider.disabled=state.busy||!state.path.length;slider.value=state.progress;
+    host.querySelectorAll('select').forEach(el=>el.disabled=state.busy||!state.solutions.length);
+    host.dataset.pathPoints=String(state.path.length);host.dataset.progress=state.progress.toFixed(4);host.dataset.playing=String(state.playing);
+  }
+  function pause(){cancelAnimationFrame(state.frame);state.frame=0;state.playing=false;syncControls();}
+  function clearPath(){pause();state.version++;state.path=[];state.trace=[];state.progress=0;viewer.setTrace([]);viewer.setGhost(null);delete host.dataset.maxRotationError;delete host.dataset.minAbsDet;syncControls();}
+  function solveTarget() {
+    clearPath();
+    const solutions=[];
+    for(const slice of solveMapIk(state.target,mapFn,detFn).slice(0,4)) {
+      const arm=armFromSlice(slice);
+      const wrists=custom6RWristSolutions(arm,fixedRotation);
+      for(const wrist of wrists){const q=[...arm,...wrist];if(!solutions.some(s=>jointDistance(s,q)<3e-2))solutions.push(q);}
+    }
+    state.solutions=solutions;state.selected=0;state.start=0;state.goal=Math.min(1,solutions.length-1);
+    if(canPlan) {
+      // Preselect two different arm IKs on the same wrist branch and determinant side.
+      outer:for(let i=0;i<solutions.length;i++)for(let j=i+1;j<solutions.length;j++){
+        const a=solutions[i],b=solutions[j];
+        if(torusDistance(a.slice(1,3),b.slice(1,3))>.1 && detFn(a.slice(1,3))*detFn(b.slice(1,3))>0 && Math.sin(a[4])*Math.sin(b[4])>0){state.start=i;state.goal=j;break outer;}
+      }
+      for(const key of ['start','goal']){
+        const select=host.querySelector(`[data-${key}]`);select.innerHTML=solutions.map((_,i)=>`<option value="${i}">IK ${i+1}</option>`).join('');select.value=state[key];
+      }
+    }
+    state.selected=state.start;renderIks();if(solutions.length)viewer.update(solutions[state.selected]);
+    const error=solutions.length?Math.max(...solutions.map(q=>rotationMatrixResidual(rotationOnly(model.pose(q)),fixedRotation))):Infinity;
+    host.dataset.ikCount=String(solutions.length);
+    status.textContent=`${solutions.length} complete IKs · fixed rotation error ${Number.isFinite(error)?error.toExponential(1):'n/a'} · O_w=(${state.target[0].toFixed(3)}, 0, ${state.target[1].toFixed(3)}) m. ${canPlan?'Choose endpoints, then Build path.':''}`;
+    syncControls();draw();
+  }
+  function renderIks(){const h=host.querySelector('[data-iks]');h.innerHTML=state.solutions.map((q,i)=>`<button data-i="${i}" class="${i===state.selected?'selected':''}" aria-pressed="${i===state.selected}" style="border-color:${COLORS[i%COLORS.length]}">IK ${i+1}</button>`).join('');h.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>select(+b.dataset.i)));}
+  function select(i){if(!state.solutions.length||state.busy)return;pause();state.selected=(i+state.solutions.length)%state.solutions.length;viewer.update(state.solutions[state.selected]);renderIks();draw();}
+  function showSample(progress){state.progress=progress;const q=state.path[Math.round(progress*(state.path.length-1))];if(q)viewer.update(q);syncControls();draw();}
+  async function buildPath() {
+    if(state.busy||state.start===state.goal||state.solutions.length<2)return;
+    clearPath();state.busy=true;const version=state.version;syncControls();
+    status.textContent='Searching arm joint space with A*, enforcing arm and wrist clearance at fixed orientation…';
+    await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
+    try{
+      const qa=state.solutions[state.start],qb=state.solutions[state.goal];
+      const result=buildFixedOrientationPath(qa,qb,{targetRotation:fixedRotation});
+      if(version!==state.version)return;
+      if(!result.found){status.textContent=result.reason;return;}
+      let error=0,minDet=Infinity;
+      for(const q of result.path){
+        error=Math.max(error,rotationMatrixResidual(rotationOnly(model.pose(q)),fixedRotation));
+        const columns=model.geometricJacobian(q).columns;
+        minDet=Math.min(minDet,Math.abs(matrixDeterminant(columns[0].map((_,i)=>columns.map(c=>c[i])))));
+      }
+      if(error>2e-6||minDet<.004){status.textContent='The independent URDF rotation or full-Jacobian check rejected this path.';return;}
+      state.path=result.path;const points=result.path.map(q=>model.wrist(q));state.trace=points.map(p=>[p.x,p.z]);
+      viewer.setGhost(result.path[0]);viewer.setTrace(points);viewer.update(result.path[0]);
+      host.dataset.maxRotationError=String(error);host.dataset.minAbsDet=String(minDet);
+      status.textContent=`${result.path.length} discrete configurations · min |det J| ${minDet.toFixed(3)} · min |sin q₅| ${result.minWrist.toFixed(3)} · max rotation error ${error.toExponential(1)}. Arm edges and the continued wrist pass numerical checks. Press Play.`;
+    }catch(error){status.textContent=`Path search failed: ${error.message}`;}
+    finally{if(version===state.version){state.busy=false;syncControls();draw();}}
+  }
+  function draw(){
+    if(!pair.ready()||!state.cache)return;
+    const [a,b]=pair.contexts,[as,bs]=pair.sizes;clear(a,as);clear(b,bs);
+    const jm=plotMap(as,[-PI,PI],[-PI,PI],{x:'q₂ (rad)',y:'q₃ (rad)'}),wm=plotMap(bs,state.cache.rhoRange,state.cache.zRange,{x:canPlan?'x (m), y = 0':'ρ (m)',y:'z (m)'});state.jmap=jm;state.wmap=wm;
+    axes(a,jm);axes(b,wm);
+    drawSegments(a,state.cache.singularSegments,jm,'#e00000',1.8);drawSegments(b,state.cache.criticalSegments,wm,'#e00000',1.8);
+    if(state.path.length){polylineTorus(a,state.path.map(q=>q.slice(1,3).map(wrap)),jm,'#111',3);polyline(b,state.trace,wm,'#2474d2',3);}
+    state.solutions.forEach((q,i)=>dot(a,jm.toPx(q[1],q[2]),COLORS[i%COLORS.length],i===state.selected?8:5,'#111'));
+    if(state.target){dot(b,wm.toPx(...state.target),'#fff',7,'#111');ring(b,wm.toPx(...state.target),COLORS[state.selected%COLORS.length],10,3);}
+    if(state.path.length){const i=Math.round(state.progress*(state.path.length-1)),q=state.path[i];dot(a,jm.toPx(wrap(q[1]),wrap(q[2])),'#fff',5,'#111');dot(b,wm.toPx(...state.trace[i]),'#fff',5,'#111');}
+  }
+  wc.addEventListener('pointerdown',event=>{
+    if(state.busy||!state.wmap)return;
+    const rect=wc.getBoundingClientRect(),p=state.wmap.fromPx(event.clientX-rect.left,event.clientY-rect.top);
+    if(p[0]<state.wmap.xr[0]||p[0]>state.wmap.xr[1]||p[1]<state.wmap.yr[0]||p[1]>state.wmap.yr[1])return;
+    state.target=p;solveTarget();
+  });
+  if(canPlan){
+    for(const key of ['start','goal'])host.querySelector(`[data-${key}]`).addEventListener('change',event=>{clearPath();state[key]=+event.target.value;select(state[key]);status.textContent='Endpoints changed. Build a new path at the same fixed orientation.';syncControls();});
+    host.querySelector('[data-build]').addEventListener('click',buildPath);
+    host.querySelector('[data-play]').addEventListener('click',()=>{
+      if(state.playing){pause();return;}if(state.busy||state.path.length<2)return;
+      if(state.progress>=1)state.progress=0;
+      const version=state.version,duration=Math.max(6000,state.path.length*12),started=performance.now()-state.progress*duration;
+      state.playing=true;syncControls();
+      const step=now=>{if(!state.playing||version!==state.version)return;if(document.hidden||!host.closest('.slide')?.classList.contains('active')){pause();return;}showSample(Math.min(1,(now-started)/duration));if(state.progress<1)state.frame=requestAnimationFrame(step);else pause();};
+      state.frame=requestAnimationFrame(step);
+    });
+    host.querySelector('[data-progress]').addEventListener('input',event=>{const progress=Number(event.target.value);pause();showSample(progress);});
+    document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});window.addEventListener('hashchange',pause);
+  }else{
+    let timer=null;host.querySelector('[data-autoplay]').addEventListener('change',event=>{clearInterval(timer);if(event.target.checked)timer=setInterval(()=>{if(!document.hidden&&host.closest('.slide')?.classList.contains('active'))select(state.selected+1);},1700);});
+  }
+  solveTarget();
+}
+
+async function createAbbAspectLab(host) {
+  const {solveAbbIk,ABB_IK_EXAMPLE}=await import(`./abbIrbIk.js?v=${MODULE_REVISION}`);
+  host.classList.add('cusp-lab','cusp-partitioned','cusp-abb');
+  host.innerHTML='<div class="cusp-partition-panels"><div class="cusp-plot"><h3>ABB arm singularities · q₂,q₃</h3><canvas data-joint></canvas></div><div class="cusp-plot"><h3>wrist-center section · y = 0, x ≥ 0</h3><canvas data-work></canvas></div><div class="cusp-stage" data-stage><div class="hud">ABB IRB 4600</div></div></div><div class="cusp-abb-legend"><span><i style="background:#e00000"></i>shoulder: G = 0</span><span><i style="background:#2474d2"></i>elbow: F = a₃ sin q₃ + d₄ cos q₃ = 0</span><span>wrist: sin q₅ = 0 · coincident arm markers represent wrist flips</span></div><div class="cusp-partition-controls"><div class="cusp-iks" data-iks></div><div class="cusp-status" data-status role="status"></div><div><button data-example>Example target</button><label class="cusp-toggle"><input type="checkbox" data-autoplay> cycle through IKs</label></div></div>';
+  const viewer=await createModelViewer(host.querySelector('[data-stage]'),'abb',{embedded:true,showEeFrame:true});
+  const jc=host.querySelector('[data-joint]'),wc=host.querySelector('[data-work]'),status=host.querySelector('[data-status]');
+  const {a1,a2,a3,d1,d4}=ABB_PARAMETERS;
+  const factors={
+    shoulder:([q2,q3])=>a1+a2*Math.sin(q2)+a3*Math.sin(q2+q3)+d4*Math.cos(q2+q3),
+    elbow:([,q3])=>a3*Math.sin(q3)+d4*Math.cos(q3)
+  };
+  const mapFn=([q2,q3])=>[Math.abs(factors.shoulder([q2,q3])),d1+a2*Math.cos(q2)+a3*Math.cos(q2+q3)-d4*Math.sin(q2+q3)];
+  const cache=buildFactoredMapCache(mapFn,factors,401);
+  const state={target:ABB_IK_EXAMPLE.target.wrist.slice(),solutions:[],selected:0,map:null};
+  const pair=resizeCanvases([jc,wc],draw);
+  function solveTarget() {
+    state.solutions=solveAbbIk({...ABB_IK_EXAMPLE.target,wrist:state.target}).filter(row=>!row.singular&&Math.abs(row.determinant)>1e-8);state.selected=0;
+    host.dataset.ikCount=String(state.solutions.length);
+    host.dataset.target=JSON.stringify(state.target);
+    host.dataset.rotation=JSON.stringify(ABB_IK_EXAMPLE.target.rotation);
+    if(state.solutions.length)viewer.update(state.solutions[0].q);
+    render();
+  }
+  function select(i){if(!state.solutions.length)return;state.selected=(i+state.solutions.length)%state.solutions.length;viewer.update(state.solutions[state.selected].q);render();}
+  function render(){
+    const pills=host.querySelector('[data-iks]');
+    pills.innerHTML=state.solutions.map((row,i)=>`<button data-i="${i}" aria-pressed="${i===state.selected}" class="${i===state.selected?'selected':''}" title="S,E,W = ${row.signs.map(s=>s>0?'+':'−').join(', ')}">IK ${i+1}</button>`).join('');
+    pills.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>select(+button.dataset.i)));
+    const row=state.solutions[state.selected];
+    if(row){
+      const T=viewer.model.pose(row.q),Rerror=rotationMatrixResidual(rotationOnly(T),ABB_IK_EXAMPLE.target.rotation);
+      const perror=viewer.model.wrist(row.q).distanceTo(new THREE.Vector3(...state.target));
+      host.dataset.positionError=String(perror);host.dataset.rotationError=String(Rerror);host.dataset.selectedIk=String(state.selected);
+      host.dataset.selectedQ=JSON.stringify(row.q);host.dataset.signs=JSON.stringify(row.signs);
+      status.textContent=`${state.solutions.length} regular IKs · IK ${state.selected+1}: S ${row.signs[0]>0?'+':'−'}, E ${row.signs[1]>0?'+':'−'}, W ${row.signs[2]>0?'+':'−'} · wrist error ${perror.toExponential(1)} m · rotation error ${Rerror.toExponential(1)}. Mathematical branches before joint-limit filtering.`;
+    }else status.textContent='No isolated regular IK at this target. Select a point away from the singular curves inside the reachable section.';
+    draw();
+  }
+  function draw(){
+    if(!pair.ready())return;
+    const [jctx,wctx]=pair.contexts,[js,ws]=pair.sizes;clear(jctx,js);clear(wctx,ws);
+    const jm=plotMap(js,[-PI,PI],[-PI,PI],{x:'q₂ (rad)',y:'q₃ (rad)'}),wm=plotMap(ws,cache.rhoRange,cache.zRange,{x:'x (m), y = 0',y:'z (m)'});state.map=wm;
+    axes(jctx,jm);axes(wctx,wm);
+    cache.factorGroups.forEach(group=>{drawSegments(jctx,group.singularSegments,jm,group.color,2);drawSegments(wctx,group.criticalSegments,wm,group.color,2);});
+    const arms=new Map();
+    state.solutions.forEach((row,i)=>{const key=row.q.slice(0,3).map(q=>q.toFixed(7)).join(',');if(!arms.has(key))arms.set(key,{q:row.q,indices:[]});arms.get(key).indices.push(i);});
+    Array.from(arms.values()).forEach(({q,indices},index)=>{
+      const point=jm.toPx(q[1],q[2]),selected=indices.includes(state.selected);
+      dot(jctx,point,COLORS[index%COLORS.length],selected?8:5,'#111');
+      jctx.save();jctx.font='bold 10px Arial';jctx.textAlign=point[0]>jm.pad.l+jm.w-35?'right':'left';jctx.fillStyle='#111';jctx.strokeStyle='#fff';jctx.lineWidth=3;
+      const label=indices.map(i=>i+1).join('/'),x=point[0]+(jctx.textAlign==='right'?-10:10),y=point[1]-9;
+      jctx.strokeText(label,x,y);jctx.fillText(label,x,y);jctx.restore();
+    });
+    dot(wctx,wm.toPx(state.target[0],state.target[2]),'#111',7,'#fff');
+  }
+  wc.addEventListener('pointerdown',event=>{
+    if(!state.map)return;const rect=wc.getBoundingClientRect(),p=state.map.fromPx(event.clientX-rect.left,event.clientY-rect.top);
+    if(p[0]<0||p[0]>state.map.xr[1]||p[1]<state.map.yr[0]||p[1]>state.map.yr[1])return;
+    state.target=[p[0],0,p[1]];solveTarget();
+  });
+  host.querySelector('[data-example]').addEventListener('click',()=>{state.target=ABB_IK_EXAMPLE.target.wrist.slice();solveTarget();});
+  let timer=null;host.querySelector('[data-autoplay]').addEventListener('change',event=>{clearInterval(timer);if(event.target.checked)timer=setInterval(()=>{if(!document.hidden&&host.closest('.slide')?.classList.contains('active'))select(state.selected+1);},1600);});
+  solveTarget();
+}
+
+async function createAbbFactorsLab(host) {
+  host.classList.add('cusp-abb-factors');
+  host.innerHTML='<div class="cusp-stage" data-stage><div class="hud">ABB IRB 4600</div></div><div class="cusp-abb-cases"><button data-case="regular">Regular</button><button data-case="G">Shoulder</button><button data-case="F">Elbow</button><button data-case="wrist">Wrist</button></div><div class="cusp-status" data-status role="status"></div>';
+  const viewer=await createModelViewer(host.querySelector('[data-stage]'),'abb',{embedded:true,showEeFrame:true});
+  function select(name){
+    const q=abbPreset(name),f=abbFactors(q);viewer.update(q);
+    host.querySelectorAll('[data-case]').forEach(button=>{button.classList.toggle('selected',button.dataset.case===name);button.setAttribute('aria-pressed',String(button.dataset.case===name));});
+    const J=abbJacobian(q),rank=numericRank(J);
+    host.dataset.rank=String(rank);host.dataset.case=name;
+    host.querySelector('[data-status]').textContent=`G = ${f.G.toFixed(4)} m · F = ${f.F.toFixed(4)} m · sin q₅ = ${f.wrist.toFixed(4)} · rank J = ${rank}/6`;
+  }
+  host.querySelectorAll('[data-case]').forEach(button=>button.addEventListener('click',()=>select(button.dataset.case)));
+  select('regular');
 }
 
 function buildNumericalMapCache(mapFn,detFn,n){const values=Array.from({length:n},()=>Array(n));let maxR=0,minZ=Infinity,maxZ=-Infinity;for(let i=0;i<n;i+=1)for(let j=0;j<n;j+=1){const q=[-PI+2*PI*i/(n-1),-PI+2*PI*j/(n-1)],w=mapFn(q);values[i][j]=detFn(q);maxR=Math.max(maxR,w[0]);minZ=Math.min(minZ,w[1]);maxZ=Math.max(maxZ,w[1]);}const singularSegments=marchingSquares(values,[-PI,PI],[-PI,PI]),criticalSegments=singularSegments.map(segment=>segment.map(mapFn)),pad=Math.max(.08,(maxZ-minZ)*.08);return{singularSegments,criticalSegments,rhoRange:[0,maxR*1.08],zRange:[minZ-pad,maxZ+pad]};}
 
 function buildFactoredMapCache(mapFn,factors,n){let maxR=0,minZ=Infinity,maxZ=-Infinity;const grids={};for(const name of Object.keys(factors))grids[name]=Array.from({length:n},()=>Array(n));for(let i=0;i<n;i+=1)for(let j=0;j<n;j+=1){const q=[-PI+2*PI*i/(n-1),-PI+2*PI*j/(n-1)],w=mapFn(q);for(const [name,fn] of Object.entries(factors))grids[name][i][j]=fn(q);maxR=Math.max(maxR,w[0]);minZ=Math.min(minZ,w[1]);maxZ=Math.max(maxZ,w[1]);}const palette={shoulder:'#e00000',elbow:'#2474d2'},factorGroups=Object.keys(factors).map(name=>{const singularSegments=marchingSquares(grids[name],[-PI,PI],[-PI,PI]);return{name,color:palette[name],singularSegments,criticalSegments:singularSegments.map(segment=>segment.map(mapFn))};}),pad=Math.max(.08,(maxZ-minZ)*.08);return{factorGroups,rhoRange:[0,maxR*1.08],zRange:[minZ-pad,maxZ+pad]};}
 
-function drawFactorLegend(ctx,map){const entries=[['#e00000','shoulder  fS = 0'],['#2474d2','elbow  a₂c₃ − a₃s₃ = 0']];ctx.save();ctx.font='bold 10px Arial';ctx.textAlign='left';entries.forEach((entry,i)=>{const x=map.pad.l+8+i*112,y=map.pad.t+15;ctx.strokeStyle=entry[0];ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+18,y);ctx.stroke();ctx.fillStyle='#222';ctx.fillText(entry[1],x+23,y+3);});ctx.restore();}
-
 function solveMapIk(target,mapFn,detFn){const roots=[];for(let i=0;i<20;i+=1)for(let j=0;j<20;j+=1){let q=[-PI+2*PI*(i+.31)/20,-PI+2*PI*(j+.67)/20];for(let k=0;k<32;k+=1){const f=mapFn(q),e=[target[0]-f[0],target[1]-f[1]],h=1e-5,a=mapFn([q[0]+h,q[1]]),b=mapFn([q[0],q[1]+h]),J=[[(a[0]-f[0])/h,(b[0]-f[0])/h],[(a[1]-f[1])/h,(b[1]-f[1])/h]],d=J[0][0]*J[1][1]-J[0][1]*J[1][0];if(Math.hypot(...e)<1e-8)break;if(Math.abs(d)<1e-9)break;q=[wrap(q[0]+clamp((e[0]*J[1][1]-J[0][1]*e[1])/d,-.45,.45)),wrap(q[1]+clamp((J[0][0]*e[1]-e[0]*J[1][0])/d,-.45,.45))];}if(distance2(mapFn(q),target)<2e-5&&Math.abs(detFn(q))>1e-5&&!roots.some(r=>torusDistance(r,q)<1.5e-1))roots.push(q);}return roots;}
-
-function solveWristOrientations(model,arm,targetR){const roots=[],values=[-PI,-PI/2,0,PI/2],residual=(w)=>{const R=rotationOnly(model.pose([...arm,...w])),e=[];for(let r=0;r<3;r+=1)for(let c=0;c<3;c+=1)e.push(R[r][c]-targetR[r][c]);return e;};for(const a of values)for(const b of values)for(const c of values){let w=[a,b,c];for(let k=0;k<45;k+=1){const e=residual(w);if(norm(e)<1e-9)break;const h=2e-5,J=Array.from({length:9},()=>Array(3));for(let col=0;col<3;col+=1){const wp=w.slice();wp[col]+=h;const ep=residual(wp);for(let row=0;row<9;row+=1)J[row][col]=(ep[row]-e[row])/h;}const A=Array.from({length:3},(_,r)=>Array.from({length:3},(_,col)=>J.reduce((sum,row)=>sum+row[r]*row[col],r===col?1e-7:0))),bvec=Array.from({length:3},(_,col)=>-J.reduce((sum,row,i)=>sum+row[col]*e[i],0)),step=solveLinear(A,bvec);if(!step.every(Number.isFinite))break;w=w.map((v,i)=>wrap(v+clamp(step[i],-.55,.55)));}const err=norm(residual(w));if(err<2e-6&&!roots.some(r=>jointDistance(r,w)<3e-2))roots.push(w);}for(const w of roots.slice()){const flip=[wrap(w[0]+PI),wrap(-w[1]),wrap(w[2]+PI)];if(norm(residual(flip))<2e-6&&!roots.some(r=>jointDistance(r,flip)<3e-2))roots.push(flip);}return roots;}
 
 function rotationOnly(matrix){const e=matrix.elements;return[[e[0],e[4],e[8]],[e[1],e[5],e[9]],[e[2],e[6],e[10]]];}
 function rotationMatrixResidual(a,b){let error=0;for(let r=0;r<3;r+=1)for(let c=0;c<3;c+=1)error=Math.max(error,Math.abs(a[r][c]-b[r][c]));return error;}
@@ -157,13 +454,78 @@ function orientationError(current,target){const col=(R,i)=>[R[0][i],R[1][i],R[2]
 function norm(v){return Math.hypot(...v);}
 function jointDistance(a,b){return Math.hypot(...a.map((v,i)=>wrap(v-b[i])));}
 
-async function createFanuc16Lab(host){host.className+=' cusp-lab cusp-fanuc';host.innerHTML='<div class="cusp-stage" data-stage><div class="hud">custom CRX URDF · course STL geometry · RGB ee frame</div></div><aside class="cusp-fanuc-panel"><div class="cusp-branch-map"><canvas></canvas></div><div class="cusp-iks" data-iks></div><div class="cusp-formula" data-q></div><div class="cusp-status" data-status></div><label class="cusp-toggle"><input type="checkbox" data-autoplay> animate all sixteen IK solutions</label></aside>';
-  const [viewer,response]=await Promise.all([createModelViewer(host.querySelector('[data-stage]'),'fanuc',{embedded:true,showEeFrame:true}),fetch(new URL('../../assets/data/ik16_solutions.csv',import.meta.url))]);if(!response.ok)throw new Error('Could not load ik16_solutions.csv.');const signs=[1,-1,-1,1,-1,-1],offsets=[0,-PI/2,0,PI,PI,0];const rows=(await response.text()).trim().split(/\r?\n/).slice(1).map(line=>{const v=line.split(',').map(Number),qDh=v.slice(1,7).map(x=>x*DEG),q=qDh.map((x,i)=>wrap(signs[i]*x+offsets[i]));return{id:v[0],q,qDh,qDeg:q.map(x=>x/DEG),positionError:v[7],rotationError:v[8],sigma:v[9]};});let selected=0,last=0;const canvas=host.querySelector('.cusp-branch-map canvas'),pair=resizeCanvases([canvas],draw);
-  const target=viewer.model.pose(rows[0].q),residuals=rows.map(row=>matrixResidual(viewer.model.pose(row.q),target)),maxResidual=Math.max(...residuals);
-  function renderButtons(){const h=host.querySelector('[data-iks]');h.innerHTML=rows.map((r,i)=>`<button data-i="${i}" class="${i===selected?'selected':''}">${r.id}</button>`).join('');h.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>select(+b.dataset.i)));}
-  function select(i){selected=(i+rows.length)%rows.length;viewer.update(rows[selected].q);renderButtons();const r=rows[selected];host.querySelector('[data-q]').textContent=`IK ${r.id} · URDF angles\nq = (${r.qDeg.map(x=>`${x.toFixed(2)}°`).join(', ')})`;host.querySelector('[data-status]').textContent=`CSV residuals: position ${r.positionError.toExponential(2)} m · rotation ${r.rotationError.toExponential(2)} rad · scaled σmin ${r.sigma.toFixed(4)}`;draw();}
-  function draw(){if(!pair.ready()){const box=canvas.parentElement.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);if(box.width<2||box.height<2)return;canvas.width=Math.round(box.width*dpr);canvas.height=Math.round(box.height*dpr);pair.contexts[0].setTransform(dpr,0,0,dpr,0,0);pair.sizes[0]=[box.width,box.height];}const ctx=pair.contexts[0],size=pair.sizes[0];clear(ctx,size);const map=plotMap(size,[-PI,PI],[-PI,PI],{x:'q₁',y:'q₂'});axes(ctx,map);rows.forEach((r,i)=>dot(ctx,map.toPx(r.q[0],r.q[1]),COLORS[i%COLORS.length],i===selected?8:5,'#111'));}
-  const cycle=(time)=>{if(host.querySelector('[data-autoplay]').checked&&time-last>1250){last=time;select(selected+1);}requestAnimationFrame(cycle);};renderButtons();select(0);setTimeout(draw,300);requestAnimationFrame(cycle);console.info(`ENG-654 Lecture 06 FANUC CSV check: ${rows.length} solutions loaded, maximum URDF FK matrix residual ${maxResidual}.`);}
+async function createFanuc16Lab(host) {
+  host.className += ' cusp-lab cusp-fanuc';
+  host.innerHTML = '<div class="cusp-stage" data-stage><div class="hud">CRX course model · common tool pose</div></div><aside class="cusp-fanuc-panel"><div class="cusp-branch-map"><canvas></canvas></div><div class="cusp-fanuc-actions"><label class="cusp-toggle"><input type="checkbox" data-multiple> Show multiple IKs</label><button data-show-all>Show all</button><span class="cusp-fanuc-count" data-count></span></div><div class="cusp-iks" data-iks aria-label="Inverse-kinematic configurations"></div><div class="cusp-formula" data-q></div><div class="cusp-status" data-status></div><label class="cusp-toggle"><input type="checkbox" data-autoplay> cycle through individual IKs</label></aside>';
+  const [viewer, response] = await Promise.all([
+    createModelViewer(host.querySelector('[data-stage]'), 'fanuc', { embedded: true, showEeFrame: true }),
+    fetch(new URL('../../assets/data/ik16_solutions.csv', import.meta.url))
+  ]);
+  if (!response.ok) throw new Error('Could not load ik16_solutions.csv.');
+  const signs = [1,-1,-1,1,-1,-1], offsets = [0,-PI/2,0,PI,PI,0];
+  const rows = (await response.text()).trim().split(/\r?\n/).slice(1).map(line => {
+    const v = line.split(',').map(Number), qDh = v.slice(1,7).map(x => x*DEG);
+    const q = qDh.map((x,i) => wrap(signs[i]*x+offsets[i]));
+    return { id:v[0], q, positionError:v[7], rotationError:v[8], sigma:v[9] };
+  });
+  let selected = 0, timer = null, map;
+  const visible = new Set([0,1]);
+  const multi = host.querySelector('[data-multiple]'), autoplay = host.querySelector('[data-autoplay]');
+  const canvas = host.querySelector('.cusp-branch-map canvas'), pair = resizeCanvases([canvas], draw);
+  const target = viewer.model.pose(rows[0].q);
+  const maxResidual = Math.max(...rows.map(row => matrixResidual(viewer.model.pose(row.q), target)));
+  host.dataset.fkResidual = String(maxResidual);
+  function refresh() {
+    viewer.update(rows[selected].q);
+    viewer.setConfigurations(multi.checked ? [...visible].map(i => ({id:i, q:rows[i].q, color:COLORS[i%COLORS.length]})) : null);
+    const h = host.querySelector('[data-iks]');
+    h.innerHTML = rows.map((row,i) => `<button data-i="${i}" style="--ik-color:${COLORS[i%COLORS.length]}" class="${selected===i?'selected ':''}${multi.checked&&visible.has(i)?'visible-ik':''}" aria-pressed="${multi.checked?visible.has(i):selected===i}" title="${multi.checked?'Toggle visibility of':'Select'} IK ${row.id}">${multi.checked&&visible.has(i)?'✓ ':''}${row.id}</button>`).join('');
+    h.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      selected = +b.dataset.i;
+      if (multi.checked) { if (visible.has(selected)) visible.delete(selected); else visible.add(selected); }
+      refresh();
+    }));
+    host.querySelector('[data-count]').textContent = `${multi.checked?visible.size:1} / ${rows.length} visible`;
+    host.dataset.visibleCount = String(multi.checked?visible.size:1);
+    const row = rows[selected];
+    host.querySelector('[data-q]').textContent = `IK ${row.id} · URDF angles\nq = (${row.q.map(v => `${(v/DEG).toFixed(1)}°`).join(', ')})`;
+    host.querySelector('[data-status]').textContent = `${multi.checked?'Toggle the numbered buttons to compare configurations at the common tool pose.':'Choose one IK, or enable multiple configurations.'} CSV errors: ${row.positionError.toExponential(1)} m, ${row.rotationError.toExponential(1)} rad · scaled σmin ${row.sigma.toFixed(4)}.`;
+    draw();
+  }
+  function stopCycle() { clearInterval(timer); timer = null; autoplay.checked = false; }
+  multi.addEventListener('change', () => { stopCycle(); if (multi.checked) visible.add(selected); refresh(); });
+  host.querySelector('[data-show-all]').addEventListener('click', () => {
+    stopCycle(); multi.checked = true; rows.forEach((_,i) => visible.add(i)); refresh();
+  });
+  autoplay.addEventListener('change', () => {
+    clearInterval(timer); timer = null;
+    if (autoplay.checked) {
+      multi.checked = false; refresh();
+      timer = setInterval(() => {
+        if (document.hidden || !host.closest('.slide')?.classList.contains('active')) return;
+        selected = (selected+1)%rows.length; refresh();
+      },1250);
+    }
+  });
+  function draw() {
+    if (!pair.ready()) return;
+    const ctx=pair.contexts[0],size=pair.sizes[0];clear(ctx,size);
+    map=plotMap(size,[-PI,PI],[-PI,PI],{x:'q₁ (rad)',y:'q₂ (rad)'});axes(ctx,map);
+    rows.forEach((row,i) => {
+      const shown = multi.checked ? visible.has(i) : i===selected;
+      dot(ctx,map.toPx(row.q[0],row.q[1]),shown?COLORS[i%COLORS.length]:'#ddd',i===selected?8:5,shown?'#111':'#aaa');
+    });
+  }
+  canvas.addEventListener('pointerdown', event => {
+    if (!map) return;
+    const r=canvas.getBoundingClientRect(), p=[event.clientX-r.left,event.clientY-r.top];
+    let nearest=-1, d=18;
+    rows.forEach((row,i)=>{const px=map.toPx(row.q[0],row.q[1]),dist=distance2(p,px);if(dist<d){nearest=i;d=dist;}});
+    if(nearest>=0){selected=nearest;if(multi.checked)visible.add(selected);refresh();}
+  });
+  refresh();
+  console.info(`ENG-654 Lecture 06 FANUC CSV check: ${rows.length} solutions, maximum URDF FK residual ${maxResidual}.`);
+}
 
 function matrixResidual(a,b){return Math.max(...a.elements.map((v,i)=>Math.abs(v-b.elements[i])));}
 
@@ -190,15 +552,6 @@ function solveIkSlice(target,p) {
   return roots.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
 }
 
-function planAspectPath(a,b,p) {
-  const direct=Array.from({length:61},(_,i)=>[angleLerp(a[0],b[0],i/60),angleLerp(a[1],b[1],i/60)]),scale=Math.max(1,Math.abs(det3([0,...a],p))),margin=.012*scale;
-  if(direct.every(q=>Math.abs(det3([0,...q],p))>margin))return direct;
-  const n=100,toIndex=(q)=>q.map(x=>Math.round((wrap(x)+PI)/(2*PI)*(n-1))%(n-1)),start=toIndex(a),goal=toIndex(b),key=(i,j)=>`${i},${j}`,sign=Math.sign(det3([0,...a],p)),open=[[0,start[0],start[1]]],came=new Map(),cost=new Map([[key(...start),0]]),neighbors=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
-  let found=null,guard=0;while(open.length&&guard<26000){guard+=1;open.sort((x,y)=>x[0]-y[0]);const [,i,j]=open.shift(),k=key(i,j);if(i===goal[0]&&j===goal[1]){found=[i,j];break;}for(const [di,dj] of neighbors){const ni=(i+di+n-1)%(n-1),nj=(j+dj+n-1)%(n-1),q=[-PI+2*PI*ni/(n-1),-PI+2*PI*nj/(n-1)],d=det3([0,...q],p);if(Math.sign(d)!==sign||Math.abs(d)<margin)continue;const nk=key(ni,nj),g=cost.get(k)+Math.hypot(di,dj);if(g>=(cost.get(nk)??Infinity))continue;cost.set(nk,g);came.set(nk,[i,j]);const hx=Math.min(Math.abs(ni-goal[0]),n-1-Math.abs(ni-goal[0])),hy=Math.min(Math.abs(nj-goal[1]),n-1-Math.abs(nj-goal[1]));open.push([g+Math.hypot(hx,hy),ni,nj]);}}
-  if(!found)return[];const cells=[];for(let c=found;c;){cells.push(c);const prev=came.get(key(...c));if(!prev)break;c=prev;}cells.reverse();let path=cells.map(([i,j])=>[-PI+2*PI*i/(n-1),-PI+2*PI*j/(n-1)]);path[0]=a;path[path.length-1]=b;path=simplifyPath(path,p,margin);return path;
-}
-
-function simplifyPath(path,p,margin){const out=[path[0]];let i=0;while(i<path.length-1){let best=i+1;for(let j=path.length-1;j>i+1;j-=1){let safe=true;for(let k=1;k<18;k+=1){const q=[angleLerp(path[i][0],path[j][0],k/18),angleLerp(path[i][1],path[j][1],k/18)];if(Math.abs(det3([0,...q],p))<margin){safe=false;break;}}if(safe){best=j;break;}}out.push(path[best]);i=best;}const dense=[];for(let k=0;k<out.length-1;k+=1)for(let s=0;s<20;s+=1)dense.push([angleLerp(out[k][0],out[k+1][0],s/20),angleLerp(out[k][1],out[k+1][1],s/20)]);dense.push(out.at(-1));return dense;}
 
 function verifyContinuation(path,p){let seed=path[0].slice();for(let i=1;i<path.length;i+=Math.max(1,Math.floor(path.length/40))){const target=sliceFk(path[i],p),sol=solveNear(target,seed,p);if(!sol||torusDistance(sol,path[i])>.08)return false;seed=sol;}return true;}
 async function verifyFullIkContinuation(path,viewer,solvePosition){if(!path.length)return false;const stride=Math.max(1,Math.floor(path.length/14));for(let i=0;i<path.length;i+=stride){const q=path[i],point=viewer.point(q),solutions=await solvePosition([point.x,point.y,point.z]);if(!solutions.some(candidate=>Math.hypot(...candidate.map((angle,j)=>wrap(angle-q[j])))<2e-3))return false;}const q=path.at(-1),point=viewer.point(q),solutions=await solvePosition([point.x,point.y,point.z]);return solutions.some(candidate=>Math.hypot(...candidate.map((angle,j)=>wrap(angle-q[j])))<2e-3);}
@@ -210,16 +563,32 @@ function fkDh(q,p){const rows=[[p.a1,p.A1,p.d1],[p.a2,p.A2,p.d2],[p.a3,p.A3,p.d3
 function dhMatrix(theta,a,alpha,d){const c=Math.cos(theta),s=Math.sin(theta),ca=Math.cos(alpha),sa=Math.sin(alpha);return new THREE.Matrix4().set(c,-s*ca,s*sa,a*c,s,c*ca,-c*sa,a*s,0,sa,ca,d,0,0,0,1);}
 
 function factorText(p){
-  if(close(p.A1,PI/2)&&close(p.A2,PI/2)&&close(p.d2,1)&&close(p.d3,0)&&close(p.a2,2)&&close(p.a3,1.5))return p.a1<.05?'det(Jₚ) = ¾(3c₃ + 4)c₂(c₃ − 2s₃)\nindependent of q₁, d₁, α₃':'det(Jₚ) = ¾(3c₃ + 4)[c₂(c₃ − 2s₃) − s₃]\nindependent of q₁, d₁, α₃';
+  if(close(p.A1,PI/2)&&close(p.A2,PI/2)&&close(p.d2,1)&&close(p.d3,0)&&close(p.a2,2)&&close(p.a3,1.5))return close(p.a1,0)?'det(Jₚ) = ¾(3c₃ + 4)c₂(c₃ − 2s₃)\nindependent of q₁, d₁, α₃':`det(Jₚ) = ¾(3c₃ + 4)[c₂(c₃ − 2s₃) − ${close(p.a1,1)?'':p.a1.toFixed(2)}s₃]\nindependent of q₁, d₁, α₃`;
   const [[a1,A1],[a2,A2,d2],[a3,,d3]]=[[p.a1,p.A1,p.d1],[p.a2,p.A2,p.d2],[p.a3,p.A3,p.d3]],s1=Math.sin(A1),c1=Math.cos(A1),s2=Math.sin(A2),c2=Math.cos(A2),terms=(xs)=>xs.filter(([v])=>Math.abs(v)>1e-7).map(([v,t],i)=>`${i?(v>=0?' + ':' − '):(v<0?'−':'')}${Math.abs(v).toFixed(3)}${t}`).join('')||'0';
   const f0=terms([[-a1*a2*s1,'s₃'],[-a1*a3*s1*s2*s2,'s₃c₃'],[-a1*d3*s1*s2*c2,'c₃']]),fs=terms([[a1*a2*s2*c1+d2*d3*s1*s2*s2,'c₃'],[a1*a3*s2*c1,'c₃²'],[a2*a3*s1*c2,'s₃²'],[-a2*d3*s1*s2,'s₃'],[-a3*d2*s1*s2*c2,'s₃c₃']]),fc=terms([[a1*a3*s2*c1*c2-a2*a3*s1,'s₃c₃'],[-a1*d3*s2*s2*c1+a2*d2*s1*s2,'c₃'],[-a2*a2*s1,'s₃'],[a3*d2*s1*s2,'c₃²']]);return`det(Jₚ) = ${a3.toFixed(3)}[F₀ + s₂Fₛ + c₂F꜀]\nF₀ = ${f0}\nFₛ = ${fs}\nF꜀ = ${fc}\nindependent of q₁, d₁, α₃`;
 }
 
 export async function createModelViewer(host,key,options={}) {
   host.classList.add('cusp-stage');
-  const spec=MODEL_SPECS[key],kit=createThreeKit(host,spec),model=await loadUrdfRobot(kit.world,spec);
+  const spec=MODEL_SPECS[key],kit=createThreeKit(host,spec),model=key==='abb'?await loadAbbViewerModel(kit.world):await loadUrdfRobot(kit.world,spec);
+  if(key==='abb'){kit.renderer.toneMapping=THREE.ACESFilmicToneMapping;kit.renderer.toneMappingExposure=.85;}
   kit.sceneControls.registerStlRoot(model.root);
   let q=spec.q.map(v=>v*DEG),ghost=null,trace=null,eeFrame=null;
+  const overlays = new Map();
+  function removeClone(clone) {
+    if (!clone) return;
+    kit.sceneControls.unregisterStlRoot(clone); clone.removeFromParent();
+    clone.traverse(o => { if (o.isMesh) o.material.dispose(); });
+  }
+  function cloneRobot(color, opacity) {
+    const clone = model.root.clone(true); clone.visible = true;
+    clone.traverse(o => { if (o.isMesh) {
+      o.material = o.material.clone();
+      if (color) o.material.color.set(color);
+      o.material.transparent = true; o.material.opacity = opacity; o.material.depthWrite = false;
+    } });
+    kit.world.add(clone); kit.sceneControls.registerStlRoot(clone); return clone;
+  }
   if(options.showEeFrame){eeFrame=new THREE.Group();const axes=new THREE.AxesHelper(spec.frameScale||.25),origin=new THREE.Mesh(new THREE.SphereGeometry((spec.frameScale||.25)*.055,16,10),new THREE.MeshBasicMaterial({color:0x111111}));eeFrame.add(axes,origin);eeFrame.matrixAutoUpdate=false;eeFrame.renderOrder=15;kit.world.add(eeFrame);}
   const updateFrame=(next)=>{if(eeFrame){eeFrame.matrix.copy(model.pose(next));eeFrame.matrixWorldNeedsUpdate=true;}};
   model.update(q);updateFrame(q);kit.render();
@@ -228,10 +597,44 @@ export async function createModelViewer(host,key,options={}) {
     update(next){q=next.slice();model.update(q);updateFrame(q);kit.render();},
     point(next){return model.point(next);},
     sliceConfiguration(slice){const p0=model.point([0,slice[0],slice[1]]);return[-Math.atan2(p0.y,p0.x),slice[0],slice[1]];},
-    setGhost(next){if(ghost){kit.sceneControls.unregisterStlRoot(ghost);ghost.removeFromParent();}ghost=model.root.clone(true);ghost.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.transparent=true;o.material.opacity=.18;o.material.depthWrite=false;}});kit.world.add(ghost);kit.sceneControls.registerStlRoot(ghost);model.applyTo(ghost,next);kit.render();},
-    setTrace(points){trace?.removeFromParent();if(points.length>1){const g=new THREE.BufferGeometry().setFromPoints(points),m=new THREE.LineBasicMaterial({color:0x2474d2,linewidth:3});trace=new THREE.Line(g,m);kit.world.add(trace);}kit.render();},
+    setGhost(next){removeClone(ghost);ghost=null;if(next){ghost=cloneRobot(null,.18);model.applyTo(ghost,next);}kit.render();},
+    setTrace(points){if(trace){trace.removeFromParent();trace.geometry.dispose();trace.material.dispose();trace=null;}if(points.length>1){const g=new THREE.BufferGeometry().setFromPoints(points),m=new THREE.LineBasicMaterial({color:0x2474d2,linewidth:3});trace=new THREE.Line(g,m);kit.world.add(trace);}kit.render();},
+    setConfigurations(configurations=null) {
+      const wanted = new Set((configurations || []).map(c => c.id));
+      for (const [id, clone] of overlays) clone.visible = wanted.has(id);
+      model.root.visible = configurations === null;
+      for (const config of configurations || []) {
+        let clone = overlays.get(config.id);
+        if (!clone) { clone = cloneRobot(config.color,.38); overlays.set(config.id,clone); }
+        clone.visible = true; model.applyTo(clone,config.q);
+      }
+      host.dataset.visibleConfigurations = String(configurations === null ? 1 : configurations.length);
+      kit.render();
+    },
     model,
-    dispose:kit.dispose
+    dispose(){removeClone(ghost);overlays.forEach(removeClone);if(trace){trace.geometry.dispose();trace.material.dispose();}model.dispose?.();kit.dispose();}
+  };
+}
+
+async function loadAbbViewerModel(world) {
+  const visuals = await loadAbbIrbVisuals(world);
+  const matrix = rows => new THREE.Matrix4().set(...rows.flat());
+  const pose = (q,linkName='tool0') => matrix(abbUrdfTransforms(q)[linkName]);
+  const point = (q,linkName='tool0') => new THREE.Vector3().setFromMatrixPosition(pose(q,linkName));
+  return {
+    root: visuals.group, meshCount: visuals.count,
+    update(q) { visuals.update(abbUrdfTransforms(q)); },
+    applyTo(clone,q) {
+      const transforms = abbUrdfTransforms(q);
+      clone.children.forEach(node=>{if(transforms[node.name]){node.matrix.copy(matrix(transforms[node.name]));node.matrixWorldNeedsUpdate=true;}});
+    },
+    pose, point,
+    wrist(q) { return new THREE.Vector3(...abbDHKinematics(q).wrist); },
+    geometricJacobian(q) {
+      const p=point(q),J=abbJacobian(q,{point:p.toArray()});
+      return {columns:J[0].map((_,i)=>J.map(row=>row[i])),indices:[0,1,2,3,4,5],p,T:pose(q)};
+    },
+    dispose:visuals.dispose
   };
 }
 
@@ -255,10 +658,10 @@ async function loadUrdfRobot(world,spec){const urdfUrl=versionedAssetUrl(spec.ur
   async function build(linkName,parent){const link=links.get(linkName),node=new THREE.Group();node.userData.linkName=linkName;parent.add(node);nodeByLink.set(linkName,node);if(link?.visual){const holder=new THREE.Group();holder.applyMatrix4(link.visual.origin);const file=link.visual.file.split('/').at(-1),meshUrl=versionedAssetUrl(file,new URL(spec.mesh,import.meta.url)),r=await fetch(meshUrl);if(!r.ok)throw new Error(`Could not load course STL ${file}.`);const geom=parseStlGeometry(await r.arrayBuffer()),mat=new THREE.MeshStandardMaterial({color:meshColor(meshCount),roughness:.62,metalness:.06,side:THREE.DoubleSide});const mesh=new THREE.Mesh(geom,mat);mesh.userData.isCourseStl=true;mesh.scale.fromArray(link.visual.scale);holder.add(mesh);node.add(holder);meshCount+=1;}for(const joint of joints.filter(j=>j.parent===linkName)){const originNode=new THREE.Group();originNode.applyMatrix4(joint.origin);node.add(originNode);const rotor=new THREE.Group();originNode.add(rotor);joint.rotor=rotor;if(joint.type!=='fixed')movable.push(joint);await build(joint.child,rotor);}}
   await build(rootName,root);const update=(q,target=root)=>{target.traverse(o=>{if(o.userData.jointIndex!=null){const joint=movable[o.userData.jointIndex],angle=q[o.userData.jointIndex]||0;o.quaternion.setFromAxisAngle(joint.axis,angle);}});};movable.forEach((joint,i)=>{joint.rotor.userData.jointIndex=i;joint.movableIndex=i;});
   const findPath=(linkName,target,path=[])=>{if(linkName===target)return path;for(const joint of joints.filter(j=>j.parent===linkName)){const found=findPath(joint.child,target,[...path,joint]);if(found)return found;}return null;},serial=findPath(rootName,spec.end)||[];
-  const pose=(q)=>{const T=new THREE.Matrix4();for(const joint of serial){T.multiply(joint.origin);if(joint.type!=='fixed')T.multiply(new THREE.Matrix4().makeRotationAxis(joint.axis,q[joint.movableIndex]||0));}return T;};
+  const pose=(q,linkName=spec.end)=>{const T=new THREE.Matrix4();for(const joint of linkName===spec.end?serial:(findPath(rootName,linkName)||[])){T.multiply(joint.origin);if(joint.type!=='fixed')T.multiply(new THREE.Matrix4().makeRotationAxis(joint.axis,q[joint.movableIndex]||0));}return T;};
   const geometricJacobian=(q)=>{const T=new THREE.Matrix4(),origins=[],axes=[],indices=[];for(const joint of serial){T.multiply(joint.origin);if(joint.type!=='fixed'){origins.push(new THREE.Vector3().setFromMatrixPosition(T));axes.push(joint.axis.clone().transformDirection(T));indices.push(joint.movableIndex);T.multiply(new THREE.Matrix4().makeRotationAxis(joint.axis,q[joint.movableIndex]||0));}}const p=new THREE.Vector3().setFromMatrixPosition(T),columns=origins.map((o,i)=>{const v=axes[i].clone().cross(p.clone().sub(o));return[v.x,v.y,v.z,axes[i].x,axes[i].y,axes[i].z];});return{columns,indices,p,T};};
   const wrist=(q)=>{const T=new THREE.Matrix4();let count=0;for(const joint of serial){T.multiply(joint.origin);if(joint.type!=='fixed'){if(count===4)return new THREE.Vector3().setFromMatrixPosition(T);T.multiply(new THREE.Matrix4().makeRotationAxis(joint.axis,q[joint.movableIndex]||0));count+=1;}}return new THREE.Vector3().setFromMatrixPosition(T);};
-  const applyTo=(clone,q)=>{clone.traverse(o=>{if(o.userData.jointIndex!=null){const i=o.userData.jointIndex;o.quaternion.setFromAxisAngle(movable[i].axis,q[i]||0);}});};const point=(q,linkName=spec.end)=>{update(q);root.updateMatrixWorld(true);const node=nodeByLink.get(linkName);if(!node)return new THREE.Vector3();const value=node.getWorldPosition(new THREE.Vector3());return root.worldToLocal(value);};return{root,movable,meshCount,update,applyTo,point,pose,geometricJacobian,wrist,nodeByLink};}
+  const applyTo=(clone,q)=>{clone.traverse(o=>{if(o.userData.jointIndex!=null){const i=o.userData.jointIndex;o.quaternion.setFromAxisAngle(movable[i].axis,q[i]||0);}});};const point=(q,linkName=spec.end)=>new THREE.Vector3().setFromMatrixPosition(pose(q,linkName));return{root,movable,meshCount,update,applyTo,point,pose,geometricJacobian,wrist,nodeByLink};}
 
 function parseVisual(link){const visual=[...link.children].find(x=>x.tagName.toLowerCase()==='visual');if(!visual)return null;const mesh=visual.querySelector('geometry > mesh');if(!mesh)return null;return{file:mesh.getAttribute('filename'),scale:parseVec(mesh.getAttribute('scale')||'1 1 1'),origin:parseOrigin([...visual.children].find(x=>x.tagName.toLowerCase()==='origin'))};}
 function versionedAssetUrl(path,base=import.meta.url){const url=new URL(path,base);url.searchParams.set('v',MODULE_REVISION);return url;}

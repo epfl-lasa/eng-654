@@ -1,0 +1,18 @@
+[package]
+name = "crb15000-ik"
+default-run = "crb15000-ik"
+version = "0.1.0"
+edition = "2024"
+description = "Fixed-geometry analytical CRB15000 IK with adaptive polynomial roots and Rayon batches"
+
+[dependencies]
+nalgebra = { version = "0.33.3", default-features = false, features = ["std"] }
+num-complex = "0.4.6"
+rayon = "1.12.0"
+rug = { version = "1.30.0", default-features = false, features = ["float", "complex", "std"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

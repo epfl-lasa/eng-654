@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 420" role="img" aria-labelledby="offset-title offset-desc">
+  <title id="offset-title">Intersecting and separated first joint axes</title>
+  <desc id="offset-desc">Two three-revolute-joint robots at zero joint angles, with d1 equal to 0.5 metre. At left a1 is zero and the vertical first axis intersects the second axis. At right a1 is one metre and a highlighted horizontal segment is the shortest distance between those axes. The remaining links and axis directions are the same: z1 is up, z2 points along negative world y, and z3 is down. The diagrams use the standard D-H geometry a equals a1, 2, 1.5; d equals 0.5, 1, 0; alpha1 and alpha2 equal pi over 2. The drawings are schematic.</desc>
+  <defs>
+    <marker id="offset-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2463a6"/></marker>
+    <marker id="offset-ochre" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#a66b06"/></marker>
+    <marker id="offset-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#bd2840"/></marker>
+  </defs>
+  <rect width="520" height="420" rx="12" fill="#fff"/>
+  <path d="M260 24V336" stroke="#dfe4e9" stroke-width="1.5"/>
+  <g font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#202833" text-anchor="middle">
+    <text x="130" y="32">Intersecting first axes</text>
+    <text x="130" y="63" font-weight="700">a₁ = 0</text>
+    <text x="390" y="32">Separated first axes</text>
+    <text x="390" y="63" font-weight="700">a₁ = 1 m</text>
+  </g>
+  <!-- Orthographic sketch: +x points right, -y points down/right, +z points up. -->
+  <g fill="none" stroke="#36404c" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M65 253V218L85 238H218"/>
+    <path d="M300 253V218H338L358 238H491"/>
+  </g>
+  <g fill="#dfe4e9" stroke="#677483" stroke-width="2">
+    <path d="M45 254H85L92 271H38Z"/>
+    <path d="M280 254H320L327 271H273Z"/>
+  </g>
+  <path d="M300 218H338" stroke="#bd2840" stroke-width="10"/>
+  <g fill="none" stroke-width="2.8" stroke-dasharray="7 5">
+    <path d="M65 301V108" stroke="#2463a6" marker-end="url(#offset-blue)"/>
+    <path d="M300 301V108" stroke="#2463a6" marker-end="url(#offset-blue)"/>
+    <path d="M31 184L124 277" stroke="#a66b06" marker-end="url(#offset-ochre)"/>
+    <path d="M304 184L397 277" stroke="#a66b06" marker-end="url(#offset-ochre)"/>
+    <path d="M161 177V306" stroke="#bd2840" marker-end="url(#offset-red)"/>
+    <path d="M434 177V306" stroke="#bd2840" marker-end="url(#offset-red)"/>
+  </g>
+  <g fill="#fff" stroke="#36404c" stroke-width="2.5">
+    <circle cx="65" cy="218" r="7"/><circle cx="85" cy="238" r="7"/><circle cx="161" cy="238" r="7"/>
+    <circle cx="300" cy="218" r="7"/><circle cx="358" cy="238" r="7"/><circle cx="434" cy="238" r="7"/>
+  </g>
+  <g fill="#bd2840"><circle cx="218" cy="238" r="7"/><circle cx="491" cy="238" r="7"/></g>
+  <g fill="none" stroke="#bd2840" stroke-width="2">
+    <path d="M300 182V166 M338 182V166 M300 174H338"/>
+    <path d="M300 185V207 M338 185V207" stroke-dasharray="3 4"/>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif" font-size="24">
+    <g fill="#2463a6"><text x="35" y="107">z₁</text><text x="271" y="107">z₁</text></g>
+    <g fill="#a66b06"><text x="108" y="303">z₂</text><text x="381" y="303">z₂</text></g>
+    <g fill="#bd2840"><text x="171" y="320">z₃</text><text x="444" y="320">z₃</text><text x="208" y="220">pₜ</text><text x="478" y="220">pₜ</text><text x="306" y="154">a₁</text></g>
+    <g fill="#475569" text-anchor="middle"><text x="260" y="365">Home posture: q = 0, d₁ = 0.5 m</text><text x="260" y="398">Dashed lines show the joint axes.</text></g>
+  </g>
+</svg>

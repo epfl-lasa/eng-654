@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 440" role="img" aria-labelledby="lever-title lever-desc">
+  <title id="lever-title">A revolute joint produces tangential end-effector velocity</title>
+  <desc id="lever-desc">The blue vertical arrow is the unit joint axis z k through the point p k. The ochre arrow from p k to the end-effector point p t is the lever arm p t minus p k. A positive angular velocity q dot k times z k produces the red tangent velocity v t k at p t. In this example the lever arm lies in a plane perpendicular to the axis, and the red tangent is perpendicular to both in three dimensions. All vectors are expressed in the same world frame, world0.</desc>
+  <defs>
+    <marker id="lever-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2463a6"/></marker>
+    <marker id="lever-ochre" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#a66b06"/></marker>
+    <marker id="lever-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#bd2840"/></marker>
+  </defs>
+  <rect width="500" height="440" rx="12" fill="#fff"/>
+  <g font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#202833">
+    <text x="250" y="35" text-anchor="middle" font-weight="700">One revolute joint</text>
+  </g>
+  <path d="M59 247L332 177L422 292L149 362Z" fill="#f4f6f8" stroke="#d9e0e7" stroke-width="1.5"/>
+  <path d="M125 275L345 219" stroke="#c6cdd5" stroke-width="13" stroke-linecap="round"/>
+  <path d="M125 337V86" fill="none" stroke="#2463a6" stroke-width="3.5" marker-end="url(#lever-blue)"/>
+  <path d="M125 275L339 220" fill="none" stroke="#a66b06" stroke-width="4" marker-end="url(#lever-ochre)"/>
+  <path d="M345 219L415 309" fill="none" stroke="#bd2840" stroke-width="4" marker-end="url(#lever-red)"/>
+  <path d="M180 269C191 296 116 318 79 289" fill="none" stroke="#2463a6" stroke-width="2.5" marker-end="url(#lever-blue)"/>
+  <circle cx="125" cy="275" r="8" fill="#fff" stroke="#36404c" stroke-width="3"/>
+  <circle cx="345" cy="219" r="8" fill="#bd2840" stroke="#fff" stroke-width="2"/>
+  <path d="M346 234L331 238L322 225" fill="none" stroke="#8491a0" stroke-width="1.5"/>
+  <g font-family="Arial, Helvetica, sans-serif" font-size="25">
+    <g fill="#2463a6"><text x="77" y="97">⁰zₖ</text><text x="159" y="106">ωₖ = q̇ₖ ⁰zₖ</text></g>
+    <path d="M163 116L135 143" stroke="#2463a6" stroke-width="1.5" fill="none"/>
+    <text x="178" y="210" fill="#a66b06">⁰pₜ − ⁰pₖ</text>
+    <text x="67" y="321" fill="#202833">⁰pₖ</text>
+    <text x="356" y="197" fill="#202833">⁰pₜ</text>
+    <text x="418" y="267" fill="#bd2840">⁰vₜ,ₖ</text>
+    <text x="250" y="388" fill="#202833" text-anchor="middle">⁰vₜ,ₖ = q̇ₖ [⁰zₖ × (⁰pₜ − ⁰pₖ)]</text>
+    <text x="250" y="424" fill="#475569" text-anchor="middle">All vectors expressed in world0.</text>
+  </g>
+</svg>

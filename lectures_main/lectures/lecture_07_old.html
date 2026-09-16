@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workspace Path Planning | ENG-654</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/layouts.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/reveal.css">
+  <link rel="stylesheet" href="../css/navigation.css">
+  <link rel="stylesheet" href="../css/viz.css">
+  <link rel="stylesheet" href="../css/lecture-03.css">
+  <link rel="stylesheet" href="../css/lecture-06.css">
+  <link rel="stylesheet" href="../css/lecture-07.css?v=20260915-tool-rectangle-1">
+  <script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']],displayMath:[['\\[','\\]']]}};</script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script type="importmap">{"imports":{"three":"../vendor/three/build/three.module.js","three/addons/":"../vendor/three/examples/jsm/"}}</script>
+</head>
+<body class="mode-deck narrative-lecture lecture-07">
+<main id="deck" class="deck">
+
+  <section class="slide title-slide l7-slide">
+    <div class="title-slide-content">
+      <p class="eyebrow">ENG-654 · Lecture 07</p>
+      <h1 class="course-title">Workspace Path Planning</h1>
+      <p class="subtitle">Follow a supplied workspace path or trajectory with a feasible joint motion</p>
+      <p class="lecture-promise">The desired motion is supplied by a precomputed trajectory or a real-time policy. We study planning methods for noncuspidal and cuspidal robots.</p>
+    </div>
+  </section>
+
+  <section class="slide l7-slide" id="workspace-input">
+    <p class="slide-kicker">Our starting assumption</p>
+    <h2 class="slide-title">We study workspace path planning with a given path or trajectory</h2>
+    <p class="slide-subtitle">Assume that a desired workspace path or trajectory has been given to the robot to follow. It can come from either source below.</p>
+    <div class="layout-two-column">
+      <div class="l7-stack"><div class="l7-card red"><h3>1 · Precomputed trajectories</h3><p>The desired motion is calculated in advance and supplied as a sequence of workspace targets, with timing when a trajectory is specified.</p><p>The complete command is available for analysis before execution.</p></div></div>
+      <div class="l7-stack"><div class="l7-card red"><h3>2 · Real-time policies</h3><p>A policy uses current observations to provide the next desired workspace pose or motion command while the robot moves.</p><p>Only the current command or a short future horizon may be available.</p></div></div>
+    </div>
+    <div class="l7-takeaway">A path specifies where to move; a trajectory also specifies when. Our task is to find a continuous joint motion that follows the supplied command while checking singularities and joint limits.</div>
+  </section>
+
+  <section class="slide l7-slide l7-roadmap">
+    <p class="slide-kicker">Four parts · workspace path planning</p>
+    <h2 class="slide-title">Find feasible joint motions for the supplied workspace command</h2>
+    <div class="l7-part-list">
+      <a data-part-link="1" href="#slide-4"><b>01</b><span><strong>Numerical and analytical planning</strong>Local continuation, complete inverse solutions, and connectivity.</span></a>
+      <a data-part-link="2" href="#slide-8"><b>02</b><span><strong>Noncuspidal robots · ABB IRB 4600</strong>Hybrid planning or analytical shoulder–elbow–wrist classification.</span></a>
+      <a data-part-link="3" href="#slide-13"><b>03</b><span><strong>Cuspidal 3R robots · custom_3R.urdf</strong>One task-space curve can produce different joint-space outcomes.</span></a>
+      <a data-part-link="4" href="#slide-21"><b>04</b><span><strong>Cuspidal 6R robots · ABB GoFa CRB 15000</strong>Inverse-solution maps, joint limits, and connections between configurations.</span></a>
+    </div>
+  </section>
+
+  <section data-part="1" class="slide l7-slide">
+    <p class="slide-kicker">Part 1 · From a task trajectory to a joint trajectory</p>
+    <h2 class="slide-title">A workspace curve is not yet a robot trajectory</h2>
+    <div class="l7-lift-diagram reveal-children">
+      <div><b>Given workspace path</b><span>\(\mathbf x_d(s)\) in task space</span></div><i>→</i>
+      <div><b>Find a joint path</b><span>choose \(\mathbf q(s)\in f^{-1}(\mathbf x_d(s))\)</span></div><i>→</i>
+      <div><b>Validate</b><span>continuity, limits, singularities, repeatability</span></div>
+    </div>
+    <div class="l7-takeaway"><strong>“Lift” means the continuous joint trajectory \(\mathbf q(s)\) that realizes the chosen task-space curve: \(f(\mathbf q(s))=\mathbf x_d(s)\).</strong> It is a mathematical mapping, not an upward motion. The same Cartesian curve can have several such joint paths, each with a different outcome.</div>
+  </section>
+
+  <section class="slide l7-slide" data-part="1">
+    <p class="slide-kicker">Part 1 · Numerical and analytical path planning</p>
+    <h2 class="slide-title">Build a joint path using local continuation or complete inverse solutions</h2>
+
+    <div class="layout-two-column">
+      <div class="l7-stack"><div class="l7-card"><h3>Numerical continuation</h3><div class="equation">\[{}^0\mathcal V_t=\begin{bmatrix}{}^0\dot{\mathbf p}_t\\{}^0\boldsymbol\omega_t\end{bmatrix}={}^0J_t(\mathbf q)\dot{\mathbf q}\]</div><p>Solve the velocity equation near the current configuration. Predict the next joint state, correct its FK error, and validate that step.</p><p>One initial IK selects one local trajectory.</p></div></div>
+      <div class="l7-stack"><div class="l7-card red"><h3>Analytical or algebraic IK</h3><div class="equation">\[\mathcal Q_k=f^{-1}({}^0T_{t,d}(t_k))\]</div><p>Enumerate every real solution at each target pose using closed-form expressions or an algebraic root solver. Connect adjacent solutions continuously.</p><p>Enumeration reveals candidates; connectivity and constraints determine feasible paths.</p></div></div>
+    </div>
+    <div class="l7-takeaway">For a 6R robot, “\(\dot{\mathbf x}=J\dot{\mathbf q}\)” uses the geometric velocity \([\dot{\mathbf p};\boldsymbol\omega]\). An Euler-angle derivative needs its representation-dependent angular mapping.</div>
+  </section>
+
+  <section data-part="1" class="slide l7-slide">
+    <p class="slide-kicker">Part 1 · Compare the two approaches</p>
+    <h2 class="slide-title">Enumeration gives global candidates; continuation gives local tracking</h2>
+    <table class="l7-compare">
+      <thead><tr><th></th><th>Jacobian / numerical</th><th>Analytical branch evaluation</th></tr></thead>
+      <tbody>
+        <tr><th>Information used</th><td>Local derivative at the current \(\mathbf q\)</td><td>Closed-form or algebraic inverse structure for the modeled geometry</td></tr>
+        <tr><th>Initialization</th><td>A seed configuration</td><td>Desired pose and robot parameters; labels organize the returned roots</td></tr>
+        <tr><th>Output</th><td>One nearby solution, if convergence succeeds</td><td>All evaluated real roots, then a selected branch</td></tr>
+        <tr><th>Singularity signal</th><td>Conditioning degrades during iteration</td><td>Branch discriminant or separator vanishes</td></tr>
+        <tr><th>Scope</th><td class="local">local tracking</td><td class="global">global root enumeration, not global path certification</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section data-part="1" class="slide l7-slide">
+    <p class="slide-kicker">Part 1 · Numerical safeguards</p>
+    <h2 class="slide-title">Local safeguards detect failure; they cannot select a globally viable start</h2>
+    <div class="l7-three reveal-children">
+      <div class="l7-card"><h3>Step size</h3><p>Large Cartesian steps invalidate the local linear model and can jump to another basin.</p></div>
+      <div class="l7-card red"><h3>Near singularity</h3><p>Stop when the full Jacobian becomes singular or ill-conditioned. Damping can moderate a numerical step, but cannot restore a missing task direction.</p></div>
+      <div class="l7-card green"><h3>Joint limits</h3><p>A regular branch may still hit a physical joint stop. Global comparison can select a different initial IK that completes the path; it does not remove the stop.</p></div>
+    </div>
+    <div class="l7-equation-banner">\[\|\dot{\mathbf q}\|\ \text{can grow while}\ \|\dot{\mathbf x}\|\ \text{stays modest as}\ \sigma_{\min}(J)\to0.\]</div>
+  </section>
+
+  <section data-part="2" class="slide l7-slide">
+    <p class="slide-kicker">Part 2 · Noncuspidal robots · ABB IRB 4600</p>
+    <h2 class="slide-title">For this noncuspidal ABB, classify the solutions by shoulder, elbow, and wrist</h2>
+    <div class="l7-three">
+      <div class="l7-card"><h3>Shoulder · S±</h3><p>Choose the shoulder branch that places the wrist centre on the required side of the first axis.</p></div>
+      <div class="l7-card"><h3>Elbow · E±</h3><p>Choose one of the two arm solutions for that shoulder branch.</p></div>
+      <div class="l7-card"><h3>Wrist · W±</h3><p>Choose the wrist solution that realizes the desired tool orientation.</p></div>
+    </div>
+    <div class="l7-equation-banner">\[2\times2\times2=8\ \text{generic mathematical IK solutions}\]</div>
+    <div class="l7-takeaway">Away from singularities, the S/E/W classification distinguishes the ABB IRB 4600 branches. Hybrid planning enumerates the starts once and continues them numerically. Fully analytical planning evaluates the same branch labels at every sample. Both methods must check joint limits and singularities.</div>
+  </section>
+
+  <section data-part="2" class="slide interactive-slide l7-slide">
+    <p class="slide-kicker">Part 2 · One ABB path, several admissible starts</p>
+    <h2 class="slide-title">An xy rectangle crosses regions with different numbers of positional IKs</h2>
+    <p class="slide-subtitle">The tool follows a 0.85 m × 0.55 m rectangle at \(z=1.10\) m with fixed downward orientation. The arm has four IKs in the inner region and two in the outer region; each regular arm solution supplies two wrist solutions.</p>
+    <div class="demo-prompt"><strong>Observe:</strong> compare the desired and achieved tool points. The shaded count is for the wrist-centre arm solutions \((q_1,q_2,q_3)\); watch it change from four to two across the boundary.</div>
+    <div class="layout-full l7-lab" data-path-lab="abb-irb-path"></div>
+  </section>
+
+  <section data-part="2" class="slide l7-slide">
+    <p class="slide-kicker">Part 2 · Hybrid planning · enumerate once, then continue</p>
+    <h2 class="slide-title">Start with all analytical IKs, then follow each with the Jacobian</h2>
+    <div class="layout-two-column">
+      <div class="l7-equation-stack">
+        <div>\[\begin{bmatrix}{}^0\mathbf v_6\\{}^0\boldsymbol\omega_6\end{bmatrix}={}^0J_6(\mathbf q)\dot{\mathbf q}\]</div>
+        <div>\[{}^0J_6(\mathbf q_k)\Delta\mathbf q=\begin{bmatrix}{}^0\mathbf p_{6,d}-{}^0\mathbf p_6\\\operatorname{Log}(R_dR^\top)^\vee\end{bmatrix}\]</div>
+        <div>\[|\det {}^0J_6|&lt;\varepsilon\quad\Longrightarrow\quad\text{stop this continuation}\]</div>
+        <p class="l7-equation-note"><strong>Evaluate the twist at the tool.</strong> For this robot, the tool origin is \(O_6\). With \({}^0\mathbf r_{56}={}^0\mathbf p_6-{}^0\mathbf p_5\), shift the wrist Jacobian to the tool: \({}^0J_6=\begin{bmatrix}I&-[{}^0\mathbf r_{56}]_\times\\0&I\end{bmatrix}{}^0J_5\). Here \([\mathbf r]_\times\mathbf a=\mathbf r\times\mathbf a\), and \(\det{}^0J_6=\det{}^0J_5\).</p>
+        <p class="l7-equation-note">Here \(R={}^0R_{\mathrm{tool}}\) and \(R_d={}^0R_{\mathrm{tool},d}\) are the current and desired tool orientations. \(\operatorname{Log}(R_dR^\top)^\vee\) is their axis–angle error vector in the world frame.</p>
+      </div>
+      <div class="derivation-stack reveal-children">
+        <div class="derivation-row"><span class="tag">1</span><p>Solve all IKs analytically at the first pose. Classify S, E, W and retain starts inside the joint limits.</p></div>
+        <div class="derivation-row"><span class="tag">2</span><p>For each start, compute \({}^0J_6\dot{\mathbf q}=[{}^0\dot{\mathbf p}_{6,d};{}^0\boldsymbol\omega_d]\), then predict \(\mathbf q_{k+1}\approx\mathbf q_k+\Delta t\dot{\mathbf q}_k\).</p></div>
+        <div class="derivation-row"><span class="tag">3</span><p>Correct the predicted pose by Newton iterations using the displayed position and orientation error.</p></div>
+        <div class="derivation-row"><span class="tag">4</span><p>Check singularities, position limits, and joint-speed demands along the whole path. Slow down for a speed limit; choose another branch when a joint stop blocks the path.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section data-part="2" class="slide interactive-slide l7-slide">
+    <p class="slide-kicker">Part 2 · Hybrid continuation</p>
+    <h2 class="slide-title">Four legal starts: two finish; two reach a positional singularity</h2>
+    <p class="slide-subtitle">Analytical IK supplies the starting solutions; each numerical predictor and correction uses the current Jacobian. Compare every starting IK on the same rectangle: successful local convergence at the start does not ensure completion.</p>
+    <div class="layout-full l7-lab" data-path-lab="abb-irb-numerical"></div>
+  </section>
+
+  <section data-part="2" class="slide interactive-slide l7-slide">
+    <p class="slide-kicker">Part 2 · Fully analytical planning</p>
+    <h2 class="slide-title">Compare all ABB solution branches along the entire rectangle</h2>
+    <p class="slide-subtitle">Analytical IK enumerates the full-pose roots at each path sample. Continuous branch tracking and joint-limit checks identify the initial configurations that can finish.</p>
+    <div class="layout-full l7-lab" data-path-lab="abb-irb-analytical"></div>
+  </section>
+
+  <section data-part="3" class="slide l7-slide">
+    <p class="slide-kicker">Part 3 · Cuspidal 3R robots · the course URDF</p>
+    <h2 class="slide-title">Use custom_3R.urdf to connect workspace geometry and joint-space paths</h2>
+    <div class="layout-60-40">
+      <div class="l7-model-stage" data-path-model="custom-intro"></div>
+      <div class="l7-stack">
+        <div class="l7-card"><h3>The actual course robot</h3><p>The URDF supplies the joint axes, offsets, and CAD geometry. The inverse solver and singularity curves use those same parameters.</p></div>
+        <div class="l7-card red"><h3>Workspace event</h3><p>The verified example starts inside a four-IK region and encircles the cusp near \((\rho,z)=(2.73,2.93)\) m. A critical-value crossing can make some inverse solutions singular while others remain regular.</p></div>
+        <div class="l7-card green"><h3>Planning consequence</h3><p>For the course robot, different lifts of the same loop can close, terminate, or change IK solution without becoming singular.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section data-part="3" class="slide interactive-slide l7-slide">
+    <p class="slide-kicker">Part 3 · One shared path editor</p>
+    <h2 class="slide-title">Edit one path; carry its exact vertices into the following slides</h2>
+    <p class="slide-subtitle">Move or reshape the default loop, or draw vertices in the URDF \((\rho,z)\) slice. Red curves are critical values; × marks the selected cusp. The start is marked separately.</p>
+    <div class="demo-prompt"><strong>Workflow:</strong> finalize one shared path. Every following 3R panel recalculates its joint trajectories. If your path has no example of a given type, that panel says so.</div>
+    <div class="layout-full l7-lab" data-path-lab="square-master"></div>
+  </section>
+
+  <section data-part="3" class="slide l7-slide">
+    <p class="slide-kicker">Part 3 · Several path types on one robot</p>
+    <h2 class="slide-title">Path feasibility is a property of the selected solution sheet</h2>
+    <div class="l7-three">
+      <div class="l7-card green"><h3>Regular</h3><p>The selected joint path remains nonsingular and closes.</p><div class="l7-mini-loop closed">workspace ↻<br>joint space ↻</div></div>
+      <div class="l7-card red"><h3>Branch-infeasible</h3><p>The selected joint trajectory reaches a fold or another continuation barrier; a different starting IK may remain feasible.</p><div class="l7-mini-loop blocked">workspace ↻<br>joint path ✕</div></div>
+      <div class="l7-card"><h3>Nonsingular change</h3><p>The lift stays regular but returns to a different IK of the starting point.</p><div class="l7-mini-loop open">workspace ↻<br>joint path →</div></div>
+    </div>
+    <div class="l7-takeaway">The Cartesian command alone does not identify which of these joint-space outcomes the robot will follow.</div>
+  </section>
+
+  <section data-part="3" class="slide interactive-slide l7-slide">
+    <p class="slide-kicker">Part 3 · Regular closed joint path</p>
+    <h2 class="slide-title">A closed task-space loop can return to the same joint configuration</h2>
+    <p class="slide-subtitle">The continuation returns near the starting IK and has nonzero determinant at every sampled point; refine the sampling before treating the lift as validated.</p>
+    <div class="layout-full l7-lab" data-path-lab="custom-regular"></div>
+  </section>
+
+  <section data-part="3" class="slide interactive-slide l7-slide">
+    <p class="slide-kicker">Part 3 · First infeasible branch</p>
+    <h2 class="slide-title">Track a starting IK whose continuation cannot complete the path</h2>
+    <p class="slide-subtitle">The workspace command continues, but this IK branch merges with another solution at \(\det J_p=0\).</p>
+    <div class="layout-full l7-lab" data-path-lab="custom-infeasible-a"></div>
+  </section>
+
+  <section data-part="3" class="slide interactive-slide l7-slide">
+    <p class="slide-kicker">Part 3 · Second infeasible branch</p>
+    <h2 class="slide-title">Compare a second starting IK on exactly the same task-space path</h2>
+    <p class="slide-subtitle">The measured endpoint and failure cause belong to this starting IK. Changing the master path can change which trajectories exist.</p>
+    <div class="layout-full l7-lab" data-path-lab="custom-infeasible-b"></div>
+  </section>
+
+  <section data-part="3" class="slide interactive-slide l7-slide">
+    <p class="slide-kicker">Part 3 · Nonsingular change of solution</p>
+    <h2 class="slide-title">One traversal changes IK solution without crossing a singularity</h2>
+    <p class="slide-subtitle">The workspace loop closes while its regular joint-space lift remains open.</p>
+    <div class="layout-full l7-lab" data-path-lab="custom-nonsingular"></div>
+  </section>
+
+  <section data-part="3" class="slide interactive-slide l7-slide">
+    <p class="slide-kicker">Part 3 · Repeatability</p>
+    <h2 class="slide-title">The second lap starts from the configuration reached after lap one</h2>
+    <p class="slide-subtitle">Play lap 1, then repeat the same path from its new endpoint. Test whether the second joint trajectory closes, changes solution again, or stops.</p>
+    <div class="layout-full l7-lab" data-path-lab="custom-two-laps"></div>
+  </section>
+
+  <section data-part="4" class="slide l7-slide">
+    <p class="slide-kicker">Part 4 · Cuspidal 6R robots · ABB GoFa CRB 15000</p>
+    <h2 class="slide-title">ABB GoFa CRB 15000: the wrist offset changes the inverse geometry</h2>
+    <div class="layout-60-40">
+      <div class="l7-model-stage" data-crb-model="intro"></div>
+      <div class="l7-stack">
+        <div class="l7-card"><h3>Six axes, offset wrist</h3><p>The supplied CRB 15000-5/0.95 has a 0.080 m offset between its last wrist axes. The three wrist axes do not meet at one common centre.</p></div>
+        <div class="l7-card"><h3>Enumerate the configurations</h3><p>The uploaded analytical IK evaluates a degree-16 polynomial, reconstructs the joint angles, and verifies each result by forward kinematics. We count real solutions and joint-limit-admissible solutions separately.</p></div>
+        <div class="l7-card red"><h3>Track connectivity</h3><p>Numerical labels such as “IK 1” are local to one pose. Follow the continuous joint trajectory to discover which solution it reaches at the end.</p></div>
+      </div>
+    </div>
+    <div class="l7-takeaway">The joint-limit interval matters: \(q_3\in[-225^\circ,85^\circ]\). A legal configuration below −180° must not be discarded merely because an equivalent angle was wrapped into another interval.</div>
+  </section>
+
+  <section data-part="4" class="slide interactive-slide l7-slide">
+    <p class="slide-kicker">Part 4 · A global inverse-kinematics map</p>
+    <h2 class="slide-title">Count the inverse solutions in an x–z slice</h2>
+    <p class="slide-subtitle">The default map contains 100,000 poses at \(y=0.2\) m. Its fixed orientation gives regions with different numbers of real IKs, even before applying joint limits. Click a point to solve its full pose.</p>
+    <div class="demo-prompt"><strong>Read the map:</strong> color counts IK branches at each pose. A constant count does not guarantee that your selected branch stays within joint limits. Click a point to inspect its solutions.</div>
+    <div class="layout-full l7-lab" data-crb-lab="atlas"></div>
+  </section>
+
+  <section data-part="4" class="slide interactive-slide l7-slide">
+    <p class="slide-kicker">Part 4 · Choose the starting solution</p>
+    <h2 class="slide-title">Draw one task path; compare the joint trajectories from its IKs</h2>
+    <p class="slide-subtitle">Choose the tool orientation and the slice coordinate \(y\), then calculate the x–z map. The selected point and drawn path carry forward from the previous map. Each path holds the chosen orientation and \(y\) constant.</p>
+    <div class="demo-prompt"><strong>Default example:</strong> IK 3 passes through \(q_6=-180^\circ\) with the corrected ±270° limit, then reaches \(q_2=-180^\circ\). The stop marker reports the limiting joint; unchanged map color cannot certify a continuous legal joint path.</div>
+    <div class="layout-full l7-lab" data-crb-lab="draw"></div>
+  </section>
+
+  <section data-part="4" class="slide interactive-slide l7-slide">
+    <p class="slide-kicker">Part 4 · A joint-limit-admissible nonsingular change</p>
+    <h2 class="slide-title">Same final tool pose, a different joint configuration, no joint-limit crossing</h2>
+    <p class="slide-subtitle">A searched connection joins two IKs of the same full pose. This demonstration allows orientation to vary along the task-space loop. The transparent robot stays at the starting configuration.</p>
+    <div class="demo-prompt"><strong>Search:</strong> enumerate IK pairs of the same pose, connect legal joint configurations, and map the connection through FK. Here a determinant derivative bound verifies the entire joint segment; all 401 animation poses are rechecked by IK.</div>
+    <div class="layout-full l7-lab" data-crb-lab="nscs"></div>
+  </section>
+
+  <section class="slide l7-slide" data-part="4">
+    <p class="slide-kicker">Part 4 · Different path types on the same CRB</p>
+    <h2 class="slide-title">One robot exhibits several distinct planning outcomes</h2>
+    <p class="slide-subtitle"><strong>MoveL means “move linearly”:</strong> the tool centre point follows a straight Cartesian segment, \(\mathbf p(s)=(1-s)\mathbf p_A+s\mathbf p_B\), with \(0\leq s\leq1\). The tool orientation interpolates between its endpoint orientations; equal endpoint orientations keep it fixed.</p>
+    <table class="l7-compare">
+      <thead><tr><th>Example in this lecture</th><th>Verified outcome</th><th>Planning lesson</th></tr></thead>
+      <tbody>
+        <tr><th>Fixed-orientation x–z circle</th><td>At \(y=0.2\) m, the default circle has eight legal starts. Two return to their initial joint configurations; six reach joint limits.</td><td>A regular closed path exists, but its starting IK matters.</td></tr>
+        <tr><th>Legal nonsingular connection</th><td>Same full endpoint pose; different joint configurations; positive determinant and limit margins.</td><td>Task-space closure does not imply joint-space closure. Repeatability requires its own check.</td></tr>
+        <tr><th>MoveL with five legal continuations</th><td>Eight initial IKs and ten final IKs. Five initial solutions complete the line inside the limits.</td><td>Enumerate and compare whole trajectories before choosing the initial IK.</td></tr>
+        <tr><th>MoveL with no legal continuation</th><td>Eight legal starts, but none can finish the prescribed line within the joint limits.</td><td>Changing the starting IK is insufficient. Change the path, orientation, or task placement.</td></tr>
+      </tbody>
+    </table>
+    <div class="l7-takeaway">Reachable endpoints do not guarantee a feasible path between them. Compare continuous joint trajectories over the whole command: an IK may close, change solution, meet a singularity, or reach a joint limit.</div>
+    <p class="l7-source">Reference: Elias &amp; Wen (2025), <a href="https://arxiv.org/pdf/2501.18505" target="_blank" rel="noopener"><em>Path Planning and Optimization for Cuspidal 6R Manipulators</em></a>.</p>
+  </section>
+
+  <section class="slide l7-slide" data-part="4">
+    <p class="slide-kicker">Part 4 · Global path analysis</p>
+    <h2 class="slide-title">Turn inverse solutions along the path into a connectivity graph</h2>
+
+    <div class="l7-three">
+      <div class="l7-card"><h3>Nodes · all IKs at each sample</h3><div class="equation">\[\mathcal Q_k=\{\mathbf q_k^{(1)},\mathbf q_k^{(2)},\ldots\}\]</div><p>Each task pose is a layer. Retain its real inverse solutions and mark those outside joint limits.</p></div>
+      <div class="l7-card"><h3>Edges · verified continuations</h3><p>Connect adjacent layers only when the joint motion is continuous and satisfies the required limits and singularity margin. Equal determinant sign alone does not establish connectivity.</p></div>
+      <div class="l7-card red"><h3>Search · an entire joint path</h3><p>Search from the first layer to the last. If no chain is found, refine uncertain connections before declaring the command infeasible. For a closed task loop, compare final and initial configurations and test another lap.</p></div>
+    </div>
+    <div class="l7-takeaway">For a cuspidal 6R robot, local S/E/W-style labels do not provide a complete global description. Check the actual joint connections. Regular closed loops, solution-changing loops, and failed continuations can occur on the same robot.</div>
+    <p class="l7-source">Graph-planning approach: <a href="https://arxiv.org/pdf/2501.18505" target="_blank" rel="noopener">Elias &amp; Wen (2025), Section 4</a>; <a href="https://github.com/rpiRobotics/cuspidal-path-planning" target="_blank" rel="noopener">authors’ implementation</a>.</p>
+  </section>
+
+  <section data-part="4" class="slide l7-slide">
+    <p class="slide-kicker">Part 4 · Put the four parts together</p>
+    <h2 class="slide-title">Global analysis connects solutions before choosing the joint trajectory</h2>
+    <div class="derivation-stack reveal-children">
+      <div class="derivation-row"><span class="tag">1</span><p>Receive the workspace path or trajectory from a precomputed command or a real-time policy.</p></div>
+      <div class="derivation-row"><span class="tag">2</span><p>Enumerate candidate IKs and connect continuous joint trajectories over the available path or planning horizon.</p></div>
+      <div class="derivation-row"><span class="tag">3</span><p>Track branch identity, singularity distance, joint limits, and collisions.</p></div>
+      <div class="derivation-row"><span class="tag">4</span><p>For closed task loops, test joint-space closure and repeatability explicitly.</p></div>
+    </div>
+    <div class="l7-takeaway"><strong>Hybrid conclusion:</strong> enumeration supplies the candidate IKs; continuation connects them locally; comparing full trajectories reveals limits, singularities, endpoint changes, and repeatability. For a known path, global analysis can choose a viable start or identify an infeasible command. With a real-time policy, feasibility must be reassessed as new commands arrive. The demonstrations check kinematics and joint limits; collision and dynamics checks are additional planning stages. Lecture 08 adds redundancy.</div>
+  </section>
+
+</main>
+<script src="../js/deck/nav-runtime.js"></script>
+<script type="module" src="../js/main.js?revision=20260915-tool-rectangle-1"></script>
+</body>
+</html>

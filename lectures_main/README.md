@@ -117,3 +117,20 @@ Navigation is handled by `js/deck/nav-runtime.js`, a plain non-module script. Th
 ## Slide numbers
 
 Slide numbers are injected automatically by `js/deck/nav-runtime.js` as a subtle overlay in the bottom-left corner. To hide the number on a particular slide, add `data-slide-number="off"` to that `<section class="slide">`.
+
+
+## Lecture PDF snapshots
+
+The lecture library links to `assets/pdf/lecture_01.pdf` through `lecture_08.pdf`. Each PDF has one page per slide, with all text fragments revealed, rendered robot scenes and plots, and slide-title bookmarks. Videos use their final frame; path demonstrations show their computed endpoint.
+
+To regenerate the snapshots, serve `lectures_main` over HTTP, start Chromium with a remote-debugging port, and run from the repository root:
+
+```bash
+CDP_URL=http://127.0.0.1:9256 \
+LECTURE_BASE_URL=http://127.0.0.1:8052 \
+node lectures_main/tools/export-lecture-pdfs.cjs
+```
+
+The exporter requires Node 22+ and Python 3 with `pypdf` and `Pillow`. It uses a disposable browser context, leaves existing tabs and saved lecture settings untouched, and captures at 1440 × 900 with a device scale of 2. The PDFs preserve selectable slide text. Canvas slides use the exact browser snapshot as their visible layer, retaining the native text below it for selection and search. Print-only layout changes stay in that context. Temporary per-slide PDFs, canvas-slide screenshots, and a capture manifest are retained in the reported review directory. Set `PDF_SCREENSHOTS=1` to also retain screenshots of text-only slides.
+
+Set `LECTURES=07,08` to regenerate selected lectures. `PDF_WORK_DIR` chooses the review directory, and `PDF_OUTPUT_DIR` overrides the PDF destination. `PDF_RESUME=1` reuses completed pages in that review directory; use it only while the lecture sources are unchanged. `SLIDES=1,22` is available for reviewing individual pages; use a separate `PDF_OUTPUT_DIR` when making partial exports. To replace selected pages of an existing complete export, combine `PDF_RESUME=1 PDF_RECAPTURE=1` with `SLIDES`; the merge retains the other pages in slide order.

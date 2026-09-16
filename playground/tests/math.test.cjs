@@ -142,3 +142,65 @@ test('screw coordinates are terminal while their retained transform remains avai
   }
   close(K.validatedMatrix(screw), K.validatedMatrix(input));
 });
+
+const generalMatrix = rows => K.computeBlock({ type: 'matrix', params: { rows: rows.length, columns: rows[0].length, matrix: rows.flat().map(String) } });
+
+test('cross products preserve order, symbols and the world screw formula v = p × omega', () => {
+  const p = generalMatrix([['x'], ['y'], ['z']]), omega = generalMatrix([[0], [0], [1]]);
+  const v = K.computeBlock({ type: 'cross' }, { a: p, b: omega });
+  assert.equal(v.kind, 'matrix');
+  assert.deepEqual(K.getSymbols(v), ['x', 'y']);
+  close(K.numericMatrix(v, { x: 2, y: 3 }), [[3], [-2], [0]]);
+  close(K.numericMatrix(K.computeBlock({ type: 'cross' }, { a: omega, b: p }), { x: 2, y: 3 }), [[-3], [2], [0]]);
+  close(K.cross([1, 2, 3], [4, 5, 6]).map(entry => K.evaluate(entry)), [-3, 6, -3]);
+  assert.throws(() => K.computeBlock({ type: 'cross' }, { a: p }), /Connect.*b/);
+  assert.throws(() => K.computeBlock({ type: 'cross' }, { a: generalMatrix([[1, 2, 3]]), b: omega }), /3 × 1/);
+});
+
+test('column assembly selects and reorders source columns and a common row slice', () => {
+  const source = generalMatrix([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]]);
+  const other = generalMatrix([[20], [30], [40], [50]]);
+  const columns = { type: 'columns', params: { columns: [3, 1, 1], rowStart: 2, rowCount: 2 } };
+  close(K.numericMatrix(K.computeBlock(columns, { c0: source, c1: other, c2: source })), [[6, 30, 4], [9, 40, 7]]);
+  assert.throws(() => K.computeBlock(columns, { c0: other, c1: other, c2: source }), /outside/);
+  assert.throws(() => K.computeBlock({ ...columns, params: { ...columns.params, rowStart: 4 } }, { c0: source, c1: other, c2: source }), /outside/);
+  assert.throws(() => K.computeBlock(columns, { c0: source }), /Connect.*column 2/);
+  const stack = K.computeBlock({ type: 'stack' }, { a: other, b: other });
+  close(K.numericMatrix(stack), [[20], [30], [40], [50], [20], [30], [40], [50]]);
+  assert.throws(() => K.computeBlock({ type: 'stack' }, { a: other, b: source }), /same number/);
+});
+
+test('determinants handle symbolic zero pivots, pivot swaps, singularities and small nonzero values', () => {
+  const symbolic = generalMatrix([['a', 'b', '0'], ['0', 'c', 'd'], ['e', '0', 'f']]);
+  const result = K.computeBlock({ type: 'determinant' }, symbolic);
+  assert.equal(result.kind, 'scalar');
+  assert.deepEqual(K.getSymbols(result), ['a', 'b', 'c', 'd', 'e', 'f']);
+  close(K.numericMatrix(result, { a: 2, b: 3, c: 5, d: 7, e: 11, f: 13 }), [[361]]);
+  close(K.numericMatrix(result, { a: 0, b: 3, c: 0, d: 7, e: 11, f: 0 }), [[231]]);
+  close(K.evaluate(K.determinant([[0, 2], [3, 4]])), -6);
+  close(K.evaluate(K.determinant([[1, 2, 3], [2, 4, 6], [1, 1, 1]])), 0);
+  assert.equal(K.evaluate(K.determinant([[1e-14, 0], [0, 1e-14]])), 1e-28);
+  assert.equal(K.numberText(1e-28), '1e-28');
+  assert.equal(K.numberText(-0), '0');
+  assert.equal(K.evaluate(K.determinant([['a']]), { a: -3 }), -3);
+  assert.throws(() => K.computeBlock({ type: 'determinant' }, generalMatrix([[1, 2, 3], [4, 5, 6]])), /square.*2 × 3/);
+});
+
+test('general matrices use dimensional multiplication and never become rigid motions by shape', () => {
+  const R = K.computeBlock(rotation(['0', '0', '1'], 'pi/2'));
+  const p = generalMatrix([[1], [0], [0]]);
+  const product = K.compose(R, p);
+  assert.equal(product.kind, 'matrix');
+  close(K.numericMatrix(product), [[0], [1], [0]]);
+  const square = generalMatrix([[1, 2, 3], [0, 1, 4], [0, 0, 1]]);
+  assert.throws(() => K.compose(p, square), /dimensions/);
+  for (const value of [p, square, generalMatrix(K.numericMatrix(K.identity(4)))]) {
+    assert.throws(() => K.toHomogeneous(value), /general matrix/);
+    assert.throws(() => K.validatedMatrix(value), /general matrix/);
+    assert.throws(() => K.inverseValue(value), /general matrix/);
+    assert.throws(() => K.logValue(value), /general matrix/);
+  }
+  const scalar = K.computeBlock({ type: 'determinant' }, square);
+  assert.throws(() => K.compose(scalar, p), /scalar/);
+  assert.throws(() => K.computeBlock({ type: 'columns', params: { columns: [1], rowStart: 1, rowCount: 1 } }, { c0: scalar }), /scalar/);
+});
