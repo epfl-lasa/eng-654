@@ -16,10 +16,10 @@ for(let r=0;r<6;r++){
 $('#bonus-jacobian-inputs').append(bonusGrid);
 const bonusFields=$$('[data-answer^="bonus.J."]'),known=new Set($$('[data-answer]').map(el=>el.dataset.answer));
 function reviewBonus(){
- const derivation=$('[data-answer="bonus.crb-jacobian"]'),written=!!derivation.value.trim(),filled=bonusFields.filter(field=>field.value.trim()).length;
- for(const field of [...bonusFields,derivation]){if(field.value.trim())field.dataset.result='review';else field.removeAttribute('data-result');}
+ const determinant=$('[data-answer="bonus.determinant"]'),hasDeterminant=!!determinant.value.trim(),derivation=$('[data-answer="bonus.crb-jacobian"]'),written=!!derivation.value.trim(),filled=bonusFields.filter(field=>field.value.trim()).length;
+ for(const field of [...bonusFields,determinant,derivation]){if(field.value.trim())field.dataset.result='review';else field.removeAttribute('data-result');}
  derivation.closest('.ex03-field').querySelector('.answer-feedback').textContent=written?'Recorded for instructor review; this derivation is not automatically graded.':'';
- $('#bonus-status').textContent=filled||written?`Bonus saved · ${filled}/36 matrix entries · ${written?'derivation included':'add your derivation'} · instructor review; not automatically graded.`:'Optional · no bonus response entered · instructor review';
+ $('#bonus-status').textContent=filled||hasDeterminant||written?`Bonus saved · ${filled}/36 matrix entries · ${hasDeterminant?'determinant included':'add your determinant'} · ${written?'derivation included':'add your derivation'} · instructor review; not automatically graded.`:'Optional · no bonus response entered · instructor review';
 }
 function status(message,error=false){$('#file-status').textContent=message;$('#file-status').classList.toggle('answer-status-error',error);}
 function documentValue(){return {schemaVersion:1,exercise:'exercise_03',model:'custom_3R',units:{length:'m',angle:'rad'},answers:{...state.answers},investigation:{probes:state.probes.map(probe=>probe.source==='joint'?{source:'joint',q:probe.q.slice()}:{source:'workspace',point:probe.point.slice()})}};}

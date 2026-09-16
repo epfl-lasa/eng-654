@@ -18,7 +18,7 @@
     .lecture-list a:hover, .lecture-list a:focus-visible { outline:2px solid var(--epfl-red); outline-offset:2px; }
     .lecture-card { display:flex; flex-direction:column; background:var(--soft); border:1px solid var(--line); border-top:4px solid var(--epfl-red); }
     .lecture-card > a:first-child { flex:1; border:0; background:transparent; }
-    .lecture-list .pdf-download { min-height:0; border:0; border-top:1px solid var(--line); padding:.65rem 1rem; color:var(--epfl-red); font-size:.8em; font-weight:700; }
+    .lecture-list .pdf-download, .lecture-list .recording-link { min-height:0; border:0; border-top:1px solid var(--line); padding:.65rem 1rem; color:var(--epfl-red); font-size:.8em; font-weight:700; }
     .exercise-list a { border-top-color: var(--black); min-height:7rem; }
     .card-step { display:block; margin-bottom:.35rem; color:var(--epfl-red); font-size:.72em; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
   </style>
@@ -30,8 +30,14 @@
   <p class="course-map">The course follows one question: how can a workspace path become a valid joint-space motion? We first make the mechanism readable, then invert its kinematics, locate singularities, understand how inverse solutions connect, and finally use that global structure in motion planning.</p>
 
   <h2 class="section-heading">Lectures</h2>
-  <p class="section-intro">Eight connected chapters; each supplies one prerequisite for the next. Open the interactive slides or download a PDF with every slide fully revealed.</p>
+  <p class="section-intro">An introduction and eight connected chapters; each chapter supplies one prerequisite for the next. Open the slides or download a PDF. Video and audio recordings are available for the introduction and lectures 5 and 7.</p>
   <div class="lecture-list">
+    <article class="lecture-card">
+      <a href="lectures/Intro.pdf"><span class="card-step">Start here</span><strong>Introduction</strong><br>Course introduction and overview</a>
+      <a class="pdf-download" href="lectures/Intro.pdf" download="Intro.pdf" aria-label="Download Introduction PDF">Download PDF ↓</a>
+      <a class="recording-link" href="assets/recordings/kgmp_intro.mp4" aria-label="Watch Introduction recording">Watch recording (video)</a>
+      <a class="recording-link" href="assets/recordings/kgmp_intro.m4a" aria-label="Listen to Introduction recording">Listen to recording (audio)</a>
+    </article>
     <article class="lecture-card">
       <a href="lectures/lecture_01.html"><span class="card-step">Model the mechanism</span><strong>Lecture 1</strong><br>Frames, transformations, and D–H modelling</a>
       <a class="pdf-download" href="assets/pdf/lecture_01.pdf" download="lecture_01.pdf" aria-label="Download Lecture 1 PDF">Download PDF ↓</a>
@@ -51,6 +57,8 @@
     <article class="lecture-card">
       <a href="lectures/lecture_05.html"><span class="card-step">Locate rank loss</span><strong>Lecture 5</strong><br>Jacobian-based singularity analysis</a>
       <a class="pdf-download" href="assets/pdf/lecture_05.pdf" download="lecture_05.pdf" aria-label="Download Lecture 5 PDF">Download PDF ↓</a>
+      <a class="recording-link" href="assets/recordings/kgmp_lec5.mp4" aria-label="Watch Lecture 5 recording">Watch recording (video)</a>
+      <a class="recording-link" href="assets/recordings/kgmp_lec5.m4a" aria-label="Listen to Lecture 5 recording">Listen to recording (audio)</a>
     </article>
     <article class="lecture-card">
       <a href="lectures/lecture_06.html"><span class="card-step">Connect the solutions</span><strong>Lecture 6</strong><br>IK-solution distribution, aspects, and cuspidality</a>
@@ -59,6 +67,8 @@
     <article class="lecture-card">
       <a href="lectures/lecture_07.html"><span class="card-step">Lift a path</span><strong>Lecture 7</strong><br>Workspace paths and joint-space continuation</a>
       <a class="pdf-download" href="assets/pdf/lecture_07.pdf" download="lecture_07.pdf" aria-label="Download Lecture 7 PDF">Download PDF ↓</a>
+      <a class="recording-link" href="assets/recordings/kgmp_lec7.mp4" aria-label="Watch Lecture 7 recording">Watch recording (video)</a>
+      <a class="recording-link" href="assets/recordings/kgmp_lec7.m4a" aria-label="Listen to Lecture 7 recording">Listen to recording (audio)</a>
     </article>
     <article class="lecture-card">
       <a href="lectures/lecture_08.html"><span class="card-step">Plan with redundancy</span><strong>Lecture 8</strong><br>Global feasibility for redundant robot motion</a>
