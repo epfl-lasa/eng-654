@@ -34,3 +34,14 @@
   .l8-cards,.l8-flow { grid-template-columns: 1fr; }
   .l8-flow > div { min-height: 4rem; }
 }
+
+/* Make the redundant configurations visible before introducing the Jacobian. */
+.l8-pose-equality { text-align: center; font-size: clamp(.95rem,1.25vw,1.4rem); }
+.l8-pose-equality mjx-container[display="true"] { margin: .4em 0 !important; }
+.l8-configuration-pair { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .8rem; }
+.l8-configuration-pair figure { margin: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0,1fr) auto; border: 1px solid var(--line); }
+.l8-configuration-pair figcaption { padding: .4rem .6rem; font-weight: 700; font-size: clamp(.85rem,1.1vw,1.2rem); }
+.l8-configuration-pair figure > p { margin: 0; padding: .35rem .5rem; max-width: none; font-size: clamp(.65rem,.84vw,.9rem); }
+.l8-null-derivation .layout-two-column,.l8-optimization .layout-two-column { gap: 1rem; }
+.l8-null-derivation .l8-card .equation,.l8-optimization .l8-card .equation { font-size: clamp(.75rem,1vw,1.08rem); }
+.l8-null-derivation mjx-container[display="true"],.l8-optimization mjx-container[display="true"] { margin: .55em 0 !important; }

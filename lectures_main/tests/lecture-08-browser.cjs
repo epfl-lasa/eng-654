@@ -67,6 +67,24 @@ async function main() {
     await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
     await send('Page.navigate', { url: LECTURE_URL });
     await until(`!!${host('null-motion')}`);
+    await go('configuration-pair');
+    const pair = await run(`({...${host('configuration-pair')}.dataset})`);
+    assert.ok(Number(pair.poseError) < 1e-10, 'Both configurations realize the same full tool pose.');
+    const configurations = JSON.parse(pair.configurations);
+    assert.ok(Math.hypot(...configurations[0].map((q,i)=>q-configurations[1][i])) > .5);
+    assert.deepEqual(await run(`[...${host('configuration-pair')}.querySelectorAll('.l8r-stage')].map(s=>s.dataset.meshCount)`),['8','8']);
+    await run('window.MathJax?.startup?.promise || Promise.resolve()');
+    for (const [width,height] of [[1440,900],[1280,720]]) {
+      await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
+      for (const number of [1,2,3,4,5,6,8,9,10]) {
+        await run(`location.hash='slide-${number}'`);
+        await until(`document.querySelectorAll('#deck>.slide')[${number-1}].classList.contains('active')&&Math.abs(document.querySelectorAll('#deck>.slide')[${number-1}].getBoundingClientRect().x)<1`);
+        const overflow = await run(`(()=>{const s=document.querySelector('.slide.active'),b=s.getBoundingClientRect();return [...s.querySelectorAll('p,h2,h3,table,mjx-container,.l8-card')].filter(e=>{const r=e.getBoundingClientRect();return r.width&&(r.left<b.left-2||r.right>b.right+2||r.bottom>b.bottom+2)}).map(e=>e.textContent.slice(0,80));})()`);
+        assert.deepEqual(overflow,[],`Slide ${number} fits at ${width}×${height}`);
+        await capture(`slide-${number}-${width}`);
+      }
+    }
+    await send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await go('null-motion');
     if (!process.env.LAYOUT_ONLY) {
     assert.equal(await run(`${host('null-motion')}.querySelector('.l8r-stage').dataset.meshCount`), '8');

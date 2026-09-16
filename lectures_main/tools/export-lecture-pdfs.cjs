@@ -124,7 +124,8 @@ async function main() {
     }
     if (lecture === '08') {
       const lab = await run(`${active}.querySelector('[data-redundancy-lab]')?.dataset.redundancyLab`);
-      if (lab && lab !== 'null-motion') {
+      if (lab === 'configuration-pair') await until(`${active}.querySelector('[data-redundancy-lab]').dataset.ready==='true'`);
+      if (lab && !['null-motion', 'configuration-pair'].includes(lab)) {
         await until(`${active}.querySelector('[data-redundancy-lab]').dataset.ready==='true'&&!${busy}`);
         await click('[data-plan]');
         await until(`${active}.querySelector('[data-redundancy-lab]').dataset.busy==='false'&&Number(${active}.querySelector('[data-scrub]').disabled)===0`);

@@ -10,8 +10,8 @@
   <link rel="stylesheet" href="../css/reveal.css">
   <link rel="stylesheet" href="../css/navigation.css">
   <link rel="stylesheet" href="../css/viz.css">
-  <link rel="stylesheet" href="../css/lecture-08.css?v=20260915-self-motion-2">
-  <link rel="stylesheet" href="../css/lecture-08-labs.css?v=20260915-self-motion-2">
+  <link rel="stylesheet" href="../css/lecture-08.css?v=20260916-notation-1">
+  <link rel="stylesheet" href="../css/lecture-08-labs.css?v=20260916-notation-1">
   <script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']],displayMath:[['\\[','\\]']]}};</script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <script type="importmap">{"imports":{"three":"../vendor/three/build/three.module.js","three/addons/":"../vendor/three/examples/jsm/"}}</script>
@@ -23,63 +23,61 @@
     <div class="title-slide-content">
       <p class="eyebrow">ENG-654 · Lecture 08</p>
       <h1 class="course-title">Redundancy Resolution in Motion Planning</h1>
-      <p class="subtitle">KUKA iiwa 7 · one supplied workspace motion, many joint motions</p>
+      <p class="subtitle">7R robot · one supplied workspace motion, many joint motions</p>
       <p class="lecture-promise">Understand the null space, compare cost functions, and explore numerical and analytical strategies on the same rectangular path.</p>
     </div>
   </section>
 
   <section class="slide l8-slide">
-    <p class="slide-kicker">Our planning problem</p>
-    <h2 class="slide-title">The workspace command is given; we choose the joint motion</h2>
-    <p class="slide-subtitle">As in Lecture 07, a precomputed trajectory or a real-time policy supplies the desired motion. Here we study how redundancy changes the planning problem.</p>
-    <div class="l8-flow">
-      <div><b>Given motion</b><span>Tool pose \({}^{0}T_{e,d}(s)\)</span></div>
-      <div><b>Primary task</b><span>Follow its position and orientation</span></div>
-      <div><b>Extra freedom</b><span>Choose how the arm moves internally</span></div>
-      <div><b>Whole path</b><span>Check continuity, limits, and singularities</span></div>
-    </div>
-    <div class="l8-takeaway">Our example is a rectangular path with fixed tool orientation. Path progress \(s\in[0,1]\) identifies where we are on the supplied command.</div>
+    <p class="slide-kicker">Show redundancy · one tool pose, different arm configurations</p>
+    <h2 class="slide-title">A 7R robot can reconfigure while keeping its tool pose fixed</h2>
+    <div class="l8-pose-equality">\[\mathbf q_A\ne\mathbf q_B,\qquad f(\mathbf q_A)=f(\mathbf q_B)={}^0T_{t,d}\]</div>
+    <div class="l8-configuration-pair" data-redundancy-lab="configuration-pair"></div>
+    <div class="l8-takeaway">The same tool <strong>position and orientation</strong> admit a continuous family of nearby configurations at a regular pose. Along a supplied path \({}^0T_{t,d}(s)\), redundancy lets us choose how the arm moves internally.</div>
   </section>
 
   <section class="slide l8-slide">
-    <p class="slide-kicker">Seven joints, six task velocities</p>
-    <h2 class="slide-title">At a regular pose, the iiwa has one instantaneous internal freedom</h2>
+    <p class="slide-kicker">Degrees of freedom · independent coordinates and motions</p>
+    <h2 class="slide-title">Seven joint degrees of freedom, six tool-pose degrees of freedom</h2>
     <div class="layout-two-column">
-      <div class="l8-big-eq red">\[{}^{0}\mathcal V_e=\begin{bmatrix}{}^{0}\dot{\mathbf p}_e\\{}^{0}\boldsymbol\omega_e\end{bmatrix}={}^0J_e(\mathbf q)\dot{\mathbf q}\]<p>\({}^0J_e\in\mathbb R^{6\times7}\), with linear velocity first.</p></div>
       <div class="l8-stack">
-        <div class="l8-card"><h3>Rank counts independent task velocities</h3><p>If \(\operatorname{rank}J=6\), every infinitesimal tool velocity can be produced locally.</p></div>
-        <div class="l8-card red"><h3>Nullity counts internal velocity directions</h3><div class="equation">\[\dim\ker J=7-\operatorname{rank}J=1\]</div><p>A nonzero combination of joint rates can leave the tool velocity equal to zero.</p></div>
+        <div class="l8-card"><h3>What is a degree of freedom?</h3><p>One independent coordinate needed to specify a configuration. This serial 7R robot has seven independent joint angles; its tool pose has three position and three orientation coordinates.</p></div>
+        <div class="l8-big-eq">\[{}^0\mathcal V_t=\begin{bmatrix}{}^0\dot{\mathbf p}_t\\{}^0\boldsymbol\omega_t\end{bmatrix}={}^0J_t(\mathbf q)\dot{\mathbf q}\]<p>\({}^0J_t\in\mathbb R^{6\times7}\). The index \(t\) denotes the tool; the superscript \(0\) denotes the world frame.</p></div>
+      </div>
+      <div class="l8-stack">
+        <div class="l8-card"><h3>Kernel = null space</h3><div class="equation">\[\ker J_t=\{\mathbf v\in\mathbb R^7:J_t\mathbf v=\mathbf0\}\]</div><p>The kernel of a matrix is the set of vectors it maps to zero. For the Jacobian, these are joint velocities that produce zero instantaneous tool velocity.</p></div>
+        <div class="l8-card red"><h3>One internal degree of freedom at full task rank</h3><div class="equation">\[\dim\ker J_t=7-\operatorname{rank}J_t=7-6=1\]</div><p>At a regular pose, rank six means that all six tool-velocity components can be commanded locally. One independent joint-velocity direction remains for internal motion.</p></div>
       </div>
     </div>
-    <div class="l8-takeaway">There is a continuous family of IKs near a regular solution. Joint limits and singularities can restrict this family and its connections along the path.</div>
+    <div class="l8-takeaway">Joint limits restrict the usable configurations. At a singularity, task rank drops and nullity increases, while some tool-velocity directions become unavailable.</div>
   </section>
 
   <section class="slide l8-slide">
     <p class="slide-kicker">Build the geometric Jacobian</p>
     <h2 class="slide-title">Every joint contributes a screw evaluated at the tool point</h2>
     <div class="l8-cards">
-      <div class="l8-card"><h3>1 · Locate the axis</h3><p>Multiply the URDF transforms along the chain to obtain a point \({}^{0}\mathbf p_i\) on joint axis \(i\) and the joint-frame rotation \({}^{0}R_{J_i}\).</p></div>
-      <div class="l8-card"><h3>2 · Express it in the world frame</h3><div class="equation">\[{}^{0}\mathbf a_i={}^0R_{J_i}\,{}^{J_i}\hat{\mathbf a}_i\]</div><p>Transform the axis written in the URDF into the same frame as the tool point.</p></div>
-      <div class="l8-card red"><h3>3 · Take the cross product</h3><div class="equation">\[{}^0J_{e,i}=\begin{bmatrix}{}^0\mathbf a_i\times({}^0\mathbf p_e-{}^0\mathbf p_i)\\{}^0\mathbf a_i\end{bmatrix}\]</div><p>Stack all seven columns in joint order.</p></div>
+      <div class="l8-card"><h3>1 · Locate the axis</h3><p>Multiply the URDF transforms along the chain to obtain a point \({}^{0}\mathbf p_i\) on joint axis \(i\) and its world-frame rotation \({}^{0}R_i\).</p></div>
+      <div class="l8-card"><h3>2 · Express it in the world frame</h3><div class="equation">\[{}^{0}\mathbf a_i={}^0R_i\,{}^i\hat{\mathbf a}_i\]</div><p>Here frame \(i\) is attached to joint axis \(i\). Rotate the URDF axis into world coordinates using \({}^0R_i\).</p></div>
+      <div class="l8-card red"><h3>3 · Take the cross product</h3><div class="equation">\[{}^0J_{t,i}=\begin{bmatrix}{}^0\mathbf a_i\times({}^0\mathbf p_t-{}^0\mathbf p_i)\\{}^0\mathbf a_i\end{bmatrix}\]</div><p>Stack all seven columns in joint order.</p></div>
     </div>
-    <div class="l8-big-eq">\[{}^0J_e=\begin{bmatrix}{}^0J_{e,1}&{}^0J_{e,2}&\cdots&{}^0J_{e,7}\end{bmatrix}\]</div>
+    <div class="l8-big-eq">\[{}^0J_t=\begin{bmatrix}{}^0J_{t,1}&{}^0J_{t,2}&\cdots&{}^0J_{t,7}\end{bmatrix}\]</div>
     <div class="l8-takeaway">We use angular velocity, not Euler-angle rates. The robot models and the analytical IK are checked against the same native KUKA iiwa 7 geometry.</div>
   </section>
 
-  <section class="slide l8-slide">
-    <p class="slide-kicker">What is the null space?</p>
-    <h2 class="slide-title">Different joint-rate vectors can create the same tool velocity</h2>
+  <section class="slide l8-slide l8-null-derivation">
+    <p class="slide-kicker">From two configurations to a local null vector</p>
+    <h2 class="slide-title">Different joint velocities can produce the same desired tool velocity</h2>
     <div class="layout-two-column">
       <div class="l8-stack">
-        <div class="l8-big-eq">\[J\dot{\mathbf q}_a=\mathcal V_d,\qquad J\dot{\mathbf q}_b=\mathcal V_d\]</div>
-        <div class="l8-big-eq red">\[J(\dot{\mathbf q}_b-\dot{\mathbf q}_a)=\mathbf0\]</div>
+        <div class="l8-card"><h3>1 · Take two configurations and two joint velocities</h3><p>Let \(\mathbf q_A,\mathbf q_B\) realize the same tool pose, with respective velocities \(\dot{\mathbf q}_A,\dot{\mathbf q}_B\).</p><div class="equation">\[J_t(\mathbf q_A)\dot{\mathbf q}_A=\mathcal V_d,\quad J_t(\mathbf q_B)\dot{\mathbf q}_B=\mathcal V_d\]</div><p>The Jacobians generally differ. Their velocity difference is not automatically a null vector of either Jacobian.</p></div>
+        <div class="l8-card"><h3>What is \(\mathcal V_d\)?</h3><div class="equation">\[\mathcal V_d\equiv{}^0\mathcal V_{t,d}=\begin{bmatrix}{}^0\dot{\mathbf p}_{t,d}\\{}^0\boldsymbol\omega_{t,d}\end{bmatrix}\]</div><p>The desired tool velocity: three linear and three angular components, expressed in the world frame. Holding the complete tool pose fixed means \(\mathcal V_d=\mathbf0\).</p></div>
       </div>
       <div class="l8-stack">
-        <div class="l8-card"><h3>Subtract the two solutions</h3><p>Their difference is an internal motion: its joint contributions cancel at the tool.</p></div>
-        <div class="l8-card red"><h3>Add any such motion</h3><div class="equation">\[\dot{\mathbf q}=\dot{\mathbf q}_p+\mathbf n\nu,\qquad J\mathbf n=\mathbf0\]</div><p>At full row rank, one scalar \(\nu\) selects the velocity along the iiwa's local self-motion direction.</p></div>
+        <div class="l8-card"><h3>2 · Fix one configuration \(\mathbf q\)</h3><p>At this same configuration, take two velocity solutions \(\dot{\mathbf q}_a,\dot{\mathbf q}_b\) of the same command.</p><div class="equation">\[J_t\dot{\mathbf q}_a=J_t\dot{\mathbf q}_b=\mathcal V_d\]\[J_t(\dot{\mathbf q}_b-\dot{\mathbf q}_a)=\mathbf0\]</div></div>
+        <div class="l8-card red"><h3>3 · \(\mathbf n\) is a null vector</h3><div class="equation">\[J_t\mathbf n=\mathbf0,\quad\|\mathbf n\|=1,\qquad\dot{\mathbf q}=\dot{\mathbf q}_p+\mathbf n\nu\]</div><p>\(\mathbf n\) is a nonzero direction in the kernel (null space). \(\dot{\mathbf q}_p\) is one velocity solution, and the scalar \(\nu\) sets the signed speed along the null direction.</p></div>
       </div>
     </div>
-    <div class="l8-takeaway">A null-space direction usually moves several joints together. It is not a single joint that can be moved independently while keeping the tool fixed.</div>
+    <div class="l8-takeaway">At rank six, the 7R robot has one independent null direction. It usually coordinates several joints to preserve the commanded tool velocity.</div>
   </section>
 
   <section class="slide l8-slide">
@@ -88,7 +86,7 @@
     <div class="l8-cards">
       <div class="l8-card"><h3>One particular solution</h3><div class="equation">\[J^+=J^T(JJ^T)^{-1}\]</div><p>For rank six, \(J^+\mathcal V_d\) is the solution with minimum Euclidean joint-rate norm.</p></div>
       <div class="l8-card"><h3>Project into the null space</h3><div class="equation">\[N=I-J^+J\]</div><p>\(JN=0\), \(N^2=N\), and \(N^T=N\). For one redundant degree, \(N=\mathbf n\mathbf n^T\) if \(\|\mathbf n\|=1\).</p></div>
-      <div class="l8-card red"><h3>All instantaneous solutions</h3><div class="equation">\[\boxed{\dot{\mathbf q}=J^+\mathcal V_d+N\mathbf z}\]</div><p>The free vector \(\mathbf z\) expresses our secondary preference.</p></div>
+      <div class="l8-card red"><h3>All instantaneous solutions</h3><div class="equation">\[\boxed{\dot{\mathbf q}=J^+\mathcal V_d+N\mathbf z}\]</div><p>Here \(J={}^0J_t(\mathbf q)\). The free vector \(\mathbf z\) expresses our secondary preference.</p></div>
     </div>
     <div class="l8-takeaway">These identities describe the exact pseudoinverse. Damped least squares improves numerical conditioning, but its associated matrix is generally not an exact null-space projector.</div>
   </section>
@@ -96,35 +94,40 @@
   <section class="slide interactive-slide l8-slide">
     <p class="slide-kicker">Experiment · hold the complete tool pose</p>
     <h2 class="slide-title">Change the redundant angle and watch the arm reconfigure</h2>
-    <p class="slide-subtitle">Hold the tool at the rectangle’s centre, \({}^0\mathbf p_e=(0.45,0,0.60)\) m, with its orientation fixed. This pose has eight continuous IK branches over \(q_3=-170^\circ\) to \(+170^\circ\). Follow the other six joint angles; grey portions exceed joint limits.</p>
+    <p class="slide-subtitle">Hold the tool at the rectangle’s centre, \({}^0\mathbf p_t=(0.45,0,0.60)\) m, with its orientation fixed. This pose has eight continuous IK branches over \(q_3=-170^\circ\) to \(+170^\circ\). Follow the other six joint angles; grey portions exceed joint limits.</p>
     <div class="redundancy-lab" data-redundancy-lab="null-motion"></div>
+  </section>
+
+  <section class="slide l8-slide l8-optimization">
+    <p class="slide-kicker">The optimization problem · follow the task and improve the posture</p>
+    <h2 class="slide-title">Minimize a cost while preserving the prescribed tool pose</h2>
+    <div class="layout-two-column">
+      <div class="l8-stack">
+        <div class="l8-card"><h3>Choose a preferred configuration</h3><div class="equation">\[\min_{\mathbf q}\ h(\mathbf q)\quad\text{subject to}\quad f(\mathbf q)={}^0T_{t,d}\]</div><p>\(h\) is a scalar cost: lower values mean a more desirable posture. The constraint keeps the commanded tool position and orientation. Joint limits must also be checked.</p></div>
+        <div class="l8-card red"><h3>Take a local projected descent step</h3><div class="equation">\[\boxed{\dot{\mathbf q}=J^+\mathcal V_d-\gamma N\nabla h},\qquad\gamma\ge0\]</div><p>\(J={}^0J_t\), \(N=I-J^+J\). The gradient \(\nabla h\) points toward increasing cost; \(-N\nabla h\) keeps its descent component in the null space. The gain \(\gamma\) sets the strength of this secondary motion.</p></div>
+      </div>
+      <div class="l8-stack">
+        <div class="l8-card"><h3>Derive the change in cost</h3><div class="equation">\[\dot h=\nabla h^T\dot{\mathbf q}\]\[=\nabla h^TJ^+\mathcal V_d-\gamma\|N\nabla h\|^2\]</div><p>The first line is the chain rule. Since \(N^T=N\) and \(N^2=N\), \(\nabla h^TN\nabla h=\|N\nabla h\|^2\).</p></div>
+        <div class="l8-card"><h3>Fixed tool pose versus a moving tool</h3><p>With \(\mathcal V_d=\mathbf0\), \(\dot h=-\gamma\|N\nabla h\|^2\le0\): the cost decreases for \(\gamma&gt;0\) whenever the projected gradient is nonzero.</p><p>With a moving tool, the primary-task term can increase the cost faster than the secondary motion reduces it.</p></div>
+      </div>
+    </div>
+    <div class="l8-takeaway">Projected descent is a local optimization method. A zero projected gradient does not prove a global minimum, and the cost does not guarantee that joint limits can be avoided.</div>
   </section>
 
   <section class="slide l8-slide">
     <p class="slide-kicker">Choose a secondary cost</p>
-    <h2 class="slide-title">Different objectives choose different internal motions</h2>
-    <p class="slide-subtitle">Let \(q_{i,c}=(q_{i,\max}+q_{i,\min})/2\), \(r_i=(q_{i,\max}-q_{i,\min})/2\), and \(u_i=(q_i-q_{i,c})/r_i\). The reference posture is the selected starting IK.</p>
+    <h2 class="slide-title">Choose one cost function h to express the secondary objective</h2>
+    <p class="slide-subtitle">Let \(q_{i,c}=(q_{i,\max}+q_{i,\min})/2\), \(r_i=(q_{i,\max}-q_{i,\min})/2\), and \(u_i=(q_i-q_{i,c})/r_i\). Each row defines a separate choice of \(h(\mathbf q)\). The reference posture is the selected starting IK.</p>
     <p class="slide-subtitle"><strong>Interpret \(u_i\):</strong> it is the joint’s dimensionless position relative to the centre of its allowed range. \(u_i=0\) is the centre, \(u_i=-1\) is the lower limit, and \(u_i=1\) is the upper limit. Thus \(|u_i|&gt;1\) means the joint is outside its limits; this normalization lets us compare joints with different ranges.</p>
     <table class="l8-table l8-cost-table">
-      <thead><tr><th>Dropdown strategy</th><th>Cost to minimize</th><th>What the arm prefers</th></tr></thead>
+      <thead><tr><th>Strategy</th><th>Alternative definitions of h</th><th>What the arm prefers</th></tr></thead>
       <tbody>
         <tr><th>No secondary cost</th><td>\(\mathbf z=\mathbf0\)</td><td>Minimum joint-rate norm at each step; no explicit joint-limit avoidance.</td></tr>
-        <tr><th>Joint centering</th><td>\(h_c=\tfrac12\sum_i u_i^2\)</td><td>Stay near the centres of the joint ranges.</td></tr>
-        <tr><th>Joint-limit barrier</th><td>\(h_b=-\sum_i\log(1-u_i^2)\)</td><td>Increasingly penalize approach to a physical stop, for \(|u_i|&lt;1\).</td></tr>
-        <tr><th>Reference posture</th><td>\(h_r=\tfrac12\|\mathbf q-\mathbf q_{\mathrm{ref}}\|^2\)</td><td>Remain close to the selected starting posture.</td></tr>
+        <tr><th>Joint centering</th><td>\(h=\tfrac12\sum_i u_i^2\)</td><td>Stay near the centres of the joint ranges.</td></tr>
+        <tr><th>Joint-limit barrier</th><td>\(h=-\sum_i\log(1-u_i^2)\)</td><td>Increasingly penalize approach to a physical stop, for \(|u_i|&lt;1\).</td></tr>
+        <tr><th>Reference posture</th><td>\(h=\tfrac12\|\mathbf q-\mathbf q_{\mathrm{ref}}\|^2\)</td><td>Remain close to the selected starting posture.</td></tr>
       </tbody>
     </table>
-  </section>
-
-  <section class="slide l8-slide">
-    <p class="slide-kicker">Project the descent direction</p>
-    <h2 class="slide-title">The secondary cost acts only through the available null direction</h2>
-    <div class="l8-big-eq red">\[\boxed{\dot{\mathbf q}=J^+\mathcal V_d-\alpha N\nabla h(\mathbf q)},\qquad\alpha\ge0\]</div>
-    <div class="layout-two-column">
-      <div class="l8-card"><h3>Hold the task fixed</h3><div class="equation">\[\mathcal V_d=0\quad\Rightarrow\quad\dot h=-\alpha\nabla h^TN\nabla h=-\alpha\|N\nabla h\|^2\le0\]</div><p>The exact projected gradient decreases the cost unless its projection vanishes.</p></div>
-      <div class="l8-card"><h3>Move along the prescribed path</h3><div class="equation">\[\dot h=\nabla h^TJ^+\mathcal V_d-\alpha\|N\nabla h\|^2\]</div><p>The primary task may increase the cost faster than the secondary motion can reduce it.</p></div>
-    </div>
-    <div class="l8-takeaway">A cost function is a preference, not a guarantee. The null-space direction may offer no escape from a joint limit imposed by the primary task.</div>
   </section>
 
   <section class="slide l8-slide">
@@ -136,7 +139,7 @@
       <div class="l8-step"><span class="tag">3</span><p>Correct the finite-step position and orientation error. A first-order null prediction alone drifts away from a curved self-motion manifold.</p></div>
       <div class="l8-step"><span class="tag">4</span><p>Validate joint limits, full-Jacobian rank, pose accuracy, and continuity along the step. Stop and report the first failed check.</p></div>
     </div>
-    <div class="l8-big-eq">\[\mathbf q_{k+1}^{\mathrm{pred}}=\mathbf q_k+J_k^+\Delta\mathbf x_k-\alpha\Delta s\,N_k\nabla h(\mathbf q_k)\]</div>
+    <div class="l8-big-eq">\[\mathbf q_{k+1}^{\mathrm{pred}}=\mathbf q_k+J_k^+\Delta\mathbf x_k-\gamma\Delta s\,N_k\nabla h(\mathbf q_k)\]</div>
     <div class="l8-takeaway">Here \(\Delta\mathbf x_k=[\Delta\mathbf p_k;\,\operatorname{Log}(R_{k+1}R_k^T)^\vee]\) is a small geometric pose increment, with both components expressed in the world frame.</div>
   </section>
 
@@ -152,7 +155,7 @@
     <h2 class="slide-title">Fixing the redundant angle turns a continuous family into discrete candidates</h2>
     <div class="layout-two-column">
       <div class="l8-stack">
-        <div class="l8-big-eq">\[\mathcal M_s=\{\mathbf q:f(\mathbf q)={}^0T_{e,d}(s)\}\]</div>
+        <div class="l8-big-eq">\[\mathcal M_s=\{\mathbf q:f(\mathbf q)={}^0T_{t,d}(s)\}\]</div>
         <div class="l8-big-eq red">\[\mathcal S_s(\lambda)=\mathcal M_s\cap\{q_3=\lambda\}\]</div>
       </div>
       <div class="l8-stack">
@@ -169,7 +172,7 @@
     <div class="l8-cards">
       <div class="l8-card"><h3>1 · Two elbow choices</h3><p>Let \(\mathbf w\) run from the shoulder to the wrist centre. The two arm lengths are \(a=b=0.4\) m.</p><div class="equation">\[c_4=\frac{\|\mathbf w\|^2-a^2-b^2}{2ab}\]</div><div class="equation">\[q_4=\pm\arccos c_4\]</div></div>
       <div class="l8-card"><h3>2 · Two shoulder choices</h3><p>With \(q_3=\lambda\), set \(A=a+bc_4\) and \(B=-bs_4\cos\lambda\).</p><div class="equation">\[w_z=A\cos q_2-B\sin q_2\]</div><p>This gives two generic \(q_2\) roots. Then use the horizontal wrist coordinates to recover \(q_1\).</p></div>
-      <div class="l8-card red"><h3>3 · Two wrist choices</h3><p>Remove the arm rotation from the desired tool rotation:</p><div class="equation">\[W=({}^0R_4)^T{}^0R_{e,d}\]</div><p>Resolve this spherical-wrist rotation into two generic \((q_5,q_6,q_7)\) solutions.</p></div>
+      <div class="l8-card red"><h3>3 · Two wrist choices</h3><p>Remove the arm rotation from the desired tool rotation:</p><div class="equation">\[W=({}^0R_4)^T{}^0R_{t,d}\]</div><p>Resolve this spherical-wrist rotation into two generic \((q_5,q_6,q_7)\) solutions.</p></div>
     </div>
     <div class="l8-big-eq">\[2\times2\times2=8\ \text{generic fixed-angle branches}\]</div>
     <div class="l8-takeaway">The three ± signs label fixed-angle algebraic roots; they are not global SEW classes for the redundant robot. Each root is checked by forward kinematics and native joint limits before planning its continuation.</div>
@@ -246,6 +249,6 @@
 
 </main>
 <script src="../js/deck/nav-runtime.js"></script>
-<script type="module" src="../js/main.js?revision=20260915-self-motion-2"></script>
+<script type="module" src="../js/main.js?revision=20260916-notation-1"></script>
 </body>
 </html>

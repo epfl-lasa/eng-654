@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { parseStlGeometry } from './frameDHPlayground.js';
 import { createZUpWorld, resizeRendererToContainer } from './threeUtils.js';
-import { fk, inverseFixedQ3, IIWA_LIMITS } from './iiwa7Kinematics.js';
+import { fk, inverseFixedQ3, poseDistance, IIWA_LIMITS } from './iiwa7Kinematics.js';
 import { buildSelfMotionSweep } from './iiwa7SelfMotion.js';
 import { DEFAULT_RECTANGLE, NULL_SPACE_COSTS, ANALYTICAL_COSTS, MIN_SINGULAR_VALUE, rectangleSamples, buildRedundancyMap, planNumerical, planAnalytical, configurationMetrics } from './iiwa7Planning.js';
 
@@ -167,6 +167,7 @@ function planMessage(plan) {
 }
 
 async function createLab(host, mode) {
+  if (mode === 'configuration-pair') return createConfigurationPair(host);
   const isNull = mode === 'null-motion';
   const labState = isNull ? { message: 'Move q₃ along a continuous fixed-pose curve. Grey sections are mathematical configurations beyond the robot’s joint limits.' } : shared;
   host.classList.add('l8-redundancy-lab');
@@ -193,7 +194,7 @@ async function createLab(host, mode) {
         ${isNull ? '<p class="l8r-equation">J q̇ = 0<br>7 joint velocities · 6 tool constraints</p>' : `
           <div class="l8r-method-row"><label>Planner<select data-method><option value="numerical">Numerical · null space</option><option value="analytical">Analytical · global map</option></select></label></div>
           <label class="l8r-cost-label"><span data-cost-label>Null-space objective</span><select data-cost></select></label>
-          <label class="l8r-gain">Null-space gain <input data-gain type="range" min="0" max="1.5" step="0.05" value="0.8"><output data-gain-output>0.80</output></label>
+          <label class="l8r-gain">Null-space gain γ <input data-gain type="range" min="0" max="1.5" step="0.05" value="0.8"><output data-gain-output>0.80</output></label>
           <div class="l8r-actions"><button class="primary" data-plan>Build path</button><button data-compare>Compare 8 starts</button></div>
           <div class="l8r-playback"><button data-play disabled>Play</button><button data-reset disabled>Reset</button><input data-scrub type="range" min="0" max="1" step="0.0025" value="0" aria-label="Path playback progress" disabled></div>
         `}
@@ -556,6 +557,19 @@ function canvasKit(canvas, draw) {
     state.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); state.w = rect.width; state.h = rect.height; state.ready = true; draw();
   };
   new ResizeObserver(resize).observe(canvas); requestAnimationFrame(resize); return state;
+}
+
+async function createConfigurationPair(host) {
+  const pose = { p: DEFAULT_RECTANGLE.center, R: DEFAULT_RECTANGLE.R };
+  const roots = [-30, 30].map(angle => inverseFixedQ3(pose, angle * DEG).find(root => root.branchIndex === 4 && root.valid));
+  if (roots.some(root => !root)) throw new Error('The redundancy example requires two legal configurations of the same tool pose.');
+  host.innerHTML = roots.map((root, i) => `<figure><figcaption>Configuration ${i ? 'B' : 'A'} · q₃ = ${i ? '+30' : '−30'}°</figcaption><div class="l8r-stage"><span class="l8r-badge">Tool t · same position and orientation</span></div><p>q${i ? 'B' : 'A'} [°]: ${root.q.map(q => (q / DEG).toFixed(1)).join(', ')}</p></figure>`).join('');
+  await Promise.all([...host.querySelectorAll('.l8r-stage')].map(async (stage, i) => {
+    const viewer = await createViewer(stage); viewer.update(roots[i].q);
+  }));
+  host.dataset.configurations = JSON.stringify(roots.map(root => root.q));
+  host.dataset.poseError = Math.max(...roots.map(root => poseDistance(fk(root.q), pose).error));
+  host.dataset.ready = 'true'; host.dataset.busy = 'false';
 }
 
 async function robotAssets() {
