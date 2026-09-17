@@ -812,7 +812,7 @@ details.faq-item .faq-answer {
 
 
 /* -------------------------------------------------------------------------- */
-/* Lectures and interactive exercises                                         */
+/* Lectures, exercises, and simulations                                       */
 /* -------------------------------------------------------------------------- */
 
 .simulation-band {
@@ -928,6 +928,28 @@ details.faq-item .faq-answer {
     font-size: 0.8rem;
     font-weight: 700;
     text-transform: uppercase;
+}
+
+.module-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.module-links a {
+    display: block;
+    padding: 0.5rem 0;
+    line-height: 1.4;
+}
+
+.module-links a:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.module-links a:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
 }
 
 @media (max-width: 1200px) {

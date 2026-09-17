@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="../css/reveal.css">
   <link rel="stylesheet" href="../css/navigation.css">
   <link rel="stylesheet" href="../css/viz.css">
-  <link rel="stylesheet" href="../css/lecture-02.css?v=20260915-tool-twist-1">
+  <link rel="stylesheet" href="../css/lecture-02.css?v=20260917-urdf-origin-3">
   <script>
     window.MathJax = { tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] } };
   </script>
@@ -76,6 +76,12 @@
           <div><strong>Types</strong><p>fixed, revolute, continuous, and prismatic are common; planar and floating support varies across consumers.</p></div>
           <div><strong>Range</strong><p>Limits constrain admissible joint positions, velocities, and efforts; continuous joints have no position bounds.</p></div>
         </div>
+      </div>
+      <div class="urdf-origin-rule">
+        <div class="equation">\[{}^{\mathrm{parent}}T_{\mathrm{child}}(0)
+          =\operatorname{Translation}(\mathbf t)\,R_z(\psi)\,R_y(\theta)\,R_x(\phi)
+          =\begin{bmatrix}R_z(\psi)R_y(\theta)R_x(\phi)&amp;\mathbf t\\\mathbf0^T&amp;1\end{bmatrix}.\]</div>
+        <p class="small-text">Applied right to left: roll → pitch → yaw → translation, with \(\mathbf t=[x,y,z]^T\) in the parent frame (rotation factors use homogeneous form in the product).</p>
       </div>
     </section>
 
@@ -560,18 +566,6 @@
         <div class="takeaway-row"><span class="takeaway-number">03</span><div><strong>PoE composes the root-to-tool motion.</strong><p>With aligned zero, base, and tool conventions, it must agree with DH and URDF forward kinematics.</p></div></div>
         <div class="takeaway-row"><span class="takeaway-number">04</span><div><strong>Inverse kinematics reverses the question.</strong><p>Given a desired workspace pose \(T^*\), Lecture 03 asks for every joint vector \(q\) satisfying \({}^{W}T_E(q)=T^*\)—and begins the study of multiplicity.</p></div></div>
       </div>
-    </section>
-
-    <section class="slide" id="ik-method-condition">
-      <p class="slide-kicker">Exercise 02 · Check the geometric assumptions</p>
-      <h2 class="slide-title">Check the geometry before dividing by a₁</h2>
-      <p class="slide-subtitle">The generic elimination step below requires a nonzero offset between the first two joint axes.</p>
-      <div class="equation">\[R=2a_1 E+F_3\quad\Longrightarrow\quad E=\frac{R-F_3}{2a_1},\qquad \boxed{a_1\ne0}\]</div>
-      <div class="layout-two-column divided">
-        <div class="definition"><strong>When a₁ ≠ 0</strong><p>The distance equation can be rearranged to isolate the signed radial component E. Continue the generic algebraic elimination with this expression.</p></div>
-        <div class="warning"><strong>For the iiwa 7, a₁ = 0</strong><p>The first two axes intersect. Fixing original q₃ does not change that intersection, so the displayed division is undefined. Use the geometric distance and projection construction, then recover the angles with Cramer’s rule.</p></div>
-      </div>
-      <p class="bridge-note">This restriction concerns the displayed elimination formula; it does not rule out algebraic treatments of the intersecting-axis case. In Exercise 02, return to the tutorial tab and choose the route that respects the geometry.</p>
     </section>
 
   </main>

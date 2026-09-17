@@ -258,6 +258,11 @@
 .urdf-properties > div { padding: 0.6rem; border-top: 3px solid var(--black); background: #fafafa; }
 .urdf-properties p { margin-bottom: 0; }
 
+/* Slide 04: a compact transform rule below the original joint layout. */
+.urdf-origin-rule { margin-top: .65rem; flex-shrink: 0; }
+.urdf-origin-rule .equation { margin-block: .4rem; font-size: clamp(1rem, 1.4vw, 1.5rem); }
+.urdf-origin-rule p { margin: .4rem 0; max-width: none; }
+
 .challenge-strip,
 .poe-extraction-flow {
   display: grid;

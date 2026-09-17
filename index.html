@@ -22,6 +22,7 @@
             <a href="#content">Content</a>
             <a href="#lectures">Lectures</a>
             <a href="#exercises">Exercises</a>
+            <a href="#simulations">Simulations</a>
             <a href="#evaluation">Evaluation</a>
             <a href="#resources">Resources</a>
             <a href="#course-structure">Course structure</a>
@@ -388,7 +389,7 @@
             <div class="section-heading">
                 <p class="eyebrow">Part I · Serial robots</p>
                 <div>
-                    <h2>Eight lectures, from foundations to planning</h2>
+                    <h2>An introduction and eight lectures</h2>
                     <p class="section-note">
                         The lecture series develops the theoretical foundations required to model robot kinematics,
                         derive and analyse inverse-kinematic solutions, characterise singularities, and formulate
@@ -401,85 +402,127 @@
             </div>
 
             <div class="module-grid lecture-grid">
-                <a class="module-card" href="lectures_main/lectures/lecture_01.html">
+                <article class="module-card">
+                    <span class="module-number">Intro</span>
+                    <div>
+                        <p class="module-schedule">Start here</p>
+                        <h3>Course introduction</h3>
+                        <p>An overview of the course, its objectives, and the path from robot kinematics to motion planning.</p>
+                    </div>
+                    <div class="module-action module-links">
+                        <a href="lectures_main/lectures/Intro.pdf" download="Intro.pdf" aria-label="Download Introduction PDF">Download PDF ↓</a>
+                        <a href="lectures_main/assets/recordings/kgmp_intro.mp4" aria-label="Watch Introduction recording">Watch recording (video) →</a>
+                        <a href="lectures_main/assets/recordings/kgmp_intro.m4a" aria-label="Listen to Introduction recording">Listen to recording (audio) →</a>
+                    </div>
+                </article>
+
+                <article class="module-card">
                     <span class="module-number">01</span>
                     <div>
                         <p class="module-schedule"><time datetime="2026-09-14T08:15">14 September · 08h15–09h00</time></p>
                         <h3>Frames, transformations &amp; DH modelling</h3>
                         <p>Build the coordinate-frame and transformation foundations used to model serial robots.</p>
                     </div>
-                    <span class="module-action">Open lecture →</span>
-                </a>
+                    <div class="module-action module-links">
+                        <a href="lectures_main/lectures/lecture_01.html" aria-label="Open Lecture 1">Open lecture →</a>
+                        <a href="lectures_main/assets/pdf/lecture_01.pdf" download="lecture_01.pdf" aria-label="Download Lecture 1 PDF">Download PDF ↓</a>
+                    </div>
+                </article>
 
-                <a class="module-card" href="lectures_main/lectures/lecture_02.html">
+                <article class="module-card">
                     <span class="module-number">02</span>
                     <div>
                         <p class="module-schedule"><time datetime="2026-09-14T09:15">14 September · 09h15–10h00</time></p>
                         <h3>Product of exponentials &amp; URDF</h3>
                         <p>Connect screw-based kinematic models with the structure of practical URDF robot models.</p>
                     </div>
-                    <span class="module-action">Open lecture →</span>
-                </a>
+                    <div class="module-action module-links">
+                        <a href="lectures_main/lectures/lecture_02.html" aria-label="Open Lecture 2">Open lecture →</a>
+                        <a href="lectures_main/assets/pdf/lecture_02.pdf" download="lecture_02.pdf" aria-label="Download Lecture 2 PDF">Download PDF ↓</a>
+                    </div>
+                </article>
 
-                <a class="module-card" href="lectures_main/lectures/lecture_03.html">
+                <article class="module-card">
                     <span class="module-number">03</span>
                     <div>
                         <p class="module-schedule"><time datetime="2026-09-14T14:15">14 September · 14h15–15h00</time></p>
                         <h3>Analytical IK of a 3R robot</h3>
                         <p>Derive and interpret the multiple inverse-kinematic solutions of a representative robot.</p>
                     </div>
-                    <span class="module-action">Open lecture →</span>
-                </a>
+                    <div class="module-action module-links">
+                        <a href="lectures_main/lectures/lecture_03.html" aria-label="Open Lecture 3">Open lecture →</a>
+                        <a href="lectures_main/assets/pdf/lecture_03.pdf" download="lecture_03.pdf" aria-label="Download Lecture 3 PDF">Download PDF ↓</a>
+                    </div>
+                </article>
 
-                <a class="module-card" href="lectures_main/lectures/lecture_04.html">
+                <article class="module-card">
                     <span class="module-number">04</span>
                     <div>
                         <p class="module-schedule"><time datetime="2026-09-14T15:15">14 September · 15h15–16h00</time></p>
                         <h3>Wrist-partitioned 6R &amp; 7R IK</h3>
                         <p>Extend analytical inverse kinematics to industrial and redundant manipulators.</p>
                     </div>
-                    <span class="module-action">Open lecture →</span>
-                </a>
+                    <div class="module-action module-links">
+                        <a href="lectures_main/lectures/lecture_04.html" aria-label="Open Lecture 4">Open lecture →</a>
+                        <a href="lectures_main/assets/pdf/lecture_04.pdf" download="lecture_04.pdf" aria-label="Download Lecture 4 PDF">Download PDF ↓</a>
+                    </div>
+                </article>
 
-                <a class="module-card" href="lectures_main/lectures/lecture_05.html">
+                <article class="module-card">
                     <span class="module-number">05</span>
                     <div>
                         <p class="module-schedule"><time datetime="2026-09-16T08:15">16 September · 08h15–09h00</time></p>
                         <h3>Jacobian-based singularity analysis</h3>
                         <p>Use Jacobians to identify, classify, and understand singular configurations.</p>
                     </div>
-                    <span class="module-action">Open lecture →</span>
-                </a>
+                    <div class="module-action module-links">
+                        <a href="lectures_main/lectures/lecture_05.html" aria-label="Open Lecture 5">Open lecture →</a>
+                        <a href="lectures_main/assets/pdf/lecture_05.pdf" download="lecture_05.pdf" aria-label="Download Lecture 5 PDF">Download PDF ↓</a>
+                        <a href="lectures_main/assets/recordings/kgmp_lec5.mp4" aria-label="Watch Lecture 5 recording">Watch recording (video) →</a>
+                        <a href="lectures_main/assets/recordings/kgmp_lec5.m4a" aria-label="Listen to Lecture 5 recording">Listen to recording (audio) →</a>
+                    </div>
+                </article>
 
-                <a class="module-card" href="lectures_main/lectures/lecture_06.html">
+                <article class="module-card">
                     <span class="module-number">06</span>
                     <div>
                         <p class="module-schedule"><time datetime="2026-09-16T09:15">16 September · 09h15–10h00</time></p>
                         <h3>IKS distribution &amp; cuspidality</h3>
                         <p>Explore aspects, inverse-kinematic solution distributions, and cuspidal properties.</p>
                     </div>
-                    <span class="module-action">Open lecture →</span>
-                </a>
+                    <div class="module-action module-links">
+                        <a href="lectures_main/lectures/lecture_06.html" aria-label="Open Lecture 6">Open lecture →</a>
+                        <a href="lectures_main/assets/pdf/lecture_06.pdf" download="lecture_06.pdf" aria-label="Download Lecture 6 PDF">Download PDF ↓</a>
+                    </div>
+                </article>
 
-                <a class="module-card" href="lectures_main/lectures/lecture_07.html">
+                <article class="module-card">
                     <span class="module-number">07</span>
                     <div>
                         <p class="module-schedule"><time datetime="2026-09-16T14:15">16 September · 14h15–15h00</time></p>
                         <h3>Joint-space &amp; workspace planning</h3>
                         <p>Compare planning representations and develop trajectories under kinematic constraints.</p>
                     </div>
-                    <span class="module-action">Open lecture →</span>
-                </a>
+                    <div class="module-action module-links">
+                        <a href="lectures_main/lectures/lecture_07.html" aria-label="Open Lecture 7">Open lecture →</a>
+                        <a href="lectures_main/assets/pdf/lecture_07.pdf" download="lecture_07.pdf" aria-label="Download Lecture 7 PDF">Download PDF ↓</a>
+                        <a href="lectures_main/assets/recordings/kgmp_lec7.mp4" aria-label="Watch Lecture 7 recording">Watch recording (video) →</a>
+                        <a href="lectures_main/assets/recordings/kgmp_lec7.m4a" aria-label="Listen to Lecture 7 recording">Listen to recording (audio) →</a>
+                    </div>
+                </article>
 
-                <a class="module-card" href="lectures_main/lectures/lecture_08.html">
+                <article class="module-card">
                     <span class="module-number">08</span>
                     <div>
                         <p class="module-schedule"><time datetime="2026-09-16T15:15">16 September · 15h15–16h00</time></p>
                         <h3>Planning for complex robots</h3>
                         <p>Plan motion for cuspidal and redundant robots while accounting for their geometry.</p>
                     </div>
-                    <span class="module-action">Open lecture →</span>
-                </a>
+                    <div class="module-action module-links">
+                        <a href="lectures_main/lectures/lecture_08.html" aria-label="Open Lecture 8">Open lecture →</a>
+                        <a href="lectures_main/assets/pdf/lecture_08.pdf" download="lecture_08.pdf" aria-label="Download Lecture 8 PDF">Download PDF ↓</a>
+                    </div>
+                </article>
             </div>
         </section>
 
@@ -534,9 +577,60 @@
             <div class="section-heading">
                 <p class="eyebrow">Exercises</p>
                 <div>
-                    <h2>Five exercises, one robot kinematics workflow</h2>
+                    <h2>From robot models to complete paths</h2>
                     <p class="section-note">
-                        The exercises develop practical proficiency in robot-model inspection, forward and inverse
+                        Work through four guided assignments on robot modelling, inverse kinematics,
+                        singularity analysis, and motion planning.
+                    </p>
+                </div>
+            </div>
+
+            <div class="module-grid lecture-grid">
+                <a class="module-card" href="lectures_main/exercises/exercise_01.html">
+                    <span class="module-number">01</span>
+                    <div>
+                        <h3>Robot modelling &amp; forward kinematics</h3>
+                        <p>Inspect the KUKA iiwa 7 URDF, assign DH frames, register meshes, and check forward kinematics.</p>
+                    </div>
+                    <span class="module-action">Open exercise →</span>
+                </a>
+
+                <a class="module-card" href="lectures_main/exercises/exercise_02.html">
+                    <span class="module-number">02</span>
+                    <div>
+                        <h3>Inverse kinematics</h3>
+                        <p>Build and check KUKA iiwa 7 inverse-kinematic equations, wrist branches, and joint limits.</p>
+                    </div>
+                    <span class="module-action">Open exercise →</span>
+                </a>
+
+                <a class="module-card" href="lectures_main/exercises/exercise_03.html">
+                    <span class="module-number">03</span>
+                    <div>
+                        <h3>Singularities &amp; cuspidality</h3>
+                        <p>Investigate the custom 3R robot's geometric Jacobian, determinant zero sets, and inverse-solution structure.</p>
+                    </div>
+                    <span class="module-action">Open exercise →</span>
+                </a>
+
+                <a class="module-card" href="lectures_main/exercises/exercise_04.html">
+                    <span class="module-number">04</span>
+                    <div>
+                        <h3>Choose a complete robot path</h3>
+                        <p>Explore ABB CRB path heights and KUKA iiwa 7 starting-angle choices to find joint-space paths that complete the motion.</p>
+                    </div>
+                    <span class="module-action">Open exercise →</span>
+                </a>
+            </div>
+        </section>
+
+        <section class="simulation-band" id="simulations">
+            <div class="section-heading">
+                <p class="eyebrow">Simulations</p>
+                <div>
+                    <h2>Five simulations, one robot kinematics workflow</h2>
+                    <p class="section-note">
+                        The simulations develop practical proficiency in robot-model inspection, forward and inverse
                         kinematics, redundancy analysis, and the execution and evaluation of kinematically feasible
                         motion-planning trajectories.
                     </p>
@@ -555,7 +649,7 @@
                             model before doing any kinematic computation.
                         </p>
                     </div>
-                    <span class="module-action">Open exercise →</span>
+                    <span class="module-action">Open simulation →</span>
                 </a>
 
                 <a class="module-card" href="modules/module2/">
@@ -569,7 +663,7 @@
                             to forward kinematics and robot motion.
                         </p>
                     </div>
-                    <span class="module-action">Open exercise →</span>
+                    <span class="module-action">Open simulation →</span>
                 </a>
 
                 <a class="module-card" href="modules/module3/">
@@ -583,7 +677,7 @@
                             of inverse kinematics visible rather than merely numerical.
                         </p>
                     </div>
-                    <span class="module-action">Open exercise →</span>
+                    <span class="module-action">Open simulation →</span>
                 </a>
 
                 <a class="module-card" href="modules/module4/">
@@ -597,7 +691,7 @@
                             obstacle with live clearance make null-space motion tangible.
                         </p>
                     </div>
-                    <span class="module-action">Open exercise →</span>
+                    <span class="module-action">Open simulation →</span>
                 </a>
 
                 <a class="module-card" href="modules/module5/">
@@ -611,7 +705,7 @@
                             by the joint motion.
                         </p>
                     </div>
-                    <span class="module-action">Open exercise →</span>
+                    <span class="module-action">Open simulation →</span>
                 </a>
             </div>
         </section>
