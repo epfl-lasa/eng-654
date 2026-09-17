@@ -6,16 +6,15 @@
   <meta name="theme-color" content="#ff0000">
   <title>Kinematic building blocks · ENG-654</title>
   <link rel="icon" type="image/svg+xml" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=6">
-  <script defer src="math.js?v=6"></script>
-  <script defer src="graph.js?v=6"></script>
+  <link rel="stylesheet" href="styles.css?v=15">
+  <script defer src="math.js?v=8"></script>
+  <script defer src="graph.js?v=12"></script>
   <script defer src="files.js?v=5"></script>
-  <script defer src="presets.js?v=3"></script>
-  <script defer src="python.js?v=6"></script>
+  <script defer src="presets.js?v=4"></script>
+  <script defer src="python.js?v=7"></script>
   <script defer src="python-import.js?v=3"></script>
-  <script defer src="preview.js?v=3"></script>
-  <script defer src="output-panel.js?v=5"></script>
-  <script defer src="app.js?v=6"></script>
+  <script defer src="output-panel.js?v=7"></script>
+  <script defer src="app.js?v=17"></script>
 </head>
 <body class="app-shell output-collapsed">
   <header class="app-header">
@@ -25,15 +24,17 @@
     </a>
     <div class="header-actions">
       <button id="undo" title="Undo (Ctrl / ⌘ Z)" aria-label="Undo">↶</button>
-      <button id="redo" title="Redo (Ctrl / ⌘ Shift Z)" aria-label="Redo">↷</button>
+      <button id="redo" title="Redo (Ctrl / ⌘ Shift Z or Ctrl Y)" aria-label="Redo">↷</button>
       <span class="header-divider" aria-hidden="true"></span>
       <button id="import" title="Upload a saved graph, workspace, or operation library (.json)">Upload operations</button><button id="save" title="Download the graph and all saved operations in My blocks (.json)">Download operations</button>
+      <button id="keyboard-shortcuts" aria-haspopup="dialog" aria-controls="keyboard-shortcuts-dialog">Keyboard shortcuts</button>
       <button id="help" class="quiet">How it works <span aria-hidden="true">?</span></button>
     </div>
   </header>
 
+  <details id="operations-panel" class="operations-panel" open>
+    <summary><span class="disclosure-sign" aria-hidden="true"></span><strong>Operation blocks</strong><span class="hint">Drag or click a block</span></summary>
   <section class="toolbar" aria-label="Block library">
-    <div class="toolbar-label">BUILD WITH<span>Drag or click a block</span></div>
     <div class="palette">
       <button class="palette-item" draggable="true" data-type="rotation" title="Add a rotation matrix"><span class="palette-icon">R</span><span class="palette-copy"><strong>Rotation</strong><small>Axis + angle</small></span></button>
       <button class="palette-item" draggable="true" data-type="translation" title="Add a translation vector"><span class="palette-icon">p</span><span class="palette-copy"><strong>Translation</strong><small>Three components</small></span></button>
@@ -44,6 +45,8 @@
       <button class="palette-item" draggable="true" data-type="column-vector" title="Add a column vector with editable entries and length"><span class="palette-icon">↕</span><span class="palette-copy"><strong>Column vector</strong><small>m × 1 entries</small></span></button>
       <button class="palette-item" draggable="true" data-type="row-vector" title="Add a row vector with editable entries and length"><span class="palette-icon">↔</span><span class="palette-copy"><strong>Row vector</strong><small>1 × n entries</small></span></button>
       <button class="palette-item" draggable="true" data-type="matrix" title="Choose m rows and n columns, then enter an m by n matrix"><span class="palette-icon">A</span><span class="palette-copy"><strong>Matrix</strong><small>m × n editor</small></span></button>
+      <button class="palette-item" draggable="true" data-type="scale" title="Multiply every vector or matrix entry by a scalar"><span class="palette-icon">k·</span><span class="palette-copy"><strong>Scalar multiplier</strong><small>k · A</small></span></button>
+      <button class="palette-item" draggable="true" data-type="add" title="Add two matching row or column vectors"><span class="palette-icon">+</span><span class="palette-copy"><strong>Add vectors</strong><small>A + B</small></span></button>
       <button class="palette-item" draggable="true" data-type="subtract" title="Subtract two matching row or column vectors"><span class="palette-icon">−</span><span class="palette-copy"><strong>Subtract vectors</strong><small>A − B</small></span></button>
       <button class="palette-item" draggable="true" data-type="cross" title="Cross product of two 3D column vectors"><span class="palette-icon">×</span><span class="palette-copy"><strong>Cross product</strong><small>A × B</small></span></button>
       <button class="palette-item" draggable="true" data-type="columns" title="Build a matrix from selected columns of block outputs"><span class="palette-icon">[c]</span><span class="palette-copy"><strong>Select columns</strong><small>Assemble a matrix</small></span></button>
@@ -57,7 +60,7 @@
     <button id="upload-blocks">Upload blocks</button><button id="download-blocks">Download blocks</button>
     <button id="import-python">Import Python</button>
   </section>
-  <section class="example-download" aria-label="Exercise 1 worked example"><strong>Exercise 1 · KUKA iiwa 7 twists</strong><button id="load-iiwa-example">Load example</button><a href="examples/exercise-01-iiwa7-twists.json" download>Download uploadable JSON</a><a href="examples/README.md" target="_blank">Derivation guide</a></section>
+  </details>
 
   <main class="workspace">
     <section class="canvas-panel" aria-label="Block composition canvas">
@@ -71,24 +74,20 @@
         <div id="empty-state" class="empty-state" hidden><div class="empty-icon">[ &nbsp; ]</div><h1>Start with a motion.</h1><p>Drag a block from the toolbar.<br>Connect its output to the next block’s input.</p><button id="load-dh" class="primary">Try a D–H transformation</button></div>
         <div id="connection-tip" class="connection-tip" role="status" hidden>Choose an input port · Esc to cancel</div>
       </div>
-      <div class="selection-actions"><span id="selection-count">1 selected</span><button id="combine-selection">Combine</button><button id="save-function">Save as function</button></div>
-      <div class="canvas-controls"><button id="select-mode" aria-pressed="true" title="Drag to select blocks">Select</button><button id="pan-mode" aria-pressed="false" title="Drag to pan the canvas">Pan</button><button id="zoom-out" aria-label="Zoom out">−</button><output id="zoom-level" class="zoom-readout">100%</output><button id="zoom-in" aria-label="Zoom in">+</button><button id="fit" title="Fit the graph to the canvas">Fit</button></div>
+      <div class="selection-actions"><span id="selection-count">1 selected</span><button id="combine-selection" title="Combine (Ctrl / ⌘ K)">Combine</button><button id="save-function">Save as function</button></div>
+      <div class="canvas-controls"><button id="select-mode" aria-pressed="true" title="Drag to select blocks">Select</button><button id="pan-mode" aria-pressed="false" title="Drag to pan the canvas">Pan</button><button id="zoom-out" aria-label="Zoom out">−</button><output id="zoom-level" class="zoom-readout">100%</output><button id="zoom-in" aria-label="Zoom in">+</button><button id="fit" title="Fit the graph to the canvas">Fit</button><button id="arrange-fit" title="Rearrange all blocks and fit the canvas (Ctrl / ⌘ Shift F)" aria-keyshortcuts="Control+Shift+F Meta+Shift+F">Arrange &amp; fit</button></div>
       <p class="canvas-help">Shift-click to select · Space-drag to pan · Scroll to zoom</p>
     </section>
 
     <section class="output-panel" aria-label="Live composition result">
-      <div class="panel-heading"><div><span class="section-label">LIVE OUTPUT</span><h2 id="output-title">Composition</h2></div><span id="output-dimension" class="badge">4 × 4</span><div class="output-toolbar"><button id="toggle-output" type="button" aria-expanded="false" aria-controls="output-content">Expand output</button><div class="segmented" aria-label="Result display"><button id="symbolic-view" aria-pressed="true">Symbolic</button><button id="numeric-view" aria-pressed="false">Numeric</button></div><button id="select-output-columns">Select columns</button><button id="copy-result" title="Copy the selected result">Copy</button><button id="output-python" class="code-button">Python &lt;/&gt;</button></div></div>
+      <div class="panel-heading"><div><span class="section-label">LIVE OUTPUT</span><h2 id="output-title">Composition</h2></div><span id="output-dimension" class="badge">4 × 4</span><div class="output-toolbar"><button id="toggle-output" type="button" aria-expanded="false" aria-controls="output-content"><span class="disclosure-sign" aria-hidden="true">+</span><span class="disclosure-label">Expand output</span></button><div class="segmented" aria-label="Result display"><button id="symbolic-view" aria-pressed="true">Symbolic</button><button id="numeric-view" aria-pressed="false">Numeric</button></div><button id="select-output-columns">Select columns</button><button id="copy-result" title="Copy the selected result">Copy</button><button id="output-python" class="code-button">Python &lt;/&gt;</button></div></div>
       <div id="output-content"></div>
     </section>
 
-    <aside class="inspector" aria-label="Selected block settings">
-      <div class="inspector-header"><span class="section-label">INSPECTOR</span><span id="selected-id" class="tag"></span></div>
-      <label class="block-navigation"><span class="section-label">GO TO A BLOCK</span><select id="block-picker" aria-label="Go to a block"></select></label>
-      <details id="preset-guide" class="preset-guide" hidden><summary>custom_3R · template guide</summary><div id="preset-guide-content"></div></details>
+    <aside id="input-panel" class="inspector" aria-label="Selected block inputs" hidden>
+      <div class="inspector-header"><span class="section-label">INPUTS</span><span id="inputs-title">Block inputs</span><button id="close-inputs" type="button" aria-label="Close inputs" title="Close inputs (Esc)">×</button></div>
       <div id="inspector-content"></div>
-      <section class="inspector-section"><div class="section-label">SYMBOL VALUES <span class="optional-label">for numeric output</span></div><div id="bindings" class="symbol-bindings"></div></section>
-      <section class="inspector-section"><div class="field-row"><label for="angle-unit">Angle inputs</label><select id="angle-unit"><option value="rad">Radians</option><option value="deg">Degrees</option></select></div><p class="hint">Rotation angles use this unit. Translation components use one consistent length unit.</p></section>
-      <section class="inspector-section"><div class="section-label">POSE PREVIEW</div><div id="preview" class="frame-preview"></div></section>
+      <section id="block-units" class="inspector-section" hidden><div class="field-row"><label for="angle-unit">Angle units</label><select id="angle-unit"><option value="rad">Radians</option><option value="deg">Degrees</option></select></div></section>
     </aside>
   </main>
 
@@ -117,19 +116,49 @@
     <div class="dialog-actions"><button id="cancel-python-import" hidden>Cancel import</button><button id="run-python-import" class="primary">Import as block</button></div>
   </dialog>
 
+  <dialog id="keyboard-shortcuts-dialog" aria-labelledby="keyboard-shortcuts-title">
+    <div class="dialog-header"><h2 id="keyboard-shortcuts-title">Keyboard shortcuts</h2><form method="dialog"><button aria-label="Close keyboard shortcuts">✕</button></form></div>
+    <div class="dialog-body">
+      <p class="hint">Use ⌘ instead of Ctrl on macOS. Text fields keep their normal editing shortcuts.</p>
+      <table class="shortcuts-table">
+        <thead><tr><th scope="col">Action</th><th scope="col">Shortcut</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Copy blocks</th><td><kbd>Ctrl+C</kbd></td></tr>
+          <tr><th scope="row">Paste blocks</th><td><kbd>Ctrl+V</kbd></td></tr>
+          <tr><th scope="row">Cut blocks</th><td><kbd>Ctrl+X</kbd></td></tr>
+          <tr><th scope="row">Duplicate selection</th><td><kbd>Ctrl+D</kbd></td></tr>
+          <tr><th scope="row">Undo</th><td><kbd>Ctrl+Z</kbd></td></tr>
+          <tr><th scope="row">Redo</th><td><kbd>Ctrl+Shift+Z</kbd> or <kbd>Ctrl+Y</kbd></td></tr>
+          <tr><th scope="row">Combine selected blocks</th><td><kbd>Ctrl+K</kbd> or <kbd>Ctrl+G</kbd></td></tr>
+          <tr><th scope="row">Expand selected function</th><td><kbd>Ctrl+E</kbd></td></tr>
+          <tr><th scope="row">Minimize / maximize selected blocks</th><td><kbd>Ctrl+Shift+M</kbd></td></tr>
+          <tr><th scope="row">Arrange &amp; fit all blocks</th><td><kbd>Ctrl+Shift+F</kbd></td></tr>
+          <tr><th scope="row">Select all blocks</th><td><kbd>Ctrl+A</kbd></td></tr>
+          <tr><th scope="row">Download operations</th><td><kbd>Ctrl+S</kbd></td></tr>
+          <tr><th scope="row">Delete selected blocks</th><td><kbd>Delete</kbd> or <kbd>Backspace</kbd></td></tr>
+          <tr><th scope="row">Open focused block’s inputs</th><td><kbd>Enter</kbd></td></tr>
+          <tr><th scope="row">Close panel / cancel connection</th><td><kbd>Esc</kbd></td></tr>
+          <tr><th scope="row">Pan the canvas</th><td><kbd>Space</kbd> + drag</td></tr>
+          <tr><th scope="row">Add/remove a block from selection</th><td><kbd>Shift</kbd> or <kbd>Ctrl</kbd> + click</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </dialog>
+
   <dialog id="help-dialog" aria-labelledby="help-title">
     <div class="dialog-header"><div><span class="section-label">KINEMATIC BUILDING BLOCKS</span><h2 id="help-title">Build a motion, one block at a time.</h2></div><form method="dialog"><button aria-label="Close instructions">✕</button></form></div>
     <div class="dialog-body help-content">
-      <ol><li><strong>Add a block.</strong> Drag it onto the canvas or click it in the toolbar.</li><li><strong>Edit its parameters.</strong> Select a block or right-click → Edit. Enter numbers, symbols such as <code>theta</code>, or expressions such as <code>pi/2</code> and <code>2*a</code>.</li><li><strong>Connect motions.</strong> Drag the right output port to another block’s left input port. You can also click one port, then the other. Each input port accepts one connection; an output can feed several blocks. Subtract vectors, Cross product, Select columns, and Stack rows have separately labelled inputs. You can also choose their sources in the inspector.</li><li><strong>Read the result.</strong> The lower panel shows the selected block’s accumulated output. Set symbol values in the inspector to evaluate it numerically.</li><li><strong>Take the code with you.</strong> Right-click → Python code to inspect, copy, or download the commented functions and composition.</li></ol>
+      <ol><li><strong>Add a block.</strong> Drag it onto the canvas or click it in the toolbar.</li><li><strong>Edit its parameters.</strong> Select a block or right-click → Edit. Enter numbers, Greek names such as <code>theta_2</code> or <code>alpha_2</code>, LaTeX such as <code>\phi_{12}</code>, or expressions such as <code>pi/2</code> and <code>2*a</code>. Inputs display mathematical notation when you finish editing.</li><li><strong>Connect motions.</strong> Drag the right output port to another block’s left input port. You can also click one port, then the other. Each input port accepts one connection; an output can feed several blocks. Add vectors, Subtract vectors, Cross product, Select columns, and Stack rows have separately labelled inputs. You can also choose their sources in the inspector.</li><li><strong>Read the result.</strong> The lower panel shows the selected block’s accumulated output. Enter either symbols or numbers directly in the block inputs. Each block owns its symbols; repeated names in another block are renamed automatically.</li><li><strong>Take the code with you.</strong> Right-click → Python code to inspect, copy, or download the commented functions and composition.</li></ol>
       <h3>Order matters</h3><p>A → B computes <strong>A B</strong> using column vectors. When this product acts on a point, the rightmost matrix acts first. Connecting a rotation and translation embeds both in 4 × 4 homogeneous matrices. A D–H chain is <strong>R<sub>z</sub>(θ) · T<sub>z</sub>(d) · T<sub>x</sub>(a) · R<sub>x</sub>(α)</strong>.</p>
-      <h3>Vectors, columns, and determinants</h3><p><strong>Column vector</strong> adds an m × 1 matrix; <strong>Row vector</strong> adds a 1 × n matrix. Both accept symbolic or numeric entries. <strong>Matrix</strong> opens an m × n editor: choose Rows (m) and Columns (n), then fill its grid. Dimensions range from 1 to 12. Resizing keeps entries at overlapping positions; new cells start at zero. Undo restores removed cells. Use the vector orientation buttons to transpose a vector without retyping its entries. <strong>Subtract vectors</strong> computes A − B entry by entry for two row vectors or two column vectors with the same length and reference frame. The result keeps their orientation. <strong>Cross product</strong> computes A × B for two 3 × 1 vectors. <strong>Select columns</strong> builds a matrix from chosen columns of one or more outputs; set the row range to extract, for example, the first three entries of a transform’s fourth column. <strong>Stack rows</strong> places A above B to build a twist (ω; v). <strong>Determinant</strong> takes a square matrix. Select a result and click Select columns to start an extraction with its inputs connected.</p><p>Use <strong>Go to a block</strong> in the inspector to navigate your calculation and inspect each intermediate result.</p>
-      <h3>Templates and examples</h3><p>Use <strong>Templates & examples</strong> to start with an empty canvas, a D–H transformation, a product of exponentials, or a screw → matrix → screw example.</p><p>The <strong>custom_3R</strong> templates provide two forward-kinematics constructions. The PoE template contains three screw exponentials followed by the home pose M. The D-H template contains three 4 × 4 matrices; each expands into four D-H operations. Both calculate the pose of tool0 in base_link using the exact custom_3R.urdf. Joint values start at zero radians; the home position is (4.5, 1.25, 1.25) metres. Open the template guide in the inspector for the parameters, then change q1, q2, and q3 to explore the FK.</p>
+      <p>Use <strong>Ctrl+Shift+M</strong> (⌘+Shift+M on macOS) to minimize selected blocks into squares or restore their full size. Connected input blocks tuck inside Add, Subtract, and other operations beside their input port, and move with the operation. Restoring the block brings it back to its original position. Their ports stay available for connections. The same action is available in each block’s menu.</p>
+      <p>Once Add, Subtract, Scalar multiplier, Cross product, Select columns, or Stack rows has valid inputs, the operation and its input blocks are replaced by a single editable vector or matrix containing the result. Inputs used by another calculation remain available. Undo restores the operation and its inputs.</p>
+      <h3>Vectors, columns, and determinants</h3><p><strong>Column vector</strong> adds an m × 1 matrix; <strong>Row vector</strong> adds a 1 × n matrix. Both accept symbolic or numeric entries. <strong>Matrix</strong> opens an m × n editor: choose Rows (m) and Columns (n), then fill its grid. Dimensions range from 1 to 12. Resizing keeps entries at overlapping positions; new cells start at zero. Undo restores removed cells. Use the Orientation selector to transpose a vector without retyping its entries. <strong>Scalar multiplier</strong> multiplies each entry of a connected vector or matrix by the Scalar factor, which accepts numbers, symbols, and expressions. <strong>Add vectors</strong> computes A + B for matching row or column vectors in the same reference frame. <strong>Subtract vectors</strong> computes A − B entry by entry for two row vectors or two column vectors with the same length and reference frame. The result keeps their orientation. <strong>Cross product</strong> computes A × B for two 3 × 1 vectors. <strong>Select columns</strong> builds a matrix from chosen columns of one or more outputs; set the row range to extract, for example, the first three entries of a transform’s fourth column. <strong>Stack rows</strong> places A above B to build a twist (ω; v). <strong>Determinant</strong> takes a square matrix. Select a result and click Select columns to start an extraction with its inputs connected.</p><p>Click a block on the canvas to open its floating input panel. Drag the panel header to move it; close it with ×, Escape, or a click on empty canvas.</p>
+      <h3>Templates and examples</h3><p>Use <strong>Templates & examples</strong> to start with an empty canvas, a D–H transformation, a product of exponentials, or a screw → matrix → screw example.</p><p>The <strong>custom_3R</strong> templates provide two forward-kinematics constructions. The PoE template contains three screw exponentials followed by the home pose M. The D-H template contains three 4 × 4 matrices; each expands into four D-H operations. Both calculate the pose of tool0 in base_link using the exact custom_3R.urdf. Joint values start unset; enter zero radians for the home pose; the home position is (4.5, 1.25, 1.25) metres. Select a joint block and change q1, q2, or q3 to explore the FK.</p>
       <h3>Screws and exponentials</h3><p>Enter the screw as <strong>ξ = (ω, v)</strong>, angular components first. The block shows <strong>e<sup>[ξ]θ</sup></strong>; its Matrix switch reveals the 4 × 4 result. For a unit rotational axis, θ is the rotation angle. For a pure translation (ω = 0), the amount is a displacement and the angle-unit setting has no effect. To screw extracts one principal screw from a numeric rigid transform; its rotational angle is in radians, between 0 and π. Its output is screw coordinates: enter them in an Exponential block to compose that motion.</p>
-      <h3>Combine and reuse</h3><p>Shift-click (or Ctrl/⌘-click) to select multiple blocks, or drag a rectangle around them. Click <strong>Combine</strong> to replace a connected chain with one block. Name it <code>^0T_1</code> for frame notation or use any label. <strong>Save as function</strong> stores the selected chain in My blocks; selecting just the final block saves all its upstream operations. Drag a saved function onto the canvas and enter values or symbols for its arguments. A function keeps the angle convention used when it was created. Use <strong>Expand into individual blocks</strong> to inspect its operations again.</p>
+      <h3>Combine and reuse</h3><p>Shift-click (or Ctrl/⌘-click) to select multiple blocks, or drag a rectangle around them. Click <strong>Combine</strong> to replace a connected chain with one block. Name it <code>^0T_1</code> for frame notation or use any label. <strong>Save as function</strong> stores the selected chain in My blocks; selecting just the final block saves all its upstream operations. Drag a saved function onto the canvas and enter values or symbols for its arguments. A function keeps the angle convention used when it was created. Press Ctrl/⌘ E or use the block’s context menu to expand its operations again.</p>
       <h3>Python functions</h3><p>The Python panel shows commented functions for each operation and a callable function for the chain. Its numeric example runs only when the file is executed directly. Download the file to use it in Python, or choose <strong>Import Python</strong> to bring it back as a reusable block. Playground exports import offline. External NumPy / SymPy functions require a Python runtime download on first use; they must accept scalar parameters and return a symbolic matrix. Edited exports must be re-exported, or have their saved-definition footer removed before external import.</p>
-      <h3>Working on the canvas</h3><p>The live output starts collapsed to give the canvas more room; use <strong>Expand output</strong> to inspect it, and <strong>Minimize output</strong> to return to the canvas. Drag selected blocks by their header, body, or footer. Buttons and ports keep their own actions. Connection lines snap to nearby valid ports; release when the target highlights. Drag empty space to select; hold Space and drag to pan, or use the Pan button. Scroll to zoom. Ctrl/⌘ A selects all blocks; Ctrl/⌘ G combines the selection. Delete removes the selection; Ctrl/⌘ Z undoes a change. Right-click a connection to disconnect it. Download operations saves an editable JSON file with the graph and My blocks; Upload operations restores it. Download blocks and Upload blocks share reusable operations on their own. Uploads can be undone. Older graph JSON files still open. The current graph and My blocks are saved on this device.</p>
-      <h3>Pose preview controls</h3><p>Left-drag to orbit, right- or Shift-drag to pan, and scroll or middle-drag to zoom. On a touch screen, use one finger to orbit and two fingers to pan or pinch. Use Reset to restore the camera view. These controls change the view, not the computed FK.</p>
-      <p class="hint">Expressions support +, −, *, /, ^, pi, sin, cos, tan, sqrt, acos, and atan2. Use * explicitly. Function arguments such as sin(pi/2) are always radians; Angle inputs controls rotation and exponential parameters.</p>
+      <h3>Working on the canvas</h3><p>The live output starts collapsed to give the canvas more room; use <strong>Expand output</strong> to inspect it, and <strong>Collapse output</strong> to return to the canvas. Drag selected blocks by their header, body, or footer. Buttons and ports keep their own actions. Connection lines snap to nearby valid ports; release when the target highlights. Drag empty space to select; hold Space and drag to pan, or use the Pan button. Scroll to zoom. Click <strong>Arrange &amp; fit</strong> or press <strong>Ctrl/⌘ Shift F</strong> to lay out all blocks by their connections and fit them on screen. Undo restores the previous layout. Ctrl/⌘ A selects all blocks; Ctrl/⌘ K combines the selection; Ctrl/⌘ E expands a function. Ctrl/⌘ C copies selected blocks, Ctrl/⌘ V pastes, Ctrl/⌘ X cuts, and Ctrl/⌘ D duplicates. Ctrl/⌘ Shift Z or Ctrl/⌘ Y redoes a change. Delete removes the selection; Ctrl/⌘ Z undoes a change. Right-click a connection to disconnect it. Download operations saves an editable JSON file with the graph and My blocks; Upload operations restores it. Download blocks and Upload blocks share reusable operations on their own. Uploads can be undone. Older graph JSON files still open. The current graph and My blocks are saved on this device.</p>
+      <p class="hint">Expressions support +, −, *, /, ^, pi, sin, cos, tan, sqrt, acos, and atan2. Use * explicitly. Function arguments such as sin(pi/2) are always radians; Angle units controls rotation and exponential parameters.</p>
       <p class="hint">Screw convention: <a href="https://modernrobotics.northwestern.edu/nu-gm-book-resource/3-3-3-exponential-coordinates-of-rigid-body-motion/" target="_blank" rel="noreferrer">Modern Robotics, §3.3.3</a>.</p>
     </div>
   </dialog>

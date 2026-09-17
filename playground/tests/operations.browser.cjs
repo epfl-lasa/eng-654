@@ -52,14 +52,14 @@ async function connection(url) {
     };
     const click = selector => run(`document.querySelector(${JSON.stringify(selector)}).click()`);
     const change = (selector, value, event = 'change') => run(`(() => { const input=document.querySelector(${JSON.stringify(selector)}); input.value=${JSON.stringify(String(value))}; input.dispatchEvent(new Event(${JSON.stringify(event)}, {bubbles:true})); })()`);
-    const select = id => change('#block-picker', id);
+    const select = id => run("document.querySelector("+JSON.stringify('[data-node-id="'+id+'"]')+").dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))");
     const state = () => run('KinematicsPlayground.getState()');
     const output = () => run('KinematicsPlayground.getOutput()?.matrix.map(row => row.map(value => KinematicsMath.evaluate(value, KinematicsPlayground.getState().graph.bindings)))');
     const near = (actual, expected) => {
       assert.equal(actual.length, expected.length);
       actual.forEach((row, r) => { assert.equal(row.length, expected[r].length); row.forEach((value, c) => assert.ok(Math.abs(value - expected[r][c]) < 1e-10, `${r},${c}: ${value} != ${expected[r][c]}`)); });
     };
-    const add = async type => { await click(`.palette-item[data-type="${type}"]`); return (await state()).selected; };
+    const add = async type => { await click(`.palette-item[data-type="${type}"]`); const id=(await state()).selected;await select(id);return id; };
     const source = (label, id) => change(`select[aria-label="${label}"]`, id);
     const wire = async (from, to, input) => {
       // Keyboard activation starts at the receiving port, then chooses its source.
@@ -84,7 +84,7 @@ async function connection(url) {
       };
     })()`);
 
-    await click('#load-iiwa-example');
+    await upload(fs.readFileSync(require('node:path').join(__dirname,'../examples/exercise-01-iiwa7-twists.json'),'utf8'));
     await until('KinematicsPlayground.getState().graph.nodes.length === 40', 'KUKA graph load');
     assert.equal((await state()).selected, 'space_screws');
     near(await output(), [[0,0,0,0,0,0,0],[0,1,0,-1,0,1,0],[1,0,1,0,1,0,1],[0,-.34,0,.74,0,-1.14,0],[0,0,0,0,0,0,0],[0,0,0,0,0,0,0]]);
@@ -142,7 +142,7 @@ async function connection(url) {
 
     await change('#example', 'screw'); await until('KinematicsPlayground.getOutput()?.kind === "screw"', 'numeric screw result');
     assert.equal(await run('document.querySelector("#select-output-columns").disabled'), true, 'screw coordinates cannot become matrix edges');
-    await click('#load-iiwa-example'); await until('KinematicsPlayground.getState().selected === "space_screws"');
+    await upload(fs.readFileSync(require('node:path').join(__dirname,'../examples/exercise-01-iiwa7-twists.json'),'utf8')); await until('KinematicsPlayground.getState().selected === "space_screws"');
     await click('#numeric-view'); await click('#fit');
     await run('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
     const shot = await page.send('Page.captureScreenshot', { format: 'png' }); fs.writeFileSync(screenshot, Buffer.from(shot.data, 'base64'));

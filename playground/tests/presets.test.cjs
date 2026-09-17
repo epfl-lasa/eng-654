@@ -67,10 +67,10 @@ test('custom 3R templates identify the exact source and create independent edita
     assert.equal(details.baseFrame, 'base_link'); assert.equal(details.toolFrame, 'tool0');
     assert.match(details.description, /radians/);
     const first = P.create(name), second = P.create(name);
-    assert.equal(first.angleUnit, 'rad'); assert.deepEqual(first.bindings, { q1: '0', q2: '0', q3: '0' });
+    assert.equal(first.angleUnit, 'rad'); assert.deepEqual(first.bindings, {});
     assert.deepEqual(G.rawSymbols(first), ['q1', 'q2', 'q3']);
     first.nodes[0].label = 'Student edit'; first.bindings.q1 = '1';
-    assert.notEqual(second.nodes[0].label, first.nodes[0].label); assert.equal(second.bindings.q1, '0');
+    assert.notEqual(second.nodes[0].label, first.nodes[0].label); assert.equal(second.bindings.q1, undefined);
   }
   assert.equal(P.metadata('missing'), null);
   assert.throws(() => P.create('missing'), /Unknown/);

@@ -39,7 +39,7 @@
     ];
     const definition = Graph.validateDefinition({
       version: 1, id: 'custom3r_dh_' + index, name: label, kind: 'graph',
-      parameters: [q], defaults: { [q]: '0' }, angleUnit: 'rad', outputId: 'rx',
+      parameters: [q], defaults: {}, angleUnit: 'rad', outputId: 'rx',
       graph: { version: 1, name: label + ' · D-H operations', angleUnit: 'rad',
         nodes: operations, edges: connectChain(operations), bindings: {} }
     });
@@ -71,7 +71,7 @@
       nodes = [dhBlock(1, '1', '-pi/2', '1'), dhBlock(2, '2', 'pi/2', '1.25'), dhBlock(3, '1.5', '0', '0.25')];
     }
     return Graph.validateGraph({ version: 1, name: descriptions[name].label, angleUnit: 'rad',
-      bindings: { q1: '0', q2: '0', q3: '0' }, nodes, edges: connectChain(nodes) });
+      bindings: {}, nodes, edges: connectChain(nodes) });
   }
 
   return { names, metadata, create };

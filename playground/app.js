@@ -15,6 +15,8 @@
     inverse: { title: 'Inverse', icon: 'T⁻¹', params: {} },
     logarithm: { title: 'To screw', icon: 'log', params: {} },
     matrix: { title: 'Matrix', icon: 'A', params: { rows: 3, columns: 3, matrix: ['1','0','0','0','1','0','0','0','1'] } },
+    scale: { title: 'Scalar multiplier', icon: 'k·', params: { factor: 'k' } },
+    add: { title: 'Add vectors', icon: '+', params: {} },
     subtract: { title: 'Subtract vectors', icon: '−', params: {} },
     cross: { title: 'Cross product', icon: '×', params: {} },
     columns: { title: 'Select columns', icon: '[c]', params: { columns: [1,2,3], rowStart: 1, rowCount: 3 } },
@@ -22,6 +24,8 @@
     determinant: { title: 'Determinant', icon: 'det', params: {} },
     function: { title: 'Function', icon: 'ƒ', params: {} }
   };
+  const DOCK_TARGETS = new Set(['scale','add','subtract','cross','columns','stack','determinant','inverse','logarithm']);
+  let dockedBlocks = new Map();
   const DEFAULT_BLOCK_SIZE = {width:196,height:154};
   const clone = value => JSON.parse(JSON.stringify(value));
   function nodeSpec(node) {
@@ -33,7 +37,7 @@
     const element=$('nodes').querySelector('[data-node-id="'+CSS.escape(node.id)+'"]');
     return {width:element?.offsetWidth||DEFAULT_BLOCK_SIZE.width,height:element?.offsetHeight||DEFAULT_BLOCK_SIZE.height};
   }
-  const pretty = text => String(text).replace(/\b(theta|alpha|omega|phi|pi)\b/g, word => ({theta:'θ',alpha:'α',omega:'ω',phi:'φ',pi:'π'})[word]);
+  const pretty = M.pretty;
   const el = (tag, attrs = {}, ...children) => {
     const element = document.createElement(tag);
     for (const [key, value] of Object.entries(attrs)) {
@@ -52,6 +56,28 @@
     if (text !== undefined) node.textContent = text;
     return node;
   };
+  function mathElement(source) {
+    const tag = (name, ...children) => {
+      const node = document.createElementNS('http://www.w3.org/1998/Math/MathML', name);
+      children.forEach(child => node.append(typeof child === 'string' ? document.createTextNode(child) : child));
+      return node;
+    };
+    const show = ast => {
+      if(ast.type==='number')return tag('mn',M.numberText(ast.value));
+      if(ast.type==='symbol'){
+        const {base,subscript}=M.symbolParts(ast.name), symbol=tag('mi',M.GREEK[base]||base);
+        return subscript?tag('msub',symbol,tag(/^\d+$/.test(subscript)?'mn':'mi',subscript)):symbol;
+      }
+      const group = ast => tag('mrow',tag('mo','('),show(ast),tag('mo',')'));
+      if(ast.type==='call')return ast.name==='sqrt'?tag('msqrt',show(ast.args[0])):tag('mrow',tag('mi',ast.name),tag('mo','('),...ast.args.flatMap((a,i)=>i?[tag('mo',','),show(a)]:[show(a)]),tag('mo',')'));
+      if(ast.op==='/')return tag('mfrac',show(ast.args[0]),show(ast.args[1]));
+      if(ast.op==='^')return tag('msup',ast.args[0].type==='op'?group(ast.args[0]):show(ast.args[0]),show(ast.args[1]));
+      const operand = a => a.type==='op'&&['+','-'].includes(a.op)?group(a):show(a);
+      if(ast.op==='neg')return tag('mrow',tag('mo','−'),operand(ast.args[0]));
+      return tag('mrow',operand(ast.args[0]),tag('mo',({'+':'+','-':'−','*':'·'})[ast.op]),operand(ast.args[1]));
+    };
+    try{return tag('math',show(M.parse(source)));}catch(_){return el('span',{},pretty(source));}
+  }
   function formattedName(name) {
     const match = String(name).match(/^\^(?:\{([^{}]+)\}|([^\s{}]+?))([A-Za-zΑ-ω]+)_(?:\{([^{}]+)\}|([^\s{}]+))$/);
     return match ? el('span',{class:'frame-name'},el('sup',{},match[1]||match[2]),match[3],el('sub',{},match[4]||match[5])) : el('span',{},name);
@@ -86,11 +112,11 @@
   }
   let graph = preset('dh'), selected = 'b4', values = new Map(), numericValues = new Map(), view = {x:0,y:0,scale:1};
   let displayMode = 'symbolic', history = [], future = [], gesture = null, connection = null, codeNode = null;
-  let bindingsSignature = '', preview = null, toastTimer, saveTimer, paletteDragTime = 0;
+  let toastTimer, saveTimer, paletteDragTime = 0;
   let selectedIds = new Set([selected]), library = [], canvasMode = 'select', spaceDown = false, suppressClickUntil = 0;
   let functionAction = null, pendingDefinition = null, codeDefinition = null, importController = null;
-  let presetGuideSignature = '';
-  const snapshot = () => JSON.stringify({graph,selected,selectedIds:[...selectedIds],library});
+  let inspectorOpen = false, inspectorPosition = null, inspectorDrag = null;
+  const snapshot = () => JSON.stringify({graph,selected,selectedIds:[...selectedIds],library,view});
   function onlySelect(id) { selected=id; selectedIds=new Set(id?[id]:[]); }
   function checkpoint() {
     const current = snapshot();
@@ -102,8 +128,9 @@
     const source = redo ? future : history, destination = redo ? history : future;
     if (!source.length) return;
     destination.push(snapshot()); const previous = JSON.parse(source.pop());
-    graph = previous.graph; library = previous.library || library; selected = previous.selected; selectedIds=new Set(previous.selectedIds || (selected?[selected]:[])); connection = null; bindingsSignature = '';
-    renderLibrary(); render(); saveLocal(); toast(redo ? 'Change restored.' : 'Change undone.');
+    if(previous.view)view=previous.view;
+    graph = previous.graph; library = previous.library || library; selected = previous.selected; selectedIds=new Set(previous.selectedIds || (selected?[selected]:[])); connection = null;
+    renderLibrary(); render({complete:false}); saveLocal(); toast(redo ? 'Change restored.' : 'Change undone.');
   }
   function toast(message) {
     $('toast').textContent = message; $('toast').hidden = false;
@@ -121,7 +148,7 @@
     table.append(el('tbody', {}, matrix.map(row => el('tr', {}, row.map(entry => {
       const full = numeric ? M.numberText(M.evaluate(entry, graph.bindings)) : pretty(M.format(entry));
       const text = compact && full.length > 30 ? full.slice(0,27) + '…' : full;
-      return el('td', {title: compact ? full : null}, text);
+      return el('td', {title: compact ? full : null}, numeric || text!==full ? text : mathElement(entry));
     })))));
     if(compact&&matrix[0].length===4){
       // Sparse transforms need less room for constant columns than for a*cos(q).
@@ -144,23 +171,23 @@
     }
     if (node.type === 'translation') return `T(${p.vector.map(pretty).join(', ')})`;
     if (node.type === 'exponential') return `exp([ξ]${pretty(p.theta)})`;
-    if (['matrix','subtract', 'cross','columns','stack','determinant'].includes(node.type)) return node.label;
+    if (['matrix','scale','add','subtract', 'cross','columns','stack','determinant'].includes(node.type)) return node.label;
     return node.type === 'transform' ? (node.label === 'Transform' ? 'T' : node.label) : node.type === 'inverse' ? 'inverse' : 'log';
   }
   function chainName(id, seen = new Set()) {
     if (seen.has(id)) return '';
     seen.add(id); const node = graph.nodes.find(n => n.id === id); if (!node) return '';
     const edge = graph.edges.find(e => e.to === id), before = edge ? chainName(edge.from,seen) : '';
-    if (['subtract', 'cross','columns','stack'].includes(node.type)) return node.label;
+    if (['scale','add','subtract', 'cross','columns','stack'].includes(node.type)) return node.label;
     if (node.type === 'inverse' || node.type === 'logarithm' || node.type === 'determinant') return `${node.type === 'inverse' ? 'inverse' : node.type === 'determinant' ? 'det' : 'log'}(${before || 'input'})`;
     return (before ? before + ' · ' : '') + operationName(node);
   }
   function renderNodes() {
     $('nodes').replaceChildren(...graph.nodes.map(node => {
-      const result = values.get(node.id), spec = nodeSpec(node);
-      const article = el('article', {class:'block' + (selectedIds.has(node.id) ? ' is-selected' : '') + (result.error ? ' has-error' : ''), 'data-node-id':node.id, tabindex:'0', 'aria-label':`${node.label}: ${spec.title} block`});
+      const result = values.get(node.id), spec = nodeSpec(node), label=node.label;
+      const article = el('article', {class:'block' + (selectedIds.has(node.id) ? ' is-selected' : '') + (node.minimized ? ' is-minimized' : '') + (result.error ? ' has-error' : ''), 'data-node-id':node.id, tabindex:'0', 'aria-label':`${label}: ${spec.title} block${node.minimized?' (minimized)':''}`,title:node.minimized?node.label+(result.error?' · '+result.error:''):null});
       article.style.left = node.position.x + 'px'; article.style.top = node.position.y + 'px';
-      const header = el('div', {class:'block-header'}, el('span',{class:'block-icon'},spec.icon), el('div',{},el('strong',{class:'block-title'},formattedName(node.label)),el('span',{class:'block-type'},spec.title)), el('button',{class:'block-menu','aria-label':`Actions for ${node.label}`,onpointerdown:e=>e.stopPropagation(),onclick:e=>{e.stopPropagation();openNodeMenu(node.id,e.clientX,e.clientY);}},'⋯'));
+      const header = el('div', {class:'block-header'}, el('span',{class:'block-icon'},spec.icon), el('div',{},el('strong',{class:'block-title'},formattedName(label)),el('span',{class:'block-type'},spec.title)), el('button',{class:'block-menu','aria-label':`Actions for ${node.label}`,onpointerdown:e=>e.stopPropagation(),onclick:e=>{e.stopPropagation();openNodeMenu(node.id,e.clientX,e.clientY);}},'⋯'));
       const body = el('div', {class:'block-body'});
       try {
         if (node.type === 'function' && !node.showMatrix) {
@@ -180,7 +207,20 @@
       if (node.type === 'exponential' || node.type === 'function') footer.append(el('button',{'aria-pressed':String(node.showMatrix),'aria-label':`Matrix form for ${node.label}`,onclick:e=>{e.stopPropagation();checkpoint();node.showMatrix=!node.showMatrix;render({inspector:false});saveLocal();}},node.showMatrix?(node.type==='function'?'Function':'Exponential'):'Matrix'));
       const slots = G.inputPorts(node);
       const inputs = slots.map((slot,index)=>el('button',{class:'port input'+(graph.edges.some(e=>e.to===node.id&&(e.input||'input')===slot)?' connected':''),'data-port':'input','data-input':slot,'data-node-id':node.id,'aria-label':`Input ${slotLabel(node,slot)} of ${node.label}`,title:`${slotLabel(node,slot)} · connect from another output`,style:`top:${100*(index+1)/(slots.length+1)}%`},slots.length>1?el('span',{class:'port-label'},slotLabel(node,slot)):null));
-      if(slots.length>2)article.style.minHeight=Math.max(DEFAULT_BLOCK_SIZE.height,(slots.length+1)*40)+'px';
+      if(node.minimized){
+        // Spread larger input sets over three sides to keep the square small.
+        const left=slots.length>3?Math.ceil(slots.length/3):slots.length;
+        const top=Math.ceil((slots.length-left)/2), bottom=slots.length-left-top;
+        const size=Math.max(80,(left+1)*28);
+        article.style.width=size+'px';article.style.height=size+'px';
+        inputs.forEach((port,index)=>{
+          if(index<left){port.style.top=100*(index+1)/(left+1)+'%';return;}
+          const upper=index<left+top, count=upper?top:bottom, offset=index-left-(upper?0:top);
+          port.classList.add(upper?'port-top':'port-bottom');
+          port.style.top=upper?'0':'100%';port.style.left=100*(offset+1)/(count+1)+'%';
+        });
+      }
+      else if(slots.length>2)article.style.minHeight=Math.max(DEFAULT_BLOCK_SIZE.height,(slots.length+1)*40)+'px';
       const output = el('button',{class:'port output'+(graph.edges.some(e=>e.from===node.id)?' connected':''),'data-port':'output','data-node-id':node.id,'aria-label':`Output of ${node.label}`,title:node.type==='logarithm'?'Screw coordinates · read or copy ω, v, θ in the output panel':'Output · connect to another input'});
       [...inputs,output].forEach(port => {
         port.addEventListener('pointerdown',startPort);
@@ -193,8 +233,48 @@
       article.addEventListener('contextmenu',event=>{event.preventDefault();openNodeMenu(node.id,event.clientX,event.clientY);});
       return article;
     }));
+    layoutDockedBlocks();
     $('empty-state').hidden = graph.nodes.length !== 0;
     requestAnimationFrame(renderConnections);
+  }
+  function blockElement(id) { return $('nodes').querySelector('article[data-node-id="'+CSS.escape(id)+'"]'); }
+  function displayedPosition(node) {
+    const element=blockElement(node.id);
+    return element?{x:element.offsetLeft,y:element.offsetTop}:node.position;
+  }
+  function layoutDockedBlocks() {
+    const byId=new Map(graph.nodes.map(node=>[node.id,node])), groups=new Map();
+    dockedBlocks=new Map();
+    // One visual home per source; additional outgoing connections stay intact.
+    graph.edges.forEach(edge=>{
+      const source=byId.get(edge.from), target=byId.get(edge.to);
+      if(!source.minimized||target.minimized||!DOCK_TARGETS.has(target.type)||dockedBlocks.has(source.id))return;
+      dockedBlocks.set(source.id,edge);
+      if(!groups.has(target.id))groups.set(target.id,[]);
+      groups.get(target.id).push(edge);
+    });
+    groups.forEach((edges,id)=>{
+      const target=byId.get(id), article=blockElement(id), slots=G.inputPorts(target);
+      const size=Math.max(...edges.map(edge=>blockSize(byId.get(edge.from)).width));
+      const lane=size+76, rowHeight=size+30;
+      article.classList.add('has-docked-inputs');
+      article.style.width=DEFAULT_BLOCK_SIZE.width+lane+'px';
+      article.style.setProperty('--dock-lane',lane+'px');
+      article.querySelector('.block-body').style.minHeight=slots.length*rowHeight+'px';
+      const header=article.querySelector('.block-header').offsetHeight;
+      slots.forEach((slot,index)=>{
+        const port=article.querySelector('[data-input="'+CSS.escape(slot)+'"]');
+        port.style.top=header+(index+.5)*rowHeight+'px';
+        if(edges.some(edge=>(edge.input||'input')===slot))port.style.left=lane-24+'px';
+      });
+      edges.forEach(edge=>{
+        const child=blockElement(edge.from), index=slots.indexOf(edge.input||'input');
+        child.classList.add('is-docked');child.dataset.dockedTo=id;
+        child.style.left=target.position.x+article.clientLeft+22+'px';
+        child.style.top=target.position.y+article.clientTop+header+(index+.5)*rowHeight-child.offsetHeight/2+'px';
+      });
+      if(!article.querySelector('.docked-connections'))article.append(svg('svg',{class:'docked-connections','aria-hidden':'true'}));
+    });
   }
   function slotLabel(node, slot) { return slot==='input'?'Input':node.type==='columns'?'C'+(Number(slot.slice(1))+1):slot.toUpperCase(); }
   function portPoint(id, port, input='input') {
@@ -212,12 +292,24 @@
     if(connection&&!graph.nodes.some(node=>node.id===connection.id))connection=null;
     $('nodes').querySelectorAll('.port').forEach(port=>port.classList.toggle('is-snap-target',!!connection?.target&&port.dataset.nodeId===connection.target.id&&port.dataset.port===connection.target.port&&(port.dataset.input||'input')===connection.target.input));
     $('connections').replaceChildren();
+    $('nodes').querySelectorAll('.docked-connections').forEach(layer=>layer.replaceChildren());
     graph.edges.forEach(edge=>{
       const a=portPoint(edge.from,'output'), b=portPoint(edge.to,'input',edge.input);
       const path=svg('path',{d:wirePath(a,b),class:'wire','data-from':edge.from,'data-to':edge.to,fill:'none'});
       path.addEventListener('contextmenu',event=>{event.preventDefault();openMenu([{label:'Disconnect',action:()=>disconnect(edge.to,edge.input||'input')}],event.clientX,event.clientY);});
       const hit=svg('path',{d:wirePath(a,b),class:'wire-hit',fill:'none','aria-label':'Connection; right-click to disconnect'});
       hit.addEventListener('contextmenu',event=>{event.preventDefault();openMenu([{label:'Disconnect',action:()=>disconnect(edge.to,edge.input||'input')}],event.clientX,event.clientY);});
+      const dock=dockedBlocks.get(edge.from);
+      if(dock?.to===edge.to&&(dock.input||'input')===(edge.input||'input')){
+        const container=blockElement(edge.to), bounds=container.getBoundingClientRect(), origin=worldPoint(bounds.left,bounds.top);
+        origin.x+=container.clientLeft;origin.y+=container.clientTop;
+        const link=svg('path',{d:`M${a.x-origin.x},${a.y-origin.y} L${b.x-origin.x},${b.y-origin.y}`,class:'dock-wire',fill:'none'});
+        link.addEventListener('contextmenu',event=>{event.preventDefault();event.stopPropagation();openMenu([{label:'Disconnect',action:()=>disconnect(edge.to,edge.input||'input')}],event.clientX,event.clientY);});
+        container.querySelector('.docked-connections').append(link);
+        // Keep the global geometry available, but draw this internal wire over
+        // the receiving block's background without a redundant dimension label.
+        path.style.visibility='hidden';hit.style.visibility='hidden';$('connections').append(path,hit);return;
+      }
       const source=values.get(edge.from)?.value, target=values.get(edge.to)?.value;
       const label=source&&target&&source.kind!=='transform'&&target.kind==='transform'?'→ 4 × 4':dimension(source);
       const x=(a.x+b.x)/2,y=(a.y+b.y)/2-12;
@@ -239,8 +331,8 @@
     $('select-output-columns').disabled=!result?.value?.matrix||['scalar','screw'].includes(result.value.kind);
     $('symbolic-view').setAttribute('aria-pressed',displayMode==='symbolic');$('numeric-view').setAttribute('aria-pressed',displayMode==='numeric');
     const host=$('output-content');host.replaceChildren();
-    if(!node){host.append(el('p',{class:'output-empty'},'Each connection adds one operation. Select any block to see the result up to that point.'));preview?.update(null);return;}
-    if(result.error){host.append(el('p',{class:'error-message'},result.error));preview?.update(null);return;}
+    if(!node){host.append(el('p',{class:'output-empty'},'Each connection adds one operation. Select any block to see the result up to that point.'));return;}
+    if(result.error){host.append(el('p',{class:'error-message'},result.error));if(displayMode==='numeric')host.append(el('p',{class:'hint'},'Enter numbers directly in the block inputs, or switch to Symbolic.'));return;}
     try {
       if(result.value.kind==='screw'){
         const s=result.value.screw;
@@ -251,18 +343,41 @@
         host.append(matrixElement(result.value.matrix,displayMode==='numeric'));
         host.append(el('p',{class:'matrix-caption'},result.value.kind==='translation'?'Translation vector · mixed compositions embed it in a 4 × 4 transform.':result.value.kind==='rotation'?'Rotation matrix · connecting a translation promotes the result to 4 × 4.':result.value.kind==='matrix'?'Matrix · columns and rows follow the order selected in the inspector.':result.value.kind==='scalar'?'Determinant · defined for square matrices; zero means the matrix is singular.':'Homogeneous transform · upper-left: rotation; last column: position.'));
       }
-    }catch(error){host.replaceChildren(el('p',{class:'error-message'},error.message),el('p',{class:'hint'},'Set numeric symbol values in the inspector, or switch to Symbolic.'));}
-    try{preview?.update(M.validatedMatrix(numericValues.get(selected)?.value,graph.bindings));}catch(_){preview?.update(null);}
+    }catch(error){host.replaceChildren(el('p',{class:'error-message'},error.message),el('p',{class:'hint'},'Enter numbers directly in the block inputs, or switch to Symbolic.'));}
   }
   function field(label, input) { return el('label',{class:'field'},el('span',{},label),input); }
   function parameterInput(node,key,index,label) {
     const input=el('input',{type:'text',value:index===undefined?node.params[key]:node.params[key][index],maxlength:'500','aria-label':label,spellcheck:'false',autocomplete:'off'});
-    input.addEventListener('focus',checkpoint);
+    const preview=el('span',{class:'math-input-preview','aria-hidden':'true'},mathElement(input.value));
+    const wrapper=el('span',{class:'math-input'},input,preview);
+    input.dataset.parameterKey=key;
+    if(index!==undefined)input.dataset.parameterIndex=index;
+    let editing=false;
+    input.addEventListener('focus',()=>{editing=false;});
     input.addEventListener('input',()=>{
+      if(!editing){checkpoint();editing=true;}
       if(index===undefined)node.params[key]=input.value;else node.params[key][index]=input.value;
+      const renamed=G.isolateSymbols(graph,node.id);
+      renamed.filter(change=>change.nodeId===node.id).forEach(change=>delete graph.bindings[change.to]);
+      preview.replaceChildren(mathElement(index===undefined?node.params[key]:node.params[key][index]));
       refreshAfterEdit();
     });
-    return input;
+    input.addEventListener('blur',()=>{
+      if(editing){
+        editing=false;
+        const completed=G.completeOperations(graph);
+        if(completed.completed.length){graph=completed.graph;onlySelect(completed.completed.at(-1));render();saveLocal();return;}
+      }
+      if(selected!==node.id)return;
+      // Reveal the stored, block-specific spelling after editing without moving
+      // the cursor while the user is still entering a LaTeX command.
+      for(const editor of $('inspector-content').querySelectorAll('[data-parameter-key]')){
+        const key=editor.dataset.parameterKey,index=editor.dataset.parameterIndex;
+        editor.value=index===undefined?node.params[key]:node.params[key][index];
+        editor.nextElementSibling.replaceChildren(mathElement(editor.value));
+      }
+    });
+    return wrapper;
   }
   function vectorFields(node,key,labels) {
     return el('div',{class:'vector-fields'},labels.map((label,i)=>field(label,parameterInput(node,key,i,`${key} ${label}`))));
@@ -297,133 +412,136 @@
     if(['Column vector','Row vector'].includes(node.label))node.label=orientation==='column'?'Column vector':'Row vector';
     render();saveLocal();
   }
+  function renderUnits() {
+    const node=graph.nodes.find(n=>n.id===selected), saved=node?.type==='function';
+    $('block-units').hidden=!node||!['rotation','exponential','function'].includes(node.type);
+    $('angle-unit').value=saved?node.params.definition.angleUnit:graph.angleUnit;
+    $('angle-unit').disabled=saved;
+    $('angle-unit').title=saved?'This function retains the units in which it was saved.':'Angle units for rotation and screw inputs on this canvas.';
+  }
   function renderInspector() {
     const node=graph.nodes.find(n=>n.id===selected), host=$('inspector-content');host.replaceChildren();
-    $('selected-id').textContent=node?node.id.toUpperCase():'';
-    if(!node){host.append(el('div',{class:'inspector-section'},el('h2',{},'Your motion, assembled.'),el('p',{class:'hint'},'Select a block to edit its parameters. Start with a rotation, translation, or screw exponential.')));return;}
+    if(!node)inspectorOpen=false;
+    $('input-panel').hidden=!inspectorOpen;
+    renderUnits();
+    $('inputs-title').textContent=node?node.label:'Block inputs';
+    if(!node){host.append(el('p',{class:'hint'},'Select a block to edit its inputs.'));return;}
     const section=el('section',{class:'inspector-section'});
-    section.append(el('div',{class:'inspector-title-row'},el('h2',{},nodeSpec(node).title),el('button',{class:'quiet',onclick:()=>showCode(node.id)},'Python </>')));
-    const name=el('input',{type:'text',value:node.label,maxlength:'80','aria-label':'Block name'});
-    name.addEventListener('focus',checkpoint);name.addEventListener('input',()=>{node.label=name.value;refreshAfterEdit();});section.append(field('Block name',name));
     if(node.type==='rotation'){
       const axis=el('select',{'aria-label':'Rotation axis'},['X','Y','Z','Custom'].map(a=>el('option',{value:a.toLowerCase()},a)));
       const index=[['1','0','0'],['0','1','0'],['0','0','1']].findIndex(a=>a.every((s,i)=>node.params.axis[i]===s));axis.value=index<0?'custom':['x','y','z'][index];
       axis.addEventListener('change',()=>{checkpoint();if(axis.value!=='custom')node.params.axis=['x','y','z'].map(a=>a===axis.value?'1':'0');else node.params.axis=['1','1','0'];render();saveLocal();});
       section.append(field('Rotation axis',axis));
-      if(axis.value==='custom')section.append(vectorFields(node,'axis',['x','y','z']),el('p',{class:'hint'},'The axis direction is normalized automatically.'));
-      section.append(field('Angle · number or symbol',parameterInput(node,'angle',undefined,'Rotation angle')));
+      if(axis.value==='custom')section.append(vectorFields(node,'axis',['x','y','z']));
+      section.append(field('Angle',parameterInput(node,'angle',undefined,'Rotation angle')));
     }else if(node.type==='translation'){
-      section.append(el('p',{class:'section-label'},'TRANSLATION VECTOR'),vectorFields(node,'vector',['x','y','z']),el('p',{class:'hint'},'For example: a, 0, d. Connecting a rotation produces a homogeneous transform.'));
+      section.append(vectorFields(node,'vector',['x','y','z']));
     }else if(node.type==='transform'){
       const grid=el('div',{class:'matrix-fields'});
-      node.params.matrix.forEach((_,i)=>{const input=parameterInput(node,'matrix',i,`Matrix row ${Math.floor(i/4)+1} column ${i%4+1}`);if(i>=12){input.readOnly=true;input.title='Homogeneous bottom row: 0, 0, 0, 1';}grid.append(input);});
-      section.append(el('p',{class:'section-label'},'HOMOGENEOUS MATRIX'),grid,el('p',{class:'hint'},'Enter a rotation in the upper-left 3 × 3 and a position in the last column. Symbolic expressions are supported.'));
+      node.params.matrix.forEach((_,i)=>{const editor=parameterInput(node,'matrix',i,`Matrix row ${Math.floor(i/4)+1} column ${i%4+1}`);if(i>=12){editor.querySelector('input').readOnly=true;editor.title='Homogeneous bottom row: 0, 0, 0, 1';}grid.append(editor);});
+      section.append(grid);
     }else if(node.type==='matrix'){
-      section.append(el('p',{class:'section-label'},'CHOOSE THE MATRIX SIZE · m × n'),
-        el('div',{class:'field-row'},countField('Rows (m)',node.params.rows,count=>matrixSize(node,'rows',count)),countField('Columns (n)',node.params.columns,count=>matrixSize(node,'columns',count))));
-      const vector=node.params.rows===1||node.params.columns===1;
-      if(vector)section.append(el('div',{class:'field-row matrix-orientation','aria-label':'Vector orientation'},
-        el('button',{type:'button','data-vector-orientation':'column','aria-pressed':String(node.params.columns===1),onclick:()=>orientVector(node,'column')},'Column vector'),
-        el('button',{type:'button','data-vector-orientation':'row','aria-pressed':String(node.params.rows===1),onclick:()=>orientVector(node,'row')},'Row vector')));
-      section.append(el('p',{class:'matrix-shape-summary',id:'matrix-shape-summary'},`${node.params.rows} rows × ${node.params.columns} columns · ${node.params.matrix.length} editable entries`));
+      section.append(el('div',{class:'field-row'},countField('Rows (m)',node.params.rows,count=>matrixSize(node,'rows',count)),countField('Columns (n)',node.params.columns,count=>matrixSize(node,'columns',count))));
+      if(node.params.rows===1||node.params.columns===1){
+        const orientation=el('select',{id:'vector-orientation','aria-label':'Vector orientation'},el('option',{value:'column'},'Column vector'),el('option',{value:'row'},'Row vector'));
+        orientation.value=node.params.columns===1?'column':'row';
+        orientation.addEventListener('change',()=>orientVector(node,orientation.value));
+        section.append(field('Orientation',orientation));
+      }
       const grid=el('div',{class:'matrix-fields general-matrix-fields','data-matrix-editor':'','aria-label':`${node.params.rows} by ${node.params.columns} editable matrix`,style:`grid-template-columns:repeat(${node.params.columns},minmax(42px,1fr))`});
-      node.params.matrix.forEach((_,i)=>grid.append(parameterInput(node,'matrix',i,`Matrix row ${Math.floor(i/node.params.columns)+1} column ${i%node.params.columns+1}`)));
-      section.append(grid,el('p',{class:'hint'},'Enter numbers or symbolic expressions in each cell, for example 2, a, or cos(theta). Resize from 1 to 12 rows and columns. Existing overlapping cells stay in place; new cells are zero. Undo recovers removed cells. Products use the displayed dimensions.'));
+      node.params.matrix.forEach((_,i)=>{
+        const editor=parameterInput(node,'matrix',i,`Matrix row ${Math.floor(i/node.params.columns)+1} column ${i%node.params.columns+1}`);
+        grid.append(node.params.matrix.length===3&&(node.params.rows===1||node.params.columns===1)?field(['x','y','z'][i],editor):editor);
+      });
+      section.append(grid);
     }else if(node.type==='columns'){
-      section.append(el('p',{class:'hint'},'Choose each output column from any connected matrix or vector. Column and row numbers start at 1. All columns use the same row range.'));
+      section.append(countField('Output columns',node.params.columns.length,count=>{
+        node.params.columns=Array.from({length:count},(_,i)=>node.params.columns[i]??1);
+        const ports=G.inputPorts(node);graph.edges=graph.edges.filter(edge=>edge.to!==node.id||ports.includes(edge.input||'input'));
+      }));
       section.append(el('div',{class:'field-row'},countField('First row',node.params.rowStart,count=>{node.params.rowStart=count;}),countField('Number of rows',node.params.rowCount,count=>{node.params.rowCount=count;})));
       node.params.columns.forEach((column,i)=>section.append(el('div',{class:'column-source'},sourceField(node,'c'+i,'Output column '+(i+1)+' · source'),countField('Source column '+(i+1),column,count=>{node.params.columns[i]=count;}))));
-      section.append(el('div',{class:'field-row'},el('button',{disabled:node.params.columns.length>=12,onclick:()=>{checkpoint();node.params.columns.push(1);render();saveLocal();}},'Add column'),el('button',{disabled:node.params.columns.length<=1,onclick:()=>{checkpoint();const slot='c'+(node.params.columns.length-1);node.params.columns.pop();graph.edges=graph.edges.filter(e=>e.to!==node.id||e.input!==slot);render();saveLocal();}},'Remove last')));
-    }else if(node.type==='subtract'){
-      section.append(sourceField(node,'a','A · first vector'),sourceField(node,'b','B · vector to subtract'),el('p',{class:'hint'},'Returns A − B entry by entry. Use two row vectors or two column vectors of the same length, expressed in the same frame.'));
+    }else if(node.type==='scale'){
+      section.append(field('Scalar factor',parameterInput(node,'factor',undefined,'Scalar factor')),sourceField(node,'input','A · vector or matrix'));
+    }else if(node.type==='add'||node.type==='subtract'){
+      section.append(sourceField(node,'a','A · first vector'),sourceField(node,'b',node.type==='add'?'B · vector to add':'B · vector to subtract'));
     }else if(node.type==='cross'||node.type==='stack'){
-      section.append(sourceField(node,'a',node.type==='cross'?'A · first vector':'A · upper rows'),sourceField(node,'b',node.type==='cross'?'B · second vector':'B · lower rows'),el('p',{class:'hint'},node.type==='cross'?'Returns A × B for two 3 × 1 column vectors in the same frame. Order matters: p × ω = −ω × p gives a revolute screw’s linear component. Use Select columns to extract a vector from a transform.':'Places A above B. Both inputs need the same number of columns. To form an angular-first twist, choose ω for A and v for B.'));
-    }else if(node.type==='determinant'){
-      section.append(sourceField(node,'input','Matrix input'),el('p',{class:'hint'},'Computes det(A) for a square matrix. Use Select columns to form a square submatrix from a wider matrix. A rectangular Jacobian has no determinant.'));
+      section.append(sourceField(node,'a',node.type==='cross'?'A · first vector':'A · upper rows'),sourceField(node,'b',node.type==='cross'?'B · second vector':'B · lower rows'));
+    }else if(['determinant','inverse','logarithm'].includes(node.type)){
+      section.append(sourceField(node,'input','Matrix input'));
     }else if(node.type==='exponential'){
-      section.append(el('p',{class:'section-label'},'ANGULAR PART · ω'),vectorFields(node,'omega',['ωx','ωy','ωz']),el('p',{class:'section-label'},'LINEAR PART · v'),vectorFields(node,'v',['vx','vy','vz']),field('Angle / displacement · θ',parameterInput(node,'theta',undefined,'Screw angle or displacement')),
-        el('p',{class:'hint'},'ξ = (ω, v). For a unit rotational axis through r, v = −ω × r. For pure translation, set ω = 0; θ is displacement and ignores the angle unit.'));
-      const toggle=el('input',{type:'checkbox',checked:node.showMatrix});toggle.addEventListener('change',()=>{checkpoint();node.showMatrix=toggle.checked;render({inspector:false});saveLocal();});
-      section.append(el('label',{class:'field-row'},toggle,'Show matrix on the block'));
+      section.append(el('p',{class:'section-label'},'Angular · ω'),vectorFields(node,'omega',['ωx','ωy','ωz']),el('p',{class:'section-label'},'Linear · v'),vectorFields(node,'v',['vx','vy','vz']),field('Angle / displacement · θ',parameterInput(node,'theta',undefined,'Screw angle or displacement')));
     }else if(node.type==='function'){
       const definition=node.params.definition;
-      section.append(el('p',{class:'section-label'},'FUNCTION ARGUMENTS'));
-      definition.parameters.forEach(name=>section.append(field(pretty(name)+' · value or symbol',parameterInput(node,'arguments',name,`Argument ${name}`))));
-      if(!definition.parameters.length)section.append(el('p',{class:'hint'},'This function has no free parameters.'));
-      section.append(el('p',{class:'hint'},`This function preserves its original ${definition.angleUnit==='deg'?'degree':'radian'} convention. Enter numbers to evaluate it or new symbols to reuse it in a larger FK.`));
-      if(definition.kind==='graph')section.append(el('button',{class:'full-width',onclick:()=>expandNode(node.id)},'Expand into individual blocks'));
-    }else{
-      section.append(el('p',{class:'hint'},node.type==='inverse'?'Connect a rotation, translation, or transform. This block returns its inverse.':'Connect a numeric rotation or transform to recover ω, v, and θ. Assign every input symbol a numeric value. The returned rotational angle is in radians. This output contains coordinates; enter them in an Exponential block to compose that motion.'));
+      definition.parameters.forEach(name=>section.append(field(pretty(name),parameterInput(node,'arguments',name,`Argument ${name}`))));
+      if(!definition.parameters.length)section.append(el('p',{class:'hint'},'No editable inputs.'));
     }
-    section.append(el('p',{id:'inspector-error',class:'error-message'}));
-    const actions=el('div',{class:'inspector-actions'},el('button',{onclick:()=>duplicateNode(node.id)},'Duplicate'),el('button',{onclick:()=>disconnect(node.id),disabled:!graph.edges.some(e=>e.to===node.id)},'Disconnect'),el('button',{class:'danger',onclick:()=>deleteNode(node.id)},'Delete'));
-    section.append(actions);
-    if(node.type!=='logarithm')section.append(el('button',{class:'full-width',onclick:()=>openFunctionDialog('save')},'Save chain as function'));
+    section.append(el('p',{id:'inspector-error',class:'error-message'},values.get(selected)?.error||''));
     host.append(section);
   }
-  function rawSymbols() {
-    return G.rawSymbols(graph).sort();
-  }
-  function renderBindings() {
-    const names=rawSymbols(), signature=JSON.stringify(names);
-    if(signature===bindingsSignature)return;
-    bindingsSignature=signature;const host=$('bindings');host.replaceChildren();
-    if(!names.length){host.append(el('p',{class:'hint'},'Add a symbol such as theta or a to any parameter.'));return;}
-    names.forEach(name=>{
-      const input=el('input',{type:'text',value:graph.bindings[name]??'',placeholder:'Set a value','aria-label':`Value of ${name}`,maxlength:'500',spellcheck:'false'});
-      input.addEventListener('focus',checkpoint);input.addEventListener('input',()=>{
-        if(input.value.trim())graph.bindings[name]=input.value;else delete graph.bindings[name];
-        refreshAfterEdit();
-      });
-      host.append(el('label',{class:'binding-row'},el('span',{title:name},pretty(name)),input));
+  // Older files stored numeric substitutions separately. Put them into the
+  // editable parameters once, so no invisible values affect the calculation.
+  function inlineSavedValues() {
+    if(!Object.keys(graph.bindings).length)return;
+    const replace=expression=>{
+      if(typeof expression!=='string')return expression;
+      const normalized=M.normalizeInput(expression);
+      if(Object.hasOwn(graph.bindings,normalized))return graph.bindings[normalized];
+      return normalized.replace(/[A-Za-z_][A-Za-z_0-9]*/g,name=>Object.hasOwn(graph.bindings,name)?'('+graph.bindings[name]+')':name);
+    };
+    graph.nodes.forEach(node=>{
+      if(node.type==='function'){
+        Object.keys(node.params.arguments).forEach(name=>{node.params.arguments[name]=replace(node.params.arguments[name]);});
+      }else{
+        Object.entries(node.params).forEach(([key,value])=>{node.params[key]=Array.isArray(value)?value.map(replace):replace(value);});
+      }
     });
+    graph.bindings={};
   }
-  function renderPresetGuide(name) {
-    const metadata=P.names.includes(name)?P.metadata(name):null;
-    $('preset-guide').hidden=!metadata;
-    if(!metadata||name===presetGuideSignature)return;
-    presetGuideSignature=name;
-    const host=$('preset-guide-content');
-    host.replaceChildren(el('p',{},metadata.description),el('p',{class:'mono'},metadata.formula),
-      el('p',{},'Output: base_link → tool0. The template starts in radians and metres, with q1 = q2 = q3 = 0.'),
-      el('p',{},'At home: R = I, p = (4.5, 1.25, 1.25).'),
-      el('p',{},'Change the joint values to compare both FK methods. Download operations keeps an editable copy; reselecting the template restores its starting values.'));
-    if(name==='custom3r-dh'){
-      const table=el('table',{'aria-label':'Standard D-H parameters for custom_3R',class:'template-table'},el('thead',{},el('tr',{},['i','θᵢ','dᵢ','aᵢ','αᵢ'].map(text=>el('th',{},text)))),el('tbody',{},[['1','q1','1','1','−π/2'],['2','q2','1.25','2','π/2'],['3','q3','0.25','1.5','0']].map(row=>el('tr',{},row.map(text=>el('td',{},text))))));
-      host.append(table,el('p',{},'Each matrix expands into Rz(θᵢ) → Tz(dᵢ) → Tx(aᵢ) → Rx(αᵢ). Select it and use Expand into individual blocks.'),el('p',{},'d₁ = 1 m includes both 0.5 m origin heights. D-H frames 1 and 2 differ from the URDF link frames; the final frame is tool0.'));
-    }else{
-      host.append(el('p',{},'The screw coordinates are expressed in base_link at q = 0. The fixed home transform M is applied after the three exponentials.'),el('p',{class:'mono'},'ω₁ = (0,0,1), v₁ = (0,0,0)\nω₂ = (0,1,0), v₂ = (−1,0,1)\nω₃ = (0,0,1), v₃ = (1.25,−3,0)'));
+  function toggleBlockSize(ids=[...selectedIds]) {
+    const nodes=graph.nodes.filter(node=>ids.includes(node.id));
+    if(!nodes.length||gesture)return;
+    const minimize=nodes.some(node=>!node.minimized);
+    checkpoint();
+    nodes.forEach(node=>{if(minimize)node.minimized=true;else delete node.minimized;});
+    connection=null;closeMenu();hideInspector();render();saveLocal();
+    $('canvas').focus({preventScroll:true});
+    toast(minimize?'Selected blocks minimized.':'Selected blocks restored to full size.');
+  }
+  function render({inspector=true,complete=true}={}) {
+    inlineSavedValues();
+    if(complete){
+      const completed=G.completeOperations(graph);
+      if(completed.completed.length){
+        graph=completed.graph;inspector=true;
+        if(!graph.nodes.some(node=>node.id===selected))onlySelect(completed.completed.at(-1));
+      }
     }
-    host.append(el('a',{href:'../lectures_main/assets/models/custom_3R/custom_3R.urdf',target:'_blank',rel:'noreferrer'},'Source: custom_3R.urdf'));
-  }
-  function render({inspector=true}={}) {
+    G.isolateSymbols(graph);
     values=G.evaluateGraph(graph);
     numericValues=G.evaluateGraph(graph,{numeric:true});
     graph.nodes.filter(node=>node.type==='logarithm').forEach(node=>values.set(node.id,numericValues.get(node.id)));
     if(selected&&!graph.nodes.some(n=>n.id===selected))selected=null;
     selectedIds=new Set([...selectedIds].filter(id=>graph.nodes.some(n=>n.id===id)));
     if(selected&&!selectedIds.has(selected))selectedIds.add(selected);
-    renderNodes();if(inspector)renderInspector();renderBindings();renderOutput();updateView();
-    $('block-picker').replaceChildren(el('option',{value:''},'Go to a block…'),...graph.nodes.map(node=>el('option',{value:node.id},node.label)));
-    $('block-picker').value=selected||'';
+    renderNodes();if(inspector)renderInspector();renderOutput();updateView();
     renderSelection();
-    $('angle-unit').value=graph.angleUnit;
+    renderUnits();
     const exampleNames={dh:'D–H transformation',poe:'Product of exponentials',screw:'Screw → matrix → screw',empty:'Empty canvas'};
     P.names.forEach(name=>{exampleNames[name]=P.metadata(name).label;});
     const example=Object.keys(exampleNames).find(k=>exampleNames[k]===graph.name);
     $('example').querySelector('[value="custom"]')?.remove();
     if(example)$('example').value=example;else{$('example').append(el('option',{value:'custom',disabled:true,hidden:true},'Custom operations'));$('example').value='custom';}
-    renderPresetGuide(example);
     $('undo').disabled=!history.length;$('redo').disabled=!future.length;
     const count=graph.nodes.length, errors=[...values.values()].filter(r=>r.error).length;
     $('status').textContent=`${count} block${count===1?'':'s'} · ${graph.edges.length} connection${graph.edges.length===1?'':'s'}${errors?' · '+errors+' need input':''}`;
     if($('inspector-error'))$('inspector-error').textContent=values.get(selected)?.error||'';
   }
-  function refreshAfterEdit() { render({inspector:false});saveLocal(); }
+  function refreshAfterEdit() { render({inspector:false,complete:false});saveLocal(); }
   function selectNode(id,additive=false) {
     if(additive){if(selectedIds.has(id))selectedIds.delete(id);else selectedIds.add(id);selected=selectedIds.has(id)?id:[...selectedIds].at(-1)||null;}
     else onlySelect(id);
-    render();saveLocal();
+    inspectorOpen=!!selected;render();positionInspector();saveLocal();
   }
   function renderSelection() {
     $('selection-count').textContent=selectedIds.size+' selected';
@@ -431,7 +549,26 @@
     $('save-function').disabled=!selectedIds.size || graph.nodes.find(n=>n.id===selected)?.type==='logarithm';
     $('nodes').querySelectorAll('.block').forEach(n=>n.classList.toggle('is-selected',selectedIds.has(n.dataset.nodeId)));
   }
-  function focusEditor() { ($('inspector-content').querySelector('select,input:not([readonly]):not([aria-label="Block name"])') || $('inspector-content').querySelector('input'))?.focus(); }
+  function showInspector() {
+    if(!selected)return;
+    inspectorOpen=true;renderInspector();positionInspector();
+  }
+  function hideInspector() {
+    const focused=$('input-panel').contains(document.activeElement);
+    inspectorOpen=false;$('input-panel').hidden=true;
+    if(focused)$('canvas').focus({preventScroll:true});
+  }
+  function positionInspector() {
+    if(!inspectorOpen)return;
+    const panel=$('input-panel'), canvas=$('canvas').getBoundingClientRect();
+    const margin=12, width=panel.offsetWidth;
+    panel.style.maxHeight=Math.max(80,innerHeight-2*margin)+'px';
+    const desired=inspectorPosition||{x:innerWidth-width-margin,y:canvas.top+60};
+    const x=Math.max(margin,Math.min(desired.x,innerWidth-width-margin));
+    const y=Math.max(margin,Math.min(desired.y,innerHeight-panel.offsetHeight-margin));
+    panel.style.left=x+'px';panel.style.top=y+'px';
+  }
+  function focusEditor() { showInspector();($('inspector-content').querySelector('select,input:not([readonly])') || $('inspector-content').querySelector('input'))?.focus(); }
   function updateView() {
     $('world').style.transform=`translate(${view.x}px,${view.y}px) scale(${view.scale})`;
     $('zoom-level').value=Math.round(view.scale*100)+'%';
@@ -441,16 +578,30 @@
   function fitGraph() {
     if(!graph.nodes.length){view={x:0,y:0,scale:1};updateView();return;}
     const bounds=$('canvas').getBoundingClientRect();
-    const minX=Math.min(...graph.nodes.map(n=>n.position.x))-35,minY=Math.min(...graph.nodes.map(n=>n.position.y))-30;
-    const maxX=Math.max(...graph.nodes.map(n=>n.position.x+blockSize(n).width))+35;
-    const maxY=Math.max(...graph.nodes.map(n=>n.position.y+blockSize(n).height))+30;
-    view.scale=Math.max(.08,Math.min(1.1,(bounds.width-35)/(maxX-minX),(bounds.height-65)/(maxY-minY)));
+    const top=Math.max(...['.canvas-heading','.selection-actions'].map(selector=>document.querySelector(selector).getBoundingClientRect().bottom-bounds.top))+16;
+    const bottom=bounds.bottom-document.querySelector('.canvas-controls').getBoundingClientRect().top+16;
+    const width=Math.max(1,bounds.width-32),height=Math.max(1,bounds.height-top-bottom);
+    const minX=Math.min(...graph.nodes.map(n=>displayedPosition(n).x))-35,minY=Math.min(...graph.nodes.map(n=>displayedPosition(n).y))-30;
+    const maxX=Math.max(...graph.nodes.map(n=>displayedPosition(n).x+blockSize(n).width))+35;
+    const maxY=Math.max(...graph.nodes.map(n=>displayedPosition(n).y+blockSize(n).height))+30;
+    view.scale=Math.min(1.1,width/(maxX-minX),height/(maxY-minY));
     view.x=(bounds.width-(maxX-minX)*view.scale)/2-minX*view.scale;
-    view.y=(bounds.height-(maxY-minY)*view.scale)/2-minY*view.scale-8;
+    view.y=top+(height-(maxY-minY)*view.scale)/2-minY*view.scale;
     updateView();saveLocal();
   }
+  function arrangeAndFit() {
+    if(gesture)return;
+    if(!graph.nodes.length){fitGraph();return;}
+    const sizes=new Map(graph.nodes.map(node=>[node.id,blockSize(node)]));
+    const positions=G.layoutPositions(graph,sizes,$('canvas').clientWidth/Math.max(1,$('canvas').clientHeight));
+    if(graph.nodes.some(node=>node.position.x!==positions.get(node.id).x||node.position.y!==positions.get(node.id).y)){
+      checkpoint();
+      graph.nodes.forEach(node=>{node.position=positions.get(node.id);});
+    }
+    connection=null;render();fitGraph();toast('Blocks arranged and fitted to the canvas.');
+  }
   function zoom(factor,x=$('canvas').clientWidth/2,y=$('canvas').clientHeight/2) {
-    const next=Math.max(.08,Math.min(2,view.scale*factor));
+    const next=Math.max(.001,Math.min(2,view.scale*factor));
     view.x=x-(x-view.x)*next/view.scale;view.y=y-(y-view.y)*next/view.scale;view.scale=next;updateView();saveLocal();
   }
   function worldPoint(clientX,clientY) {const r=$('canvas').getBoundingClientRect();return{x:(clientX-r.left-view.x)/view.scale,y:(clientY-r.top-view.y)/view.scale};}
@@ -467,13 +618,53 @@
     const label=definition?.name||(vectorOrientation==='column'?'Column vector':vectorOrientation==='row'?'Row vector':undefined);
     const node=makeNode(freshId(),type,params,position.x,position.y,label);
     const candidate=clone(graph);candidate.nodes.push(node);
-    if(definition)Object.entries(definition.defaults||{}).forEach(([name,value])=>{if(!Object.hasOwn(candidate.bindings,name))candidate.bindings[name]=value;});
+    const renames=G.isolateSymbols(candidate);
+    for(const name of G.rawSymbols(node))delete candidate.bindings[name];
+    if(definition)Object.entries(definition.defaults||{}).forEach(([name,value])=>{
+      try{if(M.evaluate(value)===0)return;}catch(_){/* Keep nonnumeric saved defaults editable. */}
+      const local=renames.find(change=>change.nodeId===node.id&&change.from===name)?.to||name;
+      candidate.bindings[local]=value;
+    });
     try{const validated=G.validateGraph(candidate);checkpoint();graph=validated;}catch(error){toast(error.message);return;}
-    onlySelect(node.id);bindingsSignature='';render();saveLocal();
-    if(!point){requestAnimationFrame(fitGraph);focusEditor();}
+    hideInspector();onlySelect(node.id);render();saveLocal();
+    if(!point)requestAnimationFrame(fitGraph);
     return node.id;
   }
-  function duplicateNode(id) {const node=graph.nodes.find(n=>n.id===id);if(!node||graph.nodes.length>=120)return;const copy=clone(node);copy.id=freshId();copy.label=node.label.slice(0,75)+' copy';copy.position.x+=35;copy.position.y+=50;try{const candidate=G.validateGraph({...graph,nodes:[...graph.nodes,copy]});checkpoint();graph=candidate;onlySelect(copy.id);render();saveLocal();}catch(error){toast(error.message);}}
+  function selectionClipboard(ids=[...selectedIds]) {
+    const selected=new Set(ids), nodes=graph.nodes.filter(node=>selected.has(node.id));
+    const names=G.rawSymbols({nodes});
+    return {format:'kinematic-block-selection',graph:{version:1,name:'Copied blocks',angleUnit:graph.angleUnit,
+      nodes:clone(nodes),edges:clone(graph.edges.filter(edge=>selected.has(edge.from)&&selected.has(edge.to))),
+      bindings:Object.fromEntries(names.filter(name=>Object.hasOwn(graph.bindings,name)).map(name=>[name,graph.bindings[name]]))}};
+  }
+  function pasteSelection(payload) {
+    try {
+      if(payload?.format!=='kinematic-block-selection')return;
+      const copied=G.validateGraph(payload.graph);
+      if(!copied.nodes.length)return;
+      if(graph.nodes.length+copied.nodes.length>120)throw new Error('This canvas supports up to 120 blocks.');
+      if(copied.angleUnit!==graph.angleUnit)throw new Error('Set Angle inputs to '+(copied.angleUnit==='rad'?'Radians':'Degrees')+' before pasting these blocks.');
+      const ids=new Map(copied.nodes.map(node=>[node.id,freshId()]));
+      copied.nodes.forEach(node=>{node.id=ids.get(node.id);node.position.x+=35;node.position.y+=50;});
+      // Avoid placing repeated pastes directly on top of one another.
+      while(copied.nodes.some(node=>graph.nodes.some(other=>node.position.x===other.position.x&&node.position.y===other.position.y))){
+        copied.nodes.forEach(node=>{node.position.x+=35;node.position.y+=50;});
+      }
+      copied.edges=copied.edges.map(edge=>({...edge,from:ids.get(edge.from),to:ids.get(edge.to)}));
+      const candidate=clone(graph);candidate.nodes.push(...clone(copied.nodes));candidate.edges.push(...copied.edges);
+      const changes=G.isolateSymbols(candidate);
+      const pastedIds=new Set(copied.nodes.map(node=>node.id));
+      for(const node of copied.nodes)for(const name of G.rawSymbols(node)){
+        const renamed=changes.find(change=>change.nodeId===node.id&&change.from===name)?.to||name;
+        if(Object.hasOwn(copied.bindings,name))candidate.bindings[renamed]=copied.bindings[name];
+        else delete candidate.bindings[renamed];
+      }
+      const validated=G.validateGraph(candidate);
+      checkpoint();graph=validated;selectedIds=pastedIds;selected=[...pastedIds].at(-1);connection=null;
+      render();saveLocal();requestAnimationFrame(fitGraph);toast(`${pastedIds.size} block${pastedIds.size===1?'':'s'} pasted.`);
+    }catch(error){toast('Could not paste blocks: '+error.message);}
+  }
+  function duplicateNode(id) {pasteSelection(selectionClipboard([id]));}
   function deleteNodes(ids) {const removed=new Set(ids);if(!graph.nodes.some(n=>removed.has(n.id)))return;checkpoint();graph.nodes=graph.nodes.filter(n=>!removed.has(n.id));graph.edges=graph.edges.filter(e=>!removed.has(e.from)&&!removed.has(e.to));onlySelect(graph.nodes.at(-1)?.id||null);connection=null;render();saveLocal();}
   function deleteNode(id) {deleteNodes([id]);}
   function disconnect(id,input) {const matches=e=>e.to===id&&(input===undefined||(e.input||'input')===input);if(!graph.edges.some(matches))return;checkpoint();graph.edges=graph.edges.filter(e=>!matches(e));render();saveLocal();toast('Input disconnected.');}
@@ -534,7 +725,7 @@
         else if(node.position.x>=origin.x&&Math.abs(node.position.y-origin.y)<260)node.position.x+=addedWidth;
       });
       const expandedGraph=G.validateGraph(result.graph);
-      checkpoint();graph=expandedGraph;connection=null;selectedIds=new Set(expandedIds);selected=outputId||expandedIds.at(-1)||null;bindingsSignature='';render();saveLocal();requestAnimationFrame(fitGraph);
+      checkpoint();graph=expandedGraph;connection=null;selectedIds=new Set(expandedIds);selected=outputId||expandedIds.at(-1)||null;render();saveLocal();requestAnimationFrame(fitGraph);
     }
     catch(error){toast(error.message);}
   }
@@ -546,7 +737,7 @@
     try{
       if(functionAction==='combine'){
         const result=G.groupSelection(graph,[...selectedIds],{id:pendingDefinition.id,label:name,nodeId:freshId()});
-        checkpoint();graph=result.graph;connection=null;onlySelect(result.nodeId);bindingsSignature='';render();saveLocal();requestAnimationFrame(fitGraph);toast('Blocks combined. Edit the arguments in the inspector.');
+        checkpoint();graph=result.graph;connection=null;onlySelect(result.nodeId);render();saveLocal();requestAnimationFrame(fitGraph);toast('Blocks combined. Edit the arguments in the inspector.');
       }else{keepDefinition({...pendingDefinition,name});toast('Function saved in My blocks. Drag it onto the canvas to reuse it.');}
       $('function-dialog').close();
     }catch(error){$('function-error').textContent=error.message;}
@@ -593,12 +784,13 @@
     if(event.shiftKey||event.ctrlKey||event.metaKey){selectNode(id,true);suppressClickUntil=Date.now()+400;return;}
     if(!selectedIds.has(id))onlySelect(id);else selected=id;
     renderInspector();renderOutput();renderSelection();
-    gesture={type:'node',id,pointer:event.pointerId,startX:event.clientX,startY:event.clientY,positions:graph.nodes.filter(n=>selectedIds.has(n.id)).map(n=>({id:n.id,...n.position}))};
+    const movingIds=new Set([...selectedIds].map(id=>dockedBlocks.get(id)?.to||id));
+    gesture={type:'node',id,pointer:event.pointerId,startX:event.clientX,startY:event.clientY,positions:graph.nodes.filter(n=>movingIds.has(n.id)).map(n=>({id:n.id,...n.position}))};
     $('canvas').setPointerCapture(event.pointerId);
   }
   $('canvas').addEventListener('pointerdown',event=>{
     if(event.button!==0||event.target.closest('.block,.wire,.wire-hit,button'))return;
-    event.preventDefault();closeMenu();const pan=spaceDown||canvasMode==='pan';
+    event.preventDefault();closeMenu();hideInspector();const pan=spaceDown||canvasMode==='pan';
     gesture={type:pan?'pan':'select',pointer:event.pointerId,startX:event.clientX,startY:event.clientY,x:view.x,y:view.y,base:event.shiftKey?new Set(selectedIds):new Set()};
     $('canvas').setPointerCapture(event.pointerId);
   });
@@ -607,8 +799,8 @@
     if(gesture.pointer!==event.pointerId)return;
     const dx=event.clientX-gesture.startX,dy=event.clientY-gesture.startY;
     if(gesture.type==='node'){
-      if(!gesture.moved){if(Math.hypot(dx,dy)<3)return;checkpoint();gesture.moved=true;}
-      gesture.positions.forEach(start=>{const node=graph.nodes.find(n=>n.id===start.id);node.position={x:start.x+dx/view.scale,y:start.y+dy/view.scale};const element=$('nodes').querySelector(`[data-node-id="${CSS.escape(node.id)}"]`);element.classList.add('is-dragging');element.style.left=node.position.x+'px';element.style.top=node.position.y+'px';});renderConnections();
+      if(!gesture.moved){if(Math.hypot(dx,dy)<3)return;checkpoint();gesture.moved=true;hideInspector();}
+      gesture.positions.forEach(start=>{const node=graph.nodes.find(n=>n.id===start.id);node.position={x:start.x+dx/view.scale,y:start.y+dy/view.scale};const element=$('nodes').querySelector(`[data-node-id="${CSS.escape(node.id)}"]`);element.classList.add('is-dragging');element.style.left=node.position.x+'px';element.style.top=node.position.y+'px';});layoutDockedBlocks();renderConnections();
     }else if(gesture.type==='pan'){view.x=gesture.x+dx;view.y=gesture.y+dy;updateView();}
     else if(gesture.type==='connect')moveConnection(event);
     else if(gesture.type==='select'){
@@ -634,6 +826,7 @@
       if(Math.hypot(event.clientX-current.startX,event.clientY-current.startY)<3){selectedIds=current.base;selected=[...selectedIds].at(-1)||null;}
       $('selection-box').hidden=true;render();
     }
+    if(current.type==='node'&&!current.moved)showInspector();
     saveLocal();$('undo').disabled=!history.length;
   });
   $('canvas').addEventListener('pointercancel',()=>{gesture=null;connection=null;$('nodes').querySelectorAll('.is-dragging').forEach(node=>node.classList.remove('is-dragging'));$('selection-box').hidden=true;renderConnections();});
@@ -653,7 +846,7 @@
   function closeMenu(){$('context-menu').hidden=true;}
   function openNodeMenu(id,x,y) {
     if(!selectedIds.has(id))onlySelect(id);else selected=id;render();
-    const node=graph.nodes.find(n=>n.id===id),items=[{label:'Edit parameters',action:focusEditor},{label:'Python code </>',action:()=>showCode(id)}];
+    const node=graph.nodes.find(n=>n.id===id),items=[{label:(node.minimized?'Maximize':'Minimize')+' block · Ctrl+Shift+M',action:()=>toggleBlockSize([id])},{label:'Edit parameters',action:focusEditor},{label:'Python code </>',action:()=>showCode(id)}];
     if(selectedIds.size>1)items.push({label:'Combine selected blocks',action:()=>openFunctionDialog('combine')});
     if(node.type!=='logarithm')items.push({label:'Save as function',action:()=>openFunctionDialog('save')});
     if(node.type==='function'&&node.params.definition.kind==='graph')items.push({label:'Expand individual blocks',action:()=>expandNode(id)});
@@ -682,24 +875,14 @@
   function restoreFile(candidate) {
     const restored=Files.readFile(candidate,library);
     checkpoint();library=restored.library;
-    if(restored.graph){graph=restored.graph;onlySelect(restored.selected||graph.nodes.at(-1)?.id||null);}
-    bindingsSignature='';connection=null;renderLibrary();render();requestAnimationFrame(fitGraph);saveLocal();
+    if(restored.graph){hideInspector();graph=restored.graph;onlySelect(restored.selected||graph.nodes.at(-1)?.id||null);}
+    connection=null;renderLibrary();render();requestAnimationFrame(fitGraph);saveLocal();
     toast(restored.graph?'Operations uploaded.':'Saved operations added to My blocks.');
   }
   $('graph-file').addEventListener('change',async()=>{
     const file=$('graph-file').files[0];if(!file)return;
     try{if(file.size>5*1024*1024)throw new Error('Choose an operations file smaller than 5 MB.');restoreFile(JSON.parse(await file.text()));}
     catch(error){toast('Could not upload operations: '+error.message);}finally{$('graph-file').value='';}
-  });
-  $('load-iiwa-example').addEventListener('click',async()=>{
-    const button=$('load-iiwa-example');button.disabled=true;
-    try{const response=await fetch('examples/exercise-01-iiwa7-twists.json');if(!response.ok)throw new Error('Example file could not be loaded.');restoreFile(await response.json());}
-    catch(error){toast('Download the KUKA example and choose Upload operations to open it.');}
-    finally{button.disabled=false;}
-  });
-  $('block-picker').addEventListener('change',()=>{
-    const node=graph.nodes.find(n=>n.id===$('block-picker').value);if(!node)return;selectNode(node.id);
-    view.scale=.9;view.x=$('canvas').clientWidth/2-(node.position.x+116)*view.scale;view.y=$('canvas').clientHeight/2-(node.position.y+120)*view.scale;updateView();saveLocal();
   });
   $('select-output-columns').addEventListener('click',()=>{
     const source=selected,value=values.get(source)?.value;if(!value?.matrix||['scalar','screw'].includes(value.kind))return;
@@ -710,7 +893,7 @@
       checkpoint();graph=candidate;onlySelect(id);render();saveLocal();requestAnimationFrame(fitGraph);
     }catch(error){toast('Could not select columns: '+error.message);}
   });
-  function loadExample(name){checkpoint();graph=preset(name);onlySelect(graph.nodes.at(-1)?.id||null);bindingsSignature='';connection=null;render();requestAnimationFrame(fitGraph);saveLocal();}
+  function loadExample(name){checkpoint();hideInspector();graph=preset(name);onlySelect(graph.nodes.at(-1)?.id||null);connection=null;render();requestAnimationFrame(fitGraph);saveLocal();}
   $('example').addEventListener('change',()=>{if($('example').value!=='custom')loadExample($('example').value);});$('load-dh').addEventListener('click',()=>loadExample('dh'));
   $('angle-unit').addEventListener('change',()=>{checkpoint();graph.angleUnit=$('angle-unit').value;refreshAfterEdit();toast('Angle parameters now use '+(graph.angleUnit==='deg'?'degrees.':'radians.'));});
   $('symbolic-view').addEventListener('click',()=>{displayMode='symbolic';renderOutput();});$('numeric-view').addEventListener('click',()=>{displayMode='numeric';renderOutput();});
@@ -736,12 +919,48 @@
   });
   $('cancel-python-import').addEventListener('click',()=>importController?.abort());
   $('python-import-dialog').addEventListener('close',()=>importController?.abort());
+  $('keyboard-shortcuts').addEventListener('click',()=>$('keyboard-shortcuts-dialog').showModal());
+  $('keyboard-shortcuts-dialog').addEventListener('close',()=>$('keyboard-shortcuts').focus());
   $('help').addEventListener('click',()=>$('help-dialog').showModal());$('undo').addEventListener('click',()=>undo());$('redo').addEventListener('click',()=>undo(true));
   $('zoom-in').addEventListener('click',()=>zoom(1.15));$('zoom-out').addEventListener('click',()=>zoom(1/1.15));$('fit').addEventListener('click',fitGraph);
+  $('arrange-fit').addEventListener('click',arrangeAndFit);
   function setCanvasMode(mode){canvasMode=mode;$('select-mode').setAttribute('aria-pressed',mode==='select');$('pan-mode').setAttribute('aria-pressed',mode==='pan');$('canvas').classList.toggle('pan-mode',mode==='pan');}
   $('select-mode').addEventListener('click',()=>setCanvasMode('select'));$('pan-mode').addEventListener('click',()=>setCanvasMode('pan'));
+  $('close-inputs').addEventListener('click',()=>{hideInspector();$('canvas').focus();});
+  const inputHeader=$('input-panel').querySelector('.inspector-header');
+  inputHeader.addEventListener('pointerdown',event=>{
+    if(event.button!==0||event.target.closest('button'))return;
+    event.preventDefault();const bounds=$('input-panel').getBoundingClientRect();
+    inspectorDrag={pointer:event.pointerId,x:event.clientX,y:event.clientY,left:bounds.left,top:bounds.top};
+    inputHeader.setPointerCapture(event.pointerId);
+  });
+  inputHeader.addEventListener('pointermove',event=>{
+    if(!inspectorDrag||event.pointerId!==inspectorDrag.pointer)return;
+    inspectorPosition={x:inspectorDrag.left+event.clientX-inspectorDrag.x,y:inspectorDrag.top+event.clientY-inspectorDrag.y};
+    positionInspector();
+  });
+  const finishInspectorDrag=event=>{
+    if(!inspectorDrag||event.pointerId!==inspectorDrag.pointer)return;
+    inspectorDrag=null;if(inputHeader.hasPointerCapture(event.pointerId))inputHeader.releasePointerCapture(event.pointerId);
+  };
+  inputHeader.addEventListener('pointerup',finishInspectorDrag);inputHeader.addEventListener('pointercancel',finishInspectorDrag);
+  new ResizeObserver(positionInspector).observe($('input-panel'));
+  window.addEventListener('resize',positionInspector);
+  const editingText = target => target.matches('input,textarea,select') || target.isContentEditable || !!document.querySelector('dialog[open]');
+  for(const action of ['copy','cut'])document.addEventListener(action,event=>{
+    if(editingText(event.target)||!selectedIds.size||!event.clipboardData)return;
+    event.preventDefault();event.clipboardData.setData('text/plain',JSON.stringify(selectionClipboard()));
+    if(action==='cut')deleteNodes([...selectedIds]);else toast('Selected blocks copied.');
+  });
+  document.addEventListener('paste',event=>{
+    if(editingText(event.target)||!event.clipboardData)return;
+    try{const payload=JSON.parse(event.clipboardData.getData('text/plain'));
+      if(payload?.format==='kinematic-block-selection'){event.preventDefault();pasteSelection(payload);}
+    }catch(_){/* Ordinary text paste remains the browser's responsibility. */}
+  });
   document.addEventListener('keydown',event=>{
     if(event.key==='Escape'){
+      if(!document.querySelector('dialog[open]')){hideInspector();if(event.target.closest('#input-panel'))$('canvas').focus();}
       closeMenu();connection=null;
       if(gesture?.type==='connect'){const pointer=gesture.pointer;gesture=null;if($('canvas').hasPointerCapture(pointer))$('canvas').releasePointerCapture(pointer);}
       renderConnections();return;
@@ -750,9 +969,13 @@
     const typing=event.target.matches('input,textarea,select')||event.target.isContentEditable;
     if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){event.preventDefault();saveGraph();return;}
     if(typing)return;
+    if((event.ctrlKey||event.metaKey)&&event.shiftKey&&event.key.toLowerCase()==='f'){event.preventDefault();arrangeAndFit();return;}
+    if((event.ctrlKey||event.metaKey)&&event.shiftKey&&event.key.toLowerCase()==='m'){event.preventDefault();toggleBlockSize();return;}
     if(event.code==='Space'){event.preventDefault();spaceDown=true;$('canvas').classList.add('space-pan');}
     else if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='a'){event.preventDefault();selectedIds=new Set(graph.nodes.map(n=>n.id));selected=graph.nodes.at(-1)?.id||null;render();}
-    else if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='g'){event.preventDefault();if(selectedIds.size>1)openFunctionDialog('combine');}
+    else if((event.ctrlKey||event.metaKey)&&['k','g'].includes(event.key.toLowerCase())){event.preventDefault();if(selectedIds.size>1)openFunctionDialog('combine');}
+    else if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='e'){event.preventDefault();if(selected&&graph.nodes.find(n=>n.id===selected)?.type==='function')expandNode(selected);}
+    else if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='d'){event.preventDefault();if(selectedIds.size)pasteSelection(selectionClipboard());}
     else if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='z'){event.preventDefault();undo(event.shiftKey);}
     else if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='y'){event.preventDefault();undo(true);}
     else if((event.key==='Delete'||event.key==='Backspace')&&selectedIds.size){event.preventDefault();deleteNodes([...selectedIds]);}
@@ -761,10 +984,9 @@
   window.addEventListener('blur',()=>{spaceDown=false;$('canvas').classList.remove('space-pan');});
   try{
     const saved=JSON.parse(localStorage.getItem(STORAGE)||'null');
-    if(saved){graph=G.validateGraph(saved.graph);onlySelect(graph.nodes.some(n=>n.id===saved.selected)?saved.selected:graph.nodes.at(-1)?.id||null);if(saved.view&&[saved.view.x,saved.view.y,saved.view.scale].every(Number.isFinite)&&saved.view.scale>=.08&&saved.view.scale<=2)view=saved.view;}
+    if(saved){graph=G.validateGraph(saved.graph);onlySelect(graph.nodes.some(n=>n.id===saved.selected)?saved.selected:graph.nodes.at(-1)?.id||null);if(saved.view&&[saved.view.x,saved.view.y,saved.view.scale].every(Number.isFinite)&&saved.view.scale>0&&saved.view.scale<=2)view=saved.view;}
   }catch(_){/* A fresh example remains available if stored data is incomplete. */}
   try{const saved=JSON.parse(localStorage.getItem(LIBRARY_STORAGE)||'[]');if(Array.isArray(saved))library=saved.slice(0,60).flatMap(item=>{try{return[G.validateDefinition(item)];}catch(_){return[];}});}catch(_){}
-  preview=window.KinematicsPreview?.create($('preview'));
   renderLibrary();render();requestAnimationFrame(fitGraph);
   new ResizeObserver(()=>{updateView();renderConnections();}).observe($('canvas'));
   window.addEventListener('beforeunload',()=>{try{localStorage.setItem(STORAGE,JSON.stringify({graph,selected,view}));localStorage.setItem(LIBRARY_STORAGE,JSON.stringify(library));}catch(_){}});

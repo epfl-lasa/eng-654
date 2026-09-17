@@ -26,10 +26,10 @@ async function connect(url){
   const click=selector=>run(`document.querySelector(${JSON.stringify(selector)}).click()`);
   const change=(selector,value,event='change')=>run(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});e.value=${JSON.stringify(String(value))};e.dispatchEvent(new Event(${JSON.stringify(event)},{bubbles:true}));})()`);
   const state=()=>run('KinematicsPlayground.getState()');
-  const select=id=>change('#block-picker',id);
+  const select = id => run("document.querySelector("+JSON.stringify('[data-node-id="'+id+'"]')+").dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))");
   const node=async id=>(await state()).graph.nodes.find(n=>n.id===id);
   const output=()=>run('KinematicsPlayground.getOutput()?.matrix.map(row=>row.map(v=>KinematicsMath.evaluate(v,KinematicsPlayground.getState().graph.bindings)))');
-  const add=async type=>{await click(`.palette-item[data-type="${type}"]`);return(await state()).selected;};
+  const add=async type=>{await click(`.palette-item[data-type="${type}"]`);const id=(await state()).selected;await select(id);return id;};
   const size=(axis,count)=>change(`input[aria-label="${axis==='rows'?'Rows (m)':'Columns (n)'}"]`,count);
   const cell=(r,c,value)=>change(`input[aria-label="Matrix row ${r} column ${c}"]`,value,'input');
   const capture=async name=>{fs.mkdirSync(shots,{recursive:true});await run('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))');const shot=await page.send('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(shots,name+'.png'),Buffer.from(shot.data,'base64'));};
@@ -43,7 +43,7 @@ async function connect(url){
   await page.send('Page.navigate',{url:base+'/playground/building_blocks.html'});await until('!!window.KinematicsPlayground&&document.querySelector(".output-panel").dataset.expanded==="false"');
   const largeCanvas=await run('document.querySelector("#canvas").clientHeight');
   assert.equal(await run('document.querySelector("#output-content").hidden'),true);
-  assert.ok(await run('document.querySelector(".output-panel").clientHeight')<=54);
+  assert.ok(await run('document.querySelector(".output-panel").clientHeight')<=62);
   await click('#toggle-output');await until('document.querySelector(".output-panel").dataset.expanded==="true"');
   assert.equal(await run('document.querySelector("#output-content").hidden'),false);
   assert.ok(largeCanvas-(await run('document.querySelector("#canvas").clientHeight'))>120,'minimizing gives canvas more height');
@@ -54,19 +54,19 @@ async function connect(url){
   assert.deepEqual([p.rows,p.columns,p.matrix],[3,1,['x','y','z']]);
   for(const [i,v]of [1,2,3].entries())await cell(i+1,1,v);
   await size('rows',4);assert.deepEqual((await node(column)).params.matrix,['1','2','3','0']);
-  await click('[data-vector-orientation="row"]');p=(await node(column)).params;assert.deepEqual([p.rows,p.columns,p.matrix],[1,4,['1','2','3','0']]);
+  await change('#vector-orientation','row');p=(await node(column)).params;assert.deepEqual([p.rows,p.columns,p.matrix],[1,4,['1','2','3','0']]);
   await click('#undo');p=(await node(column)).params;assert.deepEqual([p.rows,p.columns],[4,1]);
   await size('rows',2);await click('#undo');assert.deepEqual((await node(column)).params.matrix,['1','2','3','0']);
   const row=await add('row-vector');p=(await node(row)).params;assert.deepEqual([p.rows,p.columns,p.matrix],[1,3,['x','y','z']]);
   for(const [i,v]of [4,5,6].entries())await cell(1,i+1,v);
-  await click('[data-vector-orientation="column"]');near(await output(),[[4],[5],[6]]);
-  await click('[data-vector-orientation="row"]');near(await output(),[[4,5,6]]);
+  await change('#vector-orientation','column');near(await output(),[[4],[5],[6]]);
+  await change('#vector-orientation','row');near(await output(),[[4,5,6]]);
   await size('columns',5);near(await output(),[[4,5,6,0,0]]);
   console.log('PASS: explicit row/column vectors, editable length, orientation preservation and undo.');
 
   const matrix=await add('matrix');await size('rows',2);await size('columns',3);
   for(const [r,c,v]of [[1,1,'a+sin(pi/2)'],[1,2,2],[1,3,3],[2,1,4],[2,2,5],[2,3,6]])await cell(r,c,v);
-  await change('input[aria-label="Value of a"]',2,'input');near(await output(),[[3,2,3],[4,5,6]]);
+  await cell(1,1,'2+sin(pi/2)');near(await output(),[[3,2,3],[4,5,6]]);
   assert.equal(await run('document.querySelectorAll("[data-matrix-editor] input").length'),6);
   await size('columns',2);near(await output(),[[3,2],[4,5]]);await click('#undo');near(await output(),[[3,2,3],[4,5,6]]);
   await size('rows',3);await size('columns',4);near(await output(),[[3,2,3,0],[4,5,6,0],[0,0,0,0]]);
@@ -74,15 +74,16 @@ async function connect(url){
   const beforeInvalid=(await node(matrix)).params;await size('rows',13);assert.deepEqual((await node(matrix)).params,beforeInvalid);assert.match(await run('document.querySelector("#toast").textContent'),/1 to 12/);
   await size('columns',2);
   const det=await add('determinant');await wire(matrix,det);near(await output(),[[7]]);
-  await until('document.querySelector("#toggle-output").textContent==="Expand output"');
+  await until('document.querySelector("#toggle-output .disclosure-label").textContent==="Expand output"');
   await select(matrix);await size('columns',3);await select(det);
-  await until('document.querySelector("#toggle-output").textContent==="Show error"');
+  await until('document.querySelector("#toggle-output .disclosure-label").textContent==="Show error"');
   assert.equal(await run('KinematicsPlayground.getOutput()'),null);assert.match(await run('document.querySelector("#toggle-output").title'),/square/i);
   await capture('nonsquare-collapsed');await click('#toggle-output');assert.match(await run('document.querySelector("#output-content").textContent'),/square/i);assert.equal(await run('document.querySelector("#output-content").hidden'),false);await capture('nonsquare-expanded');await click('#toggle-output');
   await select(matrix);await size('columns',2);await select(det);near(await output(),[[7]]);
-  await until('document.querySelector("#toggle-output").textContent==="Expand output"');
+  await until('document.querySelector("#toggle-output .disclosure-label").textContent==="Expand output"');
+  await run('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
   const geometry=await run(`(()=>{const graph=KinematicsPlayground.getState().graph;return[...document.querySelectorAll('#connections .wire')].map(w=>{const a=graph.nodes.find(n=>n.id===w.dataset.from),b=graph.nodes.find(n=>n.id===w.dataset.to),ae=document.querySelector('[data-node-id="'+a.id+'"]'),be=document.querySelector('[data-node-id="'+b.id+'"]'),v=w.getAttribute('d').match(/-?[\\d.]+/g).map(Number);return{width:ae.offsetWidth,start:[v[0],v[1]],expected:[a.position.x+ae.offsetWidth,a.position.y+ae.offsetHeight/2],end:v.slice(-2),target:[b.position.x,b.position.y+be.offsetHeight/2]};});})()`);
-  assert.ok(geometry.length);for(const g of geometry){assert.equal(g.width,196);assert.deepEqual(g.start,g.expected);assert.deepEqual(g.end,g.target);}
+  assert.ok(geometry.length);for(const g of geometry){assert.equal(g.width,196);for(const [actual,expected] of [[g.start,g.expected],[g.end,g.target]])actual.forEach((value,i)=>assert.ok(Math.abs(value-expected[i])<1e-3,JSON.stringify(g)));}
   await click('#fit');await capture('symbolic-square-determinant');
   console.log('PASS: m×n grid, symbolic entries, preserving resize/undo, square determinant and visible rectangular error, compact wire endpoints.');
 

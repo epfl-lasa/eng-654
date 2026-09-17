@@ -8,6 +8,38 @@
 
   const FUNCTIONS = Object.freeze({ sin: Math.sin, cos: Math.cos, tan: Math.tan,
     sqrt: Math.sqrt, acos: Math.acos, atan2: Math.atan2 });
+  const GREEK = Object.freeze(Object.assign(Object.create(null), {
+    alpha:'α', beta:'β', gamma:'γ', delta:'δ', epsilon:'ε', zeta:'ζ', eta:'η', theta:'θ',
+    iota:'ι', kappa:'κ', lambda:'λ', mu:'μ', nu:'ν', xi:'ξ', omicron:'ο', pi:'π',
+    rho:'ρ', sigma:'σ', tau:'τ', upsilon:'υ', phi:'φ', chi:'χ', psi:'ψ', omega:'ω',
+    varepsilon:'ϵ', vartheta:'ϑ', varkappa:'ϰ', varpi:'ϖ', varrho:'ϱ', varsigma:'ς', varphi:'ϕ',
+    Alpha:'Α', Beta:'Β', Gamma:'Γ', Delta:'Δ', Epsilon:'Ε', Zeta:'Ζ', Eta:'Η', Theta:'Θ',
+    Iota:'Ι', Kappa:'Κ', Lambda:'Λ', Mu:'Μ', Nu:'Ν', Xi:'Ξ', Omicron:'Ο', Pi:'Π',
+    Rho:'Ρ', Sigma:'Σ', Tau:'Τ', Upsilon:'Υ', Phi:'Φ', Chi:'Χ', Psi:'Ψ', Omega:'Ω'
+  }));
+  function normalizeInput(source) {
+    let text = String(source).trim().replace(/^\$(.*)\$$/s, '$1').replace(/[−–]/g, '-').replace(/[·×]/g, '*');
+    text = text.replace(/\\(?:left|right)\b/g, '').replace(/\\(?:cdot|times)\b/g, '*');
+    text = text.replace(/\\([A-Za-z]+)/g, (whole, name) => Object.hasOwn(GREEK, name) || Object.hasOwn(FUNCTIONS, name) ? name : whole);
+    for (const [name, glyph] of Object.entries(GREEK)) text = text.replaceAll(glyph, name);
+    text = text.replace(/([A-Za-z][A-Za-z_0-9]*)_\{([A-Za-z_0-9]+)\}/g, '$1_$2');
+    // Reduce innermost fractions first, retaining parentheses around operands.
+    for (let i = 0; i < 16 && /\\frac\{([^{}]*)\}\{([^{}]*)\}/.test(text); i++) {
+      text = text.replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, '(($1)/($2))');
+    }
+    return text.replace(/\{/g, '(').replace(/\}/g, ')');
+  }
+  function symbolParts(name) {
+    const match = /^([A-Za-z]+)(?:_(.+)|(\d+))$/.exec(name);
+    return { base: match ? match[1] : name, subscript: match ? match[2] || match[3] : '' };
+  }
+  function pretty(source) {
+    const subs = {'0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉'};
+    return normalizeInput(source).replace(/[A-Za-z][A-Za-z_0-9]*/g, name => {
+      const {base, subscript} = symbolParts(name);
+      return (GREEK[base] || base) + (subscript ? /^\d+$/.test(subscript) ? [...subscript].map(c => subs[c]).join('') : '_' + subscript : '');
+    });
+  }
   const RESERVED_NAMES = new Set(['__proto__', 'constructor', 'prototype']);
   const SCREW_OUTPUT_MESSAGE = 'A screw result contains ω, v and θ. Enter these in an Exponential block to compose its motion.';
   const expressionSizes = new WeakMap();
@@ -88,7 +120,7 @@
   function parse(source) {
     if (source && typeof source === 'object' && source.type) return checked(source);
     if (typeof source === 'number') return num(source);
-    const text = String(source === undefined ? '' : source).trim();
+    const text = normalizeInput(source === undefined ? '' : source);
     if (!text) throw new Error('Enter a number or a symbol.');
     if (text.length > 500) throw new Error('Please use an expression shorter than 500 characters.');
     const tokens = [];
@@ -185,9 +217,8 @@
     if (a.type === 'number') return numberText(a.value);
     if (a.type === 'symbol') {
       if (a.name === 'pi') return '\\pi';
-      const match = /^(theta|alpha|beta|gamma|delta|omega|phi|psi|rho)(?:_?(\d+))?$/.exec(a.name);
-      if (match) return '\\' + match[1] + (match[2] ? '_{' + match[2] + '}' : '');
-      return a.name.replace(/_/g, '\\_');
+      const {base, subscript} = symbolParts(a.name);
+      return (Object.hasOwn(GREEK, base) ? '\\' + base : base.replace(/_/g, '\\_')) + (subscript ? '_{' + subscript.replace(/_/g, '\\_') + '}' : '');
     }
     if (a.type === 'call') return a.name === 'sqrt' ? '\\sqrt{' + tex(a.args[0]) + '}'
       : '\\operatorname{' + a.name + '}\\left(' + a.args.map(tex).join(',') + '\\right)';
@@ -400,11 +431,14 @@
   function computeBlock(block, inputValue = null, bindings = {}, angleUnit = 'rad') {
     const params = block.params || {};
     let own;
-    if (block.type === 'subtract') {
+    if (block.type === 'add' || block.type === 'subtract') {
       const a = inputMatrix(inputValue && inputValue.a, 'a'), b = inputMatrix(inputValue && inputValue.b, 'b');
-      if ((a.length !== 1 && a[0].length !== 1) || (b.length !== 1 && b[0].length !== 1)) throw new Error('Subtraction needs two row or column vectors.');
+      if ((a.length !== 1 && a[0].length !== 1) || (b.length !== 1 && b[0].length !== 1)) throw new Error((block.type === 'add' ? 'Addition' : 'Subtraction') + ' needs two row or column vectors.');
       if (a.length !== b.length || a[0].length !== b[0].length) throw new Error('Vectors must have the same length and orientation.');
-      return { kind: 'matrix', matrix: matrixMap(a, (value, i, j) => sub(value, b[i][j])) };
+      const operation = block.type === 'add' ? add : sub;
+      return { kind: 'matrix', matrix: matrixMap(a, (value, i, j) => operation(value, b[i][j])) };
+    } else if (block.type === 'scale') {
+      return { kind: 'matrix', matrix: matrixScale(inputMatrix(inputValue), parse(params.factor)) };
     } else if (block.type === 'cross') {
       const a = inputMatrix(inputValue && inputValue.a, 'a'), b = inputMatrix(inputValue && inputValue.b, 'b');
       if (a.length !== 3 || a[0].length !== 1 || b.length !== 3 || b[0].length !== 1) throw new Error('A cross product needs two 3 × 1 column vectors.');
@@ -455,7 +489,7 @@
     else throw new Error('Unknown block type: ' + block.type);
     return compose(inputValue, own);
   }
-  return { parse, format, tex, evaluate, symbols, num, numberText, multiply, cross, determinant, toHomogeneous, numericMatrix,
+  return { parse, format, tex, normalizeInput, symbolParts, GREEK, pretty, evaluate, symbols, num, numberText, multiply, cross, determinant, toHomogeneous, numericMatrix,
     getSymbols, computeBlock, compose, inverseValue, logValue, identity, rotation, exponential,
     validateRigid: (matrix, bindings = {}, requireNumeric = true) => validateRigid(matrix, bindings, requireNumeric), validatedMatrix };
 });

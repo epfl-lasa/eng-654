@@ -4,13 +4,13 @@
   else root.KinematicsGraph = factory(root.KinematicsMath);
 })(typeof window !== 'undefined' ? window : globalThis, function (MathEngine) {
   'use strict';
-  const TYPES = new Set(['rotation', 'translation', 'transform', 'exponential', 'inverse', 'logarithm', 'function', 'matrix', 'subtract', 'cross', 'columns', 'stack', 'determinant']);
+  const TYPES = new Set(['rotation', 'translation', 'transform', 'exponential', 'inverse', 'logarithm', 'function', 'matrix', 'scale', 'add', 'subtract', 'cross', 'columns', 'stack', 'determinant']);
   const DEFAULT_LABELS = { rotation: 'Rotation', translation: 'Translation', transform: 'Transformation',
     exponential: 'Screw exponential', inverse: 'Inverse', logarithm: 'Matrix to screw', function: 'Saved function',
-    matrix: 'Matrix', subtract: 'Subtract vectors', cross: 'Cross product', columns: 'Select columns', stack: 'Stack rows', determinant: 'Determinant' };
+    matrix: 'Matrix', scale: 'Scalar multiplier', add: 'Add vectors', subtract: 'Subtract vectors', cross: 'Cross product', columns: 'Select columns', stack: 'Stack rows', determinant: 'Determinant' };
   const EXPRESSION_KEYS = { rotation: ['axis', 'angle'], translation: ['vector'], transform: ['matrix'],
-    exponential: ['omega', 'v', 'theta'], matrix: ['matrix'] };
-  const INPUT_OPERATIONS = new Set(['inverse', 'logarithm', 'subtract', 'cross', 'columns', 'stack', 'determinant']);
+    exponential: ['omega', 'v', 'theta'], matrix: ['matrix'], scale: ['factor'] };
+  const INPUT_OPERATIONS = new Set(['inverse', 'logarithm', 'scale', 'add', 'subtract', 'cross', 'columns', 'stack', 'determinant']);
   const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
   const SCREW_OUTPUT_MESSAGE = 'A screw result contains ω, v and θ. Enter these in an Exponential block to compose its motion.';
   const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -31,7 +31,7 @@
     return value;
   }
   function inputPorts(node) {
-    if (node.type === 'subtract' || node.type === 'cross' || node.type === 'stack') return ['a', 'b'];
+    if (node.type === 'add' || node.type === 'subtract' || node.type === 'cross' || node.type === 'stack') return ['a', 'b'];
     if (node.type === 'columns') return (node.params.columns || []).map((_, index) => 'c' + index);
     return ['input'];
   }
@@ -55,6 +55,7 @@
     if (type === 'rotation') return { axis: vector(params.axis, 'Rotation axis'), angle: string(params.angle, 'Angle') };
     if (type === 'translation') return { vector: vector(params.vector, 'Translation') };
     if (type === 'transform') return { matrix: vector(params.matrix, 'Transformation matrix', 16) };
+    if (type === 'scale') return { factor: string(params.factor, 'Scalar factor') };
     if (type === 'matrix') {
       const rows = dimension(params.rows, 'Rows'), columns = dimension(params.columns, 'Columns');
       return { rows, columns, matrix: vector(params.matrix, 'Matrix', rows * columns) };
@@ -102,9 +103,11 @@
         throw new Error('Block positions must be finite coordinates between −100000 and 100000.');
       }
       if (source.showMatrix !== undefined && typeof source.showMatrix !== 'boolean') throw new Error('The matrix display preference must be true or false.');
+      if (source.minimized !== undefined && typeof source.minimized !== 'boolean') throw new Error('The minimized display preference must be true or false.');
       graph.nodes.push({ id: nodeId, type: source.type,
         label: source.label === undefined ? DEFAULT_LABELS[source.type] : string(source.label, 'Block label', 80),
-        params: cleanParams(source.type, source.params, context, depth), position: { x: position.x, y: position.y }, showMatrix: source.showMatrix === true });
+        params: cleanParams(source.type, source.params, context, depth), position: { x: position.x, y: position.y }, showMatrix: source.showMatrix === true,
+        ...(source.minimized === true ? { minimized: true } : {}) });
     }
     const parents = new Map(), occupied = new Set(), nodesById = new Map(graph.nodes.map(node => [node.id, node]));
     for (const edge of candidate.edges) {
@@ -211,6 +214,30 @@
     }
     return [...found].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
   }
+  // Canvas symbols belong to one block. Function definitions retain their own
+  // parameter scope; only their exposed arguments participate in this rename.
+  function isolateSymbols(graph, editedId) {
+    const reserved = new Set([...rawSymbols(graph), ...Object.keys(graph.bindings)]), owners = new Set(), changes = [];
+    const nodes = [...graph.nodes].sort((a, b) => Number(a.id === editedId) - Number(b.id === editedId));
+    for (const node of nodes) {
+      const renames = Object.create(null);
+      for (const name of rawSymbols(node)) {
+        if (owners.has(name)) {
+          let suffix = 2, next;
+          do { next = name.slice(0, 73) + '_' + suffix++; } while (reserved.has(next));
+          reserved.add(next); renames[name] = next;
+          if (Object.hasOwn(graph.bindings, name)) graph.bindings[next] = graph.bindings[name];
+          changes.push({nodeId:node.id, from:name, to:next});
+        }
+        owners.add(renames[name] || name);
+      }
+      if (!Object.keys(renames).length) continue;
+      const rename = expression => MathEngine.normalizeInput(expression).replace(/[A-Za-z_][A-Za-z_0-9]*/g, name => renames[name] || name);
+      if (node.type === 'function') node.params.arguments = Object.fromEntries(Object.entries(node.params.arguments).map(([key, value]) => [key, rename(value)]));
+      else node.params = mapExpressionParams(node, rename);
+    }
+    return changes;
+  }
   function ancestorChain(graph, nodeId) {
     const nodes = new Map(graph.nodes.map(node => [node.id, node])), parents = new Map();
     for (const edge of graph.edges) {
@@ -232,7 +259,7 @@
     if (!Array.isArray(selectedIds) || !selectedIds.length) throw new Error('Select at least one block to combine.');
     const selected = new Set(selectedIds), nodes = graph.nodes.filter(node => selected.has(node.id));
     if (nodes.length !== selected.size) throw new Error('The selection contains a missing block.');
-    if (nodes.some(node => ['subtract', 'cross', 'columns', 'stack'].includes(node.type))) throw new Error('Save the output as a function to include every operand of a multi-input calculation. Combining a selection requires a single chain.');
+    if (nodes.some(node => ['add', 'subtract', 'cross', 'columns', 'stack'].includes(node.type))) throw new Error('Save the output as a function to include every operand of a multi-input calculation. Combining a selection requires a single chain.');
     const parents = new Map(graph.edges.map(edge => [edge.to, edge.from]));
     const starts = nodes.filter(node => !selected.has(parents.get(node.id)));
     if (starts.length !== 1) throw new Error('Select one connected chain of blocks to combine.');
@@ -249,6 +276,7 @@
     if (['inverse', 'logarithm'].includes(chain[0].type)) throw new Error('Include the input of an inverse or logarithm when saving a function.');
     if (parents.has(chain[0].id) && chain.some(node => node.type === 'inverse')) throw new Error('Include the complete input chain before combining an inverse; it acts on that whole input.');
     if (parents.has(chain[0].id) && chain.some(node => node.type === 'determinant')) throw new Error('Include the complete input chain before combining a determinant; it acts on that whole input.');
+    if (parents.has(chain[0].id) && chain.some(node => node.type === 'scale')) throw new Error('Include the complete input chain before combining a scalar multiplier; it acts on that whole input.');
     return chain;
   }
   function definitionFromChain(graph, chain, options = {}) {
@@ -367,7 +395,7 @@
           if (upstream.error) throw new Error('Fix the input from “' + nodes.get(edge.from).label + '” first. ' + upstream.error);
         }
         if (INPUT_OPERATIONS.has(node.type)) {
-          const operand = ['subtract', 'cross', 'columns', 'stack'].includes(node.type)
+          const operand = ['add', 'subtract', 'cross', 'columns', 'stack'].includes(node.type)
             ? Object.fromEntries(Object.entries(inputs).map(([input, upstream]) => [input, upstream.value])) : parent ? parent.value : null;
           result.value = MathEngine.computeBlock(block, operand, bindings, graph.angleUnit);
           result.ownValue = result.value;
@@ -378,6 +406,46 @@
     graph.nodes.forEach(node => evaluateNode(node.id));
     return results;
   }
+  function materializeResult(candidate, nodeId, { consumeInputs = false } = {}) {
+    const graph=validateGraph(candidate), node=graph.nodes.find(node=>node.id===nodeId);
+    if(!node||!['add','subtract','scale','cross','columns','stack'].includes(node.type))throw new Error('Choose a vector or matrix operation result.');
+    const result=evaluateGraph(graph).get(nodeId);
+    if(result.error||!result.value?.matrix)throw new Error(result.error||'Connect valid inputs before editing the result.');
+    const consumed=new Set();
+    if(consumeInputs){
+      const visit=id=>graph.edges.filter(edge=>edge.to===id).forEach(edge=>{if(!consumed.has(edge.from)){consumed.add(edge.from);visit(edge.from);}});
+      visit(nodeId);
+    }
+    const matrix=result.value.matrix, rows=matrix.length, columns=matrix[0].length;
+    node.type='matrix';node.label=columns===1?'Column vector':rows===1?'Row vector':'Matrix';
+    node.params={rows,columns,matrix:matrix.flat().map(expressionSource)};
+    graph.edges=graph.edges.filter(edge=>edge.to!==nodeId);
+    if(consumeInputs){
+      // Preserve sources needed by a different calculation, including their ancestors.
+      let changed=true;
+      while(changed){
+        changed=false;
+        for(const id of consumed)if(graph.edges.some(edge=>edge.from===id&&!consumed.has(edge.to))){consumed.delete(id);changed=true;}
+      }
+      graph.nodes=graph.nodes.filter(node=>!consumed.has(node.id));
+      graph.edges=graph.edges.filter(edge=>!consumed.has(edge.from)&&!consumed.has(edge.to));
+      delete node.minimized;
+    }
+    isolateSymbols(graph,nodeId);
+    return validateGraph(graph);
+  }
+  function completeOperations(candidate) {
+    let graph=candidate;
+    const completed=[], failed=new Set();
+    while(true){
+      const results=evaluateGraph(graph);
+      const ready=[...graph.nodes].reverse().find(node=>!failed.has(node.id)&&['add','subtract','scale','cross','columns','stack'].includes(node.type)&&!results.get(node.id).error&&results.get(node.id).value?.matrix);
+      if(!ready)break;
+      try{graph=materializeResult(graph,ready.id,{consumeInputs:true});completed.push(ready.id);}
+      catch(_){failed.add(ready.id);}
+    }
+    return {graph,completed:completed.filter(id=>graph.nodes.some(node=>node.id===id))};
+  }
   function expandFunction(candidate, nodeId) {
     const graph = validateGraph(candidate), node = graph.nodes.find(value => value.id === nodeId);
     if (!node || node.type !== 'function') throw new Error('Choose a saved function block to expand.');
@@ -385,8 +453,9 @@
     if (definition.kind !== 'graph') throw new Error('An imported matrix function has no internal canvas blocks to expand.');
     const parent = graph.edges.find(edge => edge.to === nodeId), chain = ancestorChain(definition.graph, definition.outputId);
     if (parent && chain.some(block => block.type === 'inverse')) throw new Error('Disconnect this function’s input before expanding its inverse operation.');
-    if (parent && chain.some(block => ['subtract', 'cross', 'columns', 'stack', 'determinant'].includes(block.type))) throw new Error('Disconnect this function’s input before expanding its multi-input or determinant calculation.');
+    if (parent && chain.some(block => ['add', 'subtract', 'cross', 'columns', 'stack', 'determinant'].includes(block.type))) throw new Error('Disconnect this function’s input before expanding its multi-input or determinant calculation.');
     if (graph.nodes.length - 1 + chain.length > 120) throw new Error('Expanding this function would exceed the 120-block canvas limit.');
+    if (parent && chain.some(block => block.type === 'scale')) throw new Error('Disconnect this function’s input before expanding its scalar multiplier.');
     const used = new Set(graph.nodes.map(block => block.id)), remap = new Map();
     for (const block of chain) {
       let suffix = 1, fresh = (nodeId + '_' + block.id).slice(0, 55);
@@ -424,6 +493,51 @@
     return { graph: validateGraph({ ...graph, nodes: graph.nodes.flatMap(block => block.id === nodeId ? nodes : [block]), edges }),
       nodeIds: nodes.map(block => block.id), outputId };
   }
-  return { validateGraph, evaluateGraph, canConnect, connect, inputPorts, validateDefinition, rawSymbols,
-    captureFunction, functionFromOutput, groupSelection, expandFunction };
+  function layoutPositions(graph, sizes = new Map(), aspectRatio = 1.5) {
+    const size = node => sizes.get(node.id) || {width:196, height:154};
+    const parents = new Map(graph.nodes.map(node => [node.id, new Set()]));
+    const neighbors = new Map(graph.nodes.map(node => [node.id, new Set()]));
+    for (const edge of graph.edges) {
+      parents.get(edge.to).add(edge.from);
+      neighbors.get(edge.to).add(edge.from); neighbors.get(edge.from).add(edge.to);
+    }
+    const ranks = new Map();
+    function rank(id) {
+      if (!ranks.has(id)) ranks.set(id, Math.max(-1, ...[...parents.get(id)].map(rank)) + 1);
+      return ranks.get(id);
+    }
+    const seen = new Set(), components = [];
+    for (const root of graph.nodes) {
+      if (seen.has(root.id)) continue;
+      const ids = new Set(), queue = [root.id]; seen.add(root.id);
+      for (const id of queue) {
+        ids.add(id);
+        for (const neighbor of neighbors.get(id)) if (!seen.has(neighbor)) { seen.add(neighbor); queue.push(neighbor); }
+      }
+      const layers = [];
+      for (const node of graph.nodes.filter(node => ids.has(node.id))) (layers[rank(node.id)] ||= []).push(node);
+      const heights = layers.map(layer => layer.reduce((height, node) => height + size(node).height, 0) + (layer.length - 1) * 55);
+      const height = Math.max(...heights), positions = new Map();
+      let x = 0;
+      layers.forEach((layer, i) => {
+        // Keep each column centred, with enough room for expanded matrices.
+        let y = (height - heights[i]) / 2;
+        for (const node of layer) { positions.set(node.id, {x, y}); y += size(node).height + 55; }
+        x += Math.max(...layer.map(node => size(node).width)) + 90;
+      });
+      components.push({positions, width:x - 90, height});
+    }
+    // Pack disconnected calculations into rows instead of one very tall column.
+    const targetWidth = Math.max(0, ...components.map(c => c.width), Math.sqrt(components.reduce((area, c) => area + (c.width + 90) * (c.height + 75), 0) * aspectRatio));
+    const positions = new Map();
+    let x = 0, y = 0, rowHeight = 0;
+    for (const component of components) {
+      if (x && x + component.width > targetWidth) { x = 0; y += rowHeight + 75; rowHeight = 0; }
+      for (const [id, position] of component.positions) positions.set(id, {x:position.x + x, y:position.y + y});
+      x += component.width + 90; rowHeight = Math.max(rowHeight, component.height);
+    }
+    return positions;
+  }
+  return { validateGraph, evaluateGraph, canConnect, connect, inputPorts, validateDefinition, rawSymbols, isolateSymbols, layoutPositions,
+    captureFunction, functionFromOutput, groupSelection, expandFunction, materializeResult, completeOperations };
 });

@@ -52,14 +52,14 @@ async function connection(url) {
     };
     const click = selector => run(`document.querySelector(${JSON.stringify(selector)}).click()`);
     const change = (selector, value, event = 'change') => run(`(() => { const input=document.querySelector(${JSON.stringify(selector)}); input.value=${JSON.stringify(String(value))}; input.dispatchEvent(new Event(${JSON.stringify(event)}, {bubbles:true})); })()`);
-    const select = id => change('#block-picker', id);
+    const select = id => run("document.querySelector("+JSON.stringify('[data-node-id="'+id+'"]')+").dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))");
     const state = () => run('KinematicsPlayground.getState()');
     const output = () => run('KinematicsPlayground.getOutput()?.matrix.map(row => row.map(value => KinematicsMath.evaluate(value, KinematicsPlayground.getState().graph.bindings)))');
     const near = (actual, expected) => {
       assert.equal(actual.length, expected.length);
       actual.forEach((row, r) => { assert.equal(row.length, expected[r].length); row.forEach((value, c) => assert.ok(Math.abs(value - expected[r][c]) < 1e-10, `${r},${c}: ${value} != ${expected[r][c]}`)); });
     };
-    const add = async type => { await click(`.palette-item[data-type="${type}"]`); return (await state()).selected; };
+    const add = async type => { await click(`.palette-item[data-type="${type}"]`); const id=(await state()).selected;await select(id);return id; };
     const source = (label, id) => change(`select[aria-label="${label}"]`, id);
     const wire = async (from, to, input) => {
       // Keyboard activation starts at the receiving port, then chooses its source.
@@ -130,7 +130,7 @@ async function connection(url) {
     }
     await select('difference');near(await output(),[[4],[-3],[0]]);
     // The same operation preserves row orientation after changing both operands.
-    for(const id of ['a','b']){await select(id);await click('[data-vector-orientation="row"]');}
+    for(const id of ['a','b']){await select(id);await change('#vector-orientation','row');}
     await select('difference');near(await output(),[[4,-3,0]]);
     await click('#undo');await select('difference');assert.equal(await run('KinematicsPlayground.getOutput()'),null,'mixed row/column inputs report an error');
     await click('#redo');await select('difference');near(await output(),[[4,-3,0]]);
