@@ -15,6 +15,7 @@
     inverse: { title: 'Inverse', icon: 'T⁻¹', params: {} },
     logarithm: { title: 'To screw', icon: 'log', params: {} },
     matrix: { title: 'Matrix', icon: 'A', params: { rows: 3, columns: 3, matrix: ['1','0','0','0','1','0','0','0','1'] } },
+    subtract: { title: 'Subtract vectors', icon: '−', params: {} },
     cross: { title: 'Cross product', icon: '×', params: {} },
     columns: { title: 'Select columns', icon: '[c]', params: { columns: [1,2,3], rowStart: 1, rowCount: 3 } },
     stack: { title: 'Stack rows', icon: '↕', params: {} },
@@ -143,14 +144,14 @@
     }
     if (node.type === 'translation') return `T(${p.vector.map(pretty).join(', ')})`;
     if (node.type === 'exponential') return `exp([ξ]${pretty(p.theta)})`;
-    if (['matrix','cross','columns','stack','determinant'].includes(node.type)) return node.label;
+    if (['matrix','subtract', 'cross','columns','stack','determinant'].includes(node.type)) return node.label;
     return node.type === 'transform' ? (node.label === 'Transform' ? 'T' : node.label) : node.type === 'inverse' ? 'inverse' : 'log';
   }
   function chainName(id, seen = new Set()) {
     if (seen.has(id)) return '';
     seen.add(id); const node = graph.nodes.find(n => n.id === id); if (!node) return '';
     const edge = graph.edges.find(e => e.to === id), before = edge ? chainName(edge.from,seen) : '';
-    if (['cross','columns','stack'].includes(node.type)) return node.label;
+    if (['subtract', 'cross','columns','stack'].includes(node.type)) return node.label;
     if (node.type === 'inverse' || node.type === 'logarithm' || node.type === 'determinant') return `${node.type === 'inverse' ? 'inverse' : node.type === 'determinant' ? 'det' : 'log'}(${before || 'input'})`;
     return (before ? before + ' · ' : '') + operationName(node);
   }
@@ -178,8 +179,8 @@
       const footer = el('div',{class:'block-footer'},el('span',{},result.value ? 'Output · '+dimension(result.value) : 'Connect or edit input'));
       if (node.type === 'exponential' || node.type === 'function') footer.append(el('button',{'aria-pressed':String(node.showMatrix),'aria-label':`Matrix form for ${node.label}`,onclick:e=>{e.stopPropagation();checkpoint();node.showMatrix=!node.showMatrix;render({inspector:false});saveLocal();}},node.showMatrix?(node.type==='function'?'Function':'Exponential'):'Matrix'));
       const slots = G.inputPorts(node);
-      const inputs = slots.map((slot,index)=>el('button',{class:'port input'+(graph.edges.some(e=>e.to===node.id&&(e.input||'input')===slot)?' connected':''),'data-port':'input','data-input':slot,'data-node-id':node.id,'aria-label':`Input ${slotLabel(node,slot)} of ${node.label}`,title:`${slotLabel(node,slot)} · connect from another output`,style:`top:calc(${100*(index+1)/(slots.length+1)}% - 7px)`},slots.length>1?el('span',{class:'port-label'},slotLabel(node,slot)):null));
-      if(slots.length>2)article.style.minHeight=Math.max(DEFAULT_BLOCK_SIZE.height,slots.length*26+36)+'px';
+      const inputs = slots.map((slot,index)=>el('button',{class:'port input'+(graph.edges.some(e=>e.to===node.id&&(e.input||'input')===slot)?' connected':''),'data-port':'input','data-input':slot,'data-node-id':node.id,'aria-label':`Input ${slotLabel(node,slot)} of ${node.label}`,title:`${slotLabel(node,slot)} · connect from another output`,style:`top:${100*(index+1)/(slots.length+1)}%`},slots.length>1?el('span',{class:'port-label'},slotLabel(node,slot)):null));
+      if(slots.length>2)article.style.minHeight=Math.max(DEFAULT_BLOCK_SIZE.height,(slots.length+1)*40)+'px';
       const output = el('button',{class:'port output'+(graph.edges.some(e=>e.from===node.id)?' connected':''),'data-port':'output','data-node-id':node.id,'aria-label':`Output of ${node.label}`,title:node.type==='logarithm'?'Screw coordinates · read or copy ω, v, θ in the output panel':'Output · connect to another input'});
       [...inputs,output].forEach(port => {
         port.addEventListener('pointerdown',startPort);
@@ -188,7 +189,7 @@
       article.append(header,body,footer,...inputs,output);
       article.addEventListener('click',event=>{if(Date.now()>suppressClickUntil&&!event.target.closest('button'))selectNode(node.id,event.shiftKey||event.ctrlKey||event.metaKey);});
       article.addEventListener('keydown',event=>{if(event.key==='Enter'&&event.target===article){selectNode(node.id);focusEditor();}});
-      header.addEventListener('pointerdown',event=>startNodeDrag(event,node.id));
+      article.addEventListener('pointerdown',event=>startNodeDrag(event,node.id));
       article.addEventListener('contextmenu',event=>{event.preventDefault();openNodeMenu(node.id,event.clientX,event.clientY);});
       return article;
     }));
@@ -198,6 +199,8 @@
   function slotLabel(node, slot) { return slot==='input'?'Input':node.type==='columns'?'C'+(Number(slot.slice(1))+1):slot.toUpperCase(); }
   function portPoint(id, port, input='input') {
     const n = graph.nodes.find(n=>n.id===id), element = $('nodes').querySelector(`[data-node-id="${CSS.escape(id)}"]`);
+    const socket = element?.querySelector(port==='output'?'[data-port="output"]':`[data-port="input"][data-input="${CSS.escape(input)}"]`);
+    if(socket){const r=socket.getBoundingClientRect();return worldPoint(r.left+r.width/2,r.top+r.height/2);}
     const slots=G.inputPorts(n), fraction=port==='output'?.5:(Math.max(0,slots.indexOf(input))+1)/(slots.length+1);
     return {x:n.position.x+(port==='output'?(element?.offsetWidth||DEFAULT_BLOCK_SIZE.width):0),y:n.position.y+(element?.offsetHeight||DEFAULT_BLOCK_SIZE.height)*fraction};
   }
@@ -207,6 +210,7 @@
   }
   function renderConnections() {
     if(connection&&!graph.nodes.some(node=>node.id===connection.id))connection=null;
+    $('nodes').querySelectorAll('.port').forEach(port=>port.classList.toggle('is-snap-target',!!connection?.target&&port.dataset.nodeId===connection.target.id&&port.dataset.port===connection.target.port&&(port.dataset.input||'input')===connection.target.input));
     $('connections').replaceChildren();
     graph.edges.forEach(edge=>{
       const a=portPoint(edge.from,'output'), b=portPoint(edge.to,'input',edge.input);
@@ -220,7 +224,7 @@
       $('connections').append(path,hit,svg('rect',{x:x-30,y:y-12,width:60,height:20,rx:4,class:'wire-label-bg'}),svg('text',{x,y:y+2,'text-anchor':'middle',class:'wire-label'},label));
     });
     if(connection){
-      const a=portPoint(connection.id,connection.port,connection.input), b=connection.pointer||{x:a.x+(connection.port==='output'?90:-90),y:a.y};
+      const a=portPoint(connection.id,connection.port,connection.input), b=connection.target?portPoint(connection.target.id,connection.target.port,connection.target.input):connection.pointer||{x:a.x+(connection.port==='output'?90:-90),y:a.y};
       $('connections').append(svg('path',{d:connection.port==='output'?wirePath(a,b):wirePath(b,a),class:'wire wire-pending',fill:'none'}));
     }
     $('connection-tip').hidden=!connection;
@@ -330,6 +334,8 @@
       section.append(el('div',{class:'field-row'},countField('First row',node.params.rowStart,count=>{node.params.rowStart=count;}),countField('Number of rows',node.params.rowCount,count=>{node.params.rowCount=count;})));
       node.params.columns.forEach((column,i)=>section.append(el('div',{class:'column-source'},sourceField(node,'c'+i,'Output column '+(i+1)+' · source'),countField('Source column '+(i+1),column,count=>{node.params.columns[i]=count;}))));
       section.append(el('div',{class:'field-row'},el('button',{disabled:node.params.columns.length>=12,onclick:()=>{checkpoint();node.params.columns.push(1);render();saveLocal();}},'Add column'),el('button',{disabled:node.params.columns.length<=1,onclick:()=>{checkpoint();const slot='c'+(node.params.columns.length-1);node.params.columns.pop();graph.edges=graph.edges.filter(e=>e.to!==node.id||e.input!==slot);render();saveLocal();}},'Remove last')));
+    }else if(node.type==='subtract'){
+      section.append(sourceField(node,'a','A · first vector'),sourceField(node,'b','B · vector to subtract'),el('p',{class:'hint'},'Returns A − B entry by entry. Use two row vectors or two column vectors of the same length, expressed in the same frame.'));
     }else if(node.type==='cross'||node.type==='stack'){
       section.append(sourceField(node,'a',node.type==='cross'?'A · first vector':'A · upper rows'),sourceField(node,'b',node.type==='cross'?'B · second vector':'B · lower rows'),el('p',{class:'hint'},node.type==='cross'?'Returns A × B for two 3 × 1 column vectors in the same frame. Order matters: p × ω = −ω × p gives a revolute screw’s linear component. Use Select columns to extract a vector from a transform.':'Places A above B. Both inputs need the same number of columns. To form an angular-first twist, choose ω for A and v for B.'));
     }else if(node.type==='determinant'){
@@ -552,6 +558,28 @@
     return connection.port==='output'?connect(connection.id,id,input):connect(id,connection.id,connection.input);
   }
   function handlePortClick(id,port,input='input') {if(!finishPort(id,port,input)){connection={id,port,input};renderConnections();}}
+  function nearbyPort(clientX,clientY,pointerType='mouse') {
+    if(!connection)return null;
+    const canvas=$('canvas').getBoundingClientRect();
+    if(clientX<canvas.left||clientX>canvas.right||clientY<canvas.top||clientY>canvas.bottom)return null;
+    let nearest=null,distance=pointerType==='touch'?36:28;
+    $('nodes').querySelectorAll(`[data-port="${connection.port==='output'?'input':'output'}"]`).forEach(port=>{
+      const {nodeId:id,port:direction,input='input'}=port.dataset;
+      if(id===connection.id)return;
+      const r=port.getBoundingClientRect(),d=Math.hypot(clientX-r.left-r.width/2,clientY-r.top-r.height/2);
+      if(d>distance)return;
+      const error=connection.port==='output'?G.canConnect(graph,connection.id,id,input):G.canConnect(graph,id,connection.id,connection.input);
+      if(error)return;
+      nearest={id,port:direction,input};distance=d;
+    });
+    return nearest;
+  }
+  function moveConnection(event) {
+    if(!connection)return;
+    connection.pointer=worldPoint(event.clientX,event.clientY);
+    connection.target=nearbyPort(event.clientX,event.clientY,event.pointerType);
+    renderConnections();
+  }
   function startPort(event) {
     if(event.button!==0)return;event.stopPropagation();event.preventDefault();
     const {nodeId:id,port,input='input'}=event.currentTarget.dataset;
@@ -561,9 +589,9 @@
     $('canvas').setPointerCapture(event.pointerId);renderConnections();
   }
   function startNodeDrag(event,id) {
-    if(event.button!==0||event.target.closest('button'))return;event.preventDefault();event.stopPropagation();
+    if(event.button!==0||event.target.closest('button,input,select,textarea,a,[contenteditable="true"]'))return;event.preventDefault();event.stopPropagation();
     if(event.shiftKey||event.ctrlKey||event.metaKey){selectNode(id,true);suppressClickUntil=Date.now()+400;return;}
-    checkpoint();if(!selectedIds.has(id))onlySelect(id);else selected=id;
+    if(!selectedIds.has(id))onlySelect(id);else selected=id;
     renderInspector();renderOutput();renderSelection();
     gesture={type:'node',id,pointer:event.pointerId,startX:event.clientX,startY:event.clientY,positions:graph.nodes.filter(n=>selectedIds.has(n.id)).map(n=>({id:n.id,...n.position}))};
     $('canvas').setPointerCapture(event.pointerId);
@@ -575,13 +603,14 @@
     $('canvas').setPointerCapture(event.pointerId);
   });
   $('canvas').addEventListener('pointermove',event=>{
-    if(!gesture){if(connection){connection.pointer=worldPoint(event.clientX,event.clientY);renderConnections();}return;}
+    if(!gesture){if(connection)moveConnection(event);return;}
     if(gesture.pointer!==event.pointerId)return;
     const dx=event.clientX-gesture.startX,dy=event.clientY-gesture.startY;
     if(gesture.type==='node'){
-      gesture.positions.forEach(start=>{const node=graph.nodes.find(n=>n.id===start.id);node.position={x:start.x+dx/view.scale,y:start.y+dy/view.scale};const element=$('nodes').querySelector(`[data-node-id="${CSS.escape(node.id)}"]`);element.style.left=node.position.x+'px';element.style.top=node.position.y+'px';});renderConnections();
+      if(!gesture.moved){if(Math.hypot(dx,dy)<3)return;checkpoint();gesture.moved=true;}
+      gesture.positions.forEach(start=>{const node=graph.nodes.find(n=>n.id===start.id);node.position={x:start.x+dx/view.scale,y:start.y+dy/view.scale};const element=$('nodes').querySelector(`[data-node-id="${CSS.escape(node.id)}"]`);element.classList.add('is-dragging');element.style.left=node.position.x+'px';element.style.top=node.position.y+'px';});renderConnections();
     }else if(gesture.type==='pan'){view.x=gesture.x+dx;view.y=gesture.y+dy;updateView();}
-    else if(gesture.type==='connect'){connection.pointer=worldPoint(event.clientX,event.clientY);renderConnections();}
+    else if(gesture.type==='connect')moveConnection(event);
     else if(gesture.type==='select'){
       const bounds=$('canvas').getBoundingClientRect(),left=Math.min(gesture.startX,event.clientX),top=Math.min(gesture.startY,event.clientY),right=Math.max(gesture.startX,event.clientX),bottom=Math.max(gesture.startY,event.clientY);
       Object.assign($('selection-box').style,{left:left-bounds.left+'px',top:top-bounds.top+'px',width:right-left+'px',height:bottom-top+'px'});$('selection-box').hidden=false;
@@ -593,12 +622,13 @@
   $('canvas').addEventListener('pointerup',event=>{
     if(!gesture||gesture.pointer!==event.pointerId)return;
     const current=gesture;gesture=null;
+    $('nodes').querySelectorAll('.is-dragging').forEach(node=>node.classList.remove('is-dragging'));
     suppressClickUntil=Date.now()+100;
     if($('canvas').hasPointerCapture(event.pointerId))$('canvas').releasePointerCapture(event.pointerId);
     if(current.type==='connect'){
-      const port=document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-port]');
-      if(port)finishPort(port.dataset.nodeId,port.dataset.port,port.dataset.input);
-      if(connection)delete connection.pointer;renderConnections();
+      const port=nearbyPort(event.clientX,event.clientY,event.pointerType);
+      if(port)finishPort(port.id,port.port,port.input);
+      if(connection){delete connection.pointer;delete connection.target;}renderConnections();
     }
     if(current.type==='select'){
       if(Math.hypot(event.clientX-current.startX,event.clientY-current.startY)<3){selectedIds=current.base;selected=[...selectedIds].at(-1)||null;}
@@ -606,7 +636,7 @@
     }
     saveLocal();$('undo').disabled=!history.length;
   });
-  $('canvas').addEventListener('pointercancel',()=>{gesture=null;connection=null;$('selection-box').hidden=true;renderConnections();});
+  $('canvas').addEventListener('pointercancel',()=>{gesture=null;connection=null;$('nodes').querySelectorAll('.is-dragging').forEach(node=>node.classList.remove('is-dragging'));$('selection-box').hidden=true;renderConnections();});
   $('canvas').addEventListener('wheel',event=>{event.preventDefault();const rect=$('canvas').getBoundingClientRect();zoom(Math.exp(-event.deltaY*.0015),event.clientX-rect.left,event.clientY-rect.top);},{passive:false});
   document.querySelectorAll('.palette-item').forEach(button=>{
     button.addEventListener('dragstart',event=>{paletteDragTime=Date.now();event.dataTransfer.setData('application/x-kinematic-block',button.dataset.type);event.dataTransfer.setData('text/plain',button.dataset.type);event.dataTransfer.effectAllowed='copy';});
@@ -711,7 +741,11 @@
   function setCanvasMode(mode){canvasMode=mode;$('select-mode').setAttribute('aria-pressed',mode==='select');$('pan-mode').setAttribute('aria-pressed',mode==='pan');$('canvas').classList.toggle('pan-mode',mode==='pan');}
   $('select-mode').addEventListener('click',()=>setCanvasMode('select'));$('pan-mode').addEventListener('click',()=>setCanvasMode('pan'));
   document.addEventListener('keydown',event=>{
-    if(event.key==='Escape'){closeMenu();connection=null;renderConnections();return;}
+    if(event.key==='Escape'){
+      closeMenu();connection=null;
+      if(gesture?.type==='connect'){const pointer=gesture.pointer;gesture=null;if($('canvas').hasPointerCapture(pointer))$('canvas').releasePointerCapture(pointer);}
+      renderConnections();return;
+    }
     if(document.querySelector('dialog[open]'))return;
     const typing=event.target.matches('input,textarea,select')||event.target.isContentEditable;
     if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){event.preventDefault();saveGraph();return;}

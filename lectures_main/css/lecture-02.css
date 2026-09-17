@@ -115,7 +115,7 @@
 .rodrigues-meaning > div:nth-child(2) { border-top-color: var(--epfl-red); }
 .rodrigues-meaning p { margin-bottom: 0; }
 
-/* Slide 18: expand and regroup the translational exponential in one view. */
+/* Slides 18–19: derive translation, then assemble the homogeneous transform. */
 .lecture-02 .g-derivation-slide { padding-bottom: 3.5rem; }
 .g-derivation-slide .slide-subtitle { max-width: none; }
 .g-derivation-columns {
@@ -132,14 +132,15 @@
 .g-derivation-slide p:not(.slide-kicker):not(.slide-subtitle) { margin-block: .35rem; font-size: .88rem; line-height: 1.35; }
 .g-derivation-slide .g-explanation { color: var(--muted); }
 .g-derivation-slide .g-result { margin-top: .6rem; }
-.g-integral { margin-top: .65rem; padding: .4rem .65rem; background: #f8f8f8; border-left: 3px solid var(--epfl-red); }
-.g-integral strong { font-size: .85rem; }
-.g-integral mjx-container[display="true"],
-.g-pose-result mjx-container[display="true"] { margin: .4em 0 !important; }
-.g-pose-result { display: grid; grid-template-columns: 1fr 1.4fr; gap: 1rem; align-items: center; margin-top: .35rem; }
+.g-known-result,
+.g-combined-result { margin: .65rem 0; padding: .4rem .65rem; background: #f8f8f8; border-left: 3px solid var(--epfl-red); }
+.g-known-result { margin-top: 0; }
+.g-known-result strong,
+.g-combined-result strong { font-size: .85rem; }
+.g-derivation-slide mjx-container[display="true"] { margin: .6em 0 !important; }
+.g-derivation-slide .clean-callout { margin-top: .8rem !important; }
 @media (max-width: 600px) {
-  .g-derivation-columns,
-  .g-pose-result { grid-template-columns: 1fr; }
+  .g-derivation-columns { grid-template-columns: 1fr; }
   .g-derivation-columns > div:first-child { border-right: 0; padding-right: 0; }
 }
 

@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="../css/reveal.css">
   <link rel="stylesheet" href="../css/navigation.css">
   <link rel="stylesheet" href="../css/viz.css">
-  <link rel="stylesheet" href="../css/lecture-02.css?v=20260917-urdf-origin-3">
+  <link rel="stylesheet" href="../css/lecture-02.css?v=20260917-screw-blocks-1">
   <script>
     window.MathJax = { tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] } };
   </script>
@@ -290,16 +290,20 @@
       <div class="clean-callout"><strong>Check:</strong> at \(\theta=0\), \(R=I\); differentiating at zero gives \(\left.\frac{dR}{d\theta}\right|_0=[\boldsymbol\omega]_\times\).</div>
     </section>
 
-    <section class="slide g-derivation-slide">
-      <p class="slide-kicker">Act II · From rotation to rigid transformation</p>
-      <h2 class="slide-title">Derive \(G(\theta)\) from the exponential’s translation block</h2>
-      <p class="slide-subtitle">Let \(K=[\boldsymbol\omega]_\times\), with \(\|\boldsymbol\omega\|=1\), and \(\widehat{\boldsymbol\xi}=\begin{bmatrix}K&\mathbf v\\\mathbf0^T&0\end{bmatrix}\). Expand the same matrix exponential used for rotation.</p>
+    <section class="slide g-derivation-slide" id="screw-translation-block">
+      <p class="slide-kicker">Act II · From rotation to rigid transformation · 1/2</p>
+      <h2 class="slide-title">Rotation is known; derive the translation block</h2>
+      <p class="slide-subtitle">We already calculated \(R(\theta)=e^{K\theta}\). We now need only \(\mathbf t(\theta)=G(\theta)\mathbf v\), where \(K=[\boldsymbol\omega]_\times\) and \(\|\boldsymbol\omega\|=1\).</p>
+      <div class="g-known-result">
+        <strong>Already known · Rodrigues’ formula</strong>
+        <div class="equation">\[R(\theta)=e^{K\theta}=I_3+\sin\theta\,K+(1-\cos\theta)K^2.\]</div>
+      </div>
       <div class="g-derivation-columns">
         <div>
-          <h3>1 · Expand the block powers</h3>
+          <h3>1 · Read the upper-right block of the series</h3>
           <div class="equation">\[
-            \widehat{\boldsymbol\xi}^{\,2}=\begin{bmatrix}K^2&K\mathbf v\\\mathbf0^T&0\end{bmatrix},\qquad
-            \widehat{\boldsymbol\xi}^{\,n}=\begin{bmatrix}K^n&K^{n-1}\mathbf v\\\mathbf0^T&0\end{bmatrix}\quad(n\ge1).
+            \widehat{\boldsymbol\xi}=\begin{bmatrix}K&amp;\mathbf v\\\mathbf0^T&amp;0\end{bmatrix},\qquad
+            \widehat{\boldsymbol\xi}^{\,n}=\begin{bmatrix}K^n&amp;K^{n-1}\mathbf v\\\mathbf0^T&amp;0\end{bmatrix}\quad(n\ge1).
           \]</div>
           <div class="equation">\[
             e^{\widehat{\boldsymbol\xi}\theta}
@@ -307,36 +311,74 @@
             +\frac{\theta^2}{2!}\widehat{\boldsymbol\xi}^{\,2}
             +\frac{\theta^3}{3!}\widehat{\boldsymbol\xi}^{\,3}+\cdots
           \]</div>
-          <p>Read the upper-right block:</p>
-          <div class="equation">\[\begin{aligned}
-            \mathbf t(\theta)&=\underbrace{\left(\theta I+\frac{\theta^2}{2!}K+\frac{\theta^3}{3!}K^2
+          <div class="equation">\[
+            \mathbf t(\theta)=\underbrace{\left(\theta I_3+\frac{\theta^2}{2!}K+\frac{\theta^3}{3!}K^2
               +\frac{\theta^4}{4!}K^3+\cdots\right)}_{G(\theta)}\mathbf v.
-          \end{aligned}\]</div>
-          <p class="g-explanation">Each translation term has one fewer power of \(K\). Equivalently, \(G(\theta)\) is the term-by-term integral of \(R(\theta)\).</p>
+          \]</div>
+          <p class="g-explanation">Each upper-right block contains one fewer power of \(K\), followed by \(\mathbf v\).</p>
         </div>
         <div>
           <h3>2 · Reduce powers and recognize the series</h3>
           <p>Use \(K^3=-K\), \(K^4=-K^2\), \(K^5=K\), …</p>
           <div class="equation">\[\begin{aligned}
-            G(\theta)&=\theta I\\
-              &\quad+\underbrace{\left(\frac{\theta^2}{2!}-\frac{\theta^4}{4!}
+            G(\theta)&amp;=\theta I_3\\
+              &amp;\quad+\underbrace{\left(\frac{\theta^2}{2!}-\frac{\theta^4}{4!}
                 +\frac{\theta^6}{6!}-\cdots\right)}_{1-\cos\theta}K\\
-              &\quad+\underbrace{\left(\frac{\theta^3}{3!}-\frac{\theta^5}{5!}
+              &amp;\quad+\underbrace{\left(\frac{\theta^3}{3!}-\frac{\theta^5}{5!}
                 +\frac{\theta^7}{7!}-\cdots\right)}_{\theta-\sin\theta}K^2.
           \end{aligned}\]</div>
-          <div class="equation g-result">\[\boxed{G(\theta)=\theta I+(1-\cos\theta)K+(\theta-\sin\theta)K^2.}\]</div>
+          <div class="equation g-result">\[\boxed{G(\theta)=\theta I_3+(1-\cos\theta)K+(\theta-\sin\theta)K^2.}\]</div>
         </div>
       </div>
-      <div class="g-integral">
-        <strong>The same result by integrating Rodrigues:</strong>
-        <div class="equation">\[G(\theta)=\int_0^\theta e^{Ku}\,du
-          =\int_0^\theta\big[I+\sin u\,K+(1-\cos u)K^2\big]du.\]</div>
+      <p class="clean-callout">\(\mathbf v\) is a 3-vector. Its contribution to the full matrix exponential is the translation \(\mathbf t(\theta)=G(\theta)\mathbf v\).</p>
+    </section>
+
+    <section class="slide g-derivation-slide" id="screw-combined-transform">
+      <p class="slide-kicker">Act II · From rotation to rigid transformation · 2/2</p>
+      <h2 class="slide-title">Assemble the full 4 × 4 transformation</h2>
+      <p class="slide-subtitle">Combine the rotation and translation blocks. The bottom row follows directly from the same exponential series.</p>
+      <div class="g-derivation-columns">
+        <div>
+          <h3>Where do the bottom 0 and 1 come from?</h3>
+          <div class="equation">\[
+            I_4=\begin{bmatrix}I_3&amp;\mathbf0\\\mathbf0^T&amp;1\end{bmatrix},\qquad
+            \widehat{\boldsymbol\xi}^{\,n}=\begin{bmatrix}K^n&amp;K^{n-1}\mathbf v\\\mathbf0^T&amp;0\end{bmatrix}.
+          \]</div>
+          <p>For every \(n\ge1\), the bottom row of \(\widehat{\boldsymbol\xi}^{\,n}\) is zero. Only the identity term contributes a bottom-right 1.</p>
+          <div class="equation">\[
+            \underbrace{[\,0\;0\;0\;1\,]}_{I_4}
+            +\underbrace{[\,0\;0\;0\;0\,]+\cdots}_{\text{all positive powers}}
+            =[\,0\;0\;0\;1\,].
+          \]</div>
+        </div>
+        <div>
+          <h3>Put the two results into their blocks</h3>
+          <div class="equation">\[
+            T(\theta)=e^{\widehat{\boldsymbol\xi}\theta}
+            =\begin{bmatrix}
+              \underbrace{e^{K\theta}}_{3\times3}&amp;\underbrace{G(\theta)\mathbf v}_{3\times1}\\
+              \underbrace{\mathbf0^T}_{1\times3}&amp;1
+            \end{bmatrix}.
+          \]</div>
+          <p>The last row preserves the homogeneous coordinate of a point:</p>
+          <div class="equation">\[
+            \begin{bmatrix}R&amp;\mathbf t\\\mathbf0^T&amp;1\end{bmatrix}
+            \begin{bmatrix}\mathbf p\\1\end{bmatrix}
+            =\begin{bmatrix}R\mathbf p+\mathbf t\\1\end{bmatrix}.
+          \]</div>
+        </div>
       </div>
-      <div class="g-pose-result">
-        <div class="equation">\[e^{\widehat{\boldsymbol\xi}\theta}
-          =\begin{bmatrix}R(\theta)&G(\theta)\mathbf v\\\mathbf0^T&1\end{bmatrix}.\]</div>
-        <p><strong>Pure translation:</strong> if \(\boldsymbol\omega=\mathbf0\), then \(K=0\), \(G(\theta)=\theta I\), and \(\mathbf t=\theta\mathbf v\).</p>
+      <div class="g-combined-result">
+        <strong>Combined formula · \(\|\boldsymbol\omega\|=1\)</strong>
+        <div class="equation">\[\boxed{
+          e^{\widehat{\boldsymbol\xi}\theta}
+          =\begin{bmatrix}
+            I_3+\sin\theta\,K+(1-\cos\theta)K^2
+            &amp;\big[\theta I_3+(1-\cos\theta)K+(\theta-\sin\theta)K^2\big]\mathbf v\\
+            \mathbf0^T&amp;1
+          \end{bmatrix}.}\]</div>
       </div>
+      <p class="g-explanation"><strong>Pure translation:</strong> if \(\boldsymbol\omega=\mathbf0\), then \(K=0\), \(R=I_3\), and \(\mathbf t=\theta\mathbf v\). The bottom row is still \([\,0\;0\;0\;1\,]\).</p>
     </section>
 
     <section class="slide tool-twist-slide" id="tool-point-velocity">

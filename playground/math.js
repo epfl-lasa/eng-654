@@ -400,7 +400,12 @@
   function computeBlock(block, inputValue = null, bindings = {}, angleUnit = 'rad') {
     const params = block.params || {};
     let own;
-    if (block.type === 'cross') {
+    if (block.type === 'subtract') {
+      const a = inputMatrix(inputValue && inputValue.a, 'a'), b = inputMatrix(inputValue && inputValue.b, 'b');
+      if ((a.length !== 1 && a[0].length !== 1) || (b.length !== 1 && b[0].length !== 1)) throw new Error('Subtraction needs two row or column vectors.');
+      if (a.length !== b.length || a[0].length !== b[0].length) throw new Error('Vectors must have the same length and orientation.');
+      return { kind: 'matrix', matrix: matrixMap(a, (value, i, j) => sub(value, b[i][j])) };
+    } else if (block.type === 'cross') {
       const a = inputMatrix(inputValue && inputValue.a, 'a'), b = inputMatrix(inputValue && inputValue.b, 'b');
       if (a.length !== 3 || a[0].length !== 1 || b.length !== 3 || b[0].length !== 1) throw new Error('A cross product needs two 3 × 1 column vectors.');
       return { kind: 'matrix', matrix: asColumn(cross(a.map(row => row[0]), b.map(row => row[0]))) };

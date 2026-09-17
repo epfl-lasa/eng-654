@@ -22,7 +22,7 @@ previous graph and library if needed. Invalid files leave the current work intac
 Use **Download blocks** and **Upload blocks** to share My blocks on its own.
 An individual saved block's menu also offers **Download block (.json)**.
 
-## Cross products, column selection, and determinants
+## Vector subtraction, cross products, column selection, and determinants
 
 - **Row vector / Column vector:** add a 1 × n or m × 1 vector, then choose its
   length and enter its components in the inspector.
@@ -32,6 +32,9 @@ An individual saved block's menu also offers **Download block (.json)**.
   multiplies the actual matrix dimensions.
 - **Cross product:** choose two 3 × 1 outputs as **A** and **B**, either in the
   inspector or using the labelled ports. The result is **A × B**.
+- **Subtract vectors:** choose **A** and **B** to calculate **A − B** entry by
+  entry. Both inputs must be row vectors or both column vectors, with the same
+  length and reference frame. The result keeps their orientation.
 - **Select columns:** choose a source output and column number for each output
   column. Set a common first row and number of rows. Columns may come from
   different blocks and can repeat. All row/column indices start at 1. The live
@@ -102,6 +105,8 @@ reselecting a preset restores the starting template.
   `*`, `/`, `^`, `sin`, `cos`, `tan`, `sqrt`, `acos`, and `atan2`.
 - Drag an output port to an input port, or click the two ports in succession.
   One output may feed multiple blocks. Each input accepts one connection.
+  Larger ports and nearby-target snapping help connect blocks: a valid nearby
+  port highlights and the line snaps to its centre before you release it.
 - Select any block to see the result accumulated up to that point. Symbol values
   provide a numeric evaluation and a draggable coordinate-frame preview.
 - Right-click a block to edit it, save a reusable function, or expose its
@@ -122,7 +127,8 @@ use one finger to orbit or two fingers to pan and pinch. Reset restores the view
 
 - **Shift-, Ctrl-, or Cmd-click** a block to add or remove it from the selection.
   Drag empty canvas space to draw a selection box. Shift-drag adds to the current
-  selection. Drag a selected block's header to move the selection together.
+  selection. Drag anywhere on a selected block's header, body, or footer to move
+  the selection together. Buttons and connection ports retain their own actions.
 - Hold **Space** and drag to pan, or choose the Pan tool. Scroll to zoom.
   **Ctrl/Cmd+A** selects all blocks; **Ctrl/Cmd+G** combines the selection.
 - **Combine** replaces consecutive connected operations with one named function

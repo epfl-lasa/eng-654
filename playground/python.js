@@ -201,10 +201,10 @@ def to_homogeneous(value):
     return MANIFEST_PREFIX + encoded + '\n';
   }
   const indent = source => String(source).split('\n').map(line => line ? '    ' + line : '').join('\n');
-  const inputOperation = type => ['inverse', 'logarithm', 'cross', 'columns', 'stack', 'determinant'].includes(type);
+  const inputOperation = type => ['inverse', 'logarithm', 'subtract', 'cross', 'columns', 'stack', 'determinant'].includes(type);
   function orderedInputs(graph, node) {
     const inputs = graph.edges.filter(edge => edge.to === node.id);
-    const slots = node.type === 'cross' || node.type === 'stack' ? ['a', 'b']
+    const slots = node.type === 'subtract' || node.type === 'cross' || node.type === 'stack' ? ['a', 'b']
       : node.type === 'columns' ? (node.params?.columns || []).map((_, index) => 'c' + index) : null;
     if (!slots) {
       if (inputs.length > 1) throw new Error('Each block can have only one input.');
@@ -341,7 +341,7 @@ def to_homogeneous(value):
         const p = node.params || {}, unit = quote(def.angleUnit === 'deg' ? 'deg' : 'rad');
         const inputs = orderedInputs(def.graph, node), usesInputs = inputOperation(node.type);
         const inputNames = inputs.map((_, index) => 'input_' + (index + 1));
-        let operation, outputKind = { exponential: 'transform', determinant: 'scalar', cross: 'matrix', columns: 'matrix', stack: 'matrix' }[node.type] || node.type;
+        let operation, outputKind = { exponential: 'transform', determinant: 'scalar', subtract: 'matrix', cross: 'matrix', columns: 'matrix', stack: 'matrix' }[node.type] || node.type;
         if (node.type === 'rotation') {
           needed.add('skew'); needed.add('rotation');
           operation = 'rotation(' + vector(p.axis, ['0', '0', '1'], ownNames) + ', ' + source(p.angle === undefined ? 'theta' : p.angle, ownNames) + ', ' + unit + ')';
@@ -364,7 +364,8 @@ def to_homogeneous(value):
           if (node.type === 'logarithm') needed.add('skew');
           operation = (node.type === 'inverse' ? 'rigid_inverse' : 'matrix_to_screw') + '(' + inputNames[0] + ')';
           outputKind = node.type === 'inverse' ? kinds.get(inputs[0].from) : 'screw';
-        } else if (node.type === 'cross') operation = inputNames[0] + '.cross(' + inputNames[1] + ')';
+        } else if (node.type === 'subtract') operation = inputNames[0] + ' - ' + inputNames[1];
+        else if (node.type === 'cross') operation = inputNames[0] + '.cross(' + inputNames[1] + ')';
         else if (node.type === 'stack') operation = 'sp.Matrix.vstack(' + inputNames.join(', ') + ')';
         else if (node.type === 'columns') {
           if (!Array.isArray(p.columns) || !p.columns.length || !Number.isInteger(p.rowStart) || !Number.isInteger(p.rowCount) || p.rowStart < 1 || p.rowCount < 1 || p.columns.some(column => !Number.isInteger(column) || column < 1)) throw new Error('Select positive integer columns and a valid row slice.');
@@ -378,6 +379,11 @@ def to_homogeneous(value):
           outputKind = inner.outputKind;
         } else throw new Error('Unknown block type: ' + node.type);
         const checks = [];
+        if (node.type === 'subtract') checks.push(
+          'if any(not isinstance(vector, sp.MatrixBase) or (vector.rows != 1 and vector.cols != 1) for vector in (' + inputNames.join(', ') + ')):',
+          '    raise ValueError("Subtraction needs two row or column vectors.")',
+          'if ' + inputNames[0] + '.shape != ' + inputNames[1] + '.shape:',
+          '    raise ValueError("Vectors must have the same length and orientation.")');
         if (node.type === 'cross') checks.push('if any(vector.shape != (3, 1) for vector in (' + inputNames.join(', ') + ')):', '    raise ValueError("Cross products need two 3 x 1 column vectors.")');
         if (node.type === 'stack') checks.push('if ' + inputNames[0] + '.rows + ' + inputNames[1] + '.rows > 12:', '    raise ValueError("Stacked matrices may have at most 12 rows.")');
         if (node.type === 'columns') inputNames.forEach((name, index) => checks.push('if ' + name + '.rows < ' + (p.rowStart - 1 + p.rowCount) + ' or ' + name + '.cols < ' + p.columns[index] + ':', '    raise ValueError("The selected column or rows exceed the input matrix.")'));

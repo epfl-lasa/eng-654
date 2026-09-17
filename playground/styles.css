@@ -135,7 +135,7 @@ a { color: inherit; text-underline-offset: 3px; }
 }
 .block {
   position: absolute; width: 232px; min-height: 188px; border: 1px solid #d1d1d1; border-radius: 8px;
-  background: white; box-shadow: 0 3px 10px #0000000b; user-select: none; overflow: visible;
+  background: white; box-shadow: 0 3px 10px #0000000b; user-select: none; overflow: visible; cursor: grab;
 }
 .block.is-selected { border-color: var(--red); box-shadow: 0 0 0 1px var(--red), 0 4px 14px #0000000d; z-index: 2; }
 .block.has-error { border-style: dashed; border-color: var(--red); }
@@ -179,12 +179,13 @@ a { color: inherit; text-underline-offset: 3px; }
 .block-footer button { font-size: 9px; padding: 2px 5px; min-height: 21px; border-color: #e5e5e5; }
 .block-footer .badge, .block-footer .tag { font-size: 9px; padding: 2px 5px; }
 .port {
-  position: absolute; top: calc(50% - 7px); width: 14px; height: 14px; min-height: 14px;
+  position: absolute; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; min-height: 20px;
   border: 2px solid #242424; border-radius: 50%; background: white; padding: 0; z-index: 3;
 }
-.port::before { content: ""; position: absolute; inset: -7px; border-radius: 50%; }
-.port.input { left: -8px; }
-.port.output { right: -8px; }
+.port::before { content: ""; position: absolute; inset: -10px; border-radius: 50%; }
+.port.input { left: -11px; }
+.port.output { right: -11px; }
+.port.is-snap-target { border-color: var(--red); background: var(--red); box-shadow: 0 0 0 7px #e306132b; }
 .port.connected { background: var(--ink); }
 .port:hover, .port.is-active { border-color: var(--red) !important; background: var(--red) !important; }
 .block.is-selected .port.connected { background: var(--red); border-color: var(--red); }
@@ -272,7 +273,7 @@ a { color: inherit; text-underline-offset: 3px; }
 .column-source { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
 .block-navigation { display: block; padding: 14px 19px 0; }
 .block-navigation select { font-size: 11px; }
-.port-label { position: absolute; right: 18px; top: -3px; color: var(--ink); background: #fafafa; padding: 2px 3px; font-size: 9px; line-height: 1.2; pointer-events: none; }
+.port-label { position: absolute; right: 24px; top: 0; color: var(--ink); background: #fafafa; padding: 2px 3px; font-size: 9px; line-height: 1.2; pointer-events: none; }
 .example-download { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 15px; padding: 7px 24px; border-bottom: 1px solid var(--line); font-size: 11px; background: white; }
 .example-download strong { font-weight: 500; }
 .example-download button { min-height: 25px; padding: 4px 8px; font-size: 11px; }

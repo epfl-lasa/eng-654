@@ -4,13 +4,13 @@
   else root.KinematicsGraph = factory(root.KinematicsMath);
 })(typeof window !== 'undefined' ? window : globalThis, function (MathEngine) {
   'use strict';
-  const TYPES = new Set(['rotation', 'translation', 'transform', 'exponential', 'inverse', 'logarithm', 'function', 'matrix', 'cross', 'columns', 'stack', 'determinant']);
+  const TYPES = new Set(['rotation', 'translation', 'transform', 'exponential', 'inverse', 'logarithm', 'function', 'matrix', 'subtract', 'cross', 'columns', 'stack', 'determinant']);
   const DEFAULT_LABELS = { rotation: 'Rotation', translation: 'Translation', transform: 'Transformation',
     exponential: 'Screw exponential', inverse: 'Inverse', logarithm: 'Matrix to screw', function: 'Saved function',
-    matrix: 'Matrix', cross: 'Cross product', columns: 'Select columns', stack: 'Stack rows', determinant: 'Determinant' };
+    matrix: 'Matrix', subtract: 'Subtract vectors', cross: 'Cross product', columns: 'Select columns', stack: 'Stack rows', determinant: 'Determinant' };
   const EXPRESSION_KEYS = { rotation: ['axis', 'angle'], translation: ['vector'], transform: ['matrix'],
     exponential: ['omega', 'v', 'theta'], matrix: ['matrix'] };
-  const INPUT_OPERATIONS = new Set(['inverse', 'logarithm', 'cross', 'columns', 'stack', 'determinant']);
+  const INPUT_OPERATIONS = new Set(['inverse', 'logarithm', 'subtract', 'cross', 'columns', 'stack', 'determinant']);
   const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
   const SCREW_OUTPUT_MESSAGE = 'A screw result contains ω, v and θ. Enter these in an Exponential block to compose its motion.';
   const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -31,7 +31,7 @@
     return value;
   }
   function inputPorts(node) {
-    if (node.type === 'cross' || node.type === 'stack') return ['a', 'b'];
+    if (node.type === 'subtract' || node.type === 'cross' || node.type === 'stack') return ['a', 'b'];
     if (node.type === 'columns') return (node.params.columns || []).map((_, index) => 'c' + index);
     return ['input'];
   }
@@ -232,7 +232,7 @@
     if (!Array.isArray(selectedIds) || !selectedIds.length) throw new Error('Select at least one block to combine.');
     const selected = new Set(selectedIds), nodes = graph.nodes.filter(node => selected.has(node.id));
     if (nodes.length !== selected.size) throw new Error('The selection contains a missing block.');
-    if (nodes.some(node => ['cross', 'columns', 'stack'].includes(node.type))) throw new Error('Save the output as a function to include every operand of a multi-input calculation. Combining a selection requires a single chain.');
+    if (nodes.some(node => ['subtract', 'cross', 'columns', 'stack'].includes(node.type))) throw new Error('Save the output as a function to include every operand of a multi-input calculation. Combining a selection requires a single chain.');
     const parents = new Map(graph.edges.map(edge => [edge.to, edge.from]));
     const starts = nodes.filter(node => !selected.has(parents.get(node.id)));
     if (starts.length !== 1) throw new Error('Select one connected chain of blocks to combine.');
@@ -367,7 +367,7 @@
           if (upstream.error) throw new Error('Fix the input from “' + nodes.get(edge.from).label + '” first. ' + upstream.error);
         }
         if (INPUT_OPERATIONS.has(node.type)) {
-          const operand = ['cross', 'columns', 'stack'].includes(node.type)
+          const operand = ['subtract', 'cross', 'columns', 'stack'].includes(node.type)
             ? Object.fromEntries(Object.entries(inputs).map(([input, upstream]) => [input, upstream.value])) : parent ? parent.value : null;
           result.value = MathEngine.computeBlock(block, operand, bindings, graph.angleUnit);
           result.ownValue = result.value;
@@ -385,7 +385,7 @@
     if (definition.kind !== 'graph') throw new Error('An imported matrix function has no internal canvas blocks to expand.');
     const parent = graph.edges.find(edge => edge.to === nodeId), chain = ancestorChain(definition.graph, definition.outputId);
     if (parent && chain.some(block => block.type === 'inverse')) throw new Error('Disconnect this function’s input before expanding its inverse operation.');
-    if (parent && chain.some(block => ['cross', 'columns', 'stack', 'determinant'].includes(block.type))) throw new Error('Disconnect this function’s input before expanding its multi-input or determinant calculation.');
+    if (parent && chain.some(block => ['subtract', 'cross', 'columns', 'stack', 'determinant'].includes(block.type))) throw new Error('Disconnect this function’s input before expanding its multi-input or determinant calculation.');
     if (graph.nodes.length - 1 + chain.length > 120) throw new Error('Expanding this function would exceed the 120-block canvas limit.');
     const used = new Set(graph.nodes.map(block => block.id)), remap = new Map();
     for (const block of chain) {
