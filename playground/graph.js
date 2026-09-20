@@ -4,13 +4,13 @@
   else root.KinematicsGraph = factory(root.KinematicsMath);
 })(typeof window !== 'undefined' ? window : globalThis, function (MathEngine) {
   'use strict';
-  const TYPES = new Set(['rotation', 'translation', 'transform', 'exponential', 'inverse', 'logarithm', 'function', 'matrix', 'scale', 'add', 'subtract', 'cross', 'columns', 'stack', 'determinant']);
+  const TYPES = new Set(['rotation', 'translation', 'transform', 'exponential', 'inverse', 'logarithm', 'function', 'matrix', 'scale', 'add', 'subtract', 'cross', 'columns', 'stack', 'stackColumns', 'determinant']);
   const DEFAULT_LABELS = { rotation: 'Rotation', translation: 'Translation', transform: 'Transformation',
     exponential: 'Screw exponential', inverse: 'Inverse', logarithm: 'Matrix to screw', function: 'Saved function',
-    matrix: 'Matrix', scale: 'Scalar multiplier', add: 'Add vectors', subtract: 'Subtract vectors', cross: 'Cross product', columns: 'Select columns', stack: 'Stack rows', determinant: 'Determinant' };
+    matrix: 'Matrix', scale: 'Scalar multiplier', add: 'Add vectors', subtract: 'Subtract vectors', cross: 'Cross product', columns: 'Select columns', stack: 'Stack rows', stackColumns: 'Stack columns', determinant: 'Determinant' };
   const EXPRESSION_KEYS = { rotation: ['axis', 'angle'], translation: ['vector'], transform: ['matrix'],
     exponential: ['omega', 'v', 'theta'], matrix: ['matrix'], scale: ['factor'] };
-  const INPUT_OPERATIONS = new Set(['inverse', 'logarithm', 'scale', 'add', 'subtract', 'cross', 'columns', 'stack', 'determinant']);
+  const INPUT_OPERATIONS = new Set(['inverse', 'logarithm', 'scale', 'add', 'subtract', 'cross', 'columns', 'stack', 'stackColumns', 'determinant']);
   const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
   const SCREW_OUTPUT_MESSAGE = 'A screw result contains ω, v and θ. Enter these in an Exponential block to compose its motion.';
   const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -31,7 +31,7 @@
     return value;
   }
   function inputPorts(node) {
-    if (node.type === 'add' || node.type === 'subtract' || node.type === 'cross' || node.type === 'stack') return ['a', 'b'];
+    if (node.type === 'add' || node.type === 'subtract' || node.type === 'cross' || ['stack', 'stackColumns'].includes(node.type)) return ['a', 'b'];
     if (node.type === 'columns') return (node.params.columns || []).map((_, index) => 'c' + index);
     return ['input'];
   }
@@ -43,7 +43,30 @@
   function mapExpressionParams(node, fn) {
     const params = { ...node.params };
     for (const key of EXPRESSION_KEYS[node.type] || []) params[key] = Array.isArray(params[key]) ? params[key].map(fn) : fn(params[key]);
+    if (params.symbolEditor) params.symbolEditor = { matrix: [...params.symbolEditor.matrix],
+      arguments: Object.fromEntries(Object.entries(params.symbolEditor.arguments).map(([name, value]) => [name, fn(value)])) };
     return params;
+  }
+  function matrixSymbolFields(node) {
+    if (node.type !== 'matrix') return {};
+    if (node.params.symbolEditor) return { ...node.params.symbolEditor.arguments };
+    return Object.fromEntries(rawSymbols(node).map(name => [name, name]));
+  }
+  function matrixFromSymbols(editor) {
+    // Replace whole tokens in one pass so expressions and names such as x_1
+    // and x_10 remain independent. Draft values stay editable, like cell inputs.
+    return editor.matrix.map(entry => MathEngine.normalizeInput(entry).replace(/(\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?|([A-Za-z_][A-Za-z_0-9]*)/g,
+      (token, number, name, offset, source) => name && !source.slice(offset + token.length).trimStart().startsWith('(') && Object.hasOwn(editor.arguments, name)
+        ? '(' + MathEngine.normalizeInput(editor.arguments[name]) + ')' : token));
+  }
+  function setMatrixSymbol(node, name, value) {
+    const fields = matrixSymbolFields(node);
+    if (!Object.hasOwn(fields, name)) throw new Error('Choose a symbol in this matrix.');
+    const editor = { matrix: [...(node.params.symbolEditor?.matrix || node.params.matrix)],
+      arguments: { ...fields, [name]: string(value, 'Symbol value') } };
+    const matrix = matrixFromSymbols(editor);
+    matrix.forEach(entry => string(entry, 'Matrix entry'));
+    node.params = { ...node.params, matrix, symbolEditor: editor };
   }
   function symbolName(name) {
     if (typeof name !== 'string' || !/^[A-Za-z_][A-Za-z_0-9]{0,79}$/.test(name) || DANGEROUS_KEYS.has(name) || name === 'pi') throw new Error('Invalid symbol name: ' + String(name));
@@ -58,7 +81,17 @@
     if (type === 'scale') return { factor: string(params.factor, 'Scalar factor') };
     if (type === 'matrix') {
       const rows = dimension(params.rows, 'Rows'), columns = dimension(params.columns, 'Columns');
-      return { rows, columns, matrix: vector(params.matrix, 'Matrix', rows * columns) };
+      const result = { rows, columns, matrix: vector(params.matrix, 'Matrix', rows * columns) };
+      if (params.symbolEditor !== undefined) {
+        const editor = params.symbolEditor;
+        if (!object(editor) || !object(editor.arguments) || Object.keys(editor.arguments).length > 256) throw new Error('Matrix symbol inputs must be an object with at most 256 symbols.');
+        result.symbolEditor = { matrix: vector(editor.matrix, 'Symbolic matrix', rows * columns), arguments: {} };
+        for (const [name, value] of Object.entries(editor.arguments)) {
+          symbolName(name); result.symbolEditor.arguments[name] = string(value, 'Symbol value');
+        }
+        result.matrix = vector(matrixFromSymbols(result.symbolEditor), 'Matrix', rows * columns);
+      }
+      return result;
     }
     if (type === 'columns') {
       if (!Array.isArray(params.columns) || params.columns.length < 1 || params.columns.length > 12) throw new Error('Select between 1 and 12 columns.');
@@ -174,7 +207,7 @@
         if (chain.length !== definition.graph.nodes.length) throw new Error('A function definition must contain only its output chain.');
         if (chain.at(-1).type === 'logarithm') throw new Error('Save a rotation, translation, or transformation output as a function. A screw result is not a matrix operation.');
         for (const block of chain) {
-          if (INPUT_OPERATIONS.has(block.type) && inputPorts(block).some(input => !definition.graph.edges.some(edge => edge.to === block.id && (edge.input || 'input') === input))) {
+          if (INPUT_OPERATIONS.has(block.type) && block.type !== 'scale' && inputPorts(block).some(input => !definition.graph.edges.some(edge => edge.to === block.id && (edge.input || 'input') === input))) {
             throw new Error('Include the input of every operation when saving a function; “' + block.label + '” has an unconnected input.');
           }
           const expressions = expressionParams(block);
@@ -182,7 +215,7 @@
         }
         names = rawSymbols(definition.graph);
       } else if (definition.kind === 'matrix') {
-        const dimensions = { rotation: [3, 3], translation: [3, 1], transform: [4, 4], scalar: [1, 1] };
+        const dimensions = { rotation: [3, 3], translation: [3, 1], transform: [4, 4], scalar: [1, 1], multiplier: [1, 1] };
         if (candidate.outputKind === 'matrix') {
           const rows = dimension(candidate.matrix && candidate.matrix.length, 'Function matrix rows');
           const columns = dimension(candidate.matrix && candidate.matrix[0] && candidate.matrix[0].length, 'Function matrix columns');
@@ -259,7 +292,7 @@
     if (!Array.isArray(selectedIds) || !selectedIds.length) throw new Error('Select at least one block to combine.');
     const selected = new Set(selectedIds), nodes = graph.nodes.filter(node => selected.has(node.id));
     if (nodes.length !== selected.size) throw new Error('The selection contains a missing block.');
-    if (nodes.some(node => ['add', 'subtract', 'cross', 'columns', 'stack'].includes(node.type))) throw new Error('Save the output as a function to include every operand of a multi-input calculation. Combining a selection requires a single chain.');
+    if (nodes.some(node => ['add', 'subtract', 'cross', 'columns', 'stack', 'stackColumns'].includes(node.type))) throw new Error('Save the output as a function to include every operand of a multi-input calculation. Combining a selection requires a single chain.');
     const parents = new Map(graph.edges.map(edge => [edge.to, edge.from]));
     const starts = nodes.filter(node => !selected.has(parents.get(node.id)));
     if (starts.length !== 1) throw new Error('Select one connected chain of blocks to combine.');
@@ -357,7 +390,7 @@
     if (definition.kind === 'matrix') {
       const matrix = definition.matrix.map(row => row.map(entry => substitute(entry, argumentsByName)));
       const value = { kind: definition.outputKind, matrix };
-      if (!['matrix', 'scalar'].includes(value.kind)) MathEngine.validateRigid(MathEngine.toHomogeneous(value), bindings, numeric);
+      if (!['matrix', 'scalar', 'multiplier'].includes(value.kind)) MathEngine.validateRigid(MathEngine.toHomogeneous(value), bindings, numeric);
       return value;
     }
     const results = evaluateCleanGraph(definition.graph, { numeric, replacements: argumentsByName, bindings });
@@ -395,7 +428,7 @@
           if (upstream.error) throw new Error('Fix the input from “' + nodes.get(edge.from).label + '” first. ' + upstream.error);
         }
         if (INPUT_OPERATIONS.has(node.type)) {
-          const operand = ['add', 'subtract', 'cross', 'columns', 'stack'].includes(node.type)
+          const operand = ['add', 'subtract', 'cross', 'columns', 'stack', 'stackColumns'].includes(node.type)
             ? Object.fromEntries(Object.entries(inputs).map(([input, upstream]) => [input, upstream.value])) : parent ? parent.value : null;
           result.value = MathEngine.computeBlock(block, operand, bindings, graph.angleUnit);
           result.ownValue = result.value;
@@ -406,18 +439,27 @@
     graph.nodes.forEach(node => evaluateNode(node.id));
     return results;
   }
+  function isResultOperation(graph, node, results) {
+    if (['add','subtract','scale','cross','columns','stack','stackColumns'].includes(node.type)) return true;
+    // A leading scalar is applied by ordinary composition at the receiving
+    // block. Materialize that receiver just as we would a trailing multiplier.
+    return !INPUT_OPERATIONS.has(node.type) && graph.edges.some(edge => edge.to === node.id
+      && (edge.input || 'input') === 'input' && results.get(edge.from)?.value?.kind === 'multiplier');
+  }
   function materializeResult(candidate, nodeId, { consumeInputs = false } = {}) {
     const graph=validateGraph(candidate), node=graph.nodes.find(node=>node.id===nodeId);
-    if(!node||!['add','subtract','scale','cross','columns','stack'].includes(node.type))throw new Error('Choose a vector or matrix operation result.');
-    const result=evaluateGraph(graph).get(nodeId);
-    if(result.error||!result.value?.matrix)throw new Error(result.error||'Connect valid inputs before editing the result.');
+    const results=evaluateGraph(graph);
+    if(!node||!isResultOperation(graph,node,results))throw new Error('Choose a vector or matrix operation result.');
+    const result=results.get(nodeId);
+    if(result.error||!result.value?.matrix||result.value.kind==='multiplier')throw new Error(result.error||'Connect valid inputs before editing the result.');
     const consumed=new Set();
     if(consumeInputs){
       const visit=id=>graph.edges.filter(edge=>edge.to===id).forEach(edge=>{if(!consumed.has(edge.from)){consumed.add(edge.from);visit(edge.from);}});
       visit(nodeId);
     }
     const matrix=result.value.matrix, rows=matrix.length, columns=matrix[0].length;
-    node.type='matrix';node.label=columns===1?'Column vector':rows===1?'Row vector':'Matrix';
+    if(node.label===DEFAULT_LABELS[node.type])node.label=columns===1?'Column vector':rows===1?'Row vector':'Matrix';
+    node.type='matrix';
     node.params={rows,columns,matrix:matrix.flat().map(expressionSource)};
     graph.edges=graph.edges.filter(edge=>edge.to!==nodeId);
     if(consumeInputs){
@@ -439,7 +481,7 @@
     const completed=[], failed=new Set();
     while(true){
       const results=evaluateGraph(graph);
-      const ready=[...graph.nodes].reverse().find(node=>!failed.has(node.id)&&['add','subtract','scale','cross','columns','stack'].includes(node.type)&&!results.get(node.id).error&&results.get(node.id).value?.matrix);
+      const ready=[...graph.nodes].reverse().find(node=>!failed.has(node.id)&&isResultOperation(graph,node,results)&&!results.get(node.id).error&&results.get(node.id).value?.matrix&&results.get(node.id).value.kind!=='multiplier');
       if(!ready)break;
       try{graph=materializeResult(graph,ready.id,{consumeInputs:true});completed.push(ready.id);}
       catch(_){failed.add(ready.id);}
@@ -453,7 +495,7 @@
     if (definition.kind !== 'graph') throw new Error('An imported matrix function has no internal canvas blocks to expand.');
     const parent = graph.edges.find(edge => edge.to === nodeId), chain = ancestorChain(definition.graph, definition.outputId);
     if (parent && chain.some(block => block.type === 'inverse')) throw new Error('Disconnect this function’s input before expanding its inverse operation.');
-    if (parent && chain.some(block => ['add', 'subtract', 'cross', 'columns', 'stack', 'determinant'].includes(block.type))) throw new Error('Disconnect this function’s input before expanding its multi-input or determinant calculation.');
+    if (parent && chain.some(block => ['add', 'subtract', 'cross', 'columns', 'stack', 'stackColumns', 'determinant'].includes(block.type))) throw new Error('Disconnect this function’s input before expanding its multi-input or determinant calculation.');
     if (graph.nodes.length - 1 + chain.length > 120) throw new Error('Expanding this function would exceed the 120-block canvas limit.');
     if (parent && chain.some(block => block.type === 'scale')) throw new Error('Disconnect this function’s input before expanding its scalar multiplier.');
     const used = new Set(graph.nodes.map(block => block.id)), remap = new Map();
@@ -539,5 +581,5 @@
     return positions;
   }
   return { validateGraph, evaluateGraph, canConnect, connect, inputPorts, validateDefinition, rawSymbols, isolateSymbols, layoutPositions,
-    captureFunction, functionFromOutput, groupSelection, expandFunction, materializeResult, completeOperations };
+    captureFunction, functionFromOutput, groupSelection, expandFunction, materializeResult, completeOperations, matrixSymbolFields, setMatrixSymbol };
 });

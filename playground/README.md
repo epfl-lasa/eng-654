@@ -32,24 +32,34 @@ An individual saved block's menu also offers **Download block (.json)**.
   multiplies the actual matrix dimensions.
 - **Cross product:** choose two 3 × 1 outputs as **A** and **B**, either in the
   inspector or using the labelled ports. The result is **A × B**.
-- **Scalar multiplier:** connect a vector or matrix as A and enter a Scalar factor
+- **Scalar multiplier:** connect the vector/matrix output to the multiplier input,
+  or the multiplier output to the vector/matrix input. Enter a Scalar factor
   k (a number, symbol, or expression). The result is k · A, entry by entry, with
-  the same dimensions. Symbols remain local to the multiplier block.
+  the same dimensions. Both connection directions turn the calculation into one
+  editable result block; an unshared scalar disappears. Undo restores the original
+  blocks. Symbols remain local to the multiplier block until conversion.
 - **Add vectors:** choose matching row or column vectors as A and B to calculate
   A + B. Both vectors must have the same length, orientation, and reference frame.
 - **Subtract vectors:** choose **A** and **B** to calculate **A − B** entry by
   entry. Both inputs must be row vectors or both column vectors, with the same
   length and reference frame. The result keeps their orientation.
-- **Select columns:** choose a source output and column number for each output
-  column. Set a common first row and number of rows. Columns may come from
-  different blocks and can repeat. All row/column indices start at 1. The live
-  output's **Select columns** button starts with that output already connected.
-  For a transform's position, choose column 4, first row 1, and 3 rows.
+- **Stack columns:** place A to the left of B, producing `[A B]`. Inputs may be
+  column vectors, row vectors, or matrices with the same number of rows. The
+  result supports up to 12 columns. The live output’s **Stack columns** button
+  starts with that output connected as A. Older saved column-selection blocks
+  still load and remain editable.
 - **Stack rows:** place A above B. For an angular-first twist, choose ω as A and
   v as B, producing the six-component column `(ω; v)`.
 - **Determinant:** connect a square matrix. The result is a scalar; a rectangular
-  matrix displays an error with its dimensions. Symbolic expressions and numeric evaluation are
-  supported, including singular matrices and small nonzero determinants.
+  matrix displays an error with its dimensions. Symbolic determinants simplify
+  trigonometric squares and angle sums. Numeric evaluation supports singular
+  matrices and small nonzero determinants.
+
+The custom 3R D–H and PoE presets output a 4 × 4 rigid-body pose `T`. Its
+determinant is 1 for every joint configuration because `T = [R p; 0 1]` and
+`det(R) = 1`. To examine robot singularities, calculate the appropriate Jacobian
+and pass that square matrix to Determinant. The determinant block evaluates the
+matrix connected to it; it does not differentiate a pose into a Jacobian.
 
 The live output starts minimized to give the canvas more space. Choose
 **Expand output** to inspect the result and **Collapse output** to collapse it.
@@ -60,11 +70,20 @@ Select a block on the canvas to edit its inputs in the right panel. To save a ca
 with several inputs as a reusable function, select its final output block;
 **Save as function** includes all upstream operands.
 
-Completed Add, Subtract, Scalar multiplier, Cross product, Select columns, and
+Completed Add, Subtract, Scalar multiplier, Cross product, Stack columns, and
 Stack rows calculations are immediately replaced by their editable vector or
 matrix result. The operation's exclusive input blocks and connections disappear;
 sources that also feed another calculation stay available. The result preserves
 outgoing connections and numeric precision. Undo restores the operation and inputs.
+
+The resulting matrix’s **Edit parameters → Symbols** section lists each factor
+and entry symbol separately. For example, a merged `k1 * k2 * [x_i; y_i; z_i]`
+exposes `k1`, `k2`, `x_i`, `y_i`, and `z_i`. Assigning a number updates every
+matching entry. The fields retain their assigned values so you can change them
+again, including after closing the panel, reloading, or downloading and uploading
+the workspace. Undo/redo includes symbol edits. The matrix grid remains editable;
+editing its expressions directly starts a new set of symbol inputs.
+
 
 
 ## Math inputs and block values
@@ -125,7 +144,7 @@ reselecting a preset restores the starting template.
   Larger ports and nearby-target snapping help connect blocks: a valid nearby
   port highlights and the line snaps to its centre before you release it.
 - Select any block to see the result accumulated up to that point. Enter a symbol
-  or a number directly in each input; there are no separate substitution fields.
+  or a number directly in each input; merged matrix results also expose their individual symbols in the inspector.
   Legacy saved substitutions are moved into the corresponding inputs when loaded.
 - Right-click a block to edit it, save a reusable function, or expose its
   commented Python functions.
@@ -193,8 +212,11 @@ intact. Unconnected blocks stay as compact squares on the canvas.
 
 The floating panel shows only the selected block’s direct inputs and relevant
 angle units. It starts hidden; click a block or press Enter on a focused block to
-open it. Drag its header to move it. Close it with ×, Escape, or a click on empty
-canvas. Each component accepts either a symbol or a value, including zero.
+open it. Drag its header to move it. Press Enter in an input to commit the edit and close the panel. You can also
+close it with ×, Escape, or a click on empty canvas. Rename any block using
+**Block name** or its **Rename block** menu item. Choose **Rename function** in
+a My blocks menu to update a saved function and its named canvas copies;
+individually named copies retain their names. Renaming supports undo/redo. Each component accepts either a symbol or a value, including zero.
 Block actions are available
 through canvas controls, context menus, and shortcuts.
 
@@ -230,7 +252,9 @@ equivalent opposite-sign representation.
 Numeric evaluation substitutes values before evaluating each operation, including
 the pure-translation case of a symbolic angular screw becoming zero. Symbolic
 output uses elementary simplification rather than a full computer algebra system;
-large expressions report a size limit. Numeric evaluation remains available.
+large expressions report a size limit. Determinants additionally collect polynomial terms and simplify trigonometric
+square and angle-sum identities within a bounded work limit. Numeric evaluation
+remains available.
 
 Trigonometric expressions such as `sin(pi/2)` always take radian arguments. The
 canvas angle setting applies to rotation angles and rotational screw parameters,
@@ -349,4 +373,12 @@ defaults, explicit zeros, and viewport bounds:
 
 ```sh
 OPERATIONS_BASE_URL=http://localhost:8000 OPERATIONS_CDP_PORT=9222 node playground/tests/floating-inputs.browser.cjs
+```
+
+The playground improvement checks cover renaming, Enter-to-close, column
+stacking, scalar multiplication on either side, and trigonometric determinants:
+
+```sh
+node --test playground/tests/stack-trig-scale.test.cjs playground/tests/merged-symbols.test.cjs
+OPERATIONS_BASE_URL=http://localhost:8000 OPERATIONS_CDP_PORT=9222 node playground/tests/improvements.browser.cjs
 ```

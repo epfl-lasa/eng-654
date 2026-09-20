@@ -20,11 +20,12 @@
     subtract: { title: 'Subtract vectors', icon: '−', params: {} },
     cross: { title: 'Cross product', icon: '×', params: {} },
     columns: { title: 'Select columns', icon: '[c]', params: { columns: [1,2,3], rowStart: 1, rowCount: 3 } },
+    stackColumns: { title: 'Stack columns', icon: '↔', params: {} },
     stack: { title: 'Stack rows', icon: '↕', params: {} },
     determinant: { title: 'Determinant', icon: 'det', params: {} },
     function: { title: 'Function', icon: 'ƒ', params: {} }
   };
-  const DOCK_TARGETS = new Set(['scale','add','subtract','cross','columns','stack','determinant','inverse','logarithm']);
+  const DOCK_TARGETS = new Set(['scale','add','subtract','cross','columns','stack','stackColumns','determinant','inverse','logarithm']);
   let dockedBlocks = new Map();
   const DEFAULT_BLOCK_SIZE = {width:196,height:154};
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -160,7 +161,7 @@
   }
   function dimension(value) {
     if (!value) return '—';
-    return value.kind === 'screw' ? 'ξ + θ' : value.kind === 'scalar' ? 'Scalar' : `${value.matrix.length} × ${value.matrix[0].length}`;
+    return value.kind === 'screw' ? 'ξ + θ' : ['scalar','multiplier'].includes(value.kind) ? 'Scalar' : `${value.matrix.length} × ${value.matrix[0].length}`;
   }
   function operationName(node) {
     const p = node.params;
@@ -171,14 +172,14 @@
     }
     if (node.type === 'translation') return `T(${p.vector.map(pretty).join(', ')})`;
     if (node.type === 'exponential') return `exp([ξ]${pretty(p.theta)})`;
-    if (['matrix','scale','add','subtract', 'cross','columns','stack','determinant'].includes(node.type)) return node.label;
+    if (['matrix','scale','add','subtract', 'cross','columns','stack','stackColumns','determinant'].includes(node.type)) return node.label;
     return node.type === 'transform' ? (node.label === 'Transform' ? 'T' : node.label) : node.type === 'inverse' ? 'inverse' : 'log';
   }
   function chainName(id, seen = new Set()) {
     if (seen.has(id)) return '';
     seen.add(id); const node = graph.nodes.find(n => n.id === id); if (!node) return '';
     const edge = graph.edges.find(e => e.to === id), before = edge ? chainName(edge.from,seen) : '';
-    if (['scale','add','subtract', 'cross','columns','stack'].includes(node.type)) return node.label;
+    if (['scale','add','subtract', 'cross','columns','stack','stackColumns'].includes(node.type)) return node.label;
     if (node.type === 'inverse' || node.type === 'logarithm' || node.type === 'determinant') return `${node.type === 'inverse' ? 'inverse' : node.type === 'determinant' ? 'det' : 'log'}(${before || 'input'})`;
     return (before ? before + ' · ' : '') + operationName(node);
   }
@@ -328,7 +329,7 @@
     $('output-title').title=node?chainName(selected):'';
     $('output-dimension').textContent=dimension(result?.value);
     $('copy-result').disabled=!result?.value; $('output-python').disabled=!node;
-    $('select-output-columns').disabled=!result?.value?.matrix||['scalar','screw'].includes(result.value.kind);
+    $('stack-output-columns').disabled=!result?.value?.matrix||['scalar','screw','multiplier'].includes(result.value.kind);
     $('symbolic-view').setAttribute('aria-pressed',displayMode==='symbolic');$('numeric-view').setAttribute('aria-pressed',displayMode==='numeric');
     const host=$('output-content');host.replaceChildren();
     if(!node){host.append(el('p',{class:'output-empty'},'Each connection adds one operation. Select any block to see the result up to that point.'));return;}
@@ -341,7 +342,7 @@
         host.append(el('p',{class:'matrix-caption'},pure?'Pure translation · θ is displacement; ω = 0.':'Principal rotational screw · θ in radians, 0 ≤ θ ≤ π.'));
       }else{
         host.append(matrixElement(result.value.matrix,displayMode==='numeric'));
-        host.append(el('p',{class:'matrix-caption'},result.value.kind==='translation'?'Translation vector · mixed compositions embed it in a 4 × 4 transform.':result.value.kind==='rotation'?'Rotation matrix · connecting a translation promotes the result to 4 × 4.':result.value.kind==='matrix'?'Matrix · columns and rows follow the order selected in the inspector.':result.value.kind==='scalar'?'Determinant · defined for square matrices; zero means the matrix is singular.':'Homogeneous transform · upper-left: rotation; last column: position.'));
+        host.append(el('p',{class:'matrix-caption'},result.value.kind==='translation'?'Translation vector · mixed compositions embed it in a 4 × 4 transform.':result.value.kind==='rotation'?'Rotation matrix · connecting a translation promotes the result to 4 × 4.':result.value.kind==='matrix'?'Matrix · columns and rows follow the order selected in the inspector.':result.value.kind==='multiplier'?'Scalar factor · connect to either side of a vector or matrix.':result.value.kind==='scalar'?'Determinant · defined for square matrices; zero means the matrix is singular.':'Homogeneous transform · upper-left: rotation; last column: position.'));
       }
     }catch(error){host.replaceChildren(el('p',{class:'error-message'},error.message),el('p',{class:'hint'},'Enter numbers directly in the block inputs, or switch to Symbolic.'));}
   }
@@ -356,11 +357,13 @@
     input.addEventListener('focus',()=>{editing=false;});
     input.addEventListener('input',()=>{
       if(!editing){checkpoint();editing=true;}
+      if(node.type==='matrix'&&key==='matrix')delete node.params.symbolEditor;
       if(index===undefined)node.params[key]=input.value;else node.params[key][index]=input.value;
       const renamed=G.isolateSymbols(graph,node.id);
       renamed.filter(change=>change.nodeId===node.id).forEach(change=>delete graph.bindings[change.to]);
       preview.replaceChildren(mathElement(index===undefined?node.params[key]:node.params[key][index]));
       refreshAfterEdit();
+      if(node.type==='matrix')renderMatrixSymbols(node,$('matrix-symbol-fields'));
     });
     input.addEventListener('blur',()=>{
       if(editing){
@@ -378,6 +381,37 @@
       }
     });
     return wrapper;
+  }
+  function renderMatrixSymbols(node,host) {
+    if(!host)return;
+    host.replaceChildren();
+    const fields=G.matrixSymbolFields(node);
+    if(!Object.keys(fields).length)return;
+    host.append(el('p',{class:'section-label'},'Symbols'),el('p',{class:'hint'},'Set a number or expression for each symbol. Every matching entry updates together.'));
+    for(const [name,value] of Object.entries(fields)){
+      const input=el('input',{type:'text',value,maxlength:500,'aria-label':'Symbol '+name,'data-matrix-symbol':name,spellcheck:'false',autocomplete:'off'});
+      const preview=el('span',{class:'math-input-preview','aria-hidden':'true'},mathElement(value));
+      let editing=false;
+      input.addEventListener('focus',()=>{editing=false;});
+      input.addEventListener('input',()=>{
+        if(!editing){checkpoint();editing=true;}
+        try{G.setMatrixSymbol(node,name,input.value);input.setCustomValidity('');}
+        catch(error){input.setCustomValidity(error.message);input.reportValidity();return;}
+        const renamed=G.isolateSymbols(graph,node.id);
+        renamed.filter(change=>change.nodeId===node.id).forEach(change=>delete graph.bindings[change.to]);
+        preview.replaceChildren(mathElement(G.matrixSymbolFields(node)[name]));
+        refreshAfterEdit();
+        for(const editor of $('inspector-content').querySelectorAll('[data-parameter-key="matrix"]')){
+          editor.value=node.params.matrix[Number(editor.dataset.parameterIndex)];
+          editor.nextElementSibling.replaceChildren(mathElement(editor.value));
+        }
+      });
+      input.addEventListener('blur',()=>{
+        input.value=G.matrixSymbolFields(node)[name]??input.value;
+        preview.replaceChildren(mathElement(input.value));
+      });
+      host.append(field(pretty(name),el('span',{class:'math-input'},input,preview)));
+    }
   }
   function vectorFields(node,key,labels) {
     return el('div',{class:'vector-fields'},labels.map((label,i)=>field(label,parameterInput(node,key,i,`${key} ${label}`))));
@@ -400,15 +434,20 @@
   }
   function matrixSize(node,key,count) {
     const old=node.params, rows=key==='rows'?count:old.rows, columns=key==='columns'?count:old.columns;
-    node.params={rows,columns,matrix:Array.from({length:rows*columns},(_,index)=>{
-      const r=Math.floor(index/columns),c=index%columns;return r<old.rows&&c<old.columns?old.matrix[r*old.columns+c]:'0';
-    })};
+    const resize=entries=>Array.from({length:rows*columns},(_,index)=>{
+      const r=Math.floor(index/columns),c=index%columns;return r<old.rows&&c<old.columns?entries[r*old.columns+c]:'0';
+    });
+    node.params={rows,columns,matrix:resize(old.matrix)};
+    if(old.symbolEditor){
+      const matrix=resize(old.symbolEditor.matrix), names=new Set(G.rawSymbols({type:'matrix',params:{matrix}}));
+      node.params.symbolEditor={matrix,arguments:Object.fromEntries(Object.entries(old.symbolEditor.arguments).filter(([name])=>names.has(name)))};
+    }
   }
   function orientVector(node,orientation) {
     if(node.params.rows!==1&&node.params.columns!==1)return;
     const length=node.params.matrix.length,rows=orientation==='column'?length:1,columns=orientation==='row'?length:1;
     if(node.params.rows===rows&&node.params.columns===columns)return;
-    checkpoint();node.params={rows,columns,matrix:node.params.matrix.slice()};
+    checkpoint();node.params={...node.params,rows,columns,matrix:node.params.matrix.slice()};
     if(['Column vector','Row vector'].includes(node.label))node.label=orientation==='column'?'Column vector':'Row vector';
     render();saveLocal();
   }
@@ -427,6 +466,15 @@
     $('inputs-title').textContent=node?node.label:'Block inputs';
     if(!node){host.append(el('p',{class:'hint'},'Select a block to edit its inputs.'));return;}
     const section=el('section',{class:'inspector-section'});
+    const name=el('input',{type:'text',value:node.label,maxlength:80,'aria-label':'Block name',id:'block-name'});
+    name.addEventListener('change',()=>{
+      const label=name.value.trim();
+      if(!label){name.value=node.label;return;}
+      if(label===node.label)return;
+      checkpoint();node.label=label;
+      $('inputs-title').textContent=label;render({inspector:false,complete:false});saveLocal();
+    });
+    section.append(field('Block name',name));
     if(node.type==='rotation'){
       const axis=el('select',{'aria-label':'Rotation axis'},['X','Y','Z','Custom'].map(a=>el('option',{value:a.toLowerCase()},a)));
       const index=[['1','0','0'],['0','1','0'],['0','0','1']].findIndex(a=>a.every((s,i)=>node.params.axis[i]===s));axis.value=index<0?'custom':['x','y','z'][index];
@@ -453,7 +501,8 @@
         const editor=parameterInput(node,'matrix',i,`Matrix row ${Math.floor(i/node.params.columns)+1} column ${i%node.params.columns+1}`);
         grid.append(node.params.matrix.length===3&&(node.params.rows===1||node.params.columns===1)?field(['x','y','z'][i],editor):editor);
       });
-      section.append(grid);
+      const symbols=el('div',{id:'matrix-symbol-fields'});renderMatrixSymbols(node,symbols);
+      section.append(grid,symbols);
     }else if(node.type==='columns'){
       section.append(countField('Output columns',node.params.columns.length,count=>{
         node.params.columns=Array.from({length:count},(_,i)=>node.params.columns[i]??1);
@@ -463,8 +512,11 @@
       node.params.columns.forEach((column,i)=>section.append(el('div',{class:'column-source'},sourceField(node,'c'+i,'Output column '+(i+1)+' · source'),countField('Source column '+(i+1),column,count=>{node.params.columns[i]=count;}))));
     }else if(node.type==='scale'){
       section.append(field('Scalar factor',parameterInput(node,'factor',undefined,'Scalar factor')),sourceField(node,'input','A · vector or matrix'));
+      section.append(el('p',{class:'hint'},'Connect a vector or matrix to either side. Every entry is multiplied by this factor.'));
     }else if(node.type==='add'||node.type==='subtract'){
       section.append(sourceField(node,'a','A · first vector'),sourceField(node,'b',node.type==='add'?'B · vector to add':'B · vector to subtract'));
+    }else if(node.type==='stackColumns'){
+      section.append(sourceField(node,'a','A · left columns'),sourceField(node,'b','B · right columns'));
     }else if(node.type==='cross'||node.type==='stack'){
       section.append(sourceField(node,'a',node.type==='cross'?'A · first vector':'A · upper rows'),sourceField(node,'b',node.type==='cross'?'B · second vector':'B · lower rows'));
     }else if(['determinant','inverse','logarithm'].includes(node.type)){
@@ -494,6 +546,7 @@
         Object.keys(node.params.arguments).forEach(name=>{node.params.arguments[name]=replace(node.params.arguments[name]);});
       }else{
         Object.entries(node.params).forEach(([key,value])=>{node.params[key]=Array.isArray(value)?value.map(replace):replace(value);});
+        if(node.params.symbolEditor)Object.keys(node.params.symbolEditor.arguments).forEach(name=>{G.setMatrixSymbol(node,name,replace(node.params.symbolEditor.arguments[name]));});
       }
     });
     graph.bindings={};
@@ -568,7 +621,7 @@
     const y=Math.max(margin,Math.min(desired.y,innerHeight-panel.offsetHeight-margin));
     panel.style.left=x+'px';panel.style.top=y+'px';
   }
-  function focusEditor() { showInspector();($('inspector-content').querySelector('select,input:not([readonly])') || $('inspector-content').querySelector('input'))?.focus(); }
+  function focusEditor() { showInspector();($('inspector-content').querySelector('select,input:not([readonly]):not(#block-name)') || $('inspector-content').querySelector('input'))?.focus(); }
   function updateView() {
     $('world').style.transform=`translate(${view.x}px,${view.y}px) scale(${view.scale})`;
     $('zoom-level').value=Math.round(view.scale*100)+'%';
@@ -701,6 +754,14 @@
       add.addEventListener('dragend',()=>{paletteDragTime=Date.now();$('canvas').classList.remove('is-dragover');});
       const menu=el('button',{'aria-label':`Actions for saved ${definition.name}`,class:'library-menu',onclick:event=>openMenu([
         {label:'Add to canvas',action:()=>addBlock('function',null,clone(definition))},
+        {label:'Rename function',action:()=>{
+          pendingDefinition=definition;functionAction='rename';
+          $('function-title').textContent='Rename function';$('function-name').value=definition.name;
+          $('function-name-preview').replaceChildren(formattedName(definition.name));
+          $('function-description').textContent='Update this saved function’s name and its copies on the canvas.';
+          $('function-parameters').replaceChildren();$('function-error').textContent='';$('function-submit').textContent='Rename function';
+          $('function-dialog').showModal();$('function-name').select();
+        }},
         {label:'Download block (.json)',action:()=>download(JSON.stringify(Files.libraryFile([definition]),null,2),'kinematic-block.json','application/json')},
         {label:'Python function </>',action:()=>showDefinitionCode(definition)},
         {label:'Remove from My blocks',action:()=>{library=library.filter(item=>item!==definition);renderLibrary();saveLocal();toast('Removed from My blocks. Existing copies remain available.');}}
@@ -735,7 +796,19 @@
   $('function-form').addEventListener('submit',event=>{
     event.preventDefault();const name=$('function-name').value.trim();if(!name)return;
     try{
-      if(functionAction==='combine'){
+      if(functionAction==='rename'){
+        const renamed=G.validateDefinition({...pendingDefinition,name});
+        checkpoint();
+        const update=nodes=>nodes.forEach(node=>{
+          if(node.type!=='function')return;
+          const definition=node.params.definition;
+          if(definition.id===renamed.id){if(node.label===definition.name)node.label=name;definition.name=name;}
+          if(definition.kind==='graph')update(definition.graph.nodes);
+        });
+        library=library.map(definition=>definition.id===renamed.id?renamed:definition);
+        update(graph.nodes);library.forEach(definition=>{if(definition.kind==='graph')update(definition.graph.nodes);});
+        renderLibrary();render({complete:false});saveLocal();toast('Function renamed.');
+      }else if(functionAction==='combine'){
         const result=G.groupSelection(graph,[...selectedIds],{id:pendingDefinition.id,label:name,nodeId:freshId()});
         checkpoint();graph=result.graph;connection=null;onlySelect(result.nodeId);render();saveLocal();requestAnimationFrame(fitGraph);toast('Blocks combined. Edit the arguments in the inspector.');
       }else{keepDefinition({...pendingDefinition,name});toast('Function saved in My blocks. Drag it onto the canvas to reuse it.');}
@@ -846,7 +919,7 @@
   function closeMenu(){$('context-menu').hidden=true;}
   function openNodeMenu(id,x,y) {
     if(!selectedIds.has(id))onlySelect(id);else selected=id;render();
-    const node=graph.nodes.find(n=>n.id===id),items=[{label:(node.minimized?'Maximize':'Minimize')+' block · Ctrl+Shift+M',action:()=>toggleBlockSize([id])},{label:'Edit parameters',action:focusEditor},{label:'Python code </>',action:()=>showCode(id)}];
+    const node=graph.nodes.find(n=>n.id===id),items=[{label:(node.minimized?'Maximize':'Minimize')+' block · Ctrl+Shift+M',action:()=>toggleBlockSize([id])},{label:'Edit parameters',action:focusEditor},{label:'Rename block',action:()=>{showInspector();$('block-name').select();}},{label:'Python code </>',action:()=>showCode(id)}];
     if(selectedIds.size>1)items.push({label:'Combine selected blocks',action:()=>openFunctionDialog('combine')});
     if(node.type!=='logarithm')items.push({label:'Save as function',action:()=>openFunctionDialog('save')});
     if(node.type==='function'&&node.params.definition.kind==='graph')items.push({label:'Expand individual blocks',action:()=>expandNode(id)});
@@ -884,14 +957,14 @@
     try{if(file.size>5*1024*1024)throw new Error('Choose an operations file smaller than 5 MB.');restoreFile(JSON.parse(await file.text()));}
     catch(error){toast('Could not upload operations: '+error.message);}finally{$('graph-file').value='';}
   });
-  $('select-output-columns').addEventListener('click',()=>{
-    const source=selected,value=values.get(source)?.value;if(!value?.matrix||['scalar','screw'].includes(value.kind))return;
+  $('stack-output-columns').addEventListener('click',()=>{
+    const source=selected,value=values.get(source)?.value;if(!value?.matrix||['scalar','screw','multiplier'].includes(value.kind))return;
     const anchor=graph.nodes.find(n=>n.id===source),id=freshId();
-    const node=makeNode(id,'columns',{columns:value.matrix[0].map((_,i)=>i+1),rowStart:1,rowCount:value.matrix.length},anchor.position.x+blockSize(anchor).width+65,anchor.position.y,'Selected columns');
+    const node=makeNode(id,'stackColumns',{},anchor.position.x+blockSize(anchor).width+65,anchor.position.y,'Stack columns');
     try{
-      const candidate=G.validateGraph({...graph,nodes:[...graph.nodes,node],edges:[...graph.edges,...node.params.columns.map((_,i)=>({from:source,to:id,input:'c'+i}))]});
+      const candidate=G.validateGraph({...graph,nodes:[...graph.nodes,node],edges:[...graph.edges,{from:source,to:id,input:'a'}]});
       checkpoint();graph=candidate;onlySelect(id);render();saveLocal();requestAnimationFrame(fitGraph);
-    }catch(error){toast('Could not select columns: '+error.message);}
+    }catch(error){toast('Could not stack columns: '+error.message);}
   });
   function loadExample(name){checkpoint();hideInspector();graph=preset(name);onlySelect(graph.nodes.at(-1)?.id||null);connection=null;render();requestAnimationFrame(fitGraph);saveLocal();}
   $('example').addEventListener('change',()=>{if($('example').value!=='custom')loadExample($('example').value);});$('load-dh').addEventListener('click',()=>loadExample('dh'));
@@ -927,6 +1000,11 @@
   function setCanvasMode(mode){canvasMode=mode;$('select-mode').setAttribute('aria-pressed',mode==='select');$('pan-mode').setAttribute('aria-pressed',mode==='pan');$('canvas').classList.toggle('pan-mode',mode==='pan');}
   $('select-mode').addEventListener('click',()=>setCanvasMode('select'));$('pan-mode').addEventListener('click',()=>setCanvasMode('pan'));
   $('close-inputs').addEventListener('click',()=>{hideInspector();$('canvas').focus();});
+  $('input-panel').addEventListener('keydown',event=>{
+    if(event.key!=='Enter'||event.isComposing||!event.target.matches('input,select'))return;
+    event.preventDefault();event.stopPropagation();
+    event.target.blur();hideInspector();$('canvas').focus({preventScroll:true});
+  });
   const inputHeader=$('input-panel').querySelector('.inspector-header');
   inputHeader.addEventListener('pointerdown',event=>{
     if(event.button!==0||event.target.closest('button'))return;

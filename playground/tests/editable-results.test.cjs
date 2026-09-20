@@ -63,3 +63,46 @@ test('incomplete operations retain their inputs, symbols survive complete operat
   const incomplete=fixture();incomplete.edges=incomplete.edges.filter(e=>e.input!=='b');
   assert.equal(G.completeOperations(incomplete).graph,incomplete);
 });
+
+test('leading scalar materializes rotations, translations, transforms, exponentials and saved functions',()=>{
+  const definition={version:1,id:'vector_fn',name:'Vector',kind:'matrix',angleUnit:'rad',parameters:['x'],defaults:{},outputKind:'matrix',matrix:[['x'],['2*x']]};
+  const operands=[
+    {type:'rotation',params:{axis:['0','0','1'],angle:'pi/2'}},
+    {type:'translation',params:{vector:['1','2','3']}},
+    {type:'transform',params:{matrix:['1','0','0','1','0','1','0','2','0','0','1','3','0','0','0','1']}},
+    {type:'exponential',params:{omega:['0','0','0'],v:['1','0','0'],theta:'2'}},
+    {type:'function',params:{definition,arguments:{x:'3'}}}
+  ];
+  for(const operand of operands){
+    const graph={version:1,nodes:[
+      {id:'scalar',type:'scale',label:'Scalar multiplier',params:{factor:'2'},position:{x:0,y:0}},
+      {id:'entity',...operand,label:'My entity',position:{x:300,y:50}}
+    ],edges:[{from:'scalar',to:'entity'}],bindings:{}};
+    const original=structuredClone(graph), expected=numeric(graph,'entity');
+    const {graph:completed}=G.completeOperations(graph);
+    assert.equal(completed.nodes.length,1);
+    assert.equal(completed.nodes[0].type,'matrix');
+    assert.equal(completed.nodes[0].label,'My entity');
+    assert.deepEqual(completed.nodes[0].position,{x:300,y:50});
+    assert.deepEqual(completed.edges,[]);
+    assert.deepEqual(numeric(completed,'entity'),expected);
+    assert.deepEqual(graph,original);
+  }
+});
+
+test('leading scalar conversion retains shared factors and outgoing connections',()=>{
+  const graph={version:1,nodes:[
+    {id:'factor',type:'scale',label:'Factor',params:{factor:'k'},position:{x:0,y:0}},
+    {id:'a',type:'matrix',label:'A',params:{rows:1,columns:2,matrix:['1','2']},position:{x:300,y:0}},
+    {id:'b',type:'matrix',label:'B',params:{rows:2,columns:1,matrix:['3','4']},position:{x:600,y:0}},
+    {id:'pending',type:'matrix',label:'Pending',params:{rows:1,columns:1,matrix:['']},position:{x:300,y:200}}
+  ],edges:[{from:'factor',to:'a'},{from:'factor',to:'pending'},{from:'a',to:'b'}],bindings:{}};
+  const completed=G.completeOperations(graph).graph;
+  assert.deepEqual(completed.nodes.map(n=>n.id),['factor','a','b','pending']);
+  assert.deepEqual(completed.edges,[{from:'factor',to:'pending'},{from:'a',to:'b'}]);
+  const result=G.evaluateGraph(completed).get('b');assert.equal(result.error,null);
+  const parameter=G.rawSymbols(completed.nodes.find(n=>n.id==='a'))[0];
+  assert.equal(M.evaluate(result.value.matrix[0][0],{[parameter]:2}),22);
+  assert.equal(completed.nodes.find(n=>n.id==='factor').type,'scale');
+  assert.ok(G.evaluateGraph(completed).get('pending').error);
+});

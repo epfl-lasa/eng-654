@@ -257,6 +257,96 @@
     a = vector(a, 'First cross-product vector'); b = vector(b, 'Second cross-product vector');
     return [sub(mul(a[1], b[2]), mul(a[2], b[1])), sub(mul(a[2], b[0]), mul(a[0], b[2])), sub(mul(a[0], b[1]), mul(a[1], b[0]))];
   }
+  function simplifyTrig(expression) {
+    // Collect like polynomial terms using sin(t)^2 + cos(t)^2 = 1.
+    // Calls and non-polynomial expressions remain opaque atoms. Bounded work
+    // keeps large symbolic inputs responsive; never approximate small terms.
+    const original = parse(expression);
+    let best = original;
+    for (const eliminate of ['sin', 'cos']) {
+      try {
+        const atoms = [], ids = new Map(), partners = new Map();
+        let work = 0;
+        const budget = () => { if (++work > 50000) throw expressionTooLarge(); };
+        const atom = value => {
+          const key = JSON.stringify(value);
+          if (!ids.has(key)) { ids.set(key, atoms.length); atoms.push(value); }
+          return ids.get(key);
+        };
+        const keyOf = powers => JSON.stringify([...powers].filter(([, power]) => power).sort((a,b) => a[0]-b[0]));
+        const put = (poly, powers, coefficient) => {
+          budget();
+          if (coefficient === 0) return;
+          const squared = [...powers].find(([id, power]) => power >= 2 && atoms[id].type === 'call' && atoms[id].name === eliminate);
+          if (squared) {
+            const [id, power] = squared;
+            if (!partners.has(id)) partners.set(id, atom(call(eliminate === 'sin' ? 'cos' : 'sin', atoms[id].args)));
+            const reduced = new Map(powers); reduced.set(id, power - 2);
+            put(poly, reduced, coefficient);
+            const other = partners.get(id); reduced.set(other, (reduced.get(other) || 0) + 2);
+            put(poly, reduced, -coefficient);
+          } else {
+            const key = keyOf(powers), total = (poly.get(key) || 0) + coefficient;
+            if (!Number.isFinite(total)) throw expressionTooLarge();
+            if (total === 0) poly.delete(key); else poly.set(key, total);
+            if (poly.size > 2048) throw expressionTooLarge();
+          }
+        };
+        const plus = (a, b, sign = 1) => {
+          const result = new Map(a);
+          for (const [key, value] of b) put(result, new Map(JSON.parse(key)), sign * value);
+          return result;
+        };
+        const times = (a, b) => {
+          const result = new Map();
+          for (const [ka, ca] of a) for (const [kb, cb] of b) {
+            budget();
+            const powers = new Map(JSON.parse(ka));
+            for (const [id, power] of JSON.parse(kb)) powers.set(id, (powers.get(id) || 0) + power);
+            put(result, powers, ca * cb);
+          }
+          return result;
+        };
+        const constant = value => new Map(value === 0 ? [] : [['[]', value]]);
+        const polynomial = value => {
+          budget();
+          if (isNum(value)) return constant(value.value);
+          if (value.type === 'call' && ['sin', 'cos'].includes(value.name)) {
+            const angle = value.args[0];
+            if (angle.type === 'op' && angle.op === 'neg') return times(constant(value.name === 'sin' ? -1 : 1), polynomial(call(value.name, [angle.args[0]])));
+            if (angle.type === 'op' && ['+', '-'].includes(angle.op)) {
+              const [a,b] = angle.args, sign = angle.op === '+' ? 1 : -1;
+              const sa = polynomial(call('sin', [a])), ca = polynomial(call('cos', [a]));
+              const sb = polynomial(call('sin', [b])), cb = polynomial(call('cos', [b]));
+              return value.name === 'sin' ? plus(times(sa, cb), times(ca, sb), sign) : plus(times(ca, cb), times(sa, sb), -sign);
+            }
+          }
+          if (value.type === 'op') {
+            const [a,b] = value.args;
+            if (value.op === '+') return plus(polynomial(a), polynomial(b));
+            if (value.op === '-') return plus(polynomial(a), polynomial(b), -1);
+            if (value.op === 'neg') return times(constant(-1), polynomial(a));
+            if (value.op === '*') return times(polynomial(a), polynomial(b));
+            if (value.op === '/' && isNum(b) && b.value !== 0) return times(polynomial(a), constant(1 / b.value));
+            if (value.op === '^' && isNum(b) && Number.isInteger(b.value) && b.value >= 0 && b.value <= 24) {
+              const base = polynomial(a); let result = constant(1);
+              for (let i = 0; i < b.value; i++) result = times(result, base);
+              return result;
+            }
+          }
+          return new Map([[keyOf(new Map([[atom(value), 1]])), 1]]);
+        };
+        let result = num(0);
+        for (const [key, coefficient] of polynomial(original)) {
+          let term = num(Math.abs(coefficient));
+          for (const [id, power] of JSON.parse(key)) term = mul(term, power === 1 ? atoms[id] : op('^', atoms[id], num(power)));
+          result = coefficient < 0 ? sub(result, term) : add(result, term);
+        }
+        if (expressionSize(result) < expressionSize(best)) best = result;
+      } catch (_) { /* Retain the exact original when expansion reaches its limit. */ }
+    }
+    return best;
+  }
   function determinant(matrix) {
     const [rows, columns] = matrixShape(matrix);
     if (rows !== columns) throw new Error('A determinant needs a square matrix; this input is ' + rows + ' × ' + columns + '.');
@@ -299,15 +389,16 @@
         }
         columnSign = -columnSign;
       }
+      result = simplifyTrig(result);
       memo.set(mask, result); return result;
     }
     const result = expand(0, (1 << rows) - 1);
-    return sign === 1 ? result : neg(result);
+    return simplifyTrig(sign === 1 ? result : neg(result));
   }
   function inputMatrix(value, label = 'input') {
     if (!value || !value.matrix) throw new Error('Connect a matrix to ' + label + '.');
     if (value.kind === 'screw') throw new Error(SCREW_OUTPUT_MESSAGE);
-    if (value.kind === 'scalar') throw new Error('The ' + label + ' is a scalar; connect a vector or matrix.');
+    if (value.kind === 'scalar' || value.kind === 'multiplier') throw new Error('The ' + label + ' is a scalar; connect a vector or matrix.');
     matrixShape(value.matrix); return value.matrix;
   }
   function vector(values, label) {
@@ -326,7 +417,7 @@
       throw new Error('Expected a rotation, translation, or homogeneous matrix.');
     }
     if (!value || !value.matrix) throw new Error('Connect a matrix to this input.');
-    if (value.kind === 'matrix' || value.kind === 'scalar') throw new Error('A general matrix or scalar does not represent a rigid motion. Use a Rotation, Translation, or Transformation block for a pose.');
+    if (value.kind === 'matrix' || value.kind === 'scalar' || value.kind === 'multiplier') throw new Error('A general matrix or scalar does not represent a rigid motion. Use a Rotation, Translation, or Transformation block for a pose.');
     return toHomogeneous(value.matrix);
   }
   function angle(value, unit) { const result = parse(value); return unit === 'deg' ? mul(result, div(sym('pi'), num(180))) : result; }
@@ -422,6 +513,11 @@
     if (a && a.kind === 'screw' || b && b.kind === 'screw') throw new Error(SCREW_OUTPUT_MESSAGE);
     if (!a) return b;
     if (!b) throw new Error('Connect a matrix to this input.');
+    if (a.kind === 'multiplier' || b.kind === 'multiplier') {
+      const factor = a.kind === 'multiplier' ? a : b, operand = factor === a ? b : a;
+      if (operand.kind === 'scalar') throw new Error('Connect a vector or matrix to the scalar multiplier.');
+      return { kind: operand.kind === 'multiplier' ? 'multiplier' : 'matrix', matrix: matrixScale(operand.matrix, factor.matrix[0][0]) };
+    }
     if (a.kind === 'scalar' || b.kind === 'scalar') throw new Error('A determinant is a scalar and cannot be composed as a matrix operation.');
     if (a.kind === 'matrix' || b.kind === 'matrix') return { kind: 'matrix', matrix: multiply(a.matrix, b.matrix) };
     if (a.kind === 'rotation' && b.kind === 'rotation') return { kind: 'rotation', matrix: multiply(a.matrix, b.matrix) };
@@ -438,11 +534,18 @@
       const operation = block.type === 'add' ? add : sub;
       return { kind: 'matrix', matrix: matrixMap(a, (value, i, j) => operation(value, b[i][j])) };
     } else if (block.type === 'scale') {
+      if (!inputValue) return { kind: 'multiplier', matrix: [[parse(params.factor)]] };
+      if (inputValue.kind === 'multiplier') return compose(inputValue, { kind: 'multiplier', matrix: [[parse(params.factor)]] });
       return { kind: 'matrix', matrix: matrixScale(inputMatrix(inputValue), parse(params.factor)) };
     } else if (block.type === 'cross') {
       const a = inputMatrix(inputValue && inputValue.a, 'a'), b = inputMatrix(inputValue && inputValue.b, 'b');
       if (a.length !== 3 || a[0].length !== 1 || b.length !== 3 || b[0].length !== 1) throw new Error('A cross product needs two 3 × 1 column vectors.');
       return { kind: 'matrix', matrix: asColumn(cross(a.map(row => row[0]), b.map(row => row[0]))) };
+    } else if (block.type === 'stackColumns') {
+      const a = inputMatrix(inputValue && inputValue.a, 'a'), b = inputMatrix(inputValue && inputValue.b, 'b');
+      if (a.length !== b.length) throw new Error('Stacked matrices must have the same number of rows.');
+      if (a[0].length + b[0].length > 12) throw new Error('Stacked matrices may have at most 12 columns.');
+      return { kind: 'matrix', matrix: a.map((row, i) => [...row, ...b[i]]) };
     } else if (block.type === 'stack') {
       const a = inputMatrix(inputValue && inputValue.a, 'a'), b = inputMatrix(inputValue && inputValue.b, 'b');
       if (a[0].length !== b[0].length) throw new Error('Stacked matrices must have the same number of columns.');
@@ -489,7 +592,7 @@
     else throw new Error('Unknown block type: ' + block.type);
     return compose(inputValue, own);
   }
-  return { parse, format, tex, normalizeInput, symbolParts, GREEK, pretty, evaluate, symbols, num, numberText, multiply, cross, determinant, toHomogeneous, numericMatrix,
+  return { parse, format, tex, normalizeInput, symbolParts, GREEK, pretty, evaluate, symbols, num, numberText, multiply, cross, determinant, simplifyTrig, toHomogeneous, numericMatrix,
     getSymbols, computeBlock, compose, inverseValue, logValue, identity, rotation, exponential,
     validateRigid: (matrix, bindings = {}, requireNumeric = true) => validateRigid(matrix, bindings, requireNumeric), validatedMatrix };
 });

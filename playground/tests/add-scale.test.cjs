@@ -64,8 +64,10 @@ test('addition rejects incompatible vectors and missing or scalar inputs',()=>{
 
 test('scalar multiplier validates its factor and input in the browser engine and Python',()=>{
   assert.throws(()=>graph([node('s','scale',{factor:2})]),/Scalar factor/);
-  const missing=graph([node('s','scale',{factor:'2'})]);assert.match(G.evaluateGraph(missing).get('s').error,/Connect/);
-  assert.throws(()=>P.generatePython(missing,'s'),/input|unconnected/i);
+  const missing=graph([node('s','scale',{factor:'2'})]);
+  assert.equal(G.evaluateGraph(missing).get('s').value.kind,'multiplier');
+  assert.deepEqual(output(missing,'s'),[[2]]);
+  python(missing,'s',"assert namespace['calculate']()==2");
   const scalar=graph([matrix('a',[[2]]),node('det','determinant'),node('s','scale',{factor:'2'})],[{from:'a',to:'det'},{from:'det',to:'s'}]);
   assert.match(G.evaluateGraph(scalar).get('s').error,/scalar/);
   python(scalar,'s',"try:\n namespace['calculate']()\nexcept ValueError:\n pass\nelse:\n raise AssertionError('Scalar input accepted')");

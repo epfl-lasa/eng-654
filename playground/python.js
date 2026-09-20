@@ -80,6 +80,8 @@ def to_homogeneous(value):
     compose: `def compose(left, right, left_kind="transform", right_kind="transform"):
     """An A -> B connection computes A * B, acting on column vectors."""
     A, B = as_matrix(left), as_matrix(right)
+    if left_kind == "multiplier" or right_kind == "multiplier":
+        return A * B
     if left_kind == "scalar" or right_kind == "scalar":
         raise ValueError("A determinant is a scalar result and cannot compose as a matrix.")
     if left_kind == "matrix" or right_kind == "matrix":
@@ -201,10 +203,10 @@ def to_homogeneous(value):
     return MANIFEST_PREFIX + encoded + '\n';
   }
   const indent = source => String(source).split('\n').map(line => line ? '    ' + line : '').join('\n');
-  const inputOperation = type => ['inverse', 'logarithm', 'scale', 'add', 'subtract', 'cross', 'columns', 'stack', 'determinant'].includes(type);
+  const inputOperation = type => ['inverse', 'logarithm', 'scale', 'add', 'subtract', 'cross', 'columns', 'stack', 'stackColumns', 'determinant'].includes(type);
   function orderedInputs(graph, node) {
     const inputs = graph.edges.filter(edge => edge.to === node.id);
-    const slots = node.type === 'add' || node.type === 'subtract' || node.type === 'cross' || node.type === 'stack' ? ['a', 'b']
+    const slots = node.type === 'add' || node.type === 'subtract' || node.type === 'cross' || ['stack', 'stackColumns'].includes(node.type) ? ['a', 'b']
       : node.type === 'columns' ? (node.params?.columns || []).map((_, index) => 'c' + index) : null;
     if (!slots) {
       if (inputs.length > 1) throw new Error('Each block can have only one input.');
@@ -251,7 +253,7 @@ def to_homogeneous(value):
     else if (node.type === 'translation') params.vector = p.vector || ['0', '0', '0'];
     else if (node.type === 'scale') params.factor = p.factor;
     else if (node.type === 'transform') params.matrix = (p.matrix || []).flat();
-    else if (node.type === 'matrix') { params.rows = p.rows; params.columns = p.columns; params.matrix = (p.matrix || []).flat(); }
+    else if (node.type === 'matrix') { params.rows = p.rows; params.columns = p.columns; params.matrix = (p.matrix || []).flat(); if (p.symbolEditor) params.symbolEditor = p.symbolEditor; }
     else if (node.type === 'columns') { params.columns = p.columns; params.rowStart = p.rowStart; params.rowCount = p.rowCount; }
     else if (node.type === 'exponential') { params.omega = p.omega || ['0', '0', '1']; params.v = p.v || ['0', '0', '0']; params.theta = p.theta === undefined ? 'theta' : p.theta; }
     else if (node.type === 'function') { params.definition = p.definition; params.arguments = p.arguments || {}; }
@@ -329,7 +331,7 @@ def to_homogeneous(value):
       const name = uniqueName(preferredName || def.name), parameters = def.parameters || [], names = parameterNames(parameters);
       if (def.kind === 'matrix') {
         let matrix = matrixCode(def.matrix, names);
-        if (def.outputKind === 'scalar') matrix += '[0, 0]';
+        if (def.outputKind === 'scalar' || def.outputKind === 'multiplier') matrix += '[0, 0]';
         if (def.outputKind === 'transform') { needed.add('rigid'); matrix = 'check_rigid(' + matrix + ')'; }
         if (def.outputKind === 'rotation') { needed.add('homogeneous'); needed.add('rigid'); matrix = 'check_rigid(to_homogeneous(' + matrix + '))[:3, :3]'; }
         declarations.push(functionText(name, parameters.map(parameter => names.get(parameter)), ['return ' + matrix], 'Reusable matrix function: ' + def.name));
@@ -347,7 +349,7 @@ def to_homogeneous(value):
           while ([...ownNames.values()].includes(name)) name = '_' + name;
           return name;
         });
-        let operation, outputKind = { exponential: 'transform', determinant: 'scalar', scale: 'matrix', add: 'matrix', subtract: 'matrix', cross: 'matrix', columns: 'matrix', stack: 'matrix' }[node.type] || node.type;
+        let operation, outputKind = { exponential: 'transform', determinant: 'scalar', scale: 'matrix', add: 'matrix', subtract: 'matrix', cross: 'matrix', columns: 'matrix', stack: 'matrix', stackColumns: 'matrix' }[node.type] || node.type;
         if (node.type === 'rotation') {
           needed.add('skew'); needed.add('rotation');
           operation = 'rotation(' + vector(p.axis, ['0', '0', '1'], ownNames) + ', ' + source(p.angle === undefined ? 'theta' : p.angle, ownNames) + ', ' + unit + ')';
@@ -365,23 +367,24 @@ def to_homogeneous(value):
           operation = 'screw_exponential(' + vector(p.omega, ['0', '0', '1'], ownNames) + ', ' + vector(p.v, ['0', '0', '0'], ownNames) + ', ' + source(p.theta === undefined ? 'theta' : p.theta, ownNames) + ', ' + unit + ')';
         } else if (node.type === 'inverse' || node.type === 'logarithm') {
           if (!inputs.length) throw new Error('Connect an input before exporting ' + node.type + '.');
-          if (['matrix', 'scalar'].includes(kinds.get(inputs[0].from))) throw new Error('A general matrix or scalar does not represent a rigid motion.');
+          if (['matrix', 'scalar', 'multiplier'].includes(kinds.get(inputs[0].from))) throw new Error('A general matrix or scalar does not represent a rigid motion.');
           needed.add('homogeneous'); needed.add('rigid'); needed.add(node.type);
           if (node.type === 'logarithm') needed.add('skew');
           operation = (node.type === 'inverse' ? 'rigid_inverse' : 'matrix_to_screw') + '(' + inputNames[0] + ')';
           outputKind = node.type === 'inverse' ? kinds.get(inputs[0].from) : 'screw';
         } else if (node.type === 'scale') {
-          if (!inputs.length) throw new Error('Connect an input before exporting scalar multiplication.');
-          operation = '(' + source(p.factor, ownNames) + ') * ' + inputNames[0];
+          outputKind = !inputs.length || kinds.get(inputs[0].from) === 'multiplier' ? 'multiplier' : 'matrix';
+          operation = '(' + source(p.factor, ownNames) + ')' + (inputs.length ? ' * ' + inputNames[0] : '');
         } else if (node.type === 'add' || node.type === 'subtract') operation = inputNames[0] + (node.type === 'add' ? ' + ' : ' - ') + inputNames[1];
         else if (node.type === 'cross') operation = inputNames[0] + '.cross(' + inputNames[1] + ')';
         else if (node.type === 'stack') operation = 'sp.Matrix.vstack(' + inputNames.join(', ') + ')';
+        else if (node.type === 'stackColumns') operation = 'sp.Matrix.hstack(' + inputNames.join(', ') + ')';
         else if (node.type === 'columns') {
           if (!Array.isArray(p.columns) || !p.columns.length || !Number.isInteger(p.rowStart) || !Number.isInteger(p.rowCount) || p.rowStart < 1 || p.rowCount < 1 || p.columns.some(column => !Number.isInteger(column) || column < 1)) throw new Error('Select positive integer columns and a valid row slice.');
           operation = 'sp.Matrix.hstack(' + inputNames.map((name, index) => name + '[' + (p.rowStart - 1) + ':' + (p.rowStart - 1 + p.rowCount) + ', ' + (p.columns[index] - 1) + ']').join(', ') + ')';
         } else if (node.type === 'determinant') {
           if (!inputs.length) throw new Error('Connect an input before exporting determinant.');
-          operation = inputNames[0] + '.det()';
+          operation = 'sp.trigsimp(' + inputNames[0] + '.det())';
         } else if (node.type === 'function') {
           const inner = compileDefinition(p.definition, p.definition.name, depth + 1);
           operation = inner.name + '(' + inner.parameters.map(parameter => source(p.arguments?.[parameter] === undefined ? parameter : p.arguments[parameter], ownNames)).join(', ') + ')';
@@ -393,9 +396,10 @@ def to_homogeneous(value):
           '    raise ValueError("' + (node.type === 'add' ? 'Addition' : 'Subtraction') + ' needs two row or column vectors.")',
           'if ' + inputNames[0] + '.shape != ' + inputNames[1] + '.shape:',
           '    raise ValueError("Vectors must have the same length and orientation.")');
-        if (node.type === 'scale') checks.push('if not isinstance(' + inputNames[0] + ', sp.MatrixBase):', '    raise ValueError("Scalar multiplication needs a vector or matrix input.")');
+        if (node.type === 'scale' && inputs.length && kinds.get(inputs[0].from) !== 'multiplier') checks.push('if not isinstance(' + inputNames[0] + ', sp.MatrixBase):', '    raise ValueError("Scalar multiplication needs a vector or matrix input.")');
         if (node.type === 'cross') checks.push('if any(vector.shape != (3, 1) for vector in (' + inputNames.join(', ') + ')):', '    raise ValueError("Cross products need two 3 x 1 column vectors.")');
         if (node.type === 'stack') checks.push('if ' + inputNames[0] + '.rows + ' + inputNames[1] + '.rows > 12:', '    raise ValueError("Stacked matrices may have at most 12 rows.")');
+        if (node.type === 'stackColumns') checks.push('if ' + inputNames[0] + '.cols + ' + inputNames[1] + '.cols > 12:', '    raise ValueError("Stacked matrices may have at most 12 columns.")');
         if (node.type === 'columns') inputNames.forEach((name, index) => checks.push('if ' + name + '.rows < ' + (p.rowStart - 1 + p.rowCount) + ' or ' + name + '.cols < ' + p.columns[index] + ':', '    raise ValueError("The selected column or rows exceed the input matrix.")'));
         if (node.type === 'determinant') {
           const name = inputNames[0];
@@ -414,7 +418,7 @@ def to_homogeneous(value):
           needed.add('homogeneous'); needed.add('compose');
           body.push(valueName + ' = compose(' + values.get(inputs[0].from) + ', ' + call + ', ' + quote(parentKind) + ', ' + quote(outputKind) + ')');
           if (parentKind === 'scalar' || outputKind === 'scalar') throw new Error('A determinant is a scalar result and cannot compose as a matrix.');
-          outputKind = parentKind === 'matrix' || outputKind === 'matrix' ? 'matrix'
+          outputKind = parentKind === 'multiplier' || outputKind === 'multiplier' ? (parentKind === outputKind ? 'multiplier' : 'matrix') : parentKind === 'matrix' || outputKind === 'matrix' ? 'matrix'
             : parentKind === outputKind && ['rotation', 'translation'].includes(outputKind) ? outputKind : 'transform';
         }
         values.set(node.id, valueName); kinds.set(node.id, outputKind);
