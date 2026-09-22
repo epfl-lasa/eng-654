@@ -1,11 +1,12 @@
-"""Check which Exercise 01 materials reach the Pages artifact at each stage."""
+"""Check which exercise materials reach the Pages artifact at each stage."""
 
 import json
+from html.parser import HTMLParser
 from pathlib import Path
 import tempfile
 import unittest
 
-from stage_site import ANSWER_FILE, FEEDBACK_FILES, RELEASE_CONFIG, SOLUTIONS, stage_site
+from stage_site import ANSWER_FILES, FEEDBACK_FILES, RELEASE_CONFIG, SOLUTIONS, stage_site
 
 
 class SiteStagingTests(unittest.TestCase):
@@ -36,9 +37,9 @@ class SiteStagingTests(unittest.TestCase):
             "lectures_main/assets/recordings/kgmp_intro.m4a",
             f"{SOLUTIONS}/README.md",
             f"{SOLUTIONS}/exercise_02.html",
-            f"{SOLUTIONS}/exercise_02_answers.json",
+            f"{SOLUTIONS}/exercise_03_abb_answers.json",
             f"{SOLUTIONS}/js/exercise-01-checker.js",
-            f"{SOLUTIONS}/{ANSWER_FILE}",
+            *(f"{SOLUTIONS}/{name}" for name in ANSWER_FILES),
             *(f"{SOLUTIONS}/{name}" for name in FEEDBACK_FILES),
         }
         for relative in self.public_files | private_files:
@@ -61,7 +62,7 @@ class SiteStagingTests(unittest.TestCase):
                 if stage != "exercise":
                     expected.update(f"{SOLUTIONS}/{name}" for name in FEEDBACK_FILES)
                 if stage == "answers":
-                    expected.add(f"{SOLUTIONS}/{ANSWER_FILE}")
+                    expected.update(f"{SOLUTIONS}/{name}" for name in ANSWER_FILES)
                 actual = {
                     path.relative_to(destination).as_posix()
                     for path in destination.rglob("*")
@@ -81,13 +82,52 @@ class SiteStagingTests(unittest.TestCase):
             stage_site(self.source, destination)
         self.assertFalse(destination.exists())
 
+    def test_current_exercise_solution_links_are_published(self):
+        repository = Path(__file__).resolve().parents[2]
+        (self.source / RELEASE_CONFIG).write_bytes(
+            (repository / RELEASE_CONFIG).read_bytes()
+        )
+
+        class SolutionLinks(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.links = []
+
+            def handle_starttag(self, tag, attrs):
+                attrs = dict(attrs)
+                if tag == "a" and attrs.get("href", "").startswith("../solutions/"):
+                    self.links.append(attrs)
+
+        for name in ANSWER_FILES:
+            (self.source / SOLUTIONS / name).write_bytes(
+                (repository / SOLUTIONS / name).read_bytes()
+            )
+        destination = self.root / "current-release"
+        stage_site(self.source, destination)
+        for number in range(1, 5):
+            with self.subTest(exercise=number):
+                page = Path(f"lectures_main/exercises/exercise_{number:02}.html")
+                parser = SolutionLinks()
+                parser.feed((repository / page).read_text())
+                self.assertEqual(len(parser.links), 1)
+                link = parser.links[0]
+                self.assertEqual(link["download"], f"exercise_{number:02}_answers.json")
+                target = destination / page.parent / link["href"]
+                self.assertTrue(target.is_file(), f"Missing published download: {target}")
+                self.assertTrue(json.loads(target.read_text())["answers"])
+
     def test_missing_released_file_fails_before_copying(self):
         self.configure("answers")
-        (self.source / SOLUTIONS / ANSWER_FILE).unlink()
-        destination = self.root / "public"
-        with self.assertRaisesRegex(ValueError, "Missing required release file"):
-            stage_site(self.source, destination)
-        self.assertFalse(destination.exists())
+        for name in ANSWER_FILES:
+            with self.subTest(answer_file=name):
+                path = self.source / SOLUTIONS / name
+                contents = path.read_bytes()
+                path.unlink()
+                destination = self.root / "public"
+                with self.assertRaisesRegex(ValueError, "Missing required release file"):
+                    stage_site(self.source, destination)
+                self.assertFalse(destination.exists())
+                path.write_bytes(contents)
 
     def test_rejects_stale_output_from_another_stage(self):
         self.configure("answers")

@@ -1,0 +1,442 @@
+{
+  "schemaVersion": 1,
+  "exercise": "exercise_03",
+  "model": "custom_3R",
+  "purpose": "instructor_reference_answer_key",
+  "units": {
+    "length": "m",
+    "angle": "rad"
+  },
+  "answers": {
+    "J.1.1": "-s1*X-c1*Y",
+    "J.1.2": "c1*(-u*s2+0.25*c2)",
+    "J.1.3": "-1.5*c1*c2*s3-1.5*s1*c3",
+    "J.2.1": "c1*X-s1*Y",
+    "J.2.2": "s1*(-u*s2+0.25*c2)",
+    "J.2.3": "-1.5*s1*c2*s3+1.5*c1*c3",
+    "J.3.1": "0",
+    "J.3.2": "-u*c2-0.25*s2",
+    "J.3.3": "1.5*s2*s3",
+    "J.4.1": "0",
+    "J.4.2": "-s1",
+    "J.4.3": "c1*s2",
+    "J.5.1": "0",
+    "J.5.2": "c1",
+    "J.5.3": "s1*s2",
+    "J.6.1": "1",
+    "J.6.2": "0",
+    "J.6.3": "c2",
+    "determinant": "1.5*(u*s3+(u*c2+0.25*s2)*(2*s3-1.25*c3))",
+    "region.a2": "-3",
+    "region.a3": "-2",
+    "region.b2": "-3",
+    "region.b3": "-1",
+    "separation": "critical-preimage",
+    "separation.explanation": "The workspace critical-value curve separates regions with two and four real position IKs. Its full preimage includes singular configurations where a pair merges and regular configurations representing the surviving IKs at the same workspace position. The regular preimages (characteristic configurations) can divide a nonsingular aspect into different inverse-image count regions; determinant sign alone does not identify this boundary. A and B here are regular with positive determinants, but their positions have two and four IKs respectively.",
+    "cuspidality": "nonsingular-change",
+    "four-to-two": "pair-disappears",
+    "two-to-four": "pair-appears",
+    "workspace-boundary": "critical-preimages",
+    "cusp-joint": "tangent-preimage",
+    "fold-roots": "2",
+    "cusp-roots": "3",
+    "bonus.J.1.1": "0",
+    "bonus.J.1.2": "a2*c3+a3",
+    "bonus.J.1.3": "a3",
+    "bonus.J.1.4": "0",
+    "bonus.J.1.5": "0",
+    "bonus.J.1.6": "0",
+    "bonus.J.2.1": "r",
+    "bonus.J.2.2": "0",
+    "bonus.J.2.3": "0",
+    "bonus.J.2.4": "0",
+    "bonus.J.2.5": "-d4*s4",
+    "bonus.J.2.6": "c4*h",
+    "bonus.J.3.1": "0",
+    "bonus.J.3.2": "a2*s3",
+    "bonus.J.3.3": "0",
+    "bonus.J.3.4": "0",
+    "bonus.J.3.5": "d4*c4",
+    "bonus.J.3.6": "s4*h",
+    "bonus.J.4.1": "-s23",
+    "bonus.J.4.2": "0",
+    "bonus.J.4.3": "0",
+    "bonus.J.4.4": "1",
+    "bonus.J.4.5": "0",
+    "bonus.J.4.6": "c5",
+    "bonus.J.5.1": "0",
+    "bonus.J.5.2": "1",
+    "bonus.J.5.3": "1",
+    "bonus.J.5.4": "0",
+    "bonus.J.5.5": "c4",
+    "bonus.J.5.6": "s4*s5",
+    "bonus.J.6.1": "c23",
+    "bonus.J.6.2": "0",
+    "bonus.J.6.3": "0",
+    "bonus.J.6.4": "0",
+    "bonus.J.6.5": "s4",
+    "bonus.J.6.6": "-c4*s5",
+    "bonus.crb-jacobian": "Use native frames 0=base_link and 3=link_3, O4=origin of link_4, and O6=tool0 (the same position as link_6). This is the full six-joint tool twist referenced at O4; it is not the actual velocity Jacobian of link_4. Use linear-first order [v;omega]. Let r0 = ^0p_4 - ^0p_6 point FROM O6 TO O4 and Q = ^3R_0 = (^0R_3)^T. Then ^3J_4 = [Q,-Q[r0]_x;0,Q] ^0J_6. Equivalently, column i is [Q(^0a_i × (^0p_4-^0p_i)); Q ^0a_i], i=1,...,6. No motion of frame 3 is subtracted. With native lengths a2=.444, a3=.110, d4=.470, a5=.080 m, c_i=cos(q_i), s_i=sin(q_i), c23=cos(q2+q3), s23=sin(q2+q3), r=a2*s2+a3*s23, h=a5+d4*s5, the matrix rows are [[\"0\",\"a2*c3+a3\",\"a3\",\"0\",\"0\",\"0\"],[\"r\",\"0\",\"0\",\"0\",\"-d4*s4\",\"c4*h\"],[\"0\",\"a2*s3\",\"0\",\"0\",\"d4*c4\",\"s4*h\"],[\"-s23\",\"0\",\"0\",\"1\",\"0\",\"c5\"],[\"0\",\"1\",\"1\",\"0\",\"c4\",\"s4*s5\"],[\"c23\",\"0\",\"0\",\"0\",\"s4\",\"-c4*s5\"]]. The first three rows have units m/rad, the last three rad/rad. q1,q6,d1,d6 cancel. Both the point-shift block and proper-rotation block have determinant one, hence det(^3J_4)=det(^0J_6). At q=(pi/9,-pi/4,pi/3,pi/4,pi/3,pi/6), det=-0.0285598609297313 m^3 (radians dimensionless). Expand along column 4 and use c4^2+s4^2=1: det J = -a2*((a3*s3+d4*c3)*(r+d4*c23)*s5+a5*(c23*(a3*s3+d4*c3)+s4^2*s2*(a2*c3+a3))). Equivalently, det J=-a2*(E*R*s5+a5*C), E=a3*s3+d4*c3, R=r+d4*c23, C=c23*E+s4^2*s2*(a2*c3+a3). a2 = 0.444 m is a fixed nonzero arm-length scale; the overall minus sign follows the stated linear-first row order and native joint axes. E = a3*s3+d4*c3 is the elbow term. R = r+d4*c23 is the signed radial reach of the intersection of axes 4 and 5 from axis 1. In the hypothetical zero-offset case a5=0, det J=-a2*E*R*s5: E=0 is the elbow condition, R=0 the shoulder condition, and s5=0 aligns wrist axes 4 and 6. C = c23*E+s4^2*s2*(a2*c3+a3) is the correction coupled to the actual wrist offset a5=0.080 m. The actual condition is E*R*s5+a5*C=0. E=0, R=0, or s5=0 alone is generally insufficient; cancellation can also produce a singularity with all three nonzero. In particular, at s5=0, det J=-a2*a5*C, which need not vanish. E and R have units m; C has units m, so both terms inside the brackets have units m^2 and det J has units m^3 (radians dimensionless). It depends on q2,q3,q4,q5; q1,q6,d1,d6 cancel. Point shifting and proper rotation preserve the determinant and the singular set.",
+    "bonus.determinant": "-a2*((a3*s3+d4*c3)*(r+d4*c23)*s5+a5*(c23*(a3*s3+d4*c3)+s4^2*s2*(a2*c3+a3)))"
+  },
+  "reference": {
+    "urdf": "assets/models/custom_3R/custom_3R.urdf",
+    "frame": "0 = base_link; operational point P = tool0 origin; linear velocity first",
+    "positionJacobian": "First three rows of the 6 by 3 geometric Jacobian",
+    "determinantDerivation": [
+      "Let X=1+u*c2+d3*s2, Y=d2+a3*s3, u=a2+a3*c3, and H=u*c2+d3*s2. Rotate the translational rows by Rz(-q1), whose determinant is one.",
+      "The rotated position Jacobian is [[-Y, -u*s2+d3*c2, -a3*c2*s3], [X, 0, a3*c3], [0, -H, a3*s2*s3]].",
+      "Expand along the second row: det = -X*((-u*s2+d3*c2)*a3*s2*s3-a3*c2*s3*H) - a3*c3*(Y*H).",
+      "Using (-u*s2+d3*c2)*s2-c2*H = -u, obtain a3*(X*u*s3 - Y*H*c3).",
+      "Since X=a1+H, Y=d2+a3*s3 and u=a2+a3*c3, this becomes a3*(a1*u*s3+H*(a2*s3-d2*c3)). Substitute a1=1,a2=2,a3=1.5,d2=1.25,d3=0.25."
+    ],
+    "cuspidalityEvidence": {
+      "path": {
+        "rho": 2.58,
+        "z": 3,
+        "width": 1,
+        "height": 0.55,
+        "rotation": 90
+      },
+      "startingIKs": 4,
+      "closedJointLoops": 1,
+      "nonsingularChanges": 1,
+      "foldTerminations": 2
+    },
+    "grading": "Expression checks use varied numerical configurations; assess the determinant expansion and written characteristic-set explanation separately. Other valid same-sign 2-IK/4-IK examples are accepted. The four boundary MCQs are checked automatically. The optional ABB CRB matrix and written derivation require instructor review; the reference includes a verified symbolic and numerical answer.",
+    "distributionQuestions": {
+      "workspace-boundary": "A curve in the rho-z workspace is not itself a curve in joint coordinates. Take its full inverse image. This includes singular configurations at which roots merge and regular preimages (characteristic configurations, also called pseudo-singularities) corresponding to surviving roots at the same critical workspace value. The singular curve alone need not separate 2-IK and 4-IK inverse-image regions.",
+      "cusp-joint": "At an ordinary cusp, the regular characteristic/pseudo-singularity branch approaches the singular branch tangentially in joint space. Its nearby points are regular; the contact configuration at the cusp is singular.",
+      "fold-roots": "Two local IK branches coalesce at a regular fold. Crossing from a 4-IK to a 2-IK workspace region removes that pair; the other two solutions remain distinct. This asks how many roots meet, not the total number of distinct configurations at the boundary.",
+      "cusp-roots": "Three local IK branches coalesce at an ordinary cusp. In a 4-IK region the fourth branch may remain distinct. Boundary points and cusps should be interpreted as limits of nearby regular points because numerical root deduplication can become sensitive at a multiple root.",
+      "localCuspModel": {
+        "map": "(u,v) -> (x,y) = (u, v^3 + u*v)",
+        "singularity": "u + 3*v^2 = 0",
+        "criticalValues": "4*x^3 + 27*y^2 = 0",
+        "fullPreimage": "4*u^3 + 27*(v^3+u*v)^2 = (u+3*v^2)^2*(4*u+3*v^2)",
+        "regularCharacteristicBranch": "4*u+3*v^2 = 0; its tangent at (0,0) agrees with that of u+3*v^2=0. The coordinates here are a local normal form, not the robot joint coordinates."
+      }
+    },
+    "bonus": {
+      "model": {
+        "name": "ABB GoFa CRB15000-5/0.95",
+        "urdf": "assets/models/abb_gofa/crb15000_5_95.urdf",
+        "worldFrame": "base_link",
+        "expressionFrame": "link_3",
+        "referencePointFrame": "link_4",
+        "toolFrame": "tool0",
+        "jointAxesInNativeParentFrames": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ]
+      },
+      "convention": {
+        "rowOrder": [
+          "vx",
+          "vy",
+          "vz",
+          "omega_x",
+          "omega_y",
+          "omega_z"
+        ],
+        "meaning": "Full six-joint tool0 twist, referenced at O4 and expressed along frame-3 axes. Expressing coordinates in frame 3 does not subtract frame-3 motion.",
+        "pointShift": "r0 = ^0p_4 - ^0p_6, from tool origin O6 to O4",
+        "rotation": "Q = ^3R_0 = (^0R_3)^T",
+        "conversion": "^3J_4 = [Q, -Q [r0]_x; 0, Q] ^0J_6",
+        "column": "[^3R_0 (^0a_i × (^0p_4 - ^0p_i)); ^3R_0 ^0a_i], i=1,...,6"
+      },
+      "lengths": {
+        "a2": 0.444,
+        "a3": 0.11,
+        "d4": 0.47,
+        "a5": 0.08,
+        "d1": 0.265,
+        "d6": 0.101
+      },
+      "definitions": {
+        "s_i": "sin(q_i)",
+        "c_i": "cos(q_i)",
+        "s23": "sin(q2+q3)",
+        "c23": "cos(q2+q3)",
+        "r": "a2*s2+a3*s23",
+        "h": "a5+d4*s5",
+        "worldFrame3Rotation": "Rz(q1) Ry(q2+q3)",
+        "p4InFrame3": [
+          0,
+          0,
+          0.11
+        ]
+      },
+      "matrixExpressions": [
+        [
+          "0",
+          "a2*c3+a3",
+          "a3",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "r",
+          "0",
+          "0",
+          "0",
+          "-d4*s4",
+          "c4*h"
+        ],
+        [
+          "0",
+          "a2*s3",
+          "0",
+          "0",
+          "d4*c4",
+          "s4*h"
+        ],
+        [
+          "-s23",
+          "0",
+          "0",
+          "1",
+          "0",
+          "c5"
+        ],
+        [
+          "0",
+          "1",
+          "1",
+          "0",
+          "c4",
+          "s4*s5"
+        ],
+        [
+          "c23",
+          "0",
+          "0",
+          "0",
+          "s4",
+          "-c4*s5"
+        ]
+      ],
+      "matrixLatex": "\\begin{bmatrix}0&a_2c_3+a_3&a_3&0&0&0\\\\r&0&0&0&-d_4s_4&c_4h\\\\0&a_2s_3&0&0&d_4c_4&s_4h\\\\-s_{23}&0&0&1&0&c_5\\\\0&1&1&0&c_4&s_4s_5\\\\c_{23}&0&0&0&s_4&-c_4s_5\\end{bmatrix}",
+      "numeric": {
+        "q": [
+          0.3490658503988659,
+          -0.7853981633974483,
+          1.0471975511965976,
+          0.7853981633974483,
+          1.0471975511965976,
+          0.5235987755982988
+        ],
+        "angleUnit": "rad",
+        "qExpressions": [
+          "pi/9",
+          "-pi/4",
+          "pi/3",
+          "pi/4",
+          "pi/3",
+          "pi/6"
+        ],
+        "qDegrees": [
+          20,
+          -45,
+          60,
+          45,
+          60,
+          30
+        ],
+        "matrix": [
+          [
+            0,
+            0.3320000000000001,
+            0.11,
+            0,
+            0,
+            0
+          ],
+          [
+            -0.2854853158855498,
+            0,
+            0,
+            0,
+            -0.33234018715767727,
+            0.34438358727194723
+          ],
+          [
+            0,
+            0.3845152792802907,
+            0,
+            0,
+            0.3323401871576773,
+            0.3443835872719472
+          ],
+          [
+            -0.2588190451025207,
+            0,
+            0,
+            1,
+            0,
+            0.5000000000000001
+          ],
+          [
+            0,
+            1,
+            1,
+            0,
+            0.7071067811865476,
+            0.6123724356957945
+          ],
+          [
+            0.9659258262890683,
+            0,
+            0,
+            0,
+            0.7071067811865475,
+            -0.6123724356957946
+          ]
+        ],
+        "worldToolJacobian": [
+          [
+            -0.12577211296896967,
+            0.22095819141425974,
+            -0.07406339141431184,
+            -0.003316584885776616,
+            -0.09265420741411827,
+            0
+          ],
+          [
+            0.24741753768345442,
+            0.0804222046920845,
+            -0.026956869923616518,
+            0.034512355638916026,
+            0.05641108681022451,
+            0
+          ],
+          [
+            0,
+            -0.27551303051818077,
+            -0.5894684413650079,
+            0.03242163336986828,
+            -0.06952688065310336,
+            0
+          ],
+          [
+            0,
+            -0.3420201433256687,
+            -0.3420201433256687,
+            0.9076733711903687,
+            -0.06986907716976559,
+            0.09545766491244789
+          ],
+          [
+            0,
+            0.9396926207859084,
+            0.9396926207859084,
+            0.3303660895493521,
+            0.7270570549202695,
+            0.6864168832050875
+          ],
+          [
+            1,
+            0,
+            0,
+            -0.2588190451025208,
+            0.6830127018922193,
+            -0.7209158734973702
+          ]
+        ],
+        "pointShiftWorld": [
+          -0.5156859823638397,
+          -0.22341384162551925,
+          0.18506845578909126
+        ],
+        "frame3RotationWorld": [
+          [
+            0.9076733711903688,
+            -0.3420201433256687,
+            0.24321034680169368
+          ],
+          [
+            0.33036608954935215,
+            0.9396926207859084,
+            0.08852132690137679
+          ],
+          [
+            -0.25881904510252046,
+            -2.7755575615628914e-17,
+            0.9659258262890684
+          ]
+        ],
+        "toolPointWorld": [
+          0.24741753768345442,
+          0.12577211296896967,
+          0.5001387959495331
+        ],
+        "point4World": [
+          -0.26826844468038524,
+          -0.09764172865654953,
+          0.6852072517386246
+        ],
+        "determinant": -0.028559860929731264
+      },
+      "verification": {
+        "configurations": 33,
+        "finiteDifferenceStep": 1e-06,
+        "maxSymbolicVsURDFCrossProductError": 8.881784197001252e-16,
+        "maxPointShiftVsCrossProductError": 5.551115123125783e-16,
+        "maxDeterminantDifference": 2.3592239273284576e-16,
+        "maxToolJacobianFiniteDifferenceError": 3.5084568583698683e-10,
+        "maxKinematicsVsURDFQuaternionFKError": 5.551115123125783e-16,
+        "method": "Independent quaternion propagation through actual URDF joints, explicit cross products, shifted/rotated world tool Jacobian, central finite differences of tool position and quaternion orientation.",
+        "referencePointDistinction": "The actual link_4 body-velocity Jacobian has zero columns 5 and 6. The requested shifted full-tool Jacobian retains those columns and its determinant."
+      },
+      "determinant": {
+        "expression": "-a2*((a3*s3+d4*c3)*(r+d4*c23)*s5+a5*(c23*(a3*s3+d4*c3)+s4^2*s2*(a2*c3+a3)))",
+        "groupedExpression": "-a2*(E*R*s5+a5*C)",
+        "components": {
+          "E": "a3*s3+d4*c3",
+          "R": "r+d4*c23",
+          "C": "c23*(a3*s3+d4*c3)+s4^2*s2*(a2*c3+a3)"
+        },
+        "derivation": [
+          "Expand along column 4, whose only nonzero entry is the 1 in row 4; the cofactor sign is positive. Expand the resulting 5x5 determinant and use c4^2+s4^2=1.",
+          "This gives -a2*((a3*s3+d4*c3)*(r*s5+c23*h)+a5*s4^2*(r*c3-a3*c23*s3)).",
+          "Substitute h=a5+d4*s5 and r*c3-a3*c23*s3=s2*(a2*c3+a3) to obtain the grouped expression."
+        ],
+        "comments": [
+          "a2 = 0.444 m is a fixed nonzero arm-length scale; the overall minus sign follows the stated linear-first row order and native joint axes.",
+          "E = a3*s3+d4*c3 is the elbow term. R = r+d4*c23 is the signed radial reach of the intersection of axes 4 and 5 from axis 1. In the hypothetical zero-offset case a5=0, det J=-a2*E*R*s5: E=0 is the elbow condition, R=0 the shoulder condition, and s5=0 aligns wrist axes 4 and 6.",
+          "C = c23*E+s4^2*s2*(a2*c3+a3) is the correction coupled to the actual wrist offset a5=0.080 m. The actual condition is E*R*s5+a5*C=0. E=0, R=0, or s5=0 alone is generally insufficient; cancellation can also produce a singularity with all three nonzero. In particular, at s5=0, det J=-a2*a5*C, which need not vanish.",
+          "E and R have units m; C has units m, so both terms inside the brackets have units m^2 and det J has units m^3 (radians dimensionless). It depends on q2,q3,q4,q5; q1,q6,d1,d6 cancel. Point shifting and proper rotation preserve the determinant and the singular set."
+        ]
+      }
+    }
+  }
+}

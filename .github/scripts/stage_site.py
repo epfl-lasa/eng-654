@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stage the static site using the configured Exercise 01 release stage."""
+"""Stage the static site using the configured exercise release stage."""
 
 import argparse
 import json
@@ -13,7 +13,7 @@ FEEDBACK_FILES = (
     "exercise_01.html",
     "js/exercise-01-verification.js",
 )
-ANSWER_FILE = "exercise_01_answers.json"
+ANSWER_FILES = tuple(f"exercise_{number:02}_answers.json" for number in range(1, 5))
 STAGES = ("exercise", "feedback", "answers")
 
 
@@ -30,7 +30,7 @@ def stage_site(source: Path, destination: Path) -> str:
 
     release_files = list(FEEDBACK_FILES) if stage != "exercise" else []
     if stage == "answers":
-        release_files.append(ANSWER_FILE)
+        release_files.extend(ANSWER_FILES)
     for relative in release_files:
         if not (source / SOLUTIONS / relative).is_file():
             raise ValueError(f"Missing required release file: {SOLUTIONS / relative}")
@@ -55,7 +55,7 @@ def stage_site(source: Path, destination: Path) -> str:
         symlinks=True,
         dirs_exist_ok=True,
     )
-    # Release only these Exercise 01 files; keep other instructor material private.
+    # Release only the selected feedback files and four exercise answer downloads.
     for relative in release_files:
         output = destination / SOLUTIONS / relative
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -72,7 +72,7 @@ def main() -> None:
         stage = stage_site(args.source, args.destination)
     except (OSError, ValueError) as error:
         parser.exit(1, f"Site staging failed: {error}\n")
-    print(f"Staged Exercise 01 release '{stage}' in {args.destination.resolve()}")
+    print(f"Staged exercise release '{stage}' in {args.destination.resolve()}")
 
 
 if __name__ == "__main__":

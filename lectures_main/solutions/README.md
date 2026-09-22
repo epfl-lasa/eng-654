@@ -2,7 +2,7 @@
 
 1. Share `../exercises/exercise_01.html`. Students fill in the response fields, use **Check answers** on each response slide, and download their JSON file. The checks fill correct entries light green and wrong entries light red, showing only whether each answer is right or wrong.
 2. Later, share `exercise_01.html` from this folder for detailed feedback. Students upload that JSON, inspect the explanations and model checks, revise values, and check again. This page has no answer-key download or embedded answer file.
-3. Finally, share `exercise_01_answers.json` separately. This reference file is complete and matches the current worksheet.
+3. In the `answers` release stage, students download `exercise_01_answers.json` from the worksheet’s last page. This reference file is complete and matches the current worksheet.
 
 The 19-slide worksheet starts with the supplied URDF in the instructor-provided simulator, with STL meshes unloaded. Students inspect link frames and joint axes, derive the world-space product-of-exponentials (PoE) model and then the standard-D–H model, implement both, and compare their forward kinematics with the simulator at five poses. They then load the STL meshes, repair their placement through visual-origin offsets, and repeat the comparisons to confirm that joint kinematics are unchanged.
 
@@ -22,9 +22,9 @@ Set `stage` in `../exercise_01_release.json` before a normal website deployment:
 | --- | --- |
 | `exercise` | Student worksheet with per-slide right/wrong checks and Module 1; no detailed feedback slides or answer file. |
 | `feedback` | Adds the detailed feedback slides and their interface script; the answer JSON remains excluded. |
-| `answers` | Adds the final JSON file for separate sharing. |
+| `answers` | Adds the solution JSON downloads for Exercises 01–04. |
 
-The checked-in default is `exercise`. The shared checker and the student's per-slide controls are published in every stage. No link from the worksheet reveals the later pages, and the feedback page never offers the full answer file. This controls website publishing, not access to repository source. A browser-based checker necessarily contains the calculations used to assess a response.
+The current setting is `answers`, so all four exercises’ last-page solution downloads are published. The shared checker and the student's per-slide controls are published in every stage. Switching back to `exercise` or `feedback` withholds the solution JSON files and makes those download links unavailable. This controls website publishing, not access to repository source. A browser-based checker necessarily contains the calculations used to assess a response.
 
 Use a local web server for Module 1. The worksheet and feedback page also support local file opening for answer downloads and uploads.
 
@@ -50,4 +50,4 @@ Share `../exercises/exercise_02.html` for the guided tutorial. Students fix orig
 
 The reference fixes `q3 = pi/6` and generates the tool target with FK at `[0.35, 0.55, pi/6, -1.1, 0.7, 0.8, -0.45]`. All eight mathematical branches reproduce that pose, and six satisfy the limited-joint `assets/models/iiwa7/iiwa7.urdf`. The two rejected branches exceed joint 7’s lower bound. Eight isolated solutions is a property of this regular target at the fixed redundancy coordinate, not a universal branch count for every target or for the unrestricted seven-joint robot.
 
-The existing site-staging rule excludes the entire `solutions` directory and releases only the explicit Exercise 01 allowlist. Both Exercise 02 reference files therefore remain excluded in every current release stage, including Exercise 01’s `answers` stage. Share the Exercise 02 worked slides and answer JSON separately when appropriate; changing `exercise_01_release.json` does not publish them. There are no student-page links to these instructor files. As with Exercise 01, browser-based checking contains the mathematical rules needed to evaluate answers; this separation controls publishing of the worked reference files, not inspection of the checker’s source.
+Site staging excludes the `solutions` directory by default, then copies the files allowed by the release stage. The `answers` stage publishes `exercise_01_answers.json` through `exercise_04_answers.json`, including the Exercise 02 download linked from the tutorial’s last page. The separate Exercise 02 worked slides and other instructor files remain excluded. The tutorial only loads the answer file when a student chooses to download or import it.

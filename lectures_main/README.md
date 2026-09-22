@@ -38,7 +38,7 @@ Open `exercises/exercise_01.html` for the 19-slide workflow: load only the suppl
 
 Each slide with response fields has a **Check answers** button. It checks that slide and fills correct entries light green and wrong entries light red, without showing solutions or detailed explanations. Students can revise their entries and check again, and still download or reload partial work.
 
-The instructor shares this worksheet with its per-slide checks first, the detailed feedback slides later, and the final answer file separately. Publishing follows the `stage` value in `exercise_01_release.json`: `exercise`, `feedback`, then `answers`. The default is `exercise`; the shared checker and student controls are published at every stage.
+Publishing follows the `stage` value in `exercise_01_release.json`: `exercise`, `feedback`, then `answers`. The current setting is `answers`, which publishes the solution JSON downloads linked from the last page of Exercises 01–04. The shared checker and student controls are published at every stage; the earlier stages withhold solution downloads.
 
 ## Exercise 02 tutorial
 
@@ -46,7 +46,7 @@ Open `exercises/exercise_02.html` for the 13-slide iiwa 7 IK tutorial. Students 
 
 Students build eleven expressions using draggable symbol blocks or typed formulas, then answer the wrist rotation questions. The solver executes their validated expressions and checks each branch against the full URDF-equivalent FK. The reference target has eight solutions, six within the URDF limits at q₃ = π/6. Students can generate another target through FK and classify its branches; singular cases explicitly report merged branches or family representatives. **Download responses** and **Load responses** preserve the equations, fixed angle, target and checks in schema version 1 JSON.
 
-Instructor materials are `solutions/exercise_02.html` and `solutions/exercise_02_answers.json`; the existing site staging excludes both. The student tutorial never requests the answer file. The robot views load the actual iiwa 7 URDF and eight STL meshes, with adjustable opacity, extended joint axes, URDF frames and labels. Run the course’s local server to load these views; Three.js and all model assets are stored in the repository, so no internet connection is needed.
+Instructor materials are `solutions/exercise_02.html` and `solutions/exercise_02_answers.json`. The `answers` release stage publishes the JSON for the tutorial’s last-page download; the worked HTML slides remain excluded. The tutorial does not automatically request the answer file. The robot views load the actual iiwa 7 URDF and eight STL meshes, with adjustable opacity, extended joint axes, URDF frames and labels. Run the course’s local server to load these views; Three.js and all model assets are stored in the repository, so no internet connection is needed.
 
 Run the model, expression and tutorial checks from the repository root with `node --test lectures_main/tests/exercise-02-*.test.*`.
 
