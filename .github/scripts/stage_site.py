@@ -44,6 +44,8 @@ def stage_site(source: Path, destination: Path) -> str:
         ignored = {".git", ".github", "tests"}.intersection(names)
         if Path(directory) == source / "lectures_main":
             ignored.add("solutions")
+        if Path(directory) == source / "lectures_main/assets":
+            ignored.add("recordings")
         return ignored
 
     shutil.copytree(

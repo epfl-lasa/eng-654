@@ -32,6 +32,8 @@ class SiteStagingTests(unittest.TestCase):
             ".github/workflows/pages.yml",
             "tests/private.json",
             "lectures_main/tests/reference.json",
+            "lectures_main/assets/recordings/eng654_lec00.mp4",
+            "lectures_main/assets/recordings/kgmp_intro.m4a",
             f"{SOLUTIONS}/README.md",
             f"{SOLUTIONS}/exercise_02.html",
             f"{SOLUTIONS}/exercise_02_answers.json",

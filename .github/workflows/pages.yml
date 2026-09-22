@@ -24,25 +24,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-        with:
-          # Include the actual video/audio files in the Pages artifact.
-          lfs: true
-
-      - name: Verify recording files
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          for path in Path("lectures_main/assets/recordings").iterdir():
-              if path.suffix not in {".mp4", ".m4a"}:
-                  continue
-              with path.open("rb") as recording:
-                  header = recording.read(64)
-              if header.startswith(b"version https://git-lfs.github.com/spec/v1"):
-                  raise SystemExit(f"Recording is still a Git LFS pointer: {path}")
-              if header[4:8] != b"ftyp":
-                  raise SystemExit(f"Recording is not a valid MP4/M4A file: {path}")
-          PY
 
       - name: Configure Pages
         uses: actions/configure-pages@v6

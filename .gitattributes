@@ -1,2 +1,0 @@
-lectures_main/assets/recordings/*.mp4 filter=lfs diff=lfs merge=lfs -text
-lectures_main/assets/recordings/*.m4a filter=lfs diff=lfs merge=lfs -text
