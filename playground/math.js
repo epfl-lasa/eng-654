@@ -524,8 +524,92 @@
     if (a.kind === 'translation' && b.kind === 'translation') return { kind: 'translation', matrix: matrixAdd(a.matrix, b.matrix) };
     return { kind: 'transform', matrix: multiply(toHomogeneous(a), toHomogeneous(b)) };
   }
+  // URDF fixed-axis RPY is Rz(yaw) Ry(pitch) Rx(roll), in radians.
+  // Quaternions use scalar-first order (qw, qx, qy, qz). Conversion vectors are columns.
+  function quaternionRotation(entries, bindings) {
+    let q = entries;
+    if (q.every(entry => symbols(entry).every(name => Object.hasOwn(bindings, name)))) {
+      const values = q.map(entry => evaluate(entry, bindings));
+      const scale = Math.max(...values.map(Math.abs));
+      if (!scale) throw new Error('A quaternion cannot be the zero vector.');
+      const scaled = values.map(value => value / scale), length = Math.hypot(...scaled);
+      q = scaled.map(value => num(value / length));
+    } else {
+      const length = norm(q);
+      q = q.map(entry => div(entry, length));
+    }
+    const [w, x, y, z] = q, twice = value => mul(num(2), value);
+    return [
+      [sub(num(1), twice(add(square(y), square(z)))), twice(sub(mul(x, y), mul(z, w))), twice(add(mul(x, z), mul(y, w)))],
+      [twice(add(mul(x, y), mul(z, w))), sub(num(1), twice(add(square(x), square(z)))), twice(sub(mul(y, z), mul(x, w)))],
+      [twice(sub(mul(x, z), mul(y, w))), twice(add(mul(y, z), mul(x, w))), sub(num(1), twice(add(square(x), square(y))))]
+    ];
+  }
+  function rpyQuaternion(entries) {
+    const [r, p, y] = entries.map(entry => div(entry, num(2)));
+    const [sr, sp, sy] = [r, p, y].map(entry => call('sin', [entry]));
+    const [cr, cp, cy] = [r, p, y].map(entry => call('cos', [entry]));
+    return [add(mul(mul(cr, cp), cy), mul(mul(sr, sp), sy)),
+      sub(mul(mul(sr, cp), cy), mul(mul(cr, sp), sy)),
+      add(mul(mul(cr, sp), cy), mul(mul(sr, cp), sy)),
+      sub(mul(mul(cr, cp), sy), mul(mul(sr, sp), cy))];
+  }
+  function numericOrientation(matrix, bindings) {
+    if (getSymbols({ matrix }).some(name => !Object.hasOwn(bindings, name))) {
+      throw new Error('Assign numeric values to the input symbols to extract a quaternion or RPY angles.');
+    }
+    validateRigid(homogeneous(matrix), bindings, true);
+    return numericMatrix(matrix, bindings);
+  }
+  function rotationQuaternion(matrix, bindings) {
+    const R = numericOrientation(matrix, bindings), trace = R[0][0] + R[1][1] + R[2][2];
+    let q;
+    if (trace > 0) {
+      const s = 2 * Math.sqrt(trace + 1);
+      q = [(R[2][1] - R[1][2]) / s, (R[0][2] - R[2][0]) / s, (R[1][0] - R[0][1]) / s, s / 4];
+    } else {
+      const diagonal = R.map((row, i) => row[i]), i = diagonal.indexOf(Math.max(...diagonal));
+      const j = (i + 1) % 3, k = (i + 2) % 3;
+      const s = 2 * Math.sqrt(Math.max(0, 1 + R[i][i] - R[j][j] - R[k][k]));
+      q = [0, 0, 0, (R[k][j] - R[j][k]) / s];
+      q[i] = s / 4; q[j] = (R[i][j] + R[j][i]) / s; q[k] = (R[i][k] + R[k][i]) / s;
+    }
+    const length = Math.hypot(...q), sign = q[3] < 0 ? -1 : 1;
+    return [q[3], q[0], q[1], q[2]].map(value => num(sign * value / length));
+  }
+  function rotationRPY(matrix, bindings) {
+    const R = numericOrientation(matrix, bindings), cp = Math.hypot(R[0][0], R[1][0]);
+    const pitch = Math.atan2(-R[2][0], cp);
+    // At gimbal lock choose roll = 0; yaw carries the remaining rotation.
+    const roll = cp > 1e-12 ? Math.atan2(R[2][1], R[2][2]) : 0;
+    // Couple yaw to the chosen roll to avoid cancellation near gimbal lock.
+    const sr = Math.sin(roll), cr = Math.cos(roll);
+    const yaw = Math.atan2(-R[0][1] * cr + R[0][2] * sr, R[1][1] * cr - R[1][2] * sr);
+    return [roll, pitch, yaw].map(num);
+  }
+  function orientationValue(type, inputValue, bindings) {
+    const matrix = inputMatrix(inputValue), rows = matrix.length, columns = matrix[0].length;
+    const entries = rows === 1 || columns === 1 ? matrix.flat() : [];
+    const result = (matrix, representation) => ({ kind: 'matrix', matrix, representation });
+    if (type === 'rotationQuaternion') {
+      if (rows === 3 && columns === 3) return result(asColumn(rotationQuaternion(matrix, bindings)), 'quaternion');
+      if (entries.length === 4) return result(quaternionRotation(entries, bindings), 'rotation');
+      throw new Error('Connect a 3 × 3 rotation matrix or a four-component quaternion (qw, qx, qy, qz).');
+    }
+    if (type === 'quaternionRPY') {
+      if (entries.length === 4) return result(asColumn(rotationRPY(quaternionRotation(entries, bindings), bindings)), 'rpy');
+      if (entries.length === 3) return result(asColumn(rpyQuaternion(entries)), 'quaternion');
+      throw new Error('Connect a quaternion (qw, qx, qy, qz) or an RPY vector (roll, pitch, yaw) in radians.');
+    }
+    if (rows === 3 && columns === 3) return result(asColumn(rotationRPY(matrix, bindings)), 'rpy');
+    if (entries.length !== 3) throw new Error('Connect a 3 × 3 rotation matrix or an RPY vector (roll, pitch, yaw) in radians.');
+    const [r, p, y] = entries;
+    return result(multiply(multiply(rotation([num(0), num(0), num(1)], y),
+      rotation([num(0), num(1), num(0)], p)), rotation([num(1), num(0), num(0)], r)), 'rotation');
+  }
   function computeBlock(block, inputValue = null, bindings = {}, angleUnit = 'rad') {
     const params = block.params || {};
+    if (['rotationQuaternion', 'quaternionRPY', 'rotationRPY'].includes(block.type)) return orientationValue(block.type, inputValue, bindings);
     let own;
     if (block.type === 'add' || block.type === 'subtract') {
       const a = inputMatrix(inputValue && inputValue.a, 'a'), b = inputMatrix(inputValue && inputValue.b, 'b');

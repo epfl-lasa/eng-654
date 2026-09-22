@@ -18,7 +18,7 @@
     .lecture-list a:hover, .lecture-list a:focus-visible { outline:2px solid var(--epfl-red); outline-offset:2px; }
     .lecture-card { display:flex; flex-direction:column; background:var(--soft); border:1px solid var(--line); border-top:4px solid var(--epfl-red); }
     .lecture-summary { flex:1; padding:1rem; min-height:8rem; line-height:1.45; }
-    .lecture-list .pdf-download, .lecture-list .recording-link { min-height:0; border:0; border-top:1px solid var(--line); padding:.65rem 1rem; color:var(--epfl-red); font-size:.8em; font-weight:700; }
+    .lecture-list .slides-link, .lecture-list .pdf-download, .lecture-list .recording-link { min-height:0; border:0; border-top:1px solid var(--line); padding:.65rem 1rem; color:var(--epfl-red); font-size:.8em; font-weight:700; }
     .exercise-list a { border-top-color: var(--black); min-height:7rem; }
     .card-step { display:block; margin-bottom:.35rem; color:var(--epfl-red); font-size:.72em; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
   </style>
@@ -30,7 +30,7 @@
   <p class="course-map">The course follows one question: how can a workspace path become a valid joint-space motion? We first make the mechanism readable, then invert its kinematics, locate singularities, understand how inverse solutions connect, and finally use that global structure in motion planning.</p>
 
   <h2 class="section-heading">Lectures</h2>
-  <p class="section-intro">An introduction and eight connected chapters; each chapter supplies one prerequisite for the next. Download lecture PDFs and video recordings for the introduction and all eight lectures.</p>
+  <p class="section-intro">An introduction and eight connected chapters; each chapter supplies one prerequisite for the next. Open interactive slides for all eight lectures, and download PDFs and video recordings for the introduction and all eight lectures.</p>
   <div class="lecture-list">
     <article class="lecture-card">
       <div class="lecture-summary"><span class="card-step">Start here</span><strong>Introduction</strong><br>Course introduction and overview</div>
@@ -39,41 +39,49 @@
     </article>
     <article class="lecture-card">
       <div class="lecture-summary"><span class="card-step">Model the mechanism</span><strong>Lecture 1</strong><br>Frames, transformations, and D–H modelling</div>
+      <a class="slides-link" href="lectures/lecture_01.html" aria-label="Open Lecture 1 interactive slides">Open interactive slides →</a>
       <a class="pdf-download" href="assets/pdf/lecture_01.pdf" download="lecture_01.pdf" aria-label="Download Lecture 1 PDF">Download PDF ↓</a>
       <a class="recording-link" href="https://moodle.epfl.ch/pluginfile.php/3576233/mod_resource/content/1/eng654_lec01_compressed.mp4?forcedownload=1" aria-label="Download Lecture 1 video recording">Download video (MP4) ↓</a>
     </article>
     <article class="lecture-card">
       <div class="lecture-summary"><span class="card-step">Read and compute</span><strong>Lecture 2</strong><br>URDF, screw motion, and product of exponentials</div>
+      <a class="slides-link" href="lectures/lecture_02.html" aria-label="Open Lecture 2 interactive slides">Open interactive slides →</a>
       <a class="pdf-download" href="assets/pdf/lecture_02.pdf" download="lecture_02.pdf" aria-label="Download Lecture 2 PDF">Download PDF ↓</a>
       <a class="recording-link" href="https://moodle.epfl.ch/pluginfile.php/3576235/mod_resource/content/1/eng654_lec02_compressed.mp4?forcedownload=1" aria-label="Download Lecture 2 video recording">Download video (MP4) ↓</a>
     </article>
     <article class="lecture-card">
       <div class="lecture-summary"><span class="card-step">Invert position</span><strong>Lecture 3</strong><br>Analytical inverse kinematics of 3R robots</div>
+      <a class="slides-link" href="lectures/lecture_03.html" aria-label="Open Lecture 3 interactive slides">Open interactive slides →</a>
       <a class="pdf-download" href="assets/pdf/lecture_03.pdf" download="lecture_03.pdf" aria-label="Download Lecture 3 PDF">Download PDF ↓</a>
       <a class="recording-link" href="https://moodle.epfl.ch/pluginfile.php/3576236/mod_resource/content/1/eng654_lec03_compressed.mp4?forcedownload=1" aria-label="Download Lecture 3 video recording">Download video (MP4) ↓</a>
     </article>
     <article class="lecture-card">
       <div class="lecture-summary"><span class="card-step">Invert a complete pose</span><strong>Lecture 4</strong><br>Wrist-partitioned 6R and redundant 7R IK</div>
+      <a class="slides-link" href="lectures/lecture_04.html" aria-label="Open Lecture 4 interactive slides">Open interactive slides →</a>
       <a class="pdf-download" href="assets/pdf/lecture_04.pdf" download="lecture_04.pdf" aria-label="Download Lecture 4 PDF">Download PDF ↓</a>
       <a class="recording-link" href="https://moodle.epfl.ch/pluginfile.php/3576239/mod_resource/content/1/eng654_lec04_compressed.mp4?forcedownload=1" aria-label="Download Lecture 4 video recording">Download video (MP4) ↓</a>
     </article>
     <article class="lecture-card">
       <div class="lecture-summary"><span class="card-step">Locate rank loss</span><strong>Lecture 5</strong><br>Jacobian-based singularity analysis</div>
+      <a class="slides-link" href="lectures/lecture_05.html" aria-label="Open Lecture 5 interactive slides">Open interactive slides →</a>
       <a class="pdf-download" href="assets/pdf/lecture_05.pdf" download="lecture_05.pdf" aria-label="Download Lecture 5 PDF">Download PDF ↓</a>
       <a class="recording-link" href="https://moodle.epfl.ch/pluginfile.php/3576241/mod_resource/content/1/eng654_lec05_compressed.mp4?forcedownload=1" aria-label="Download Lecture 5 video recording">Download video (MP4) ↓</a>
     </article>
     <article class="lecture-card">
       <div class="lecture-summary"><span class="card-step">Connect the solutions</span><strong>Lecture 6</strong><br>IK-solution distribution, aspects, and cuspidality</div>
+      <a class="slides-link" href="lectures/lecture_06.html" aria-label="Open Lecture 6 interactive slides">Open interactive slides →</a>
       <a class="pdf-download" href="assets/pdf/lecture_06.pdf" download="lecture_06.pdf" aria-label="Download Lecture 6 PDF">Download PDF ↓</a>
       <a class="recording-link" href="https://moodle.epfl.ch/pluginfile.php/3576242/mod_resource/content/1/eng654_lec06_compressed.mp4?forcedownload=1" aria-label="Download Lecture 6 video recording">Download video (MP4) ↓</a>
     </article>
     <article class="lecture-card">
       <div class="lecture-summary"><span class="card-step">Lift a path</span><strong>Lecture 7</strong><br>Workspace paths and joint-space continuation</div>
+      <a class="slides-link" href="lectures/lecture_07.html" aria-label="Open Lecture 7 interactive slides">Open interactive slides →</a>
       <a class="pdf-download" href="assets/pdf/lecture_07.pdf" download="lecture_07.pdf" aria-label="Download Lecture 7 PDF">Download PDF ↓</a>
       <a class="recording-link" href="https://moodle.epfl.ch/pluginfile.php/3576243/mod_resource/content/1/eng654_lec07_compressed.mp4?forcedownload=1" aria-label="Download Lecture 7 video recording">Download video (MP4) ↓</a>
     </article>
     <article class="lecture-card">
       <div class="lecture-summary"><span class="card-step">Plan with redundancy</span><strong>Lecture 8</strong><br>Global feasibility for redundant robot motion</div>
+      <a class="slides-link" href="lectures/lecture_08.html" aria-label="Open Lecture 8 interactive slides">Open interactive slides →</a>
       <a class="pdf-download" href="assets/pdf/lecture_08.pdf" download="lecture_08.pdf" aria-label="Download Lecture 8 PDF">Download PDF ↓</a>
       <a class="recording-link" href="https://moodle.epfl.ch/pluginfile.php/3576244/mod_resource/content/1/eng654_lec08_compressed.mp4?forcedownload=1" aria-label="Download Lecture 8 video recording">Download video (MP4) ↓</a>
     </article>

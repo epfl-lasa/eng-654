@@ -91,6 +91,7 @@ a { color: inherit; text-underline-offset: 3px; }
 .palette-icon sup { font-size: 9px; margin: -19px 0 0 -2px; font-style: normal; }
 .palette-icon:has(sup) { display: flex; align-items: center; justify-content: center; }
 .palette-item[data-type="logarithm"] .palette-icon { font-size: 15px; font-style: normal; }
+.palette-item:is([data-type="rotationQuaternion"], [data-type="quaternionRPY"], [data-type="rotationRPY"]) .palette-copy { white-space: normal; }
 .palette-copy { display: block; white-space: nowrap; }
 .palette-copy strong { display: block; font-size: 12px; font-weight: 600; line-height: 1.5; }
 .palette-copy small { display: block; font-size: 10px; color: var(--muted); line-height: 1.5; }

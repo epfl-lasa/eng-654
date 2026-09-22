@@ -4,13 +4,13 @@
   else root.KinematicsGraph = factory(root.KinematicsMath);
 })(typeof window !== 'undefined' ? window : globalThis, function (MathEngine) {
   'use strict';
-  const TYPES = new Set(['rotation', 'translation', 'transform', 'exponential', 'inverse', 'logarithm', 'function', 'matrix', 'scale', 'add', 'subtract', 'cross', 'columns', 'stack', 'stackColumns', 'determinant']);
+  const TYPES = new Set(['rotation', 'translation', 'transform', 'exponential', 'inverse', 'logarithm', 'function', 'matrix', 'scale', 'add', 'subtract', 'cross', 'columns', 'stack', 'stackColumns', 'determinant', 'rotationQuaternion', 'quaternionRPY', 'rotationRPY']);
   const DEFAULT_LABELS = { rotation: 'Rotation', translation: 'Translation', transform: 'Transformation',
     exponential: 'Screw exponential', inverse: 'Inverse', logarithm: 'Matrix to screw', function: 'Saved function',
-    matrix: 'Matrix', scale: 'Scalar multiplier', add: 'Add vectors', subtract: 'Subtract vectors', cross: 'Cross product', columns: 'Select columns', stack: 'Stack rows', stackColumns: 'Stack columns', determinant: 'Determinant' };
+    matrix: 'Matrix', scale: 'Scalar multiplier', add: 'Add vectors', subtract: 'Subtract vectors', cross: 'Cross product', columns: 'Select columns', stack: 'Stack rows', stackColumns: 'Stack columns', determinant: 'Determinant', rotationQuaternion: 'Rotation ↔ Quaternion', quaternionRPY: 'Quaternion ↔ RPY', rotationRPY: 'RPY ↔ Rotation' };
   const EXPRESSION_KEYS = { rotation: ['axis', 'angle'], translation: ['vector'], transform: ['matrix'],
     exponential: ['omega', 'v', 'theta'], matrix: ['matrix'], scale: ['factor'] };
-  const INPUT_OPERATIONS = new Set(['inverse', 'logarithm', 'scale', 'add', 'subtract', 'cross', 'columns', 'stack', 'stackColumns', 'determinant']);
+  const INPUT_OPERATIONS = new Set(['inverse', 'logarithm', 'scale', 'add', 'subtract', 'cross', 'columns', 'stack', 'stackColumns', 'determinant', 'rotationQuaternion', 'quaternionRPY', 'rotationRPY']);
   const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
   const SCREW_OUTPUT_MESSAGE = 'A screw result contains ω, v and θ. Enter these in an Exponential block to compose its motion.';
   const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);

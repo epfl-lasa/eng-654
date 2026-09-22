@@ -88,6 +88,36 @@ editing its expressions directly starts a new set of symbol inputs.
 
 ## Math inputs and block values
 
+### Orientation conversions
+
+The three conversion blocks choose their direction from the connected input:
+
+| Block | Accepted inputs and outputs |
+| --- | --- |
+| Rotation ↔ Quaternion | 3 × 3 rotation matrix ↔ quaternion `(qw, qx, qy, qz)` |
+| Quaternion ↔ RPY | Quaternion `(qw, qx, qy, qz)` ↔ `(roll, pitch, yaw)` |
+| RPY ↔ Rotation | `(roll, pitch, yaw)` ↔ 3 × 3 rotation matrix |
+
+Use a Row vector or Column vector block with four entries for a quaternion, or
+three entries for RPY. Quaternion order is **scalar first**; identity is
+`(1, 0, 0, 0)`. Nonzero quaternions are normalized. Output vectors are columns,
+and all results remain live when upstream inputs change. Conversion outputs use
+ordinary matrix multiplication when connected to another matrix operation.
+
+RPY uses the [URDF fixed-axis convention](https://docs.ros.org/en/rolling/p/urdfdom_headers/generated/program_listing_file_include_urdf_model_pose.h.html):
+`R = Rz(yaw) Ry(pitch) Rx(roll)`, with angles **always in radians**, independent
+of the canvas angle setting. Extracted pitch lies in `[-pi/2, pi/2]`; at gimbal
+lock the result chooses roll = 0 and an equivalent yaw. Equivalent rotations can
+have different RPY triples or opposite quaternion signs.
+
+RPY-to-matrix, RPY-to-quaternion, and quaternion-to-matrix conversions support
+symbolic entries. Extracting a quaternion from a matrix or extracting RPY needs
+numeric values for the input symbols. Invalid rotations and zero quaternions
+show an error. The conversions are preserved in saved workspaces, reusable
+functions, and Python exports.
+
+### Expressions
+
 Enter Greek names such as `theta_2` and `alpha_2`, Unicode Greek letters, or
 LaTeX such as `\phi_{12}`. All Greek letters, uppercase forms, and common variants
 are supported. Fields show mathematical notation when unfocused and a live

@@ -123,6 +123,93 @@ def to_homogeneous(value):
         if any(abs(complex(sp.N(error))) > 1e-6 for error in errors):
             raise ValueError("The rotation must be orthonormal with determinant +1.")
     return T`,
+    orientation: `def orientation_conversion(value, operation):
+    """Infer conversion direction from shape; qw,qx,qy,qz; URDF RPY in radians."""
+    import math as _math
+    matrix = sp.Matrix(value)
+    entries = list(matrix) if 1 in matrix.shape else []
+
+    def quaternion_rotation(q):
+        if not any(entry.free_symbols for entry in q):
+            values = [float(entry) for entry in q]
+            if not all(_math.isfinite(entry) for entry in values):
+                raise ValueError("Quaternion entries must be finite real numbers.")
+            scale = max(abs(entry) for entry in values)
+            if scale == 0:
+                raise ValueError("A quaternion cannot be the zero vector.")
+            q = [entry / scale for entry in values]
+            length = _math.hypot(*q)
+        else:
+            length = sp.sqrt(sum(entry**2 for entry in q))
+        w, x, y, z = [entry / length for entry in q]
+        return sp.Matrix([
+            [1-2*(y*y+z*z), 2*(x*y-z*w), 2*(x*z+y*w)],
+            [2*(x*y+z*w), 1-2*(x*x+z*z), 2*(y*z-x*w)],
+            [2*(x*z-y*w), 2*(y*z+x*w), 1-2*(x*x+y*y)]])
+
+    def numeric_rotation(R):
+        if R.free_symbols:
+            raise ValueError("Assign numeric values to extract a quaternion or RPY angles.")
+        values = [[float(R[i, j]) for j in range(3)] for i in range(3)]
+        if not all(_math.isfinite(entry) for row in values for entry in row):
+            raise ValueError("Rotation entries must be finite real numbers.")
+        if any(abs(sum(values[k][i]*values[k][j] for k in range(3)) - int(i == j)) > 1e-6
+               for i in range(3) for j in range(3)) or abs(float(R.det())-1) > 1e-6:
+            raise ValueError("A rotation must be orthonormal with determinant +1.")
+        return values
+
+    def rotation_quaternion(R):
+        R = numeric_rotation(R)
+        trace = sum(R[i][i] for i in range(3))
+        if trace > 0:
+            s = 2 * _math.sqrt(trace + 1)
+            q = [(R[2][1]-R[1][2])/s, (R[0][2]-R[2][0])/s, (R[1][0]-R[0][1])/s, s/4]
+        else:
+            i = max(range(3), key=lambda k: R[k][k])
+            j, k = (i+1) % 3, (i+2) % 3
+            s = 2 * _math.sqrt(max(0, 1+R[i][i]-R[j][j]-R[k][k]))
+            q = [0, 0, 0, (R[k][j]-R[j][k])/s]
+            q[i], q[j], q[k] = s/4, (R[i][j]+R[j][i])/s, (R[i][k]+R[k][i])/s
+        length, sign = _math.hypot(*q), -1 if q[3] < 0 else 1
+        return sp.Matrix([sign*q[i]/length for i in [3, 0, 1, 2]])
+
+    def rotation_rpy(R):
+        R = numeric_rotation(R)
+        cp = _math.hypot(R[0][0], R[1][0])
+        pitch = _math.atan2(-R[2][0], cp)
+        roll = _math.atan2(R[2][1], R[2][2]) if cp > 1e-12 else 0
+        sr, cr = _math.sin(roll), _math.cos(roll)
+        yaw = _math.atan2(-R[0][1]*cr+R[0][2]*sr, R[1][1]*cr-R[1][2]*sr)
+        return sp.Matrix([roll, pitch, yaw])
+
+    if operation == "rotationQuaternion":
+        if matrix.shape == (3, 3):
+            return rotation_quaternion(matrix)
+        if len(entries) == 4:
+            return quaternion_rotation(entries)
+        raise ValueError("Connect a 3 x 3 rotation or quaternion (qw, qx, qy, qz).")
+    if operation == "quaternionRPY":
+        if len(entries) == 4:
+            return rotation_rpy(quaternion_rotation(entries))
+        if len(entries) != 3:
+            raise ValueError("Connect a quaternion or a three-component RPY vector.")
+        r, p, y = [entry/2 for entry in entries]
+        sr, sp_, sy = sp.sin(r), sp.sin(p), sp.sin(y)
+        cr, cp, cy = sp.cos(r), sp.cos(p), sp.cos(y)
+        return sp.Matrix([cr*cp*cy+sr*sp_*sy, sr*cp*cy-cr*sp_*sy,
+                          cr*sp_*cy+sr*cp*sy, cr*cp*sy-sr*sp_*cy])
+    if operation != "rotationRPY":
+        raise ValueError("Unknown orientation conversion.")
+    if matrix.shape == (3, 3):
+        return rotation_rpy(matrix)
+    if len(entries) != 3:
+        raise ValueError("Connect a 3 x 3 rotation or RPY (roll, pitch, yaw) in radians.")
+    r, p, y = entries
+    sr, sp_, sy = sp.sin(r), sp.sin(p), sp.sin(y)
+    cr, cp, cy = sp.cos(r), sp.cos(p), sp.cos(y)
+    return sp.Matrix([[cy*cp, cy*sp_*sr-sy*cr, cy*sp_*cr+sy*sr],
+                      [sy*cp, sy*sp_*sr+cy*cr, sy*sp_*cr-cy*sr],
+                      [-sp_, cp*sr, cp*cr]])`,
     inverse: `def rigid_inverse(value):
     """Invert a rigid motion without a general matrix-inversion algorithm."""
     matrix = as_matrix(value)
@@ -181,7 +268,7 @@ def to_homogeneous(value):
 
   const MANIFEST_PREFIX = '# KINEMATICS_PLAYGROUND_V1: ';
   const PYTHON_RESERVED = new Set(('False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield match case sp np input_value output value angle_unit ' +
-    'skew rotation homogeneous as_matrix to_homogeneous compose screw_exponential check_rigid rigid_inverse matrix_to_screw').split(' '));
+    'orientation_conversion skew rotation homogeneous as_matrix to_homogeneous compose screw_exponential check_rigid rigid_inverse matrix_to_screw').split(' '));
   function pythonIdentifier(value, fallback = 'kinematic_function') {
     const greek = { θ: 'theta', α: 'alpha', ω: 'omega', ξ: 'xi', φ: 'phi' };
     let name = String(value || fallback).normalize('NFKD').replace(/[θαωξφ]/g, letter => greek[letter])
@@ -203,7 +290,7 @@ def to_homogeneous(value):
     return MANIFEST_PREFIX + encoded + '\n';
   }
   const indent = source => String(source).split('\n').map(line => line ? '    ' + line : '').join('\n');
-  const inputOperation = type => ['inverse', 'logarithm', 'scale', 'add', 'subtract', 'cross', 'columns', 'stack', 'stackColumns', 'determinant'].includes(type);
+  const inputOperation = type => ['inverse', 'logarithm', 'scale', 'add', 'subtract', 'cross', 'columns', 'stack', 'stackColumns', 'determinant', 'rotationQuaternion', 'quaternionRPY', 'rotationRPY'].includes(type);
   function orderedInputs(graph, node) {
     const inputs = graph.edges.filter(edge => edge.to === node.id);
     const slots = node.type === 'add' || node.type === 'subtract' || node.type === 'cross' || ['stack', 'stackColumns'].includes(node.type) ? ['a', 'b']
@@ -382,6 +469,11 @@ def to_homogeneous(value):
         else if (node.type === 'columns') {
           if (!Array.isArray(p.columns) || !p.columns.length || !Number.isInteger(p.rowStart) || !Number.isInteger(p.rowCount) || p.rowStart < 1 || p.rowCount < 1 || p.columns.some(column => !Number.isInteger(column) || column < 1)) throw new Error('Select positive integer columns and a valid row slice.');
           operation = 'sp.Matrix.hstack(' + inputNames.map((name, index) => name + '[' + (p.rowStart - 1) + ':' + (p.rowStart - 1 + p.rowCount) + ', ' + (p.columns[index] - 1) + ']').join(', ') + ')';
+        } else if (['rotationQuaternion', 'quaternionRPY', 'rotationRPY'].includes(node.type)) {
+          if (!inputs.length) throw new Error('Connect an orientation input before exporting this conversion.');
+          needed.add('orientation');
+          operation = 'orientation_conversion(' + inputNames[0] + ', ' + quote(node.type) + ')';
+          outputKind = 'matrix';
         } else if (node.type === 'determinant') {
           if (!inputs.length) throw new Error('Connect an input before exporting determinant.');
           operation = 'sp.trigsimp(' + inputNames[0] + '.det())';
@@ -458,7 +550,7 @@ def to_homogeneous(value):
     ];
     if (hasLog) lines.push('import numpy as np');
     if (options.note) lines.push('', comment(options.note));
-    for (const helper of ['skew', 'rotation', 'homogeneous', 'compose', 'exponential', 'rigid', 'inverse', 'logarithm']) {
+    for (const helper of ['skew', 'rotation', 'homogeneous', 'compose', 'exponential', 'rigid', 'inverse', 'logarithm', 'orientation']) {
       if (needed.has(helper)) lines.push('', '', HELPERS[helper]);
     }
     for (const declaration of declarations) lines.push('', '', declaration);

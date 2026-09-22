@@ -23,9 +23,13 @@
     stackColumns: { title: 'Stack columns', icon: '↔', params: {} },
     stack: { title: 'Stack rows', icon: '↕', params: {} },
     determinant: { title: 'Determinant', icon: 'det', params: {} },
+    rotationQuaternion: { title: 'Rotation ↔ Quaternion', icon: '↔', params: {} },
+    quaternionRPY: { title: 'Quaternion ↔ RPY', icon: '↔', params: {} },
+    rotationRPY: { title: 'RPY ↔ Rotation', icon: '↔', params: {} },
     function: { title: 'Function', icon: 'ƒ', params: {} }
   };
-  const DOCK_TARGETS = new Set(['scale','add','subtract','cross','columns','stack','stackColumns','determinant','inverse','logarithm']);
+  const ORIENTATION_TYPES = new Set(['rotationQuaternion','quaternionRPY','rotationRPY']);
+  const DOCK_TARGETS = new Set(['scale','add','subtract','cross','columns','stack','stackColumns','determinant','inverse','logarithm',...ORIENTATION_TYPES]);
   let dockedBlocks = new Map();
   const DEFAULT_BLOCK_SIZE = {width:196,height:154};
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -165,6 +169,7 @@
   }
   function operationName(node) {
     const p = node.params;
+    if (ORIENTATION_TYPES.has(node.type)) return node.label;
     if (node.type === 'function') return `${node.label}(${p.definition.parameters.map(name=>pretty(p.arguments[name])).join(', ')})`;
     if (node.type === 'rotation') {
       const axis = [['1','0','0'],['0','1','0'],['0','0','1']].findIndex(v => v.every((a,i) => a === p.axis[i]));
@@ -180,6 +185,7 @@
     seen.add(id); const node = graph.nodes.find(n => n.id === id); if (!node) return '';
     const edge = graph.edges.find(e => e.to === id), before = edge ? chainName(edge.from,seen) : '';
     if (['scale','add','subtract', 'cross','columns','stack','stackColumns'].includes(node.type)) return node.label;
+    if (ORIENTATION_TYPES.has(node.type)) return `${node.label}(${before || 'input'})`;
     if (node.type === 'inverse' || node.type === 'logarithm' || node.type === 'determinant') return `${node.type === 'inverse' ? 'inverse' : node.type === 'determinant' ? 'det' : 'log'}(${before || 'input'})`;
     return (before ? before + ' · ' : '') + operationName(node);
   }
@@ -201,7 +207,7 @@
           const s = result.ownValue.screw;
           body.append(el('div',{class:'result-symbol'},'ξ = (ω, v)'),el('div',{class:'block-meta'},'ω = ['+s.omega.map(a=>M.format(a)).join(', ')+']'),el('div',{class:'block-meta'},'v = ['+s.v.map(a=>M.format(a)).join(', ')+']'),el('div',{class:'block-meta'},'θ = '+M.format(s.theta)));
         } else if (result.ownValue) body.append(matrixElement(result.ownValue.matrix,false,true));
-        else body.append(el('div',{class:'block-placeholder'}, node.type === 'inverse' ? 'T → T⁻¹' : node.type === 'logarithm' ? 'T → (ω, v, θ)' : 'Edit parameters'));
+        else body.append(el('div',{class:'block-placeholder'}, ORIENTATION_TYPES.has(node.type) ? 'Connect a matrix or vector' : node.type === 'inverse' ? 'T → T⁻¹' : node.type === 'logarithm' ? 'T → (ω, v, θ)' : 'Edit parameters'));
       } catch (error) { body.replaceChildren(el('p',{class:'error-message'},error.message)); }
       if (result.error) body.append(el('p',{class:'error-message',title:result.error}, result.error));
       const footer = el('div',{class:'block-footer'},el('span',{},result.value ? 'Output · '+dimension(result.value) : 'Connect or edit input'));
@@ -342,7 +348,7 @@
         host.append(el('p',{class:'matrix-caption'},pure?'Pure translation · θ is displacement; ω = 0.':'Principal rotational screw · θ in radians, 0 ≤ θ ≤ π.'));
       }else{
         host.append(matrixElement(result.value.matrix,displayMode==='numeric'));
-        host.append(el('p',{class:'matrix-caption'},result.value.kind==='translation'?'Translation vector · mixed compositions embed it in a 4 × 4 transform.':result.value.kind==='rotation'?'Rotation matrix · connecting a translation promotes the result to 4 × 4.':result.value.kind==='matrix'?'Matrix · columns and rows follow the order selected in the inspector.':result.value.kind==='multiplier'?'Scalar factor · connect to either side of a vector or matrix.':result.value.kind==='scalar'?'Determinant · defined for square matrices; zero means the matrix is singular.':'Homogeneous transform · upper-left: rotation; last column: position.'));
+        host.append(el('p',{class:'matrix-caption'},result.value.representation==='quaternion'?'Quaternion column · (qw, qx, qy, qz).':result.value.representation==='rpy'?'URDF RPY column · (roll, pitch, yaw), radians.':result.value.representation==='rotation'?'Rotation matrix · Rz(yaw) Ry(pitch) Rx(roll).':result.value.kind==='translation'?'Translation vector · mixed compositions embed it in a 4 × 4 transform.':result.value.kind==='rotation'?'Rotation matrix · connecting a translation promotes the result to 4 × 4.':result.value.kind==='matrix'?'Matrix · columns and rows follow the order selected in the inspector.':result.value.kind==='multiplier'?'Scalar factor · connect to either side of a vector or matrix.':result.value.kind==='scalar'?'Determinant · defined for square matrices; zero means the matrix is singular.':'Homogeneous transform · upper-left: rotation; last column: position.'));
       }
     }catch(error){host.replaceChildren(el('p',{class:'error-message'},error.message),el('p',{class:'hint'},'Enter numbers directly in the block inputs, or switch to Symbolic.'));}
   }
@@ -519,6 +525,12 @@
       section.append(sourceField(node,'a','A · left columns'),sourceField(node,'b','B · right columns'));
     }else if(node.type==='cross'||node.type==='stack'){
       section.append(sourceField(node,'a',node.type==='cross'?'A · first vector':'A · upper rows'),sourceField(node,'b',node.type==='cross'?'B · second vector':'B · lower rows'));
+    }else if(ORIENTATION_TYPES.has(node.type)){
+      section.append(sourceField(node,'input','Rotation / orientation input'));
+      const shapes=node.type==='rotationQuaternion'?'3 × 3 rotation ↔ 4-component quaternion':node.type==='quaternionRPY'?'4-component quaternion ↔ 3-component RPY':'3-component RPY ↔ 3 × 3 rotation';
+      section.append(el('p',{class:'hint'},shapes+'. Direction follows the input shape. Vectors may be rows or columns; output vectors are columns.'));
+      section.append(el('p',{class:'hint'},'Quaternion order: (qw, qx, qy, qz); nonzero inputs are normalized. URDF RPY: (roll, pitch, yaw), always radians; R = Rz(yaw) Ry(pitch) Rx(roll).'));
+      section.append(el('p',{class:'hint'},'Extracting a quaternion from a matrix or extracting RPY requires numeric input values. At gimbal lock, roll is set to zero.'));
     }else if(['determinant','inverse','logarithm'].includes(node.type)){
       section.append(sourceField(node,'input','Matrix input'));
     }else if(node.type==='exponential'){
