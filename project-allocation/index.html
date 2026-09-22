@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Project allocation · ENG-654</title>
+  <style>
+    :root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; color: #202124; background: #f3f3f5; accent-color: #b51220; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { max-width: 1000px; margin: 36px auto 64px; padding: 0 20px; }
+    .sheet { background: white; border: 1px solid #d9dce1; border-radius: 10px; padding: 28px; margin-bottom: 20px; }
+    header.sheet { border-top: 8px solid #e00019; }
+    .eyebrow { color: #a20c1c; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { font-size: clamp(26px, 5vw, 36px); margin: 12px 0; letter-spacing: -.025em; }
+    h2 { font-size: 21px; margin: 0 0 12px; }
+    h3 { margin: 0; font-size: 21px; }
+    p, li { line-height: 1.6; }
+    ol { padding-left: 22px; margin-bottom: 0; }
+    li + li { margin-top: 8px; }
+    a { color: #a20c1c; text-underline-offset: 3px; }
+    a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid #2165b3; outline-offset: 3px; }
+    .names { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .name-label { display: block; font-weight: 600; margin-bottom: 9px; }
+    input[type=text] { width: 100%; padding: 12px; border: 1px solid #858992; border-radius: 5px; font: inherit; }
+    .hint { color: #555b65; font-size: 14px; margin: 8px 0 20px; }
+    .notice { border-left: 4px solid #b37300; background: #fff7df; padding: 12px 16px; font-size: 14px; line-height: 1.5; margin: 16px 0 0; }
+    [hidden] { display: none !important; }
+    .selection-summary { position: sticky; top: 0; z-index: 2; padding: 16px 20px; background: #fff; border: 1px solid #d9dce1; border-radius: 8px; box-shadow: 0 3px 10px #2021240a; margin: 0 0 20px; }
+    .selection-summary p { margin: 0; font-size: 14px; }
+    #choice-help { color: #555b65; margin-top: 6px; }
+    .part + .part { margin-top: 28px; }
+    .project-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .project { border: 1px solid #d9dce1; border-radius: 8px; padding: 18px 14px; background: white; transition: background .15s, border-color .15s; }
+    .project.same-part { background: #eeeef0; border-color: #c8cbd0; }
+    .project.selected { border: 2px solid #b51220; padding: 17px 13px; background: #fff6f7; }
+    .project a { display: inline-block; font-size: 13px; margin: 12px 0 14px; }
+    .radio-label { display: flex; align-items: center; gap: 7px; padding: 8px 0; font-size: 14px; cursor: pointer; }
+    .radio-label:has(input:disabled) { color: #737780; cursor: not-allowed; }
+    input[type=radio] { margin: 0; width: 17px; height: 17px; }
+    button { border: 0; border-radius: 5px; padding: 13px 22px; background: #b51220; color: white; font: 600 15px Arial, sans-serif; cursor: pointer; }
+    button:disabled { background: #747780; cursor: not-allowed; }
+    .submit-row { display: flex; align-items: center; gap: 20px; margin-top: 24px; }
+    #submit-status { margin: 0; font-size: 14px; }
+    #success { border-top: 6px solid #2b7747; }
+    #success h2:focus { outline: none; }
+    @media (max-width: 760px) { .project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sheet { padding: 20px; } }
+    @media (max-width: 460px) { main { padding: 0 12px; margin-top: 16px; } .names { grid-template-columns: 1fr; } .submit-row { align-items: flex-start; flex-direction: column; } .project { padding: 16px 10px; } .project.selected { padding: 15px 9px; } }
+  </style>
+</head>
+<body>
+<main>
+  <header class="sheet">
+    <div class="eyebrow">ENG-654 · Project preferences</div>
+    <h1>Project allocation</h1>
+    <ol>
+      <li>Enter both students’ full names. If you are working alone, enter your own name in both fields. Submit once per group.</li>
+      <li>Choose <strong>Priority 1</strong>: your preferred project from either part.</li>
+      <li>Choose <strong>Priority 2</strong>: one project from the <strong>other part</strong>. You must select exactly one Part 1 project (1A–1H) and one Part 2 project (2A–2G).</li>
+    </ol>
+    <p class="hint" style="margin-bottom:0">These are ranked preferences, not a confirmed allocation. Read the project descriptions before submitting.</p>
+    <p class="hint" style="margin-bottom:0"><strong>All times are Zurich time (CEST), 2026.</strong><br>Project descriptions: available from 23 September, 18:00, with no closing date.<br>Submissions: open 23 September, 18:30; close 25 September, 18:30.</p>
+  </header>
+  <noscript><p class="sheet">Enable JavaScript to choose and submit your project preferences.</p></noscript>
+  <div id="availability" class="sheet" role="status">Connecting to the allocation form…</div>
+  <form id="allocation-form" hidden>
+    <section class="sheet" aria-labelledby="group-title">
+      <h2 id="group-title">Your group</h2>
+      <p class="hint">Both names are required. Use the same spelling if you have submitted before.</p>
+      <div class="names">
+        <div><label class="name-label" for="name1">Student 1 · Full name</label><input id="name1" name="name1" type="text" autocomplete="off" maxlength="120" required></div>
+        <div><label class="name-label" for="name2">Student 2 · Full name</label><input id="name2" name="name2" type="text" autocomplete="off" maxlength="120" required></div>
+      </div>
+      <p id="duplicate-warning" class="notice" role="status" hidden></p>
+    </section>
+    <div class="selection-summary" aria-live="polite" aria-atomic="true">
+      <p><strong>Priority 1:</strong> <span id="summary1">Not selected</span> &nbsp; · &nbsp; <strong>Priority 2:</strong> <span id="summary2">Not selected</span></p>
+      <p id="choice-help">Choose Priority 1 first. Priority 2 will then be available in the other part.</p>
+    </div>
+    <section class="sheet" aria-label="Project choices">
+      <div class="part"><h2>Part 1 <span class="hint">· 8 projects</span></h2><div id="part1" class="project-grid"></div></div>
+      <div class="part"><h2>Part 2 <span class="hint">· 7 projects</span></h2><div id="part2" class="project-grid"></div></div>
+      <div class="submit-row"><button id="submit" type="submit" disabled>Submit preferences</button><p id="submit-status" role="status" aria-live="polite"></p></div>
+    </section>
+  </form>
+  <section id="success" class="sheet" hidden>
+    <h2 tabindex="-1">Preferences submitted</h2>
+    <p id="receipt"></p>
+    <p id="receipt-warning" class="notice" hidden></p>
+    <p class="hint">Your preferences have been recorded. Final project allocation will be communicated separately.</p>
+  </section>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const form = $('allocation-form');
+  const nameInputs = [$('name1'), $('name2')];
+  const hosted = Boolean(window.google && google.script && google.script.run);
+  let ready = false, busy = false, finished = false, nameRevision = 0, checkTimer;
+  let requestId = crypto.randomUUID(), lastPayload = '';
+  let schedule = null, syncedAt = 0, syncing = false, catalogLoaded = false, lastSyncAttempt = -Infinity;
+  const selected = priority => form.querySelector('input[name="priority' + priority + '"]:checked')?.value || '';
+  const names = () => nameInputs.map(input => input.value.trim().replace(/\s+/gu, ' '));
+  const rpc = (method, payload) => new Promise((resolve, reject) => {
+    google.script.run.withSuccessHandler(resolve).withFailureHandler(() => reject(new Error('Connection failed')))[method](payload);
+  });
+  function renderProjects(projects) {
+    if (catalogLoaded || projects.length !== 15) return;
+    for (const project of projects) {
+      const id = project.id;
+      const panel = document.createElement('article');
+      panel.className = 'project'; panel.dataset.project = id;
+      const title = document.createElement('h3'); title.textContent = 'Project ' + id;
+      const link = document.createElement('a');
+      link.href = project.pdfUrl; link.target = '_blank'; link.rel = 'noopener noreferrer';
+      link.textContent = 'Description (PDF) ↗';
+      panel.append(title, link);
+      for (const priority of [1, 2]) {
+        const label = document.createElement('label'); label.className = 'radio-label';
+        const input = document.createElement('input');
+        input.type = 'radio'; input.name = 'priority' + priority; input.value = id; input.required = true;
+        input.setAttribute('aria-label', 'Project ' + id + ', Priority ' + priority);
+        label.append(input, 'Priority ' + priority); panel.append(label);
+      }
+      $('part' + id[0]).append(panel);
+    }
+    catalogLoaded = true;
+  }
+  const serverTime = () => schedule ? schedule.serverNow + performance.now() - syncedAt : 0;
+  const submissionsOpen = () => ready && schedule && serverTime() >= schedule.submissionsOpenAt && serverTime() < schedule.submissionsCloseAt;
+  function applySchedule(state) {
+    schedule = state; syncedAt = performance.now(); ready = true;
+    if (state.projectsVisible && state.projects) renderProjects(state.projects);
+    refreshSchedule();
+  }
+  function refreshSchedule() {
+    if (!schedule) { updateChoices(); return; }
+    const now = serverTime();
+    form.hidden = finished || !catalogLoaded || now < schedule.projectsOpenAt;
+    $('availability').hidden = false;
+    $('availability').textContent = now < schedule.projectsOpenAt
+      ? 'Project descriptions open on 23 September 2026 at 18:00 Zurich time. Submissions open at 18:30.'
+      : now < schedule.submissionsOpenAt
+        ? 'Project descriptions are open. You can prepare your choices; submission opens on 23 September at 18:30 Zurich time.'
+        : now >= schedule.submissionsCloseAt
+          ? 'Submissions closed on 25 September 2026 at 18:30 Zurich time. Project descriptions remain available.'
+          : 'Submissions are open until 25 September 2026 at 18:30 Zurich time.';
+    if (!ready) $('availability').textContent += ' Reconnecting to confirm availability…';
+    updateChoices();
+    if (hosted && !catalogLoaded && now >= schedule.projectsOpenAt && performance.now() - lastSyncAttempt > 5000) syncSchedule();
+  }
+  async function syncSchedule() {
+    if (syncing) return;
+    syncing = true; lastSyncAttempt = performance.now();
+    try {
+      applySchedule(await rpc('getAllocationState'));
+    } catch (_) {
+      ready = false;
+      $('availability').hidden = false;
+      $('availability').textContent = 'We could not confirm the opening times. Please reload or try again shortly.';
+      updateChoices();
+    } finally { syncing = false; }
+  }
+  function updateChoices() {
+    const first = selected(1);
+    const secondInput = form.querySelector('input[name=priority2]:checked');
+    if (secondInput && (!first || secondInput.value[0] === first[0])) secondInput.checked = false;
+    const second = selected(2);
+    for (const panel of form.querySelectorAll('.project')) {
+      const id = panel.dataset.project;
+      panel.classList.toggle('same-part', Boolean(first && id[0] === first[0]));
+      panel.classList.toggle('selected', id === first || id === second);
+      panel.querySelector('[name=priority1]').disabled = busy || finished;
+      panel.querySelector('[name=priority2]').disabled = busy || finished || !first || id[0] === first[0];
+    }
+    $('summary1').textContent = first || 'Not selected';
+    $('summary2').textContent = second || 'Not selected';
+    $('choice-help').textContent = !first ? 'Choose Priority 1 first. Priority 2 will then be available in the other part.' :
+      'Choose Priority 2 from Part ' + (first[0] === '1' ? '2' : '1') + '. The greyed part is unavailable for Priority 2. You can change Priority 1 at any time.';
+    $('submit').disabled = !submissionsOpen() || busy || finished || !first || !second || names().some(name => !name);
+    nameInputs.forEach(input => { input.disabled = busy || finished; });
+  }
+  function showDuplicates(matches, target = $('duplicate-warning')) {
+    target.hidden = matches.length === 0;
+    target.textContent = matches.length ? 'A previous submission already includes: ' + matches.join(', ') + '. You may still submit; this will add a new entry and keep the previous one.' : '';
+  }
+  async function checkNames(revision) {
+    if (!submissionsOpen() || finished || names().some(name => !name)) return;
+    try {
+      const response = await rpc('checkNames', { names: names() });
+      if (revision === nameRevision && !finished) showDuplicates(response.duplicates);
+    } catch (_) {
+      if (revision !== nameRevision || finished) return;
+      $('duplicate-warning').hidden = false;
+      $('duplicate-warning').textContent = 'The previous-submission check is unavailable. You can still submit your preferences.';
+    }
+  }
+  nameInputs.forEach(input => input.addEventListener('input', () => {
+    input.setCustomValidity('');
+    nameRevision++;
+    clearTimeout(checkTimer);
+    showDuplicates([]);
+    updateChoices();
+    const revision = nameRevision;
+    checkTimer = setTimeout(() => checkNames(revision), 500);
+  }));
+  form.addEventListener('change', updateChoices);
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (busy || finished || !submissionsOpen()) { refreshSchedule(); return; }
+    nameInputs.forEach(input => input.setCustomValidity(input.value.trim() ? '' : 'Enter a full name.'));
+    if (!form.reportValidity()) return;
+    const payload = { names: names(), priority1: selected(1), priority2: selected(2), requestId };
+    if (!/^(1[A-H]|2[A-G])$/.test(payload.priority1) || !/^(1[A-H]|2[A-G])$/.test(payload.priority2) || payload.priority1[0] === payload.priority2[0]) {
+      $('submit-status').textContent = 'Choose exactly one project from each part.'; return;
+    }
+    const fingerprint = JSON.stringify([payload.names, payload.priority1, payload.priority2]);
+    if (lastPayload && lastPayload !== fingerprint) requestId = crypto.randomUUID();
+    lastPayload = fingerprint; payload.requestId = requestId;
+    busy = true; updateChoices();
+    $('submit-status').textContent = 'Submitting… Please keep this page open.';
+    try {
+      const result = await rpc('submitPreferences', payload);
+      if (!result.ok && result.schedule) {
+        applySchedule(result.schedule);
+        $('submit-status').textContent = result.code === 'NOT_OPEN' ? 'Submissions have not opened yet.' : 'The submission deadline has passed. Your preferences were not recorded.';
+        return;
+      }
+      if (!result.ok) throw new Error('Submission not confirmed');
+      finished = true; nameRevision++; clearTimeout(checkTimer);
+      form.hidden = true;
+      $('receipt').textContent = payload.names.join(' & ') + ' — Priority 1: ' + payload.priority1 + '; Priority 2: ' + payload.priority2 + '.';
+      showDuplicates(result.duplicates || [], $('receipt-warning'));
+      if (! $('receipt-warning').hidden) $('receipt-warning').textContent = 'A previous submission includes ' + result.duplicates.join(', ') + '. Your new preferences have also been recorded.';
+      $('success').hidden = false;
+      $('success').querySelector('h2').focus();
+    } catch (_) {
+      $('submit-status').textContent = 'We could not confirm your submission. Please retry; retrying the same submission will not create an extra entry.';
+    } finally { busy = false; updateChoices(); }
+  });
+  async function connect() {
+    if (hosted) {
+      await syncSchedule();
+      setInterval(refreshSchedule, 1000);
+      setInterval(syncSchedule, 30000);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) { refreshSchedule(); syncSchedule(); } });
+      return;
+    }
+    try {
+      const response = await fetch('./config.json', { cache: 'no-store' });
+      if (!response.ok) throw new Error('Configuration unavailable');
+      const config = await response.json();
+      if (/^https:\/\/script\.google\.com\/macros\/s\/[a-zA-Z0-9_-]+\/exec$/.test(config.formUrl)) {
+        window.location.replace(config.formUrl); return;
+      }
+    } catch (_) { /* Keep the page readable if the connection has not been configured. */ }
+    $('availability').textContent = 'The allocation form is not connected yet. Please return when the instructor opens it.';
+  }
+  updateChoices(); connect();
+})();
+</script>
+</body>
+</html>

@@ -28,3 +28,12 @@ the deployment failed with `Timeout reached, aborting!` after remaining in
 warning, but does not by itself resolve a GitHub Pages service timeout. If that
 timeout recurs, check [GitHub Status](https://www.githubstatus.com/) and rerun the
 workflow. If it persists, contact GitHub Support with the failed run URL.
+
+## Project allocation form
+
+The form source is [`project-allocation/index.html`](project-allocation/index.html).
+The instructor backend is [`.github/project-allocation/Code.gs`](.github/project-allocation/Code.gs)
+(uppercase `C`; `.github` may be hidden in your local file browser).
+Follow the [Google Apps Script setup instructions](.github/project-allocation/README.md)
+to activate submissions. The spreadsheet connection must be deployed separately
+from the static course website.
