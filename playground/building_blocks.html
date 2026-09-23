@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ff0000">
   <title>Kinematic building blocks · ENG-654</title>
   <link rel="icon" type="image/svg+xml" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=16">
+  <link rel="stylesheet" href="styles.css?v=17">
   <script defer src="math.js?v=9"></script>
   <script defer src="graph.js?v=13"></script>
   <script defer src="files.js?v=5"></script>
@@ -14,7 +14,7 @@
   <script defer src="python.js?v=8"></script>
   <script defer src="python-import.js?v=3"></script>
   <script defer src="output-panel.js?v=7"></script>
-  <script defer src="app.js?v=18"></script>
+  <script defer src="app.js?v=19"></script>
 </head>
 <body class="app-shell output-collapsed">
   <header class="app-header">
@@ -60,8 +60,10 @@
 
   <section class="function-library" aria-label="Saved function blocks">
     <span class="section-label">MY BLOCKS</span><div id="function-library" class="library-items"></div>
-    <button id="upload-blocks">Upload blocks</button><button id="download-blocks">Download blocks</button>
-    <button id="import-python">Import Python</button>
+    <div class="library-actions">
+      <button id="upload-blocks">Upload blocks</button><button id="download-blocks">Download blocks</button>
+      <button id="import-python">Import Python</button>
+    </div>
   </section>
   </details>
 

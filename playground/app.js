@@ -866,6 +866,7 @@
   }
   function startNodeDrag(event,id) {
     if(event.button!==0||event.target.closest('button,input,select,textarea,a,[contenteditable="true"]'))return;event.preventDefault();event.stopPropagation();
+    $('canvas').focus({preventScroll:true});
     if(event.shiftKey||event.ctrlKey||event.metaKey){selectNode(id,true);suppressClickUntil=Date.now()+400;return;}
     if(!selectedIds.has(id))onlySelect(id);else selected=id;
     renderInspector();renderOutput();renderSelection();
@@ -875,7 +876,7 @@
   }
   $('canvas').addEventListener('pointerdown',event=>{
     if(event.button!==0||event.target.closest('.block,.wire,.wire-hit,button'))return;
-    event.preventDefault();closeMenu();hideInspector();const pan=spaceDown||canvasMode==='pan';
+    event.preventDefault();closeMenu();hideInspector();$('canvas').focus({preventScroll:true});const pan=spaceDown||canvasMode==='pan';
     gesture={type:pan?'pan':'select',pointer:event.pointerId,startX:event.clientX,startY:event.clientY,x:view.x,y:view.y,base:event.shiftKey?new Set(selectedIds):new Set()};
     $('canvas').setPointerCapture(event.pointerId);
   });
