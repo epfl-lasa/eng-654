@@ -968,25 +968,3 @@ details.faq-item .faq-answer {
         min-height: 18rem;
     }
 }
-
-/* Keep project allocation a small link beside the GoFa asset. */
-.allocation-resource {
-    display: flex;
-    align-items: center;
-    padding: 1.2rem;
-    border-right: 1px solid var(--black);
-    border-bottom: 1px solid var(--black);
-}
-.resource-list .allocation-resource a {
-    display: inline;
-    min-height: 0;
-    padding: 0;
-    border: 0;
-    font-size: 0.9rem;
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
-}
-.resource-list .allocation-resource a:hover {
-    color: var(--red);
-    background: transparent;
-}

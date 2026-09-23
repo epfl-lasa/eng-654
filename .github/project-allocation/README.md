@@ -1,7 +1,8 @@
 # Activate project allocation
 
-The public entry point is `project-allocation/index.html`; the main page links to
-it beside the ABB GoFa asset. The form is implemented and can be previewed locally,
+The allocation entry point is `project-allocation/index.html`; it is currently
+unlinked from the main page. The main page instead links to `projects/index.html`,
+a standalone project viewing/download page with no allocation controls or time restrictions. The form is implemented and can be previewed locally,
 but submissions remain disabled until the following one-time Google deployment.
 An editable spreadsheet URL is not an API credential.
 
@@ -97,7 +98,8 @@ also rejects submissions outside the window, including requests that wait for a
 write lock across the deadline. Student clock or timezone changes cannot extend
 submission access.
 
-The timing gate controls the allocation form and its project catalog. The PDFs
+The timing gate controls only the allocation form and its project catalog. The
+separate `projects/` download page is always available, without time checks. The PDFs
 are public static website files once published; direct PDF URLs are not protected
 by this form's schedule.
 

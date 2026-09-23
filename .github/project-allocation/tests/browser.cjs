@@ -158,13 +158,28 @@ async function connection(url) {
       assert.equal(response.status, 200);
       assert.ok(Buffer.from(await response.arrayBuffer()).subarray(0, 5).equals(Buffer.from('%PDF-')));
     }
-    // The main entry point is a small link adjacent to the GoFa panel.
+    // Main page exposes only the Projects library, beside GoFa.
     await page.send('Page.navigate', { url: base + '/' });
-    await until('!!document.querySelector(".allocation-resource a")');
-    assert.match(await run('document.querySelector(".allocation-resource").previousElementSibling.textContent'), /GoFa/);
-    assert.ok(await run('document.querySelector(".allocation-resource a").getBoundingClientRect().height < 40'));
+    await until(`!!document.querySelector('a[href="projects/"]')`);
+    assert.equal(await run(`document.querySelector('a[href="projects/"] span').textContent`), 'Projects');
+    assert.match(await run(`document.querySelector('a[href="projects/"]').previousElementSibling.textContent`), /GoFa/);
+    assert.equal(await run(`document.querySelector('a[href*="project-allocation"]')`), null);
+    await page.send('Page.navigate', { url: base + '/projects/' });
+    await until('document.querySelectorAll(".project-file-actions").length === 13 && document.querySelectorAll(".unavailable").length === 2');
+    assert.equal(await run('document.querySelectorAll(".project-download-card").length'), 15);
+    assert.equal(await run('document.querySelectorAll("a[download]").length'), 13);
+    assert.equal(await run('document.querySelector(".project-file-actions a").target'), '_blank');
+    assert.equal(await run('document.querySelector("a[download]").download'), 'project_1A.pdf');
+    assert.equal(await run('document.querySelectorAll(".unavailable a").length'), 0);
+    assert.equal(await run('document.body.textContent.toLowerCase().includes("allocation")'), false);
+    for (const width of [1280, 760, 390]) {
+      await page.send('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile: width < 500 });
+      assert.ok(await run('document.documentElement.scrollWidth <= innerWidth'), 'library has no overflow at ' + width);
+    }
+    const libraryShot = await page.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
+    fs.writeFileSync('/tmp/eng654-project-library-mobile.png', Buffer.from(libraryShot.data, 'base64'));
     assert.deepEqual(page.errors, []);
-    console.log('Browser checks passed: 15 panels, all 225 priority pairs, warnings, retries, receipt, mobile layout, timed release/deadline transitions, Part 1 PDFs, and main-page link.');
+    console.log('Browser checks passed: 15 panels, all 225 priority pairs, warnings, retries, receipt, mobile layout, timed release/deadline transitions, Part 1 PDFs, Projects library, downloads, and main-page navigation.');
   } finally {
     if (context) await browser.send('Target.disposeBrowserContext', { browserContextId: context });
     if (page) page.close(); browser.close();

@@ -29,9 +29,16 @@ warning, but does not by itself resolve a GitHub Pages service timeout. If that
 timeout recurs, check [GitHub Status](https://www.githubstatus.com/) and rerun the
 workflow. If it persists, contact GitHub Support with the failed run URL.
 
+## Projects
+
+The main page's **Projects** panel opens [`projects/index.html`](projects/index.html)
+for viewing and downloading descriptions at any time, without an opening or
+closing date. Each PDF is checked before its View/Download links appear. Missing files show as unavailable;
+new Part 2 files appear automatically on the next visit after publication.
+
 ## Project allocation form
 
-The form source is [`project-allocation/index.html`](project-allocation/index.html).
+The allocation link is hidden from the main page and project library. Its form source is [`project-allocation/index.html`](project-allocation/index.html).
 The instructor backend is [`.github/project-allocation/Code.gs`](.github/project-allocation/Code.gs)
 (uppercase `C`; `.github` may be hidden in your local file browser).
 Follow the [Google Apps Script setup instructions](.github/project-allocation/README.md)
