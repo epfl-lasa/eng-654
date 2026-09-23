@@ -236,3 +236,41 @@ test('import validation bounds matrix metadata and accepts larger URDF operation
   manyEdges.edges.push(slot('source', 'c0', 'c0'));
   assert.throws(() => G.validateGraph(manyEdges), /240/);
 });
+
+test('a symbolic exponential round-trips its generating screw without choosing a principal branch', () => {
+  for (const angleUnit of ['rad', 'deg']) {
+    for (const omega of [['0', '0', '2'], ['0', '0', '0']]) {
+      const source = { ...graph([
+        node('exp', 'exponential', { omega, v: ['0', '-a', '1'], theta: '2*theta' }),
+        node('log', 'logarithm', {})
+      ], [edge('exp', 'log')]), angleUnit };
+      const result = G.evaluateGraph(source).get('log');
+      assert.equal(result.error, null);
+      assert.equal(result.value.representation, 'source-exponential');
+      assert.deepEqual(K.getSymbols(result.value), ['a', 'theta']);
+      const { screw } = result.value;
+      const rebuilt = K.exponential(screw.omega, screw.v, screw.theta);
+      for (const theta of [0, -0.5, 4, 180]) {
+        const bindings = { a: 2, theta };
+        close(K.numericMatrix(rebuilt, bindings), K.numericMatrix(result.value, bindings));
+        close(K.evaluate(screw.theta, bindings), 2 * theta * (angleUnit === 'deg' && omega[2] !== '0' ? Math.PI / 180 : 1));
+      }
+      assert.match(G.evaluateGraph(source, { numeric: true }).get('log').error, /theta|a/);
+      source.bindings = { a: '2', theta: angleUnit === 'deg' ? '120' : '2' };
+      const numeric = G.evaluateGraph(source, { numeric: true }).get('log');
+      assert.equal(numeric.error, null);
+      assert.equal(numeric.value.representation, undefined);
+      close(K.numericMatrix(K.exponential(numeric.value.screw.omega, numeric.value.screw.v, numeric.value.screw.theta)), K.numericMatrix(result.value, source.bindings));
+    }
+  }
+});
+
+test('composing a motion discards the symbolic source screw before extraction', () => {
+  const source = graph([
+    node('exp', 'exponential', { omega: ['0', '0', '1'], v: ['0', '-1', '0'], theta: 'theta' }),
+    node('shift'), node('log', 'logarithm', {})
+  ], [edge('exp', 'shift'), edge('shift', 'log')]);
+  const results = G.evaluateGraph(source);
+  assert.equal(results.get('shift').value.screw, undefined);
+  assert.match(results.get('log').error, /theta/);
+});

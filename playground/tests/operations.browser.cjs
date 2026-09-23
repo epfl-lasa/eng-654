@@ -1,6 +1,7 @@
 /* A local browser check using a disposable, isolated Chromium context.
  * Start a repo-root HTTP server and Chromium with remote debugging enabled.
  * OPERATIONS_BASE_URL, OPERATIONS_CDP_PORT and OPERATIONS_SCREENSHOT override defaults.
+ * Set OPERATIONS_SCREW_ONLY=1 to check only symbolic screw recovery.
  * node playground/tests/operations.browser.cjs
  */
 const assert = require('node:assert/strict');
@@ -84,6 +85,36 @@ async function connection(url) {
       };
     })()`);
 
+    async function checkSymbolicScrew() {
+      await change('#example', 'screw'); await click('#symbolic-view');
+      await until('KinematicsPlayground.getOutput()?.kind === "screw"', 'symbolic screw result');
+      assert.equal(await run('KinematicsMath.format(KinematicsPlayground.getOutput().screw.theta)'), 'theta');
+      assert.equal(await run('document.querySelector("#output-content .error-message") === null'), true);
+      assert.match(await run('document.querySelector("#output-content").textContent'), /Symbolic screw/);
+      assert.equal(await run('document.querySelector("#stack-output-columns").disabled'), true, 'screw coordinates cannot become matrix edges');
+      await click('#numeric-view');
+      assert.match(await run('document.querySelector("#output-content").textContent'), /theta|θ/);
+      await click('#symbolic-view'); await select('b1');
+      await change('input[aria-label="Screw angle or displacement"]', '2*q', 'input');
+      await select('b2');
+      assert.equal(await run('KinematicsMath.format(KinematicsPlayground.getOutput().screw.theta)'), '2·q');
+      assert.equal(await run('document.querySelector("#output-content .error-message") === null'), true);
+      await click('#output-python');
+      assert.match(await run('document.querySelector("#python-code").textContent'), /source_screw/);
+      await run('document.querySelector("#code-dialog").close()');
+      await select('b1');
+      await change('input[aria-label="Screw angle or displacement"]', 'pi/3', 'input');
+      await select('b2'); await click('#numeric-view');
+      assert.ok(Math.abs(await run('KinematicsMath.evaluate(KinematicsPlayground.getOutput().screw.theta)') - Math.PI/3) < 1e-10);
+      assert.match(await run('document.querySelector("#output-content").textContent'), /Principal rotational screw/);
+      console.log('PASS: symbolic screw example, expression edits, Python export, and numeric extraction.');
+    }
+    if (process.env.OPERATIONS_SCREW_ONLY === '1') {
+      await checkSymbolicScrew();
+      assert.deepEqual(page.errors, []);
+      return;
+    }
+
     await upload(fs.readFileSync(require('node:path').join(__dirname,'../examples/exercise-01-iiwa7-twists.json'),'utf8'));
     await until('KinematicsPlayground.getState().graph.nodes.length === 40', 'KUKA graph load');
     assert.equal((await state()).selected, 'space_screws');
@@ -140,8 +171,7 @@ async function connection(url) {
     await click('.library-block'); near(await output(), [[2]]);
     console.log('PASS: workspace download/upload, saved-operation library reuse, and transactional malformed-file rejection.');
 
-    await change('#example', 'screw'); await until('KinematicsPlayground.getOutput()?.kind === "screw"', 'numeric screw result');
-    assert.equal(await run('document.querySelector("#select-output-columns").disabled'), true, 'screw coordinates cannot become matrix edges');
+    await checkSymbolicScrew();
     await upload(fs.readFileSync(require('node:path').join(__dirname,'../examples/exercise-01-iiwa7-twists.json'),'utf8')); await until('KinematicsPlayground.getState().selected === "space_screws"');
     await click('#numeric-view'); await click('#fit');
     await run('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');

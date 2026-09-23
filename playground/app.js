@@ -109,7 +109,7 @@
         makeNode('b3','transform',{matrix:['1','0','0','2','0','1','0','0','0','0','1','0.2','0','0','0','1']},700,50,'Home pose · M')
       ];
     } else if (name === 'screw') {
-      base.name = 'Screw → matrix → screw'; base.bindings = {theta:'pi/3'};
+      base.name = 'Screw → matrix → screw';
       base.nodes = [makeNode('b1','exponential',null,80,50,'Screw about an offset axis'),makeNode('b2','logarithm',{},450,50,'Recover the screw')];
     }
     base.edges = base.nodes.slice(1).map((n,i) => ({from:base.nodes[i].id,to:n.id}));
@@ -205,7 +205,7 @@
             el('div',{class:'block-meta'},'v = [' + node.params.v.map(pretty).join(', ') + ']'));
         } else if (result.ownValue?.kind === 'screw') {
           const s = result.ownValue.screw;
-          body.append(el('div',{class:'result-symbol'},'ξ = (ω, v)'),el('div',{class:'block-meta'},'ω = ['+s.omega.map(a=>M.format(a)).join(', ')+']'),el('div',{class:'block-meta'},'v = ['+s.v.map(a=>M.format(a)).join(', ')+']'),el('div',{class:'block-meta'},'θ = '+M.format(s.theta)));
+          body.append(el('div',{class:'result-symbol'},'ξ = (ω, v)'),el('div',{class:'block-meta'},'ω = ['+s.omega.map(a=>M.format(a)).join(', ')+']'),el('div',{class:'block-meta'},'v = ['+s.v.map(a=>M.format(a)).join(', ')+']'),el('div',{class:'block-meta'},'angle = '+M.format(s.theta)));
         } else if (result.ownValue) body.append(matrixElement(result.ownValue.matrix,false,true));
         else body.append(el('div',{class:'block-placeholder'}, ORIENTATION_TYPES.has(node.type) ? 'Connect a matrix or vector' : node.type === 'inverse' ? 'T → T⁻¹' : node.type === 'logarithm' ? 'T → (ω, v, θ)' : 'Edit parameters'));
       } catch (error) { body.replaceChildren(el('p',{class:'error-message'},error.message)); }
@@ -343,9 +343,11 @@
     try {
       if(result.value.kind==='screw'){
         const s=result.value.screw;
-        host.append(el('div',{class:'screw-result'},el('div',{},el('strong',{},'ω'),matrixElement(s.omega.map(a=>[a]),true)),el('div',{},el('strong',{},'v'),matrixElement(s.v.map(a=>[a]),true)),el('div',{},el('strong',{},'θ'),el('p',{class:'result-symbol'},M.numberText(M.evaluate(s.theta))))));
-        const pure=s.omega.every(a=>Math.abs(M.evaluate(a))<1e-12);
-        host.append(el('p',{class:'matrix-caption'},pure?'Pure translation · θ is displacement; ω = 0.':'Principal rotational screw · θ in radians, 0 ≤ θ ≤ π.'));
+        const numeric=displayMode==='numeric';
+        host.append(el('div',{class:'screw-result'},el('div',{},el('strong',{},'ω'),matrixElement(s.omega.map(a=>[a]),numeric)),el('div',{},el('strong',{},'v'),matrixElement(s.v.map(a=>[a]),numeric)),el('div',{},el('strong',{},'θ'),el('p',{class:'result-symbol'},numeric?M.numberText(M.evaluate(s.theta,graph.bindings)):mathElement(M.format(s.theta))))));
+        const symbolic=result.value.representation==='source-exponential';
+        const pure=s.omega.every(a=>!M.symbols(a).length&&Math.abs(M.evaluate(a))<1e-12);
+        host.append(el('p',{class:'matrix-caption'},symbolic?'Symbolic screw · preserves the input exponential’s ω, v and θ. Rotational θ is in radians; this branch is not restricted to 0 ≤ θ ≤ π.':pure?'Pure translation · θ is displacement; ω = 0.':'Principal rotational screw · θ in radians, 0 ≤ θ ≤ π.'));
       }else{
         host.append(matrixElement(result.value.matrix,displayMode==='numeric'));
         host.append(el('p',{class:'matrix-caption'},result.value.representation==='quaternion'?'Quaternion column · (qw, qx, qy, qz).':result.value.representation==='rpy'?'URDF RPY column · (roll, pitch, yaw), radians.':result.value.representation==='rotation'?'Rotation matrix · Rz(yaw) Ry(pitch) Rx(roll).':result.value.kind==='translation'?'Translation vector · mixed compositions embed it in a 4 × 4 transform.':result.value.kind==='rotation'?'Rotation matrix · connecting a translation promotes the result to 4 × 4.':result.value.kind==='matrix'?'Matrix · columns and rows follow the order selected in the inspector.':result.value.kind==='multiplier'?'Scalar factor · connect to either side of a vector or matrix.':result.value.kind==='scalar'?'Determinant · defined for square matrices; zero means the matrix is singular.':'Homogeneous transform · upper-left: rotation; last column: position.'));
@@ -585,7 +587,6 @@
     G.isolateSymbols(graph);
     values=G.evaluateGraph(graph);
     numericValues=G.evaluateGraph(graph,{numeric:true});
-    graph.nodes.filter(node=>node.type==='logarithm').forEach(node=>values.set(node.id,numericValues.get(node.id)));
     if(selected&&!graph.nodes.some(n=>n.id===selected))selected=null;
     selectedIds=new Set([...selectedIds].filter(id=>graph.nodes.some(n=>n.id===id)));
     if(selected&&!selectedIds.has(selected))selectedIds.add(selected);

@@ -222,11 +222,18 @@ def to_homogeneous(value):
     R, p = T[:3, :3], T[:3, 3]
     # Inverse rotation is R.T; inverse translation is expressed in that frame.
     return homogeneous(R.T, -R.T * p)`,
-    logarithm: `def matrix_to_screw(value):
-    """Extract a principal screw (omega, v, theta) from a numeric rigid motion."""
+    logarithm: `def matrix_to_screw(value, source_screw=None):
+    """Preserve a symbolic exponential's screw, or extract a numeric principal screw."""
     T_symbolic = check_rigid(to_homogeneous(value))
+    if source_screw is not None:
+        omega, v, theta, angle_unit = source_screw
+        omega, v, theta = sp.Matrix(omega), sp.Matrix(v), sp.sympify(theta)
+        if omega.free_symbols or v.free_symbols or theta.free_symbols:
+            if omega.dot(omega) != 0 and angle_unit == "deg":
+                theta = theta * sp.pi / 180
+            return {"omega": omega, "v": v, "theta": theta, "matrix": T_symbolic}
     if T_symbolic.free_symbols:
-        raise ValueError("Set numeric symbol values before extracting a screw.")
+        raise ValueError("Set numeric symbol values before extracting a screw from a general pose.")
     T = np.array(T_symbolic.evalf(), dtype=float)
     if not np.isfinite(T).all():
         raise ValueError("The transformation must contain finite real values.")
@@ -427,7 +434,11 @@ def to_homogeneous(value):
       if (def.kind !== 'graph') throw new Error('A reusable function must contain a graph or a matrix.');
       const chain = ancestorChain(def.graph, def.outputId), body = [], values = new Map(), kinds = new Map();
       chain.forEach((node, index) => {
-        const ownParameters = parameters.filter(parameter => nodeSymbols(node).includes(parameter));
+        const sourceNode = node.type === 'logarithm'
+          ? chain.find(candidate => candidate.id === orderedInputs(def.graph, node)[0]?.from) : null;
+        const sourceScrew = sourceNode?.type === 'exponential' && !orderedInputs(def.graph, sourceNode).length ? sourceNode : null;
+        const ownSymbols = [...nodeSymbols(node), ...(sourceScrew ? nodeSymbols(sourceScrew) : [])];
+        const ownParameters = parameters.filter(parameter => ownSymbols.includes(parameter));
         const ownNames = parameterNames(ownParameters), functionName = uniqueName(name + '_block_' + (index + 1) + '_' + (node.label || node.type));
         const p = node.params || {}, unit = quote(def.angleUnit === 'deg' ? 'deg' : 'rad');
         const inputs = orderedInputs(def.graph, node), usesInputs = inputOperation(node.type);
@@ -458,6 +469,10 @@ def to_homogeneous(value):
           needed.add('homogeneous'); needed.add('rigid'); needed.add(node.type);
           if (node.type === 'logarithm') needed.add('skew');
           operation = (node.type === 'inverse' ? 'rigid_inverse' : 'matrix_to_screw') + '(' + inputNames[0] + ')';
+          if (sourceScrew) {
+            const screw = sourceScrew.params || {};
+            operation = 'matrix_to_screw(' + inputNames[0] + ', (' + vector(screw.omega, ['0', '0', '1'], ownNames) + ', ' + vector(screw.v, ['0', '0', '0'], ownNames) + ', ' + source(screw.theta === undefined ? 'theta' : screw.theta, ownNames) + ', ' + unit + '))';
+          }
           outputKind = node.type === 'inverse' ? kinds.get(inputs[0].from) : 'screw';
         } else if (node.type === 'scale') {
           outputKind = !inputs.length || kinds.get(inputs[0].from) === 'multiplier' ? 'multiplier' : 'matrix';

@@ -336,3 +336,38 @@ else:
     raise AssertionError('A scalar output must not be accepted as a matrix')
 `);
 });
+
+test('symbolic screw round-trip exports preserve theta expressions, units, and source branch', () => {
+  for (const angleUnit of ['rad', 'deg']) {
+    for (const omega of [['0', '0', '2'], ['0', '0', '0']]) {
+      const example = graph([
+        { type: 'exponential', params: { omega, v: ['0', '-1', '0'], theta: '2*theta' } },
+        { type: 'logarithm' }
+      ], {}, angleUnit);
+      const scale = angleUnit === 'deg' && omega[2] !== '0' ? 'sp.pi / 180' : '1';
+      run(generatePython(example, '1'), `
+assert output['omega'] == sp.Matrix(${JSON.stringify(omega.map(Number))})
+assert output['v'] == sp.Matrix([0, -1, 0])
+assert sp.simplify(output['theta'] - 2*sym_theta*(${scale})) == 0
+rebuilt = screw_exponential(output['omega'], output['v'], output['theta'])
+assert sp.simplify(rebuilt - output['matrix']) == sp.zeros(4)
+`);
+    }
+  }
+});
+
+test('Python export does not recover stale screw coordinates after composition', () => {
+  const example = graph([
+    { type: 'exponential', params: { omega: ['0', '0', '1'], v: ['0', '-1', '0'], theta: 'theta' } },
+    { type: 'translation', params: { vector: ['1', '0', '0'] } },
+    { type: 'logarithm' }
+  ]);
+  runModule(generatePython(example, '2'), `
+try:
+    namespace['forward_kinematics'](sp.Symbol('theta', real=True))
+except ValueError as error:
+    assert 'general pose' in str(error)
+else:
+    raise AssertionError('A composed symbolic pose needs numeric extraction')
+`);
+});

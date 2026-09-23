@@ -274,8 +274,13 @@ operation’s axis and vector coordinates; compatible coordinate transforms obey
 
 Screws use angular components first: `xi = (omega, v)`. For a unit rotational
 axis, theta is an angle; for `omega = 0`, theta is a translation parameter and
-is unaffected by the angle-unit setting. The matrix logarithm requires a numeric
-rigid transform and returns a principal rotational angle in radians between
+is unaffected by the angle-unit setting. The screw → matrix → screw example
+starts with symbolic `theta`; expressions such as `2*q` also work. When To screw
+receives a single symbolic exponential, it preserves the generating `(omega, v,
+theta)` coordinates, including their angle branch (rotational theta is converted
+to radians). This is not a principal logarithm. Composing another motion discards
+that source information. General poses require a numeric rigid transform for
+screw extraction, which returns a principal rotational angle in radians between
 zero and pi. At identity it returns zero motion. A screw axis at pi has an
 equivalent opposite-sign representation.
 

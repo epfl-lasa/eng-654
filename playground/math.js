@@ -484,6 +484,13 @@
     if (!value) throw new Error('Connect a rotation or transformation before extracting its screw.');
     if (value.kind === 'screw') throw new Error(SCREW_OUTPUT_MESSAGE);
     const source = toHomogeneous(value);
+    // A single exponential retains its generating screw. Preserve that branch
+    // for symbolic inputs; a general matrix still needs numeric extraction.
+    // compose() discards this provenance when another motion is accumulated.
+    if (value.screw && getSymbols(value).some(name => !Object.hasOwn(bindings, name))) {
+      validateRigid(source, bindings);
+      return { kind: 'screw', matrix: source, screw: value.screw, representation: 'source-exponential' };
+    }
     validateRigid(source, bindings, true);
     const T = numericMatrix(source, bindings), R = T.slice(0, 3).map(row => row.slice(0, 3)), p = T.slice(0, 3).map(row => row[3]);
     const cosine = Math.max(-1, Math.min(1, (R[0][0] + R[1][1] + R[2][2] - 1) / 2));
