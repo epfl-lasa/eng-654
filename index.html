@@ -19,13 +19,12 @@
             <a class="nav-schedule" href="#schedule">Schedule</a>
             <a href="#overview">Overview</a>
             <a href="#instructors">Instructors</a>
-            <a href="#content">Content</a>
             <a href="#lectures">Lectures</a>
             <a href="#exercises">Exercises</a>
             <a href="#simulations">Simulations</a>
             <a href="#evaluation">Evaluation</a>
             <a href="#resources">Resources</a>
-            <a href="#course-structure">Course structure</a>
+            <!-- <a href="#course-structure">Course structure</a> -->
         </nav>
     </header>
 
@@ -43,7 +42,6 @@
                     <a class="primary-action" href="https://go.epfl.ch/ENG-654" target="_blank"
                         rel="noopener noreferrer">Moodle</a>
                     <a class="secondary-action" href="#schedule">View schedule</a>
-                    <a class="secondary-action" href="#content">Explore syllabus</a>
                 </div>
             </div>
 
@@ -343,53 +341,11 @@
             </div>
         </section>
 
-        <section class="split-section" id="content">
-            <div>
-                <p class="eyebrow">Syllabus</p>
-                <h2>From models to robust motion</h2>
-                <p class="section-note">
-                    The course is hands-on and project-oriented, with practical sessions in realistic
-                    robot simulations.
-                </p>
-            </div>
-            <div class="timeline">
-                <article>
-                    <span>Robot modeling for planning</span>
-                    <p>Frames, DH parameters, URDF, joint limits, and collision geometry.</p>
-                </article>
-                <article>
-                    <span>Analytical kinematics</span>
-                    <p>Forward and inverse kinematics, multiple IK solutions, and solution continuation along a path.
-                    </p>
-                </article>
-                <article>
-                    <span>Singularity analysis</span>
-                    <p>Visualization and interpretation of possible motions near singular configurations.</p>
-                </article>
-                <article>
-                    <span>Differential kinematics</span>
-                    <p>Jacobians as tools for conditioning metrics, interpretation, and robustness analysis.</p>
-                </article>
-                <article>
-                    <span>Constraint-aware planning</span>
-                    <p>Joint limits, singularity-aware planning, and execution in simulation.</p>
-                </article>
-                <article>
-                    <span>Advanced glimpses</span>
-                    <p>Screw-theory formulation and an introductory view of Conformal Geometric Algebra.</p>
-                </article>
-                <article>
-                    <span>Final project</span>
-                    <p>An end-to-end kinematics-grounded planning pipeline with evaluation and a concise report.</p>
-                </article>
-            </div>
-        </section>
-
         <section class="simulation-band" id="lectures">
             <div class="section-heading">
-                <p class="eyebrow">Part I · Serial robots</p>
+                <p class="eyebrow">Part I</p>
                 <div>
-                    <h2>An introduction and eight lectures</h2>
+                    <h2>Motion planning of serial robots</h2>
                     <p class="section-note">
                         The lecture series develops the theoretical foundations required to model robot kinematics,
                         derive and analyse inverse-kinematic solutions, characterise singularities, and formulate
@@ -532,7 +488,7 @@
 
         <section class="simulation-band" id="lectures-part-ii" aria-labelledby="lectures-part-ii-title">
             <div class="section-heading">
-                <p class="eyebrow">Part II · Parallel robots</p>
+                <p class="eyebrow">Part II</p>
                 <div>
                     <h2 id="lectures-part-ii-title">Parallel robot design and kinematics</h2>
                     <p class="section-note">
@@ -540,6 +496,9 @@
                         kinematic modelling, statics, singularity analysis, and redundancy. The slides
                         are available in seven PDF lecture sets.
                     </p>
+                    <a class="lecture-index-link" href="lectures_main/parallel.html">
+                        Browse the lecture library →
+                    </a>
                 </div>
             </div>
 
@@ -696,7 +655,7 @@
                 <a class="module-card" href="modules/module1/">
                     <span class="module-number">01</span>
                     <div>
-                        <p class="module-schedule"><time datetime="2026-09-14T10:15">14 September · 10h15–12h00</time></p>
+                        <!-- <p class="module-schedule"><time datetime="2026-09-14T10:15">14 September · 10h15–12h00</time></p> -->
                         <h3>Robot visualization</h3>
                         <p>
                             Load a URDF and its geometry, inspect the robot structure, and visualize link, joint,
@@ -710,7 +669,7 @@
                 <a class="module-card" href="modules/module2/">
                     <span class="module-number">02</span>
                     <div>
-                        <p class="module-schedule"><time datetime="2026-09-14T10:15">14 September · 10h15–12h00</time></p>
+                        <!-- <p class="module-schedule"><time datetime="2026-09-14T10:15">14 September · 10h15–12h00</time></p> -->
                         <h3>Joint commands &amp; forward kinematics</h3>
                         <p>
                             Command the robot through sliders, CSV trajectories, or the Python WebSocket interface,
@@ -724,7 +683,7 @@
                 <a class="module-card" href="modules/module3/">
                     <span class="module-number">03</span>
                     <div>
-                        <p class="module-schedule"><time datetime="2026-09-14T16:15">14 September · 16h15–18h00</time></p>
+                        <!-- <p class="module-schedule"><time datetime="2026-09-14T16:15">14 September · 16h15–18h00</time></p> -->
                         <h3>Inverse kinematics</h3>
                         <p>
                             Prescribe an end-effector pose and compare multiple inverse-kinematic configurations of
@@ -738,7 +697,7 @@
                 <a class="module-card" href="modules/module4/">
                     <span class="module-number">04</span>
                     <div>
-                        <p class="module-schedule"><time datetime="2026-09-16T10:15">16 September · 10h15–12h00</time></p>
+                        <!-- <p class="module-schedule"><time datetime="2026-09-16T10:15">16 September · 10h15–12h00</time></p> -->
                         <h3>Redundancy &amp; self-motion</h3>
                         <p>
                             Capture a fixed end-effector pose and vary the redundancy parameter while the remaining
@@ -752,7 +711,7 @@
                 <a class="module-card" href="modules/module5/">
                     <span class="module-number">05</span>
                     <div>
-                        <p class="module-schedule"><time datetime="2026-09-16T16:15">16 September · 16h15–18h00</time></p>
+                        <!-- <p class="module-schedule"><time datetime="2026-09-16T16:15">16 September · 16h15–18h00</time></p> -->
                         <h3>Motion planning &amp; execution</h3>
                         <p>
                             Load a desired workspace pose path and a seven-joint trajectory, then animate the robot
@@ -767,7 +726,6 @@
 
         <section class="content-band details-band">
             <div class="section-heading">
-                <p class="eyebrow">Logistics</p>
                 <h2>Course details</h2>
             </div>
             <div class="detail-grid">
@@ -776,28 +734,8 @@
                     <strong>Optional</strong>
                 </div>
                 <div>
-                    <span>Frequency</span>
-                    <strong>Only this year</strong>
-                </div>
-                <div>
-                    <span>Next time</span>
-                    <strong>Fall 2026</strong>
-                </div>
-                <div>
                     <span>Contact hours</span>
-                    <strong>56 h</strong>
-                </div>
-                <div>
-                    <span>Courses</span>
-                    <strong>26 h</strong>
-                </div>
-                <div>
-                    <span>Exercises</span>
-                    <strong>6 h</strong>
-                </div>
-                <div>
-                    <span>Project</span>
-                    <strong>24 h</strong>
+                    <strong>56 h <br>(32h lectures and 24h projects)</strong>
                 </div>
                 <div>
                     <span>Assessment</span>
@@ -888,35 +826,26 @@
 
         <section class="content-band light-band" id="resources">
             <div class="section-heading">
-                <p class="eyebrow">Preparation</p>
-                <h2>Prerequisites and resources</h2>
+                <p class="eyebrow">Resources</p>
+                <h2>Resources</h2>
             </div>
-            <div class="resource-list">
-                <a href="https://edu.epfl.ch/coursebook/en/basics-of-robotics-for-manipulation-MICRO-450"
-                    target="_blank" rel="noopener noreferrer">
-                    <span>Prerequisite course</span>
-                    <small>MICRO-450 or equivalent</small>
-                </a>
-                <a href="https://www.ieee-ras.org/ras-university/?ras_page=docs/chap1_basic_motion_ctrl/kinematics.html"
-                    target="_blank" rel="noopener noreferrer">
-                    <span>RAS University</span>
-                    <small>Basic kinematics</small>
-                </a>
-                <a href="https://www.ieee-ras.org/ras-university/?ras_page=docs/chap5_adv_kin/01_singularity_analysis.html"
-                    target="_blank" rel="noopener noreferrer">
-                    <span>RAS University</span>
-                    <small>Singularity analysis</small>
-                </a>
-            </div>
-            <br>
-            <br>
-
             <!-- <p class="keyword-line" id="download-assets">
                 Robot kinematics, forward/inverse kinematics, Jacobian, singularities, multiple IK
                 solutions, cuspidality, constraint-aware motion planning, joint limits, robot simulation
             </p> -->
-            <h3 class="faq-group-title" id="resource-assets">Assets</h3>
-            <div class="resource-list" aria-labelledby="resource-assets">
+            <!-- <h3 class="faq-group-title" id="resource-assets">Projects</h3> -->
+            <div class="resource-list project-resources" aria-labelledby="resource-assets">
+                <a href="projects/">
+                    <span>Projects</span>
+                    <small>View and download project descriptions →</small>
+                </a>
+            </div>
+
+            <br>
+            <br>
+
+            <h3 class="faq-group-title" id="download-assets">Assets</h3>
+            <div class="resource-list" aria-labelledby="download-assets">
                 <a href="lectures_main/assets/models.zip" download="models.zip">
                     <span>Download robot models ↓</span>
                     <small>Complete models folder · URDF files and meshes · ZIP, 30.7 MB</small>
@@ -929,53 +858,10 @@
                     <span>Playground</span>
                     <small>A place to quickly check and study results related to transformations.</small>
                 </a>
-                <a href="projects/">
-                    <span>Projects</span>
-                    <small>View and download project descriptions →</small>
-                </a>
             </div>
         </section>
 
         <section id="course-structure" aria-labelledby="course-structure-title">
-            <div class="faq-section" id="faqs">
-                <div class="section-heading">
-                    <p class="eyebrow">Course information</p>
-                    <div>
-                        <h2 id="course-structure-title">Course structure</h2>
-                        <p class="section-note">Credits, workload, course content, and practical information.</p>
-                    </div>
-                </div>
-                <h3 class="faq-group-title" id="faq-structure">Structure and content</h3>
-
-                <div class="faq-list">
-                    <article class="faq-item">
-                        <h4 class="faq-question">How many credits and contact hours does the course have?</h4>
-                        <div class="faq-answer">
-                            <p>ENG-654 is worth <strong>4 ECTS credits</strong> and comprises <strong>56 contact hours</strong>.</p>
-                        </div>
-                    </article>
-
-                    <article class="faq-item">
-                        <h4 class="faq-question">How is the course workload divided?</h4>
-                        <div class="faq-answer">
-                            <p>
-                                The taught component comprises <strong>32 hours</strong> split across four days.
-                                The remaining <strong>24 hours</strong> are dedicated to the course project.
-                            </p>
-                        </div>
-                    </article>
-
-                    <article class="faq-item">
-                        <h4 class="faq-question">What topics do Part I and Part II cover?</h4>
-                        <div class="faq-answer">
-                            <p>
-                                The course is divided into two parts: <strong>Part I covers serial robots</strong>,
-                                while <strong>Part II covers parallel robots</strong>.
-                            </p>
-                        </div>
-                    </article>
-                </div>
-            </div>
 
             <div class="faq-section" id="faq-practical">
                 <div class="section-heading">
@@ -1004,15 +890,10 @@
             </div>
 
             <div class="faq-contact" id="faq-contact">
-                <p class="eyebrow">Still have a question?</p>
-                <h3 class="faq-group-title">Contact the course team</h3>
-                <p>For course details or other queries, contact:</p>
-                <a class="primary-action" href="mailto:aude.billard@epfl.ch">aude.billard@epfl.ch</a>
-                <p>Aude Billard.</p>
-                <a class="primary-action" href="mailto:arda.yigit@ls2n.fr">arda.yigit@ls2n.fr</a>
-                <p>Arda Yigit.</p>
-                <a class="primary-action" href="mailto:durgesh.salunkhe@epfl.ch">durgesh.salunkhe@epfl.ch</a>
-                <p>Durgesh Salunkhe.</p>                
+                <h3>Contact</h3>
+                <a href="mailto:aude.billard@epfl.ch">Aude Billard</a>
+                <a href="mailto:arda.yigit@ls2n.fr">Arda Yigit</a>
+                <a href="mailto:durgesh.salunkhe@epfl.ch">Durgesh Salunkhe</a>
             </div>
         </section>
     </main>
