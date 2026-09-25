@@ -19,7 +19,7 @@
       if (!response.ok || !/application\/pdf/i.test(response.headers.get('Content-Type') || '')) {
         card.classList.add('unavailable');
         message.textContent = response.status === 404
-          ? (id === '2G' ? 'Will be updated soon.' : 'Description not yet available.')
+          ? 'Description not yet available.'
           : 'PDF unavailable. Please try again later.';
         return;
       }
