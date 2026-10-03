@@ -1,0 +1,66 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,linkcolor=epflred,
+  pdftitle={ENG-654 Project 1A: Global Kinematics of Flexiv Enlight L}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 1H}
+
+{\LARGE\bfseries Fixed-Redundancy IK, Workspace Structure, and Motion Planning of Flexiv Enlight L\par}
+
+\section*{Motivation}
+Flexiv Enlight L is a seven-revolute-joint robot performing a six-dimensional Cartesian task. Its redundancy means that a single tool pose can generally be realized by a continuous family of configurations. One way to expose this structure is to fix one joint, for example $q_3=\lambda$, and study the resulting parameterized 6R robot. Each value of $\lambda$ can produce several discrete IK branches, and those branches can have different reachable regions, singularity boundaries, and joint-limit restrictions.
+
+The central question of this project is:
+
+\begin{quote}
+\textbf{How does fixing the redundancy parameter reshape the inverse-kinematic branches and reachable workspace of Flexiv Enlight L, and how can this structure be used to plan a continuous motion?}
+\end{quote}
+
+\section*{Task}
+You must begin from the supplied URDF and reconstruct the kinematic model of the robot. Identify the seven joint axes, geometric offsets, joint limits, base frame, and flange frame. Build a consistent Denavit--Hartenberg model and determine the seven screw axes in a clearly defined home configuration. You must then derive the forward kinematics using both the DH and Product-of-Exponentials formulations and show numerically that both agree with the URDF model.
+
+From the screw representation, construct the complete $6\times7$ geometric Jacobian. You must then fix $q_3=\lambda$ and derive the corresponding reduced $6\times6$ Jacobian for the remaining joints. Use these two Jacobians to distinguish a true singularity of the redundant robot from a singularity of the fixed-$q_3$ representation.
+
+The inverse kinematics is a central part of this project and must be derived from the robot geometry. For a fixed value of $q_3$, you must derive a complete analytical IK formulation that exposes all regular discrete solution branches of the resulting 6R problem. Your implementation must return all real solutions, handle periodic angles and joint limits correctly, and verify every retained solution through the independent forward model.
+
+Once the IK is available, use it to construct orientation-conditioned reachable-position maps. Choose a fixed flange orientation and compare the branch-wise reachable workspace for several values of $q_3$, including $-30^\circ$, $30^\circ$, and $60^\circ$. The maps should distinguish missing real IK, joint-limit rejection, and loss of regularity. You must relate the boundaries of these workspaces to the reduced and full Jacobians rather than treating the workspace as a purely numerical point cloud.
+
+Finally, select a Cartesian path that passes through an informative region of the workspace atlas. Track every admissible IK branch continuously along the path for at least one fixed value of $q_3$, and compare the outcome for another value of $q_3$. The planning experiment should show how branch availability, singularity margins, and joint limits determine whether the same task can or cannot be executed continuously.
+
+\section*{Expected Output}
+\begin{itemize}
+  \item A validated DH model, home configuration, and seven screw axes for Flexiv Enlight L.
+  \item Numerical agreement between URDF, DH, and PoE forward kinematics.
+  \item The complete $6\times7$ screw Jacobian and the reduced fixed-$q_3$ $6\times6$ Jacobian.
+  \item A complete analytical fixed-$q_3$ inverse-kinematics solver with explicit branch enumeration and FK verification.
+  \item Visualizations of representative IK solutions for the same tool pose.
+  \item Branch-resolved orientation-conditioned workspace maps for $q_3=-30^\circ$, $30^\circ$, and $60^\circ$.
+  \item Separate identification of no-IK, joint-limit, reduced-singularity, and full-robot singularity regions.
+  \item A comparison of branch workspace volume and overlap across the selected values of $q_3$.
+  \item At least one branch-continuation experiment along a Cartesian path for two different fixed values of $q_3$.
+  \item Joint trajectories, pose residuals, joint-limit margins, and singularity margins along the selected motion.
+\end{itemize}
+
+\section*{Useful resources}
+\begin{enumerate}
+	\item Simulations to visualize your robots: \url{https://epfl-lasa.github.io/eng-654/#simulations} 
+	\item Robot assets (URDF and .stl files for visualization): \url{https://epfl-lasa.github.io/eng-654/#download-assets}
+\end{enumerate}
+
+\end{document}

@@ -1,0 +1,66 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,linkcolor=epflred,
+  pdftitle={ENG-654 Project 1B: Branch-Aware Planning on ABB GoFa}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 1A}
+
+{\LARGE\bfseries Branch-Resolved Singularity Analysis and Path Placement on ABB GoFa\par}
+
+\section*{Motivation}
+A complete inverse-kinematics solver does not by itself tell whether a task is easy or difficult for a robot. The same Cartesian contour can be feasible in one placement and impossible after a small translation or rotation, and different IK branches can fail for completely different reasons. ABB GoFa provides a useful case in which the IK solver can be treated as a known tool while the deeper problem is to understand the geometry, singularities, branch structure, and global path feasibility of the robot.
+
+The central question of this project is:
+
+\begin{quote}
+\textbf{Given access to all IK solutions, how can the global kinematic structure of ABB GoFa be used to predict where a Cartesian task can be executed continuously?}
+\end{quote}
+
+\section*{Task}
+You must first reconstruct the GoFa kinematic model from the supplied URDF. Identify the joint axes, fixed offsets, joint limits, base frame, and tool frame, then build consistent DH and screw representations. Derive the forward kinematics using both DH and Product of Exponentials and verify them independently against the URDF model.
+
+Using the screw axes, derive the robot Jacobian and the wrist/subchain Jacobian $^{3}J_{5}$ used in the course. You must interpret the columns geometrically and use the complete Jacobian to quantify proximity to singularity. Construct at least one informative $(q_2,q_3)$ slice through a regular reference configuration and show how the conditioning of the full robot changes across that slice.
+
+A complete IK solver will be supplied. You are responsible for understanding its input/output conventions, validating every returned configuration with your own forward kinematics, resolving periodic representations, applying the physical joint limits, and organizing the returned solutions into persistent branches along nearby task poses. The supplied solver should be treated as a source of all candidate configurations, not as a motion planner.
+
+The main investigation is a path-placement study. Define one closed full-pose Cartesian contour and consider a family of tasks obtained by translating its placement over a two-dimensional grid. Repeat the study for at least two global tool orientations. For each placement, enumerate all IK candidates along the entire contour and determine whether each initial branch can complete the task continuously. Record the reason for failure when it cannot: loss of IK, joint-limit violation, excessive joint discontinuity, or insufficient singularity margin.
+
+Use these results to construct branch-resolved feasibility maps over task placement. Compare a local nearest-configuration continuation strategy with a branch-aware strategy that preserves alternative candidates and searches for a continuous sequence through the complete path. The aim is not only to identify feasible placements, but to explain the boundaries of the feasible regions using the singularity analysis and the behavior of individual IK branches.
+
+\section*{Expected Output}
+\begin{itemize}
+  \item A validated DH and screw model of ABB GoFa.
+  \item Numerical cross-validation of URDF, DH, and PoE forward kinematics.
+  \item A screw-based Jacobian model, including $^{3}J_{5}$, with numerical verification.
+  \item An informative $(q_2,q_3)$ conditioning or singularity slice for the full robot.
+  \item Independent verification and organization of the supplied IK solutions into persistent branches.
+  \item One closed full-pose Cartesian contour and a documented two-dimensional placement family.
+  \item Branch-resolved placement-feasibility maps for at least two tool orientations.
+  \item Failure maps separating no-IK, joint-limit, continuity, and singularity-margin failures.
+  \item A comparison between nearest-solution continuation and branch-aware global continuation.
+  \item Representative successful and failed trajectories with joint motion, pose residual, joint-limit margin, and singularity margin.
+\end{itemize}
+
+\section*{Useful resources}
+\begin{enumerate}
+	\item Simulations to visualize your robots: \url{https://epfl-lasa.github.io/eng-654/#simulations} 
+	\item Robot assets (URDF and .stl files for visualization): \url{https://epfl-lasa.github.io/eng-654/#download-assets}
+\end{enumerate}
+
+\end{document}

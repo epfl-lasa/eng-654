@@ -1,0 +1,75 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,linkcolor=epflred,
+  pdftitle={ENG-654 Project 4B: Closed-Loop Nonsingular Change of Solutions in CuRo6R}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 1G}
+
+{\LARGE\bfseries Closed-Loop IK Continuation and Nonsingular Change of Solutions in \texttt{CuRo6R}\par}
+
+\section*{Motivation}
+A closed loop in task space does not necessarily produce a closed loop in joint space. For a cuspidal manipulator, the end-effector can return to exactly the same pose while the robot arrives at a different inverse-kinematic solution, without crossing a singularity during the motion. This phenomenon is a global property of the kinematic map and cannot be inferred from a single Jacobian evaluation or from local labels such as shoulder, elbow, or wrist flip.
+
+The \texttt{CuRo6R} robot provides a setting in which this behavior can be studied using the complete 6R kinematics. By following several closed loops through task space and observing how the IK solutions evolve, you will investigate when a loop preserves an IK solution, when it produces a nonsingular change of solution, and how these outcomes are related to the singularity structure of the robot.
+
+The central question of this project is:
+
+\begin{quote}
+\textbf{How can different closed loops in task space produce different permutations of the IK solutions of \texttt{CuRo6R}, and under what conditions does a loop generate a nonsingular change of solution?}
+\end{quote}
+
+\section*{Task}
+Begin from the supplied \texttt{CuRo6R} URDF and reconstruct the complete kinematic model. Identify the six joint axes, fixed transformations, joint limits, base frame, and tool frame, and use them to construct a consistent DH model and the corresponding screw representation. Derive the forward kinematics using both the DH formulation and Product of Exponentials, and verify that both agree with the URDF model over representative configurations.
+
+Using the screw representation, derive the complete robot Jacobian together with the wrist/subchain Jacobian $^{3}J_{5}$. Interpret the relevant singularity conditions geometrically and use the full Jacobian to determine whether the complete 6R configuration remains regular during a motion.
+
+You must derive and implement the complete analytical inverse kinematics of \texttt{CuRo6R}. The solver must expose all discrete IK solutions of a regular tool pose, distinguish the positioning and wrist alternatives, handle angular periodicity and joint limits, and verify each solution using the independent forward model.
+
+The global analysis should be organized around an informative $(q_2,q_3)$ slice. Construct the corresponding singularity structure and use representative task-space poses to show how the full-robot IK solutions are distributed with respect to the singular separators. The purpose of this map is not only to count solutions, but to provide a geometric picture for understanding how a continuous trajectory may move from one IK solution to another without crossing a singularity.
+
+You must then investigate \textbf{multiple closed loops} in task space. Choose loops with meaningfully different relationships to the critical and singularity structure: for example, a small loop contained within one regular region, a loop surrounding an informative critical feature, and a larger or differently placed loop. Additional closed loops are encouraged when they help expose different IK continuation behavior.
+
+For each loop, select every admissible IK solution at the initial pose and continue it continuously around the complete loop. When the end-effector returns to its initial pose, compare the final joint configuration with the complete IK set of that same pose. Determine whether the continuation returns to the original IK solution, arrives at a different IK solution, or fails because of a singularity or joint limit.
+
+The key objective is to identify and validate different cases of paths in cuspidal robots such as regular paths, infeasible paths and nonsingular change of solutions. When a closed loop returns to the same task-space pose on a different IK solution, you must verify that the complete trajectory remains regular using the full Jacobian and that the change is not caused by numerical branch jumping. Compare the outcomes of the different loops and explain why some loops change the IK solution while others do not.
+
+\section*{Expected Output}
+\begin{itemize}
+  \item A validated DH and screw model of \texttt{CuRo6R}.
+  \item Numerical agreement between URDF, DH, and PoE forward kinematics.
+  \item The complete screw-based robot Jacobian and the wrist/subchain Jacobian $^{3}J_{5}$.
+  \item Complete analytical 6R inverse kinematics with explicit positioning and wrist solution structure.
+  \item Forward-kinematic verification and visualization of representative IK solutions.
+  \item A $(q_2,q_3)$ singularity map showing the global positioning structure relevant to the IK solutions.
+  \item Several closed task-space loops chosen to probe different parts of the global kinematic structure.
+  \item Continuous IK tracking for every admissible initial solution around each closed loop.
+  \item A start--end IK correspondence for each loop, showing whether each initial solution returns to itself, changes to another solution, or cannot complete the loop.
+  \item At least one validated example of nonsingular change of solution, when such a loop is identified.
+  \item Joint trajectories and workspace paths demonstrating continuity throughout each successful loop.
+  \item Full-Jacobian singularity margins and joint-limit margins along the investigated trajectories.
+  \item A comparison explaining how the choice of closed loop changes the resulting IK continuation and solution connectivity.
+\end{itemize}
+
+\section*{Useful resources}
+\begin{enumerate}
+	\item Simulations to visualize your robots: \url{https://epfl-lasa.github.io/eng-654/#simulations} 
+	\item Robot assets (URDF and .stl files for visualization): \url{https://epfl-lasa.github.io/eng-654/#download-assets}
+\end{enumerate}
+
+\end{document}

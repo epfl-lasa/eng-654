@@ -1,0 +1,66 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,linkcolor=epflred,
+  pdftitle={ENG-654 Project 2A: Branch-Aware Planning on ABB IRB 4600}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 1B}
+
+{\LARGE\bfseries Branch-Aware Cartesian Path Planning on ABB IRB 4600\par}
+
+\section*{Motivation}
+For an industrial 6R robot, solving IK independently at every Cartesian pose is not equivalent to planning a robot trajectory. A locally attractive branch can approach a singularity or joint limit and terminate even when another branch could complete the task. The ABB IRB 4600 will be used to study how the geometry of the positioning arm creates these branch-dependent planning failures.
+
+The central question of this project is:
+
+\begin{quote}
+\textbf{How can the singularity and IK structure of the ABB IRB 4600 be used to predict and avoid branch-dependent dead ends during Cartesian path execution?}
+\end{quote}
+
+\section*{Task}
+You must begin from the supplied URDF and reconstruct a consistent DH and screw model of the complete robot. Identify the relationship between the first three joints, the wrist center, and the final orientation joints. Derive the forward kinematics using both DH and PoE formulations and validate them against the URDF at representative configurations.
+
+Using the screw representation, derive the Jacobian structure needed to analyse the robot, including the wrist/subchain Jacobian $^{3}J_{5}$. For the positioning part of the robot, construct the corresponding wrist-center Jacobian and use it to expose the singularity structure relevant to the first three joints. The singular curves should be visualized in an informative $(q_2,q_3)$ slice and related to the wrist-center workspace.
+
+The project is primarily about planning, so geometric hints for the analytical IK decomposition will be provided. You must nevertheless implement the branch enumeration, verify all solutions using your independent forward model, and preserve branch identity along a path. In particular, you must be able to distinguish when a continuation fails because the branch itself becomes infeasible rather than because the numerical solver selected another solution.
+
+Construct several prescribed Cartesian paths for the wrist center or complete tool pose: one path that is comfortably regular, one that approaches a positioning singularity, and one that creates a joint-limit dead end for at least one branch. Start the continuation from every admissible IK solution and follow each branch separately. You must record where each branch completes, approaches singularity, reaches a limit, or loses continuity.
+
+Finally, compare a greedy continuation strategy with a layered branch-aware planner that keeps multiple IK alternatives until a globally consistent sequence has been found. Use the $(q_2,q_3)$ singularity map and workspace critical curves to explain why the two planners behave differently.
+
+\section*{Expected Output}
+\begin{itemize}
+  \item A validated DH and screw model of the ABB IRB 4600.
+  \item Cross-validation of URDF, DH, and PoE forward kinematics.
+  \item A screw-based Jacobian analysis including $^{3}J_{5}$ and the positioning-arm Jacobian used for singularity analysis.
+  \item Singularity curves in the $(q_2,q_3)$ plane and their relation to the wrist-center workspace.
+  \item Verified enumeration of all relevant IK branches for the prescribed tasks.
+  \item At least three Cartesian path cases illustrating regular continuation, near-singular behavior, and a branch-dependent dead end.
+  \item Per-branch continuation plots showing completion or the precise failure location.
+  \item A comparison between greedy continuation and a layered branch-aware planner.
+  \item Joint trajectories, joint-limit margins, Cartesian residuals, and singularity margins for representative paths.
+  \item A geometric explanation of why some branches fail even when another IK branch remains feasible.
+\end{itemize}
+
+\section*{Useful resources}
+\begin{enumerate}
+	\item Simulations to visualize your robots: \url{https://epfl-lasa.github.io/eng-654/#simulations} 
+	\item Robot assets (URDF and .stl files for visualization): \url{https://epfl-lasa.github.io/eng-654/#download-assets}
+\end{enumerate}
+
+\end{document}

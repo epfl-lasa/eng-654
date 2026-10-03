@@ -1,0 +1,66 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,linkcolor=epflred,
+  pdftitle={ENG-654 Project 2B: Redundancy Planning on KUKA iiwa 7}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 1C}
+
+{\LARGE\bfseries Local versus Global Redundancy Planning on KUKA iiwa 7\par}
+
+\section*{Motivation}
+The KUKA iiwa 7 has one more joint than is required for a general six-dimensional Cartesian task. This redundancy can be used to avoid joint limits and singularities, but a local redundancy-resolution law does not know the global structure of the feasible IK families. A locally reasonable motion can therefore drift into a dead end even when another redundancy corridor would complete the task.
+
+The central question of this project is:
+
+\begin{quote}
+\textbf{When does local null-space redundancy resolution fail, and how can a global IK map reveal a feasible trajectory that the local method does not discover?}
+\end{quote}
+
+\section*{Task}
+You must reconstruct the iiwa 7 kinematics from the supplied URDF, build consistent DH and screw representations, and verify the forward kinematics through both DH and Product of Exponentials. From the screw axes, derive the complete $6\times7$ Jacobian and verify it numerically.
+
+Use $q_3$ as a redundancy coordinate. When $q_3=\lambda$ is fixed, construct the reduced $6\times6$ Jacobian for the remaining joints and make a clear distinction between loss of rank in this reduced chart and a genuine singularity of the full seven-joint robot. A fixed-$q_3$ analytical IK routine will be supplied for this project; you must independently verify every returned solution and preserve the supplied branch labels only when the numerical configurations support them.
+
+Choose a full-pose Cartesian path that drives at least one reasonable initial configuration toward a joint limit or a narrow feasibility region. First implement a local redundancy-resolution strategy based on a pseudoinverse plus a null-space objective for joint-limit avoidance. The end-effector task must be corrected throughout so that apparent improvement in joint posture is not obtained by sacrificing Cartesian accuracy.
+
+Next, use the fixed-$q_3$ IK to construct a global path-progress versus $q_3$ feasibility map. At every path sample, distinguish absence of real IK, joint-limit violation, poor conditioning of the full $6\times7$ Jacobian, and singularity of the reduced fixed-$q_3$ chart. Identify the continuous feasible corridors that remain after these tests.
+
+Use this map to plan a varying-$q_3$ trajectory through the path, for example with a layered graph or dynamic program, \textit{you can use a naive approach that chooses the nearest valid solution in the next step of the path}. The global and local methods must start from the same initial robot configuration and satisfy the same kinematic constraints. Compare their behavior and determine whether a local failure is caused by numerical integration, by the chosen secondary objective, or by an inability to discover another globally feasible redundancy corridor.
+
+\section*{Expected Output}
+\begin{itemize}
+  \item A validated DH and screw model of the KUKA iiwa 7.
+  \item Numerical agreement between URDF, DH, and PoE forward kinematics.
+  \item The complete $6\times7$ screw Jacobian and the reduced fixed-$q_3$ $6\times6$ Jacobian.
+  \item Independent verification of the supplied fixed-$q_3$ IK solutions and their branch identities.
+  \item A local null-space joint-limit-avoidance controller with Cartesian task correction.
+  \item A path-progress versus $q_3$ feasibility map separating no-IK, joint-limit, full-Jacobian, and reduced-chart failures.
+  \item Identification of one or more continuous feasible redundancy corridors.
+  \item A globally planned varying-$q_3$ trajectory starting from the same initial configuration as the local method.
+  \item A quantitative comparison of local and global methods using completion, Cartesian error, joint travel, minimum joint-limit margin, and full-Jacobian singularity margin.
+  \item A diagnosis of whether any local failure is numerical, objective-induced, or genuinely caused by loss of feasible connectivity.
+\end{itemize}
+
+\section*{Useful resources}
+\begin{enumerate}
+	\item Simulations to visualize your robots: \url{https://epfl-lasa.github.io/eng-654/#simulations} 
+	\item Robot assets (URDF and .stl files for visualization): \url{https://epfl-lasa.github.io/eng-654/#download-assets}
+\end{enumerate}
+
+\end{document}

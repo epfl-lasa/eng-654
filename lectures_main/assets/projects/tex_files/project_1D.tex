@@ -1,0 +1,75 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,linkcolor=epflred,
+  pdftitle={ENG-654 Project 3A: Effect of alpha2 on CuRo3R}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 1D}
+
+{\LARGE\bfseries How the Second Twist Angle Reshapes the Global Kinematics of \texttt{CuRo3R}\par}
+
+\section*{Motivation}
+Cuspidality is a global property of a robot, and it can change when seemingly small geometric parameters are modified. In a 3R manipulator, the twist between consecutive joint axes determines how the joint-space singularity set folds into workspace and therefore how inverse-kinematic solutions are created, merged, separated, or connected.
+
+In this project you will use the supplied \texttt{CuRo3R} robot as a reference design and create a controlled one-parameter family. All DH parameters are kept equal to those obtained from the supplied \texttt{CuRo3R} model, except for $\alpha_2$.
+
+The mandatory geometries are
+\[
+\alpha_2\in\left\{\frac{\pi}{6},\frac{\pi}{4},\frac{\pi}{3},\frac{\pi}{2}\right\}.
+\]
+You are encouraged to investigate additional values of $\alpha_2$ whenever they help locate a transition or explain a change in the global kinematic structure.
+
+The central question is:
+\begin{quote}
+\textbf{How does changing only $\alpha_2$ modify the singularity topology, IK distribution, cuspidality, and feasible posture-changing motions of the same 3R robot?}
+\end{quote}
+
+\section*{Task}
+Begin from the supplied URDF and reconstruct a consistent DH and screw representation of \texttt{CuRo3R}. This reference model defines the geometric parameters that remain unchanged throughout the project. You must show that your DH and Product-of-Exponentials models describe the same mechanism by comparing their forward kinematics with the URDF model.
+
+Next, formulate the kinematics as a family parameterized by $\alpha_2$. Wherever possible, keep $\alpha_2$ symbolic long enough to reveal how it enters the forward kinematics, the screw-based positioning Jacobian $^{0}J_3$, and the singularity condition. The four mandatory values above must then be studied using exactly the same conventions and numerical procedures so that the resulting global maps can be compared directly.
+
+For each value of $\alpha_2$, derive and implement the complete analytical inverse kinematics. The solver must return every real configuration associated with a target position, correctly account for angular periodicity, and verify every candidate through forward kinematics. Use the same representative workspace targets across the parameter sweep whenever possible; this will make changes in IK multiplicity and branch organization visible rather than hiding them behind different test cases.
+
+The main analysis is global. For every mandatory $\alpha_2$, construct the singularity curves in the $(q_2,q_3)$ plane and map them into workspace. Use these maps to determine the regions with different numbers of inverse solutions and to study how those regions evolve as $\alpha_2$ changes. Select representative targets in the important regions and place all of their IK solutions back onto the joint-space maps.
+
+The final part of the project is to relate these geometric changes to cuspidality and motion planning. For each geometry, investigate whether selected distinct IK solutions can be connected while remaining inside the regular configuration space. Use comparable start/goal configurations or workspace paths across the parameter sweep. If a nonsingular posture change exists, construct and verify it. If it does not, identify the singularity barrier that prevents it. Additional values of $\alpha_2$ may be used to locate more precisely where the observed global behavior changes.
+
+\section*{Expected Output}
+\begin{itemize}
+  \item A validated reference DH and screw model reconstructed from the supplied \texttt{CuRo3R} URDF.
+  \item A clearly defined parameterized robot family with $a_1=1$, all other DH parameters fixed to the \texttt{CuRo3R} values, and $\alpha_2$ varied.
+  \item Numerical cross-validation of URDF, DH, and PoE forward kinematics for the reference model and validation of the modified models.
+  \item A screw-based derivation and numerical verification of $^{0}J_3$, showing explicitly how $\alpha_2$ affects the Jacobian and singularity condition.
+  \item Complete analytical inverse kinematics for each mandatory value $\alpha_2\in\{\pi/6,\pi/4,\pi/3,\pi/2\}$.
+  \item Comparable $(q_2,q_3)$ singularity maps for all mandatory values of $\alpha_2$.
+  \item Corresponding workspace critical curves and regions with different numbers of inverse-kinematic solutions.
+  \item Representative targets with all corresponding IK solutions located on the joint-space maps.
+  \item A parameter-comparison figure or atlas showing how the singularity topology and IK distribution evolve with $\alpha_2$.
+  \item A connectivity-based classification of the observed cuspidal or noncuspidal behavior for each mandatory geometry.
+  \item Branch-preserving and posture-change motion experiments that relate path feasibility to the global maps.
+  \item Additional $\alpha_2$ cases, where useful, to refine or explain transitions observed between the mandatory geometries.
+\end{itemize}
+
+\section*{Useful resources}
+\begin{enumerate}
+	\item Simulations to visualize your robots: \url{https://epfl-lasa.github.io/eng-654/#simulations} 
+	\item Robot assets (URDF and .stl files for visualization): \url{https://epfl-lasa.github.io/eng-654/#download-assets}
+\end{enumerate}
+
+\end{document}

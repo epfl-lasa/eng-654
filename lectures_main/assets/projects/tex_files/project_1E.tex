@@ -1,0 +1,75 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,linkcolor=epflred,
+  pdftitle={ENG-654 Project 3B: Effect of alpha1 on CuRo3R}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 1E}
+
+{\LARGE\bfseries How the First Twist Angle Reshapes the Global Kinematics of \texttt{CuRo3R}\par}
+
+\section*{Motivation}
+The relative orientation of the first two joint axes influences the entire geometry seen by the remainder of a serial chain. Changing this twist can alter the shape of the reachable workspace, move singularity curves, reorganize inverse-kinematic branches, and change the global connectivity of configurations even when every link length and offset is left untouched.
+
+In this project you will use the supplied \texttt{CuRo3R} robot as the reference design and vary only the DH twist parameter $\alpha_1$. Every other DH parameter must remain equal to the value reconstructed from the supplied \texttt{CuRo3R} robot.
+
+The mandatory geometries are
+\[
+\alpha_1\in\left\{\frac{\pi}{6},\frac{\pi}{4},\frac{\pi}{3},\frac{\pi}{2}\right\}.
+\]
+You are encouraged to investigate additional values of $\alpha_1$ whenever they reveal a transition or help explain the evolution of the global kinematic structure.
+
+The central question is:
+\begin{quote}
+\textbf{What changes in the global kinematics of a 3R robot when only the first DH twist $\alpha_1$ is varied?}
+\end{quote}
+
+\section*{Task}
+Begin by reconstructing the DH parameters and screw axes of the supplied \texttt{CuRo3R} URDF. This model is the reference from which the entire parameter study is generated. Verify the reconstructed model through forward kinematics using both DH transformations and Product of Exponentials and compare the results against the URDF model.
+
+You must then construct a one-parameter family in which every DH parameter remains identical to \texttt{CuRo3R} except $\alpha_1$. Keep the same frame convention, zero configuration, tool point, and joint-variable definitions for every geometry. Where practical, derive the forward kinematics and the positioning Jacobian $^{0}J_3$ with $\alpha_1$ retained symbolically so that its influence on the resulting expressions can be identified directly.
+
+For each mandatory value of $\alpha_1$, derive and implement the complete analytical inverse kinematics. Enumerate every real solution of representative workspace targets and verify the solutions through the forward model. The comparison should use common target sets whenever the workspace overlap permits it, so that changes in the number and arrangement of IK solutions can be attributed to $\alpha_1$ rather than to different experiments.
+
+Construct the singularity set in the $(q_2,q_3)$ plane for each geometry and map the corresponding critical curves into workspace. Determine how the number of IK solutions changes between the regions created by these curves. You should compare the maps as a parameter family, looking for changes in topology, branch organization, and connected regular regions rather than treating the four cases as unrelated robots.
+
+Finally, investigate what these changes imply for cuspidality and motion planning. Select representative pairs of IK solutions and determine whether they can be connected through regular configuration space. Construct branch-preserving paths and, whenever possible, nonsingular posture-changing paths. Where the behavior changes between two mandatory values of $\alpha_1$, additional parameter values are encouraged in order to identify the transition more precisely.
+
+\section*{Expected Output}
+\begin{itemize}
+  \item A validated DH and screw representation reconstructed from the supplied \texttt{CuRo3R} URDF.
+  \item A one-parameter family in which all DH parameters are fixed to the \texttt{CuRo3R} values except $\alpha_1$.
+  \item Numerical agreement between URDF, DH, and PoE forward kinematics for the reference robot and validation of the modified geometries.
+  \item A screw-based derivation and numerical verification of $^{0}J_3$, including the dependence of the singularity condition on $\alpha_1$.
+  \item Complete analytical IK for each mandatory value $\alpha_1\in\{\pi/6,\pi/4,\pi/3,\pi/2\}$.
+  \item Comparable $(q_2,q_3)$ singularity maps for all mandatory values of $\alpha_1$.
+  \item Workspace critical curves and IK-count regions for each geometry.
+  \item Representative common targets with all corresponding IK solutions located on the joint-space maps.
+  \item A parameter-comparison figure or atlas showing the evolution of the singularity topology and IK distribution with $\alpha_1$.
+  \item A connectivity-based analysis of cuspidal or noncuspidal behavior for every mandatory geometry.
+  \item Branch-preserving and posture-change motion experiments linked explicitly to the observed global structure.
+  \item Additional $\alpha_1$ cases, where useful, to refine or explain transitions observed between the mandatory geometries.
+\end{itemize}
+
+\section*{Useful resources}
+\begin{enumerate}
+	\item Simulations to visualize your robots: \url{https://epfl-lasa.github.io/eng-654/#simulations} 
+	\item Robot assets (URDF and .stl files for visualization): \url{https://epfl-lasa.github.io/eng-654/#download-assets}
+\end{enumerate}
+
+\end{document}

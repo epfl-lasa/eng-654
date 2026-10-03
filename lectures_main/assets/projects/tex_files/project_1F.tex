@@ -1,0 +1,67 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=22mm]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\definecolor{epflred}{HTML}{E3000B}
+\hypersetup{colorlinks=true,linkcolor=epflred,
+  pdftitle={ENG-654 Project 4A: IK Connectivity of CuRo6R}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=*,itemsep=5pt,topsep=4pt}
+
+\begin{document}
+{\small\textbf{EPFL \textbar\ ENG-654}\hfill Kinematics-Grounded Motion Planning for Robots}
+\vspace{5mm}
+
+{\color{epflred}\Large\bfseries Project 1F}
+
+{\LARGE\bfseries IK Branch Topology and Nonsingular Change of Solutions of \texttt{CuRo6R}\par}
+
+\section*{Motivation}
+A 6R manipulator can have several inverse-kinematic solutions for the same complete tool pose. These solutions are often described using local labels such as shoulder, elbow, or wrist flip, but such labels do not by themselves determine whether two configurations are globally disconnected. If the positioning part of the robot is cuspidal, two distinct full-robot IK solutions, $\mathbf q_a$ and $\mathbf q_b$, may be connected through a nonsingular motion, provided that the IKS chosen throughout the path remains regular (meaning nonsingular, $\det(\mathbf J(\mathbf q)) = 0$) while the robot changes configuration ($\mathbf q_a \rightarrow \mathbf q_b$). \\
+Note: full-robot or full-pose IK solutions refer to the IK solution of position + orientation, and so each IK solution, $\mathbf q_i \in \mathbb T^6$, is a 6 dimensional array. 
+
+The central question of this project is:
+
+\begin{quote}
+\textbf{How does the IK distribution of \texttt{CuRo6R} appear in a $(q_2,q_3)$ slice, and can the resulting structure be used to construct a nonsingular change between distinct full-pose IK solutions?}
+\end{quote}
+
+\section*{Task}
+Begin from the supplied \texttt{CuRo6R} URDF and reconstruct the complete six-joint kinematic model. Identify all joint axes, fixed offsets, joint limits, base frame, and tool frame. Build a consistent DH description and derive the six screw axes in the home configuration. You must derive the complete forward kinematics using both DH and Product of Exponentials and verify both formulations against the URDF.
+
+From the screw model, derive the robot Jacobian and the wrist/subchain Jacobian $^{3}J_{5}$. Interpret the wrist singularity conditions geometrically and use the full robot Jacobian to check whether a complete configuration is regular.
+
+You must derive and implement the complete analytical inverse kinematics of the robot. Your solver must expose all discrete solutions for a general regular pose, identify how positioning alternatives combine with wrist alternatives, and verify every solution through the independent forward model. Joint limits and equivalent angular representations must be handled explicitly.
+
+The main global analysis should be organized around the $(q_2,q_3)$ plane. Construct the singularity structure associated with the positioning chain and project representative full-robot IK solutions onto this slice. For a fixed tool orientation, investigate how the complete IK set is distributed across the regular regions and how wrist flips are attached to the positioning solutions. The map should make it possible to see whether two distinct full-pose IK solutions are separated by an arm singularity or lie in the same regular arm component.
+
+Finally, select a pair of distinct IK solutions of the same full tool pose that is suitable for a posture-change experiment. Construct a continuous arm motion suggested by the $(q_2,q_3)$ map and solve the wrist continuously along this path so that the desired tool orientation is maintained. Validate the complete 6R motion using the full Jacobian, joint limits, and pose residuals. If the lift fails, identify whether the obstruction comes from the positioning chain, wrist singularity, or joint limits.
+
+\section*{Expected Output}
+\begin{itemize}
+  \item A validated DH and screw model of \texttt{CuRo6R}.
+  \item Numerical agreement between URDF, DH, and PoE forward kinematics.
+  \item A screw-based full robot Jacobian and the wrist/subchain Jacobian $^{3}J_{5}$.
+  \item Complete analytical 6R inverse kinematics with explicit positioning and wrist branch structure.
+  \item FK verification and visualization of representative full-pose IK solutions.
+  \item A $(q_2,q_3)$ singularity map for the positioning structure.
+  \item Projection of representative full-robot IK solutions onto the $(q_2,q_3)$ map, including wrist-flip information.
+  \item A connectivity analysis identifying a candidate pair of distinct IK solutions for change of solutions.
+  \item A continuous solution-change trajectory where a robot follows a closed path in the workspace but goes from one IKS to another without crossing singularity.
+  \item Joint trajectories, workspace path, joint-limit margins, and full-Jacobian singularity margins along the motion.
+\end{itemize}
+
+\section*{Useful resources}
+\begin{enumerate}
+	\item Simulations to visualize your robots: \url{https://epfl-lasa.github.io/eng-654/#simulations} 
+	\item Robot assets (URDF and .stl files for visualization): \url{https://epfl-lasa.github.io/eng-654/#download-assets}
+\end{enumerate}
+
+\end{document}
