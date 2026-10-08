@@ -930,18 +930,38 @@ async function stlGeometry(filename){
   const g=/\.dae$/i.test(file.name||key)
     ?flattenCollada(await file.text())
     :loader.parse(await file.arrayBuffer());
-  if(!g.getAttribute('normal'))g.computeVertexNormals();
+
+  // Recompute normals even when an STL provides them. Some STL exporters write
+  // invalid or zero facet normals, which can make lit materials render black.
+  g.computeVertexNormals();
+  g.computeBoundingSphere();
+
   state.geometryCache.set(key,g);
   return g;
 }
 function makeMaterial(rgba){
   const c=rgba||[0.65,0.68,0.73,1];
-  return new THREE.MeshPhysicalMaterial({
-    color:new THREE.Color(c[0],c[1],c[2]),
-    transparent:true,
-    opacity:c[3]??1,
-    depthWrite:(c[3]??1)>=0.999,
-    roughness:0.28,metalness:0.2,clearcoat:0.18,
+  const opacity=c[3]??1;
+
+  // URDF RGB values are authored as display/sRGB values. Tell Three.js the
+  // input colour space explicitly so they are converted correctly internally.
+  const color=new THREE.Color().setRGB(
+    c[0],
+    c[1],
+    c[2],
+    THREE.SRGBColorSpace
+  );
+
+  // StandardMaterial is intentionally used instead of PhysicalMaterial here.
+  // A URDF inspection tool should show the requested colour predictably without
+  // depending on an environment map for metallic/clear-coat reflections.
+  return new THREE.MeshStandardMaterial({
+    color,
+    roughness:0.65,
+    metalness:0.0,
+    transparent:opacity<1,
+    opacity,
+    depthWrite:opacity>=0.999,
     side:THREE.DoubleSide
   });
 }

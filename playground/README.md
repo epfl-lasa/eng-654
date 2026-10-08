@@ -11,6 +11,136 @@ python3 -m http.server 8000
 
 Then visit `http://localhost:8000/playground/building_blocks.html`.
 
+## Standard D–H parameter playground
+
+Serve the repository with the command above and visit
+[`dh_parameters.html`](dh_parameters.html) at
+`http://localhost:8000/playground/dh_parameters.html`. ES modules and URDF/mesh
+loading require HTTP. Three.js, OrbitControls, and the robot assets are vendored
+locally; the lab needs no external service.
+
+The Study dropdown offers five geometric cases and ten course robots from
+`lectures_main/assets/models/`. Every exercise starts with an empty table.
+Students choose the signed local joint axes, assign common normals, then measure
+θ, d, α and a. Feedback and hints guide each task, and a motion preview shows
+each attempted transform. Either normal sign is accepted; coincident axes allow
+any offered perpendicular direction.
+
+The workspace fills one viewport without scrolling. Smaller screens use Exercise,
+3D view, and My table tabs, with frame controls under Frames and offsets to keep
+room for direct manipulation. Geometry cases use blue transparent joint cylinders
+connected by curved links. Robots use their transparent CAD meshes; the generated
+cylinders and links disappear once those meshes load. Long solid gold arrows
+show positive rotation axes. RGB supplied frames guide joint-axis selection; the view
+switches to assigned D–H frames for the normal and parameter tasks. The default
+view shows only the current pair, plus the always-visible ground frame. Thick RGB
+arrows mark the directions being compared. Common normals are dashed brown,
+with brown endpoint markers and a matching legend. Motion cues along/about the
+common-normal x are brown; cues along/about the joint z are gold. Students choose
+the motion axis by clicking an arrow or using the axis selector. Once it is locked,
+dragging the purple frame rotates about or translates along that axis. The signed
+numeric answer and table update together. Dragging near the target gently snaps
+into alignment; students still press Check to confirm their answer. Change axis
+unlocks the selection. Rotation about x uses the common normal after the preceding
+θ and d substeps have aligned the moving frame with it.
+During alignment, context axes, common normals, and the starting frame fade. A
+rotation exercise has three opaque arrows: the operating axis, the purple arrow
+being aligned, and the target arrow. The other frame arrows stay faint. Longer,
+thicker alignment arrows use axis names such as z₀ and z₁; D-frame names and the
+word Moving are hidden in the transformation view. There is no rotation circle.
+The direct URDF / D–H controls toggle the current
+frame layers. Intermediate motion is visible by default for parameter tasks and
+retains its purple x, y, z annotations.
+OrbitControls supports left-drag/one-finger orbit, right-drag pan, wheel/middle-drag
+zoom, and two-finger pan/zoom. Fit, Top, Front, and the Home key reset the camera.
+Camera gestures work in empty space; dragging the selected purple frame keeps
+the camera fixed. Escape cancels a frame gesture and restores camera control.
+
+**Robot** hides or shows the body, blue joints, and curved links together. Frames
+and gold axes remain independently controllable. The world-origin frame and a
+ground-axis compass stay visible, with a red x / green y / blue z legend in the
+upper right. Outside transformation tasks, frames use one label, such as F₁ or D₀.
+
+**Study offsets** compares Fᵢ₊₁ and Dᵢ⁺ at one joint, selectable joint by joint.
+Dᵢ⁺ includes the Rz(qᵢ₊₁) substep, so both compared frames follow that joint.
+Purple markers join displaced origins, and highlighted RGB arrows show their
+orientation difference. The note explains that this is a fixed change of
+coordinates, not joint motion. It reports the origin distance and rotation angle;
+the comparison remains fixed when a verified joint is moved. D–H frames are
+provisional until the common normals have been chosen.
+
+The persistent guideline has four steps: rotating axes → common normals → D–H
+parameters for consecutive frames → forward kinematics. **Hint** toggles one
+instruction for the current task. It names the moving point or axis, its target,
+and the axis to translate along or rotate about. The same hint appears in the
+exercise and 3D panes in a rounded, translucent white card using Calibri when
+available. Clicking Hint again hides it; entering or dragging a value keeps it
+visible. The parameter tasks omit the former base-frame coordinate dump and
+scenario summary.
+
+Correct parameter checks automatically replay the signed transform, hold its
+result briefly, fade out the old alignment arrows, and fade in the next task.
+The 3D pane announces the next quantity or “Let’s move to the next joint frame”
+when a row is complete. On compact screens, Check opens the 3D pane for this
+demonstration. Zero transforms explain that the directions or origins are already
+aligned. Incorrect answers stay on the same task. Reduced-motion preferences keep
+the messages and automatic progression while skipping animations. Editing,
+choosing another row, or changing exercises interrupts playback safely.
+
+**Measure** lets students click origin dots or axes. Distance supports two points,
+a point and an infinite axis, or the shortest separation between two axes. Angle
+uses two directed axes and reports radians and degrees. During parameter tasks,
+point distances also show signed components along the task's z and x directions;
+angle measurements use the task's rotation axis for a signed θ or α when both
+selected directions are perpendicular to it. Purple highlights mark selections.
+The two selection lists also let students choose overlapping geometry or use a
+keyboard. Measuring preserves the table and joint-axis answers, and dragging
+continues to orbit the camera.
+
+There is one standard D–H row per joint, including the terminal tool frame. The
+base x₀ is chosen parallel to x₁; terminal z stays parallel to the last joint axis.
+The tasks' `Rz Tz Rx Tx` order equals `Rz Tz Tx Rx` because Rx and Tx commute.
+Angles are radians, lengths metres, and table θ values are offsets added to q.
+Fixed base and tool changes of frame are retained. Robot exercises use the longest
+serial joint chain; the two CuRo/custom 6R models finish at link_6 rather than
+their shorter tool0 branch.
+
+Verify table compares D–H and URDF endpoint poses at home and twelve nonzero
+joint configurations. Rounded answers within the geometric tolerance are snapped
+to exact values. Once verified, students can move joints and download the table,
+units, boundary transforms, endpoint, and verification result as JSON. Edits
+require re-verification. Restart or another exercise clears progress.
+Check disappears once all guided parameters are complete. Verify table disappears
+after successful verification; editing a value restores the checking controls.
+Step 4 opens `building_blocks.html` in a new tab. Students compose
+`Rz(qᵢ + θᵢ,₀) Tz(dᵢ) Tx(aᵢ) Rx(αᵢ)` for each row, multiply the rows in order,
+and include the downloaded fixed base and tool matrices at the boundaries.
+
+Check geometry, conventions, and FK with:
+
+```sh
+node --test playground/tests/dh-model.test.cjs
+node --test playground/tests/dh-robots.test.cjs
+node --test playground/tests/dh-measurements.test.cjs
+node --test playground/tests/dh-drag.test.cjs
+```
+
+With a local HTTP server and a Chromium-compatible browser using remote debugging:
+
+```sh
+DH_BASE_URL=http://localhost:8000 DH_CDP_PORT=9222 node playground/tests/dh.browser.cjs
+```
+
+The robot checks use Python's standard XML parser to independently check every
+URDF chain and its FK. The browser check covers the guided flow, incorrect and
+rounded answers, alternate normals, downloads, mouse/touch camera controls,
+frame pairs, axis locking, signed mouse/touch frame dragging about/along x and z,
+alignment snapping, edge-on/head-on views, gesture cancellation, live numeric
+updates, toggleable hints, fixed frame offsets during motion,
+correct-answer demonstrations, automatic task/joint transitions, reduced motion,
+transparent meshes for all robots, verification, and viewport bounds in a
+disposable browser context.
+
 ## Save and share operations
 
 **Download operations** saves the canvas, connections, symbolic values, selected

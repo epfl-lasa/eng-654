@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ff0000">
+  <title>Standard D–H lab · ENG-654</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="stylesheet" href="styles.css?v=17">
+  <link rel="stylesheet" href="dh-styles.css?v=8">
+  <script type="importmap">{"imports":{"three":"../lectures_main/vendor/three/build/three.module.js","three/addons/":"../lectures_main/vendor/three/examples/jsm/"}}</script>
+  <script type="module" src="dh-app.js?v=8"></script>
+</head>
+<body class="dh-page" data-mobile-view="exercise">
+  <header class="dh-header">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">DH</span><span><strong class="brand-name">Standard D–H lab</strong><span class="brand-subtitle">EPFL · ENG-654</span></span></div>
+    <span class="header-formula">Rz(θ) Tz(d) Tx(a) Rx(α)</span>
+    <nav><button id="help" aria-haspopup="dialog">Parameter guide</button><a href="../index.html#resources">Course ↗</a></nav>
+  </header>
+  <section class="exercise-toolbar" aria-label="Choose an exercise">
+    <label for="exercise">Study</label><select id="exercise" aria-label="Robot or geometric exercise"></select>
+    <span id="exercise-count"></span><span class="units">rad · m</span><button id="restart">Restart</button>
+  </section>
+  <ol class="workflow-guide" aria-label="D–H study guideline">
+    <li data-workflow-step="0"><strong>Step 1</strong><span>Choose rotating axes</span></li>
+    <li data-workflow-step="1"><strong>Step 2</strong><span>Choose common normals</span></li>
+    <li data-workflow-step="2"><strong>Step 3</strong><span>D–H for consecutive frames</span></li>
+    <li data-workflow-step="3"><a href="building_blocks.html" target="_blank" rel="noopener"><strong>Step 4 ↗</strong><span>Build forward kinematics</span></a></li>
+  </ol>
+  <nav class="mobile-tabs" aria-label="Workspace view"><button data-pane-button="exercise" aria-pressed="true">Exercise</button><button data-pane-button="scene" aria-pressed="false">3D view</button><button data-pane-button="table" aria-pressed="false">My table</button></nav>
+  <main class="dh-workspace">
+    <aside class="task-panel" data-pane="exercise" aria-labelledby="task-title">
+      <div class="task-top"><span id="step-label" class="section-label">GETTING STARTED</span><span id="focus-label" class="sr-only"></span><label id="focus-picker" class="focus-picker" hidden><span id="focus-picker-label" class="sr-only">Joint</span><select id="focus" aria-label="Current joint or transition"></select></label></div>
+      <ol id="task-progress" class="task-progress" aria-label="Exercise steps"></ol>
+      <h1 id="task-title">Loading the lab…</h1><p id="task-description">Choose a robot or a geometric case, assign frames, and build its D–H table.</p>
+      <div id="task-inputs"></div>
+      <div id="feedback" class="feedback" role="status" aria-live="polite" hidden></div>
+      <section class="given-data" aria-labelledby="given-title"><h2 id="given-title">Given geometry</h2><pre id="given-data"></pre></section>
+      <p id="hint-text" class="hint" hidden></p>
+      <div class="task-actions"><button id="hint" aria-pressed="false" aria-controls="hint-text scene-hint">Hint</button><button id="check" class="primary">Check</button><button id="next" class="primary" hidden>Continue →</button></div>
+      <p id="exercise-note" class="exercise-note">Choose each joint axis, choose common normals, then measure the four parameters.</p>
+    </aside>
+    <section class="scene-panel" data-pane="scene" aria-labelledby="scene-title">
+      <div class="scene-heading"><div><span class="section-label">INTERACTIVE ROBOT</span><h2 id="scene-title">Joint axes & frames</h2></div><div class="view-buttons"><button id="view-home">Fit</button><button id="view-top">Top</button><button id="view-front">Front</button><button id="toggle-robot" aria-pressed="true" title="Show or hide the robot body, joints, and links">Robot ✓</button><button id="measure-toggle" aria-expanded="false" aria-controls="measurement-panel">Measure</button><button id="scene-hint-toggle" aria-pressed="false" aria-controls="scene-hint">Hint</button><button id="display" popovertarget="display-options">Display</button></div>
+        <details class="frame-options"><summary>Frames and offsets</summary><div class="frame-controls" aria-label="Frame layers and offsets"><label><input id="show-frames" type="checkbox" checked> URDF frames</label><label><input id="show-dh" type="checkbox" checked> D–H frames</label><label><input id="show-intermediate" type="checkbox"> Intermediate motion</label><label><input id="study-offsets" type="checkbox"> Study offsets</label><select id="offset-joint" aria-label="Joint for URDF and D–H frame offset" hidden></select></div></details>
+        <div id="manipulation-controls" class="manipulation-controls" hidden><select id="motion-axis" aria-label="Choose the rotation or translation axis"></select><button id="unlock-axis" hidden>Change axis</button><output id="drag-value" aria-label="Current parameter value"></output></div>
+        <p id="scene-instruction" class="scene-instruction" aria-live="polite"></p><p id="frame-offset-note" class="frame-offset-note" hidden></p><p id="scene-hint" class="scene-hint" role="status" hidden></p>
+      </div>
+      <div id="dh-scene">
+        <p id="scene-loading" class="scene-loading">Starting the 3D viewer…</p>
+        <div class="axis-legend" aria-label="Frame axis colors: red x, green y, blue z; dashed brown common normal"><span class="legend-x">● x</span><span class="legend-y">● y</span><span class="legend-z">● z</span><span class="legend-normal"><i aria-hidden="true"></i> normal</span></div>
+        <p id="scene-transition" class="scene-transition" role="status" aria-live="polite" hidden></p>
+        <section id="measurement-panel" class="measurement-panel" aria-label="Measure scene geometry" hidden>
+          <div class="measurement-modes"><button id="measure-distance" aria-pressed="true">Distance</button><button id="measure-angle" aria-pressed="false">Angle</button><button id="measure-clear">Clear</button><button id="measure-close" aria-label="Close measurement tool">×</button></div>
+          <div class="measurement-selections"><select id="measure-first" aria-label="First measurement point or axis"></select><span aria-hidden="true">→</span><select id="measure-second" aria-label="Second measurement point or axis"></select></div>
+          <output id="measure-result" aria-live="polite">Click two points or axes.</output><p id="measure-detail">Dots mark origins. Drag to orbit; click to measure.</p>
+        </section>
+        <div id="origin-compass" class="origin-compass" aria-label="Ground frame at the world origin; red x, green y, blue z">
+          <svg viewBox="0 0 88 82" aria-hidden="true"><g data-ground-axis="0"><line x1="40" y1="40"/><circle r="2"/><text>x</text></g><g data-ground-axis="1"><line x1="40" y1="40"/><circle r="2"/><text>y</text></g><g data-ground-axis="2"><line x1="40" y1="40"/><circle r="2"/><text>z</text></g><circle cx="40" cy="40" r="3" fill="#526174"/><text x="44" y="74" text-anchor="middle" class="compass-title">Ground · O</text></svg>
+        </div>
+      </div>
+      <div class="scene-bottom"><span id="body-status" role="status">Blue cylinders: joints · gold: rotation axes</span><span class="camera-help">Left drag: orbit · right drag: pan · wheel: zoom</span></div>
+      <div id="motion-controls" class="motion-controls" hidden><button id="play-motion">▶ Preview</button><label for="motion-progress">Motion</label><input id="motion-progress" type="range" min="0" max="100" value="100"><output id="motion-percent">100%</output></div>
+    </section>
+    <section class="table-panel" data-pane="table" aria-labelledby="table-title">
+      <div class="table-heading"><div><h2 id="table-title">Build your D–H table</h2><span class="table-convention">θᵢ = qᵢ + θᵢ,₀ · standard D–H</span></div><div><button id="download-table" disabled title="Download your table and fixed boundary transforms">Download</button><button id="verify-table" class="primary">Verify table</button></div></div>
+      <table class="dh-table"><caption class="sr-only">Home offsets in radians and lengths in metres. One row for every revolute joint.</caption><thead><tr><th scope="col">i</th><th scope="col">θᵢ,₀ (rad)</th><th scope="col">dᵢ (m)</th><th scope="col">aᵢ (m)</th><th scope="col">αᵢ (rad)</th><th scope="col">Check</th></tr></thead><tbody id="dh-table-body"></tbody></table>
+      <div id="table-status" class="table-status" role="status" aria-live="polite">Assign the joint axes and frames first. Your table starts empty.</div>
+    </section>
+  </main>
+  <div id="display-options" popover><h2>Scene display</h2><label><input id="show-body" type="checkbox" checked> Robot body, joints & links</label><label><input id="show-axes" type="checkbox" checked> Long gold joint axes</label><label><input id="show-normals" type="checkbox" checked> Current common normal</label><label><input id="show-labels" type="checkbox" checked> Point, frame & axis labels</label><p>Only the current frame pair is shown. The ground frame always stays visible.</p></div>
+  <dialog id="help-dialog" aria-labelledby="guide-title"><div class="guide-heading"><h2 id="guide-title">Parameter guide</h2><form method="dialog"><button aria-label="Close parameter guide">×</button></form></div><div id="guide-content"></div><div class="guide-actions"><button id="guide-previous">← Previous</button><span id="guide-page"></span><button id="guide-next">Next →</button></div></dialog>
+  <noscript>Enable JavaScript to use this interactive lab.</noscript>
+</body>
+</html>
