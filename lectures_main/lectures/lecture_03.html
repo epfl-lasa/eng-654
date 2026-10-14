@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="../css/reveal.css">
   <link rel="stylesheet" href="../css/navigation.css">
   <link rel="stylesheet" href="../css/viz.css">
-  <link rel="stylesheet" href="../css/lecture-03.css?v=20260913-7">
+  <link rel="stylesheet" href="../css/lecture-03.css?v=20261008-pieper-split">
   <script>
     window.MathJax = { tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] } };
   </script>
@@ -96,6 +96,8 @@
             <div><strong>Output</strong><span>all real joint triples within limits</span></div>
             <div><strong>Branches</strong><span>one position may have several IK solutions</span></div>
           </div>
+          <div class="ik-callout"><strong>The number of solutions is even:</strong> a regular target has \(0,2,\text{ or }4\) isolated mathematical IK solutions, counted modulo \(2\pi\), before joint limits are applied.</div>
+          <p class="small-text">At singular targets, branches can merge. Filtering by joint limits can also change the retained count.</p>
         </div>
         <div data-custom3r-ik data-mode="dh-motion"></div>
       </div>
@@ -199,35 +201,84 @@
     </section>
 
     <section class="slide pieper-overview">
-      <p class="slide-kicker">Algebraic method · Pieper’s elimination</p>
-      <h2 class="slide-title">Two invariants remove the first two joint angles</h2>
-      <p class="slide-subtitle">For the custom robot, \(\alpha_1=-\pi/2\), \(\alpha_2=\pi/2\). Write \(c_i=\cos\theta_i\), \(s_i=\sin\theta_i\).</p>
-      <div class="ik-callout"><strong>First remove the base offset:</strong> \(z:=z_d-d_1\). Then \(R:=x^2+y^2+z^2\) and \(z\) are unchanged by rotation about joint 1, so \(\theta_1\) disappears.</div>
+      <p class="slide-kicker">Algebraic method · Pieper’s elimination · 1 / 2</p>
+      <h2 class="slide-title">Eliminate joint 1 using position invariants</h2>
+      <p class="slide-subtitle">For simpler equations, take \(\alpha_1=\alpha_2=90^\circ\) here. Write \(c_i=\cos\theta_i\), \(s_i=\sin\theta_i\).</p>
       <div class="layout-two-column divided pieper-columns">
-        <div>
-          <h3>Write the invariants as linear polynomials in \(c_2,s_2\)</h3>
-          <div class="equation compact boxed-result">\[\begin{aligned}
-            R&=2a_1(F_1c_2+F_2s_2)+F_3,\\
-            z&=F_2c_2-F_1s_2.
-          \end{aligned}\]</div>
-          <div class="equation micro">\[\begin{aligned}
-            F_1&=a_2+a_3c_3,\quad F_2=d_3,\quad C=d_2+a_3s_3,\\
-            F_3&=a_1^2+F_1^2+F_2^2+C^2\\
-               &=a_1^2+a_2^2+a_3^2+d_2^2+d_3^2\\
-               &\quad+2a_2a_3c_3+2d_2a_3s_3.
-          \end{aligned}\]</div>
-          <p>Each \(F_i\) is constant or affine in \(c_3,s_3\).</p>
+        <div class="pieper-steps" data-reveal="children">
+          <div>
+            <h3>1 · Read the position column of the transformation</h3>
+            <div class="equation micro">\[{}^0T_3=A_1A_2A_3=\begin{bmatrix}{}^0R_3&\mathbf p\\0&1\end{bmatrix},\quad \mathbf p=\begin{bmatrix}x\\y\\z_d\end{bmatrix}.\]</div>
+            <div class="equation micro">\[\begin{aligned}
+              F_1&=a_2+a_3c_3,\quad F_2=d_3,\quad C=d_2+a_3s_3,\\
+              U&=F_1c_2+F_2s_2,\quad V=F_1s_2-F_2c_2,\\
+              x&=(a_1+U)c_1+Cs_1,\\
+              y&=(a_1+U)s_1-Cc_1,\quad z_d=d_1+V.
+            \end{aligned}\]</div>
+            <p>We are simply writing the \(x,y,z_d\) entries of the FK matrix and setting them equal to the target.</p>
+          </div>
         </div>
-        <div>
-          <h3>Eliminate \(c_2,s_2\), then solve for \(\theta_3\)</h3>
-          <div class="equation compact">\[E:=\frac{R-F_3}{2a_1}=F_1c_2+F_2s_2\]</div>
-          <p>Square and add the equations for \(E\) and \(z\): the cross terms cancel and \(c_2^2+s_2^2=1\).</p>
-          <div class="equation compact boxed-result">\[E^2+z^2=F_1^2+F_2^2.\]</div>
-          <div class="equation micro">\[t_3=\tan\frac{\theta_3}{2},\qquad c_3=\frac{1-t_3^2}{1+t_3^2},\quad s_3=\frac{2t_3}{1+t_3^2}\]</div>
-          <p>Substitute and clear \((1+t_3^2)^2\): a polynomial of degree at most four determines \(\theta_3\).</p>
+        <div class="pieper-steps" data-reveal="children">
+          <div>
+            <h3>2 · Shift the robot down by its fixed base height</h3>
+            <div class="equation compact">\[z:=z_d-d_1=V.\]</div>
+            <p>Subtracting \(d_1\) shifts the robot and target down together. This fixed translation does not change the IK joint solutions.</p>
+          </div>
+          <div>
+            <h3>3 · Observe what rotation about joint 1 preserves</h3>
+            <p class="ik-question">Can you see why \(x^2+y^2\) and \(z\) are independent of \(\theta_1\)? We will use these two invariants.</p>
+            <div class="equation micro">\[\begin{aligned}
+              x^2+y^2&=[(a_1+U)c_1+Cs_1]^2\\
+                &\quad+[(a_1+U)s_1-Cc_1]^2\\
+                &=(a_1+U)^2+C^2,\qquad z=V.
+            \end{aligned}\]</div>
+          </div>
         </div>
       </div>
-      <div class="ik-takeaway">Here \(z_d\) is world height, \(z\) is shifted height, and \(R\) is a squared distance. Solve the quartic, then recover the other two angles by linear algebra.</div>
+      <div class="ik-takeaway"><strong>Joint 1 is eliminated:</strong> \(x^2+y^2=(a_1+U)^2+C^2\) and the shifted height \(z=V\) depend only on \(\theta_2,\theta_3\).</div>
+    </section>
+
+    <section class="slide pieper-overview">
+      <p class="slide-kicker">Algebraic method · Pieper’s elimination · 2 / 2</p>
+      <h2 class="slide-title">Eliminate joint 2 to obtain a quartic</h2>
+      <p class="slide-subtitle">Continue with \(\alpha_1=\alpha_2=90^\circ\), \(z=z_d-d_1=V\), and the functions \(F_1,F_2,C,U,V\) defined on the previous slide.</p>
+      <div class="layout-two-column divided pieper-columns">
+        <div class="pieper-steps" data-reveal="children">
+          <div>
+            <h3>4 · Add the squared shifted height and expand</h3>
+            <div class="equation micro">\[\begin{aligned}
+              R&:=x^2+y^2+z^2\\
+               &=a_1^2+2a_1U+U^2+V^2+C^2,\\
+              U^2+V^2&=(F_1c_2+F_2s_2)^2\\
+               &\quad+(F_1s_2-F_2c_2)^2\\
+               &=F_1^2+F_2^2.
+            \end{aligned}\]</div>
+            <div class="equation micro">\[\begin{aligned}
+              F_3&:=a_1^2+F_1^2+F_2^2+C^2\\
+                &=a_1^2+a_2^2+a_3^2+d_2^2+d_3^2\\
+                &\quad+2a_2a_3c_3+2d_2a_3s_3.
+            \end{aligned}\]</div>
+          </div>
+        </div>
+        <div class="pieper-steps" data-reveal="children">
+          <div>
+            <h3>5 · Square and add to eliminate \(\theta_2\)</h3>
+            <div class="equation micro">\[\begin{aligned}
+              E&:=\frac{R-F_3}{2a_1}=F_1c_2+F_2s_2,\\
+              z&=F_1s_2-F_2c_2,\\
+              E^2+z^2&=F_1^2(c_2^2+s_2^2)+F_2^2(s_2^2+c_2^2)\\
+                &=F_1^2+F_2^2.
+            \end{aligned}\]</div>
+            <p>The mixed terms cancel. Only \(\theta_3\) remains.</p>
+          </div>
+          <div>
+            <h3>6 · Convert to a polynomial in the third joint</h3>
+            <div class="equation micro">\[t_3=\tan\frac{\theta_3}{2},\quad c_3=\frac{1-t_3^2}{1+t_3^2},\quad s_3=\frac{2t_3}{1+t_3^2}.\]</div>
+            <p>Substitute, then clear \((1+t_3^2)^2\): a polynomial of degree at most four in \(t_3\).</p>
+          </div>
+        </div>
+      </div>
+      <div class="ik-takeaway"><strong>The method is unchanged for other twists:</strong> the invariant functions \(x^2+y^2\) and \(z\) always eliminate \(\theta_1\); their expanded expressions depend on the geometry. For the actual custom robot, \(\alpha_1=-90^\circ\): \(z=-V=F_2c_2-F_1s_2\), as used on the next slide. Here \(a_1\ne0\).</div>
     </section>
 
     <section class="slide pieper-recovery">
@@ -910,38 +961,83 @@
 
     <section class="slide pk-angle-derivation">
       <p class="slide-kicker">Geometric method · PK1 solution</p>
-      <h2 class="slide-title">Cosine measures alignment; sine measures signed rotation</h2>
-      <p class="slide-subtitle">For a feasible PK1 problem, the projected vectors have the same nonzero length \(r\). The unit axis \(\boldsymbol\omega\) sets the positive rotation direction.</p>
+      <h2 class="slide-title">Read the signed angle from two planar coordinates</h2>
+      <p class="slide-subtitle">Keep this schematic in view: the axis fixes the orbit plane, and the two perpendicular directions give cosine and signed sine.</p>
       <div class="pk-angle-columns">
-        <div>
-          <h3>Build coordinates in the orbit plane</h3>
-          <div class="equation compact">\[\begin{aligned}
-            \mathbf p_\perp&=(I-\boldsymbol\omega\boldsymbol\omega^T)\mathbf p,\\
-            \mathbf q_\perp&=(I-\boldsymbol\omega\boldsymbol\omega^T)\mathbf q,\\
-            \mathbf e_1&=\mathbf p_\perp/r,\qquad
-            \mathbf e_2=\boldsymbol\omega\times\mathbf e_1.
-          \end{aligned}\]</div>
-          <p>\(\mathbf e_1\) points toward the starting point. \(\mathbf e_2\) is the positive tangent direction given by the right-hand rule.</p>
-          <div class="equation compact boxed-result">\[\mathbf q_\perp=r\cos\theta\,\mathbf e_1+r\sin\theta\,\mathbf e_2.\]</div>
-          <p>Take dot products with these two perpendicular unit vectors to read the coordinates of \(\mathbf q_\perp\).</p>
-        </div>
-        <div>
-          <h3>Extract cosine and signed sine</h3>
-          <div class="equation compact">\[\begin{aligned}
-            \cos\theta&=\frac{\mathbf e_1^T\mathbf q_\perp}{r}
-              =\frac{\mathbf p_\perp^T\mathbf q_\perp}{r^2},\\
-            \sin\theta&=\frac{\mathbf e_2^T\mathbf q_\perp}{r}
-              =\frac{(\boldsymbol\omega\times\mathbf p_\perp)^T\mathbf q_\perp}{r^2}\\
-              &=\frac{\boldsymbol\omega^T(\mathbf p_\perp\times\mathbf q_\perp)}{r^2}.
-          \end{aligned}\]</div>
-          <p>The dot product gives alignment. The scalar triple product gives signed area: positive when rotation from \(\mathbf p_\perp\) to \(\mathbf q_\perp\) follows \(+\boldsymbol\omega\).</p>
-          <div class="equation micro boxed-result">\[\theta=\operatorname{atan2}\!\left(
-            \boldsymbol\omega^T(\mathbf p_\perp\times\mathbf q_\perp),\,
-            \mathbf p_\perp^T\mathbf q_\perp\right).\]</div>
-          <p>The common positive factor \(r^2\) cancels in \(\operatorname{atan2}\), which keeps the sign and quadrant.</p>
+        <figure class="pk-angle-schematic geometry-stage">
+          <svg viewBox="0 0 560 590" role="img" aria-labelledby="pk1-schematic-title pk1-schematic-description">
+            <title id="pk1-schematic-title">Paden–Kahan 1: axial projection and signed orbit angle</title>
+            <desc id="pk1-schematic-description">The upper view shows p and q at the same axial height, with vectors from the axis origin O and projected vectors from the orbit center c. The lower view has the positive axis pointing toward the viewer: e1 points toward p perpendicular, e2 is the positive tangent, and q perpendicular has components r cosine theta and r sine theta.</desc>
+            <defs>
+              <marker id="pk1-arrow-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#111"/></marker>
+              <marker id="pk1-arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#3f6ea8"/></marker>
+              <marker id="pk1-arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#f00"/></marker>
+            </defs>
+            <g font-size="17">
+              <text x="24" y="28" font-weight="700">1 · Remove the common axial component</text>
+              <ellipse cx="238" cy="106" rx="160" ry="43" fill="#f7f9fc" stroke="#bbb"/>
+              <path d="M238 196V45" fill="none" stroke="#111" stroke-width="2.5" marker-end="url(#pk1-arrow-dark)"/>
+              <text x="214" y="54">ω</text><text x="215" y="203">O</text><text x="216" y="121">c</text>
+              <path d="M238 192L398 106" stroke="#3f6ea8" stroke-width="2.5" marker-end="url(#pk1-arrow-blue)"/>
+              <path d="M238 192L336 72" stroke="#f00" stroke-width="2.5" marker-end="url(#pk1-arrow-red)"/>
+              <path d="M238 106H398" stroke="#3f6ea8" stroke-width="3" marker-end="url(#pk1-arrow-blue)"/>
+              <path d="M238 106L336 72" stroke="#f00" stroke-width="3" marker-end="url(#pk1-arrow-red)"/>
+              <circle cx="238" cy="106" r="4" fill="#111"/><circle cx="238" cy="192" r="4" fill="#111"/>
+              <circle cx="398" cy="106" r="5" fill="#3f6ea8"/><circle cx="336" cy="72" r="5" fill="#f00"/>
+              <text x="404" y="111" fill="#3f6ea8">p</text><text x="342" y="65" fill="#f00">q</text>
+              <text x="352" y="100" fill="#3f6ea8">p⊥</text><text x="274" y="82" fill="#f00">q⊥</text>
+              <text x="336" y="151" fill="#3f6ea8">p</text><text x="280" y="146" fill="#f00">q</text>
+              <text x="96" y="104" fill="#555">plane Π</text>
+              <text x="25" y="225" fill="#555">c = (ωᵀp)ω = (ωᵀq)ω; axis origin O is on ω.</text>
+              <path d="M24 240H536" stroke="#ddd"/>
+              <text x="24" y="269" font-weight="700">2 · Orbit plane: +ω points toward you</text>
+              <circle cx="238" cy="431" r="126" fill="none" stroke="#bbb" stroke-width="2"/>
+              <path d="M238 431H412" stroke="#111" stroke-width="2" marker-end="url(#pk1-arrow-dark)"/>
+              <path d="M238 431V290" stroke="#111" stroke-width="2" marker-end="url(#pk1-arrow-dark)"/>
+              <text x="423" y="438">e₁</text><text x="221" y="292">e₂</text>
+              <path d="M238 431H364" stroke="#3f6ea8" stroke-width="3" marker-end="url(#pk1-arrow-blue)"/>
+              <path d="M238 431L315 331" stroke="#f00" stroke-width="3" marker-end="url(#pk1-arrow-red)"/>
+              <path d="M315 331V431" stroke="#777" stroke-dasharray="5 5"/>
+              <path d="M315 331H238" stroke="#777" stroke-dasharray="5 5"/>
+              <path d="M300 431A62 62 0 0 0 276 382" fill="none" stroke="#111" stroke-width="2" marker-end="url(#pk1-arrow-dark)"/>
+              <text x="303" y="398">+θ</text>
+              <circle cx="364" cy="431" r="5" fill="#3f6ea8"/><circle cx="315" cy="331" r="5" fill="#f00"/>
+              <text x="354" y="455" fill="#3f6ea8">p⊥</text><text x="321" y="327" fill="#f00">q⊥</text>
+              <text x="264" y="452">r cos θ</text><text x="148" y="374">r sin θ</text>
+              <text x="191" y="487">c · ⊙ ω</text>
+              <text x="28" y="577" fill="#555">r = ‖p⊥‖ = ‖q⊥‖; e₂ = ω × e₁.</text>
+            </g>
+          </svg>
+        </figure>
+        <div class="pk-angle-steps" data-reveal="children">
+          <div>
+            <h3>1 · Project onto the plane normal to the axis</h3>
+            <div class="equation micro">\[\mathbf p_\perp=(I-\boldsymbol\omega\boldsymbol\omega^T)\mathbf p,\quad \mathbf q_\perp=(I-\boldsymbol\omega\boldsymbol\omega^T)\mathbf q.\]</div>
+            <p>\(\mathbf p,\mathbf q\) are measured from an origin on the axis. A feasible PK1 has the same axial height and the same nonzero radius \(r\).</p>
+          </div>
+          <div>
+            <h3>2 · Choose a basis and resolve the target vector</h3>
+            <div class="equation micro">\[\mathbf e_1=\mathbf p_\perp/r,\quad \mathbf e_2=\boldsymbol\omega\times\mathbf e_1,\quad \mathbf q_\perp=r\cos\theta\,\mathbf e_1+r\sin\theta\,\mathbf e_2.\]</div>
+            <p>\(\mathbf e_1\) points toward the start; \(\mathbf e_2\) is its positive tangent. The dashed legs are the two coordinates.</p>
+          </div>
+          <div>
+            <h3>3 · Take dot products to read those coordinates</h3>
+            <div class="equation micro">\[\begin{aligned}
+              \cos\theta&=\frac{\mathbf e_1^T\mathbf q_\perp}{r}=\frac{\mathbf p_\perp^T\mathbf q_\perp}{r^2},\\
+              \sin\theta&=\frac{\mathbf e_2^T\mathbf q_\perp}{r}
+                =\frac{(\boldsymbol\omega\times\mathbf p_\perp)^T\mathbf q_\perp}{r^2}\\
+                &=\frac{\boldsymbol\omega^T(\mathbf p_\perp\times\mathbf q_\perp)}{r^2}.
+            \end{aligned}\]</div>
+            <p>The dot product measures alignment; the triple product supplies the sign using the right-hand rule about \(+\boldsymbol\omega\).</p>
+          </div>
+          <div>
+            <h3>4 · Recover the signed angle and its quadrant</h3>
+            <div class="equation micro boxed-result">\[\theta=\operatorname{atan2}\!\left(\boldsymbol\omega^T(\mathbf p_\perp\times\mathbf q_\perp),\,\mathbf p_\perp^T\mathbf q_\perp\right).\]</div>
+            <p>The common positive factor \(r^2\) cancels in \(\operatorname{atan2}\).</p>
+          </div>
         </div>
       </div>
-      <div class="ik-callout"><strong>Check:</strong> \(\boldsymbol\omega=\mathbf e_z\), \(\mathbf p_\perp=\mathbf e_x\), \(\mathbf q_\perp=\mathbf e_y\) gives \((\cos\theta,\sin\theta)=(0,1)\), so \(\theta=+90^\circ\). If \(r=0\), the point does not move: the angle is arbitrary or the target is infeasible.</div>
+      <div class="ik-callout"><strong>Check:</strong> \(\boldsymbol\omega=\mathbf e_z\), \(\mathbf p_\perp=\mathbf e_x\), \(\mathbf q_\perp=\mathbf e_y\) gives \((\cos\theta,\sin\theta)=(0,1)\), hence \(\theta=+90^\circ\). If \(r=0\), the angle is arbitrary or the target is infeasible.</div>
     </section>
 
     <section class="slide">
@@ -965,26 +1061,44 @@
     <section class="slide pk-reduction-slide">
       <p class="slide-kicker">Geometric method · PK3 reduction</p>
       <h2 class="slide-title">Planar reduction of the PK3 constraint</h2>
-      <p class="slide-subtitle">Axial separation consumes part of the allowed distance; the remainder becomes an in-plane circle radius.</p>
+      <p class="slide-subtitle">Advance with →: each equation reveals its geometric construction, then holds until the next press.</p>
       <div class="layout-40-60 tight-gap">
-        <div>
-          <div class="equation compact">\[\begin{aligned}
-            \mathbf c&=(\boldsymbol\omega^T\mathbf p)\boldsymbol\omega,\quad r=\|\mathbf p-\mathbf c\|,\\
-            h&=\boldsymbol\omega^T(\mathbf q-\mathbf c),\\
-            \mathbf q_\pi&=\mathbf q-h\boldsymbol\omega,\\
-            \mathbf q_\perp&=\mathbf q_\pi-\mathbf c,\quad d=\|\mathbf q_\perp\|.
-          \end{aligned}\]</div>
-          <p>For a point \(\mathbf x\) in the orbit plane, the vertical and planar distances form a right triangle:</p>
-          <div class="equation compact boxed-result">\[\begin{aligned}
-            \|\mathbf x-\mathbf q\|^2&=h^2+\|\mathbf x-\mathbf q_\pi\|^2,\\
-            \delta_\perp&=\sqrt{\delta^2-h^2}.
-          \end{aligned}\]</div>
-          <p class="small-text">Check \(\delta^2\ge h^2\), then \(|r-\delta_\perp|\le d\le r+\delta_\perp\).</p>
-          <p class="small-text">Shown: \(h=0.8\), \(\delta\simeq1.7443\), and \(\delta_\perp=1.55\).</p>
+        <div class="pk-reduction-steps">
+          <div data-pk-reduction-step="0">
+            <h3>Start · All points at distance \(\delta\) from \(\mathbf q\)</h3>
+            <div class="equation micro">\[\|\mathbf x-\mathbf q\|^2=\delta^2\]</div>
+            <p>This is the sphere centered at \(\mathbf q\).</p>
+          </div>
+          <div class="fragment" data-pk-reduction-step="1">
+            <h3>1 · Construct the orbit plane and slice the sphere</h3>
+            <div class="equation micro">\[\mathbf c=(\boldsymbol\omega^T\mathbf p)\boldsymbol\omega,\quad r=\|\mathbf p-\mathbf c\|,\quad \Pi:\boldsymbol\omega^T(\mathbf x-\mathbf c)=0.\]</div>
+            <p>\(\mathbf c\) is the orbit center; \(r\) is its radius.</p>
+          </div>
+          <div class="fragment" data-pk-reduction-step="2">
+            <h3>2 · Project the sphere center onto the orbit plane</h3>
+            <div class="equation micro">\[\begin{aligned}
+              h&=\boldsymbol\omega^T(\mathbf q-\mathbf c),\quad \mathbf q_\pi=\mathbf q-h\boldsymbol\omega,\\
+              \mathbf q_\perp&=\mathbf q_\pi-\mathbf c,\quad d=\|\mathbf q_\perp\|.
+            \end{aligned}\]</div>
+            <p>\(h\) is axial separation; \(d\) is the in-plane center distance.</p>
+          </div>
+          <div class="fragment" data-pk-reduction-step="3">
+            <h3>3 · Use the right triangle to obtain the section radius</h3>
+            <div class="equation micro boxed-result">\[\begin{aligned}
+              \|\mathbf x-\mathbf q\|^2&=h^2+\|\mathbf x-\mathbf q_\pi\|^2,\\
+              \delta_\perp&=\sqrt{\delta^2-h^2}.
+            \end{aligned}\]</div>
+            <p>Shown: \(h=0.8\), \(\delta\simeq1.7443\), \(\delta_\perp=1.55\).</p>
+          </div>
+          <div class="fragment" data-pk-reduction-step="4">
+            <h3>4 · Check feasibility and retain the intersections</h3>
+            <div class="equation micro">\[\delta^2\ge h^2,\qquad |r-\delta_\perp|\le d\le r+\delta_\perp.\]</div>
+            <p>The green points satisfy both the orbit and the original distance constraint.</p>
+          </div>
         </div>
         <div data-custom3r-ik data-mode="pk3-reduction"></div>
       </div>
-      <div class="ik-callout">Slice the sphere at the orbit plane. The section has center \(\mathbf q_\pi\) and radius \(\delta_\perp\); its intersections with the orbit are exactly the original circle–sphere intersections.</div>
+      <div class="ik-callout">Axial separation consumes part of the allowed distance. The section circle has center \(\mathbf q_\pi\) and radius \(\delta_\perp\); its intersections with the orbit give the PK3 solutions.</div>
     </section>
 
     <section class="slide">
@@ -1465,8 +1579,8 @@
         <div>
           <div class="derivation-stack">
             <div class="derivation-row"><span class="tag">1</span><p><strong>Set \(p_d\).</strong> The magenta diamond is the target.</p></div>
-            <div class="derivation-row"><span class="tag">2</span><p><strong>Rotate \(\theta_2\).</strong> It snaps with a click, pauses for 2 seconds, then the circle returns home.</p></div>
-            <div class="derivation-row"><span class="tag">3</span><p><strong>Rotate \(\theta_3\).</strong> It snaps, pauses for 2 seconds, then the circle and robot return to the chosen intersection.</p></div>
+            <div class="derivation-row"><span class="tag">2</span><p><strong>Rotate \(\theta_2\).</strong> It snaps with a click, then the circle returns home.</p></div>
+            <div class="derivation-row"><span class="tag">3</span><p><strong>Rotate \(\theta_3\).</strong> It snaps, then the circle and robot return to the chosen intersection.</p></div>
             <div class="derivation-row"><span class="tag">4</span><p><strong>Rotate \(\theta_1\).</strong> Snap to the final angle and reach \(p_d\).</p></div>
           </div>
           <p class="small-text">Only the current joint is enabled. Changing the target or choosing “Reset joints” starts a new construction.</p>
@@ -1516,6 +1630,6 @@
 
   </main>
   <script src="../js/deck/nav-runtime.js"></script>
-  <script type="module" src="../js/main.js?v=20260913-7"></script>
+  <script type="module" src="../js/main.js?revision=20261008-ik"></script>
 </body>
 </html>

@@ -880,13 +880,17 @@ function buildPk3Reduction(kit) {
   addPkAxis(kit);
   addPkPoint(kit.world, p, 'p', 0xd79b00, [-.15, -.12, .3]);
   addPkPoint(kit.world, q, 'q', 0xcc3434, [-.55, -.45, .4]);
-  addRing(kit.world, center, radius, 0x333333, 2);
+  const orbit = addRing(kit.world, center, radius, 0x333333, 2);
+  const orbitCenter = addPkPoint(kit.world, center, 'c', 0x333333, [-.3, -.3, -.3]);
+  const orbitRadius = addDimension(kit.world, center, p, 'r', 0x333333);
   const sweep = addPkSphereSweep(kit.world, q, delta);
   sweep.setProgress(1);
   const plane = addPkPlane(kit.world, center, 7.3, 0x3f6ea8);
   const section = addRing(kit.world, q, 1, 0xcc3434, 2);
   const projected = new THREE.Vector3(q.x, q.y, center.z);
   const projection = addPkPoint(kit.world, projected, 'qΠ', 0x3f6ea8, [.45, .45, -.35]);
+  const centerDistance = addDimension(kit.world, center, projected, 'd', 0x3f6ea8);
+  centerDistance.userData.dimensionLabel.position.add(new THREE.Vector3(0, -.3, -.2));
   const triangle = new THREE.Group();
   kit.world.add(triangle);
   const radiusEnd = projected.clone().add(new THREE.Vector3(0, sliceRadius, 0));
@@ -899,7 +903,8 @@ function buildPk3Reduction(kit) {
   const corners = [projected.clone().add(new THREE.Vector3(0, .15, 0)),
     projected.clone().add(new THREE.Vector3(0, .15, .15)),
     projected.clone().add(new THREE.Vector3(0, 0, .15))];
-  triangle.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(corners), new THREE.LineBasicMaterial({ color: 0x777777 })));
+  const rightAngle = new THREE.Line(new THREE.BufferGeometry().setFromPoints(corners), new THREE.LineBasicMaterial({ color: 0x777777 }));
+  triangle.add(rightAngle);
   const candidates = new THREE.Group();
   kit.world.add(candidates);
   intersections.forEach((point) => {
@@ -907,24 +912,60 @@ function buildPk3Reduction(kit) {
     marker.position.copy(point);
     candidates.add(marker);
   });
-  return addPkPlayback(kit, 14, (time) => {
-    const level = THREE.MathUtils.lerp(q.z + delta + .3, center.z, pkProgress(time, 1, 6));
+  const slide = kit.container.closest('.slide');
+  const steps = [...slide.querySelectorAll('[data-pk-reduction-step].fragment')];
+  let step = -1, elapsed = 0;
+  const duration = 2.4;
+  const draw = () => {
+    const progress = THREE.MathUtils.smoothstep(elapsed / duration, 0, 1);
+    const level = step === 1
+      ? THREE.MathUtils.lerp(q.z + delta + .3, center.z, progress)
+      : step >= 2 ? center.z : q.z + delta + .3;
+    orbit.visible = step >= 1;
+    orbitCenter.group.visible = step >= 1;
+    orbitRadius.visible = step >= 1;
+    plane.visible = step >= 1;
     plane.position.z = level;
     const squaredRadius = delta ** 2 - (level - q.z) ** 2;
-    section.visible = squaredRadius > 0;
+    section.visible = step >= 1 && squaredRadius > 0;
     section.position.set(q.x, q.y, level);
     section.scale.setScalar(Math.sqrt(Math.max(.000001, squaredRadius)));
-    projection.group.visible = time >= 6;
-    triangle.visible = time >= 7;
-    candidates.visible = time >= 10;
+    projection.group.visible = step >= 2;
+    centerDistance.visible = step >= 2;
+    triangle.visible = step >= 2;
+    planarDimension.visible = step >= 3;
+    distanceDimension.visible = step >= 3;
+    rightAngle.visible = step >= 3;
+    candidates.visible = step >= 4;
     // Fade the full sphere to emphasize its exact section; never flatten it.
-    sweep.mesh.material.opacity = .14 - .115 * pkProgress(time, 8, 10);
-    kit.note.textContent = time < 1 ? '1 · The distance constraint is a sphere centered at q with radius δ.'
-      : time < 6 ? '2 · Move a transparent plane through the sphere until it reaches the fixed orbit plane Π.'
-      : time < 7 ? '3 · Project q onto Π: qΠ is the center of the red section circle.'
-      : time < 10 ? `4 · A right triangle gives δ⊥² = δ² − h²: h = ${fixed(h, 2)}, δ⊥ = ${fixed(sliceRadius, 2)}.`
-      : '5 · Keep the planar section. Its intersections with the black orbit give the two angles.';
-  });
+    sweep.mesh.material.opacity = step >= 4 ? .025 : step === 3 ? .14 - .115 * progress : .14;
+    kit.note.textContent = step === 0 ? 'Start · The distance constraint is a sphere centered at q with radius δ. Press → to construct the orbit plane.'
+      : step === 1 ? '1 · Slice the sphere at the orbit plane Π, centered at c with radius r. Press → for the projection.'
+      : step === 2 ? '2 · Project q onto Π: qΠ is the section center, h is the axial separation, and d is the planar center distance. Press → for the right triangle.'
+      : step === 3 ? `3 · The right triangle gives δ⊥² = δ² − h²: h = ${fixed(h, 2)}, δ⊥ = ${fixed(sliceRadius, 2)}. Press → for the intersections.`
+      : '4 · The feasible circle intersections give the two PK3 solutions. Press → to continue to the angle formula.';
+  };
+  const syncStep = () => {
+    const nextStep = document.body.classList.contains('mode-scroll')
+      ? steps.length : steps.filter((element) => element.classList.contains('revealed')).length;
+    if (nextStep === step) return;
+    const goingBack = nextStep < step;
+    step = nextStep;
+    // Backward navigation restores the finished construction for that equation.
+    elapsed = goingBack || document.body.classList.contains('mode-scroll') ? duration : 0;
+    draw();
+  };
+  const observer = new MutationObserver(syncStep);
+  steps.forEach((element) => observer.observe(element, { attributes: true, attributeFilter: ['class'] }));
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  kit.cleaners.push(() => observer.disconnect());
+  syncStep();
+  return (_time, dt) => {
+    if (!slide.classList.contains('active') && !document.body.classList.contains('mode-scroll')) return;
+    if (elapsed >= duration) return;
+    elapsed = Math.min(duration, elapsed + dt);
+    draw();
+  };
 }
 
 function addPkAxis(kit) {
@@ -1742,9 +1783,9 @@ async function buildCgaInteractive(kit) {
     const instructions = {
       target: 'Set p_d (magenta diamond), then rotate θ₂ until the circles meet.',
       theta2: 'Rotate θ₂ until C_A meets C_B. The angle snaps near an intersection.',
-      reversing: 'θ₂ found! Pause for 2 seconds, then the circle and robot return home.',
+      reversing: 'θ₂ found! The circle and robot return home.',
       theta3: 'Now rotate θ₃ until the tool reaches the carried point on C_A.',
-      restoring: 'θ₂ and θ₃ found! Pause for 2 seconds, then return to the chosen intersection.',
+      restoring: 'θ₂ and θ₃ found! Return to the chosen intersection.',
       theta1: 'Now rotate θ₁ to carry the tool from the intersection to p_d.',
       complete: 'Target reached! θ₁, θ₂ and θ₃ are snapped to the chosen IK solution.',
       unreachable: 'No IK branch was found for this target. Move p_d to choose another position.'

@@ -250,3 +250,80 @@ body.mode-scroll.lecture-05 .l5-video video { flex: none; height: auto; max-heig
   body.mode-scroll.lecture-05 .l5-slide > .layout-full.sing-builder { flex: none; height: auto; }
   body.mode-scroll.lecture-05 .sing-panel { max-height: none; }
 }
+
+/* Requested Jacobian explanations: keep the lecture palette and typography. */
+.l5-rate-primer .l5-roomy { align-items: start; margin-top: .45rem; }
+.l5-rate-primer .l5-roomy > .l5-card { padding: .7rem .85rem; }
+.l5-rate-primer .l5-symbol-list { display: grid; gap: .4rem; }
+.l5-rate-primer .equation { font-size: 1.05rem; margin-block: .5rem; }
+.l5-rate-primer .l5-takeaway,
+.l5-rate-map .l5-takeaway { font-size: .86rem; }
+.l5-rate-map .l5-columns { flex: 1; align-items: start; margin-top: .3rem; }
+.l5-rate-map .l5-derivation { align-content: start; }
+.l5-rate-map .l5-derivation p { margin: .3rem 0 0; font-size: .78rem; }
+.lecture-05 .l5-rate-map .equation { font-size: .82rem; margin-block: .35rem; }
+.l5-rate-map mjx-container[display="true"] { margin: .5em 0; }
+
+.l5-jacobian-layout,
+.l5-jacobian-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 1rem;
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+.l5-jacobian-layout > *,
+.l5-jacobian-overview > * { min-width: 0; min-height: 0; }
+.l5-jacobian-layout > div:first-child { display: grid; gap: .45rem; align-content: start; }
+.l5-jacobian-layout .l5-card { padding: .5rem .65rem; }
+.l5-jacobian-layout .l5-card h3 { font-size: .92rem; }
+.l5-jacobian-layout p { margin: .3rem 0; font-size: .77rem; line-height: 1.35; }
+.lecture-05 .l5-jacobian-layout .equation { font-size: .76rem; margin-block: .3rem; }
+.l5-jacobian-layout mjx-container[display="true"] { margin: .5em 0; }
+.l5-jacobian-layout .l5-derivation { align-content: start; }
+.l5-jacobian-layout .l5-derivation > div { padding: .45rem .6rem; }
+.l5-wrist-choice .l5-takeaway,
+.l5-frame-change .l5-takeaway { font-size: .85rem; }
+.l5-linear-geometry .l5-jacobian-layout { margin-top: .45rem; }
+.lecture-05 .l5-linear-geometry > .l5-abb-matrix { font-size: .84rem; margin-block: .4rem; }
+.l5-linear-geometry > .l5-abb-matrix mjx-container[display="true"] { margin: .45em 0; }
+.l5-frame-change .l5-derivation .l5-step-label { font-size: .76rem; }
+.l5-jacobian-exercise .l5-jacobian-layout .equation { font-size: .77rem; }
+.l5-jacobian-exercise .l5-derivation { margin-top: .2rem; }
+
+.l5-jacobian-blocks mjx-mtr:nth-child(-n+3) { background: rgba(237, 27, 47, .09); }
+.l5-jacobian-blocks mjx-mtr:nth-child(n+4) { background: rgba(63, 110, 168, .10); }
+.l5-block-legend { display: grid; gap: .3rem; font-size: .85rem; }
+.l5-block-legend > span { padding: .35rem .5rem; }
+.l5-block-legend .linear { background: rgba(237, 27, 47, .09); border-left: 3px solid #ed1b2f; }
+.l5-block-legend .angular { background: rgba(63, 110, 168, .10); border-left: 3px solid #3f6ea8; }
+.l5-jacobian-overview { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.l5-jacobian-overview .l5-columns { grid-template-columns: 1fr; align-content: start; gap: .4rem; }
+.l5-jacobian-overview .l5-card { padding: .5rem .7rem; }
+.l5-jacobian-overview .l5-card h3 { font-size: .88rem; }
+.l5-jacobian-overview .l5-card p { font-size: .77rem; }
+.lecture-05 .l5-jacobian-overview .equation { font-size: .82rem; margin-block: .45rem; }
+.l5-full-jacobian .l5-takeaway { font-size: .83rem; }
+.lecture-05 .l5-full-jacobian > .l5-abb-matrix { font-size: 1rem; margin-block: .45rem; }
+.l5-full-jacobian > .l5-abb-matrix mjx-container[display="true"] { margin: .55em 0; }
+
+/* ABB schematic: controls and screw components remain outside the drawing. */
+.l5-abb-geometry { display: flex; flex-direction: column; border: 1px solid var(--line); background: #fcfcfc; min-height: 0; overflow: hidden; }
+.l5-abb-toolbar { display: flex; flex-wrap: wrap; gap: .3rem .55rem; align-items: center; padding: .4rem .5rem; border-bottom: 1px solid var(--line); font-size: .67rem; }
+.l5-abb-toolbar label { white-space: nowrap; }
+.l5-abb-toolbar select { padding: .13rem .2rem; max-width: 100%; font: inherit; background: white; color: var(--ink); border: 1px solid #bbb; }
+.l5-abb-toolbar > span { color: var(--muted); }
+.l5-abb-stage { position: relative; flex: 1; min-height: 7rem; overflow: hidden; }
+.l5-abb-stage > canvas { display: block; width: 100%; height: 100%; position: absolute; inset: 0; }
+.l5-abb-stage .course-3d-controls { top: auto; right: .35rem; bottom: .35rem; font-size: .6rem; }
+.l5-abb-readout { margin: 0; padding: .35rem .5rem; border-top: 1px solid var(--line); background: white; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .62rem; line-height: 1.45; white-space: pre-line; }
+.l5-abb-geometry[data-compact="true"] .l5-abb-stage { min-height: 6rem; }
+.l5-abb-geometry[data-compact="true"] .l5-abb-toolbar { padding-block: .25rem; }
+.l5-abb-geometry[data-compact="true"] .l5-abb-readout { font-size: .58rem; padding-block: .25rem; }
+
+@media (max-width: 900px) {
+  body.mode-scroll .l5-jacobian-layout,
+  body.mode-scroll .l5-jacobian-overview { grid-template-columns: 1fr; }
+  body.mode-scroll .l5-abb-stage { min-height: 20rem; }
+}

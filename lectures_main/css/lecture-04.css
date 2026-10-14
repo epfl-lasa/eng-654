@@ -176,6 +176,23 @@
 .lecture-04 .wrist-flip-layout,
 .lecture-04 .puma-target-layout { align-items: start; }
 
+/* Slides 10 and 14: keep the variable definitions beside their existing robot scenes. */
+.lecture-04 .wrist-point-slide,
+.lecture-04 .wrist-decoupling-slide { padding-bottom: 4rem; }
+.lecture-04 .wrist-point-slide .wrist-point-layout { align-items: stretch; }
+.lecture-04 .wrist-point-slide .ik6r-demo,
+.lecture-04 .wrist-decoupling-slide .ik6r-demo { min-height: 0; }
+.lecture-04 .wrist-decoupling-slide .layout-30-70 { flex: 1; }
+.lecture-04 .wrist-point-slide .condition-list,
+.lecture-04 .wrist-decoupling-slide .condition-list { font-size: .85rem; gap: .25rem; }
+.lecture-04 .wrist-point-slide .condition-list > div { grid-template-columns: 6rem minmax(0, 1fr); padding: .35rem .4rem; }
+.lecture-04 .wrist-decoupling-slide .condition-list > div { grid-template-columns: 1fr; gap: .25rem; padding: .4rem; }
+.lecture-04 .wrist-decoupling-slide p:not(.slide-kicker):not(.slide-subtitle) { font-size: .85rem; }
+.lecture-04 .wrist-point-slide .equation.micro,
+.lecture-04 .wrist-decoupling-slide .equation.micro { font-size: .7rem; }
+.lecture-04 .wrist-point-slide .ik-takeaway,
+.lecture-04 .wrist-decoupling-slide .ik-takeaway { font-size: .85rem; }
+
 .lecture-04 :is(
   [data-mode="partition"],
   [data-mode="wrist-center"],

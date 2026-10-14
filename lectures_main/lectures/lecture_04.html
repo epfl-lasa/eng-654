@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../css/navigation.css">
   <link rel="stylesheet" href="../css/viz.css">
   <link rel="stylesheet" href="../css/lecture-03.css">
-  <link rel="stylesheet" href="../css/lecture-04.css?v=20260913-7">
+  <link rel="stylesheet" href="../css/lecture-04.css?v=20261008-ik">
   <script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']],displayMath:[['\\[','\\]']]}};</script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <script type="importmap">{"imports":{"three":"../vendor/three/build/three.module.js","three/addons/":"../vendor/three/examples/jsm/"}}</script>
@@ -164,19 +164,26 @@
     </div>
   </section>
 
-  <section class="slide">
+  <section class="slide wrist-point-slide">
     <p class="slide-kicker">Separating position from orientation</p>
     <h2 class="slide-title">Orientation tells us where the wrist center must be</h2>
-    <div class="layout-two-column wrist-point-layout">
-      <div class="equation wrist-equation">
-        \[\boxed{p_w=p_d-d_6R_de_x},\qquad e_x=\begin{bmatrix}1\\0\\0\end{bmatrix},\ d_6=1.5.\]
+    <p class="slide-subtitle">Locate each quantity on the custom 6R robot; the position vectors and tool offset are expressed in the base frame.</p>
+    <div class="layout-40-60 tight-gap wrist-point-layout">
+      <div>
+        <div class="equation compact wrist-equation">\[\boxed{p_w=p_d-d_6R_de_x}\]</div>
+        <div class="condition-list">
+          <div><strong>\(p_d\)</strong><span>desired end-effector position: the red point</span></div>
+          <div><strong>\(p_w\)</strong><span>wrist center where axes 4, 5 and 6 intersect: the blue point</span></div>
+          <div><strong>\(R_d\)</strong><span>desired tool orientation relative to the base</span></div>
+          <div><strong>\(e_x\)</strong><span>\([1,0,0]^T\), the unit tool \(x\)-axis; \(R_de_x\) expresses it in the base</span></div>
+          <div><strong>\(d_6R_de_x\)</strong><span>directed offset from \(p_w\) to \(p_d\); \(d_6=1.5\,\mathrm m\)</span></div>
+        </div>
+        <div class="equation micro">\[p_w=\begin{bmatrix}5.112668\\.585998\\.715009\end{bmatrix}-1.5\begin{bmatrix}.782996\\.384659\\-.488830\end{bmatrix}
+          =\begin{bmatrix}3.938174\\.009009\\1.448254\end{bmatrix}\mathrm m.\]</div>
       </div>
-      <div class="equation compact">
-        \[p_w=\begin{bmatrix}5.112668\\.585998\\.715009\end{bmatrix}-1.5\begin{bmatrix}.782996\\.384659\\-.488830\end{bmatrix}
-        =\boxed{\begin{bmatrix}3.938174\\.009009\\1.448254\end{bmatrix}\mathrm m}.\]
-      </div>
+      <div data-custom6r-ik data-mode="wrist-center" data-show-position-vectors="true"></div>
     </div>
-    <div class="ik-takeaway">Because $R_de_x$ is the joint-6 axis direction, the wrist variables disappear from the position equation.</div>
+    <div class="ik-takeaway">Subtract the blue tool-offset vector from \(p_d\) to obtain \(p_w\). This removes the wrist angles from the arm position equation.</div>
   </section>
 
   <section class="slide">
@@ -223,19 +230,23 @@
     <div class="ik-takeaway">The wrist point is identical, but ${}^{0}R_3=R_z(q_1)R_y(q_2)R_z(q_3)$ differs; every arm row therefore needs its own wrist solve.</div>
   </section>
 
-  <section class="slide">
-    <p class="slide-kicker">What differs between arm branches</p>
-    <h2 class="slide-title">Position agreement does not imply orientation agreement</h2>
+  <section class="slide wrist-decoupling-slide">
+    <p class="slide-kicker">From the solved arm to the remaining wrist</p>
+    <h2 class="slide-title">Position IK is solved; orientation IK remains</h2>
+    <p class="slide-subtitle">We have solved for \(\theta_1,\theta_2,\theta_3\) to place \(p_w\). Now solve for \(\theta_4,\theta_5,\theta_6\) to match the desired orientation.</p>
     <div class="layout-30-70">
       <div>
         <div class="condition-list">
-          <div><strong>position</strong><span>$p_w$ fixes every triad origin</span></div>
-          <div><strong>orientation</strong><span>${}^{0}R_3$ fixes the remaining wrist rotation</span></div>
+          <div><strong>solved · 1–3</strong><span>The wrist-center position \(p_w\) is controlled solely by \(\theta_1,\theta_2,\theta_3\).</span></div>
+          <div><strong>remaining · 4–6</strong><span>For each fixed arm solution, \(\theta_4,\theta_5,\theta_6\) alone can set the full orientation at \(p_w\), while keeping \(p_w\) fixed.</span></div>
         </div>
-        <div class="equation compact">\[{}^{3}R_6=({}^{0}R_3)^\top R_d\]</div>
+        <div class="equation micro">\[p_w=f_{\mathrm{arm}}(\theta_1,\theta_2,\theta_3)\]</div>
+        <p>Each arm branch gives its own \({}^{0}R_3\). Express the desired orientation in that branch’s frame, then solve the wrist:</p>
+        <div class="equation micro boxed-result">\[\underbrace{{}^{3}R_6(\theta_4,\theta_5,\theta_6)}_{\text{remaining orientation IK}}=({}^{0}R_3)^\top R_d.\]</div>
       </div>
       <div data-custom6r-ik data-mode="arm-branches"></div>
     </div>
+    <div class="ik-takeaway"><strong>Decoupling:</strong> joints 1–3 place \(p_w\); with that arm branch fixed, joints 4–6 complete the orientation. Different arm branches reach the same point with different frame-3 orientations, so each needs its own wrist solve.</div>
   </section>
 
   <section class="slide">
@@ -592,6 +603,6 @@
 
 </main>
 <script src="../js/deck/nav-runtime.js"></script>
-<script type="module" src="../js/main.js?v=20260913-7"></script>
+<script type="module" src="../js/main.js?revision=20261008-ik"></script>
 </body>
 </html>

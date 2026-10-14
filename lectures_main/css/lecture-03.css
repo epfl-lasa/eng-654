@@ -586,6 +586,17 @@
 .pieper-recovery .ik-takeaway { font-size: clamp(.84rem, 1.05vw, 1.08rem); }
 .pieper-recovery .boxed-result { padding: .45rem; }
 
+/* Slides 08–09: three elimination steps per slide, with room for the takeaway. */
+.pieper-overview .pieper-columns { gap: 1.1rem; margin-top: .2rem; align-items: start; }
+.pieper-overview .pieper-columns > :first-child { padding-right: 1.1rem; }
+.pieper-overview .pieper-steps { display: grid; gap: .75rem; min-width: 0; }
+.pieper-overview .pieper-steps h3 { margin: .15rem 0; font-size: 1rem; }
+.pieper-overview .pieper-steps p { margin: .35rem 0; font-size: .88rem; line-height: 1.35; }
+.lecture-03 .pieper-overview .equation { margin-block: .35rem; font-size: .88rem; }
+.pieper-overview mjx-container[display="true"] { margin: .4em 0; }
+.pieper-overview .ik-question { padding: .35rem .5rem; }
+.pieper-overview .ik-takeaway { flex-shrink: 0; font-size: .84rem; margin-top: .8rem; }
+
 /* Direct back-substitution: reuse the earlier formulas and work one example. */
 .lecture-03 .pk-simple-backsub { padding-bottom: 4rem; }
 .pk-simple-backsub p:not(.slide-title):not(.slide-subtitle):not(.slide-kicker),
@@ -646,6 +657,22 @@
 .pk-angle-columns p,
 .pk-angle-derivation .ik-callout { font-size: .86rem; line-height: 1.35; }
 .pk-angle-columns .boxed-result { padding: .45rem; }
+.pk-angle-schematic { margin: 0; min-width: 0; }
+.pk-angle-schematic svg { max-height: 100%; }
+.pk-angle-schematic text[fill="#3f6ea8"] { fill: #3f6ea8; }
+.pk-angle-schematic text[fill="#f00"] { fill: var(--epfl-red); }
+.pk-angle-schematic text[fill="#555"] { fill: var(--muted); }
+.pk-angle-steps { display: grid; align-content: start; gap: .2rem; }
+.pk-angle-steps > div { min-width: 0; }
+.pk-angle-steps h3 { font-size: .86rem; margin: .2rem 0; }
+.pk-angle-steps p { margin: .2rem 0; font-size: .72rem; }
+.lecture-03 .pk-angle-steps .equation { font-size: .68rem; margin-block: .2rem; }
+.pk-angle-steps mjx-container[display="true"] { margin: .35em 0; }
+.pk-reduction-steps { display: grid; align-content: start; gap: .4rem; }
+.pk-reduction-steps h3 { margin: .2rem 0; font-size: .9rem; }
+.pk-reduction-steps p { margin: .2rem 0; font-size: .75rem; line-height: 1.32; }
+.lecture-03 .pk-reduction-steps .equation { margin-block: .25rem; font-size: .72rem; }
+.pk-reduction-steps mjx-container[display="true"] { margin: .4em 0; }
 .pk-animation-steps { gap: .6rem; }
 .pk-animation-steps .derivation-row { grid-template-columns: 1.2rem 1fr; gap: .5rem; }
 .pk-animation-steps p { font-size: .88rem; line-height: 1.35; }

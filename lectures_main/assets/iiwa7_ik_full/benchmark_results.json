@@ -1,0 +1,132 @@
+{
+  "date": "2026-10-14",
+  "timezone": "Europe/Zurich",
+  "cpu": "Intel Core i7-1360P",
+  "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+  "binary_sha256": "475da767f2e65081b47ab7393f32174cdc3fbed434252e35516d3773de0b10fb",
+  "urdf": "../models/iiwa7/iiwa7.urdf",
+  "urdf_sha256": "c4709df4edcfc5d86878d38fd55e6dc070b46394a0718f17eefd3ebcf45489c6",
+  "runs": [
+    {
+      "command": [
+        "iiwa7-ik",
+        "benchmark",
+        "--samples",
+        "1000000",
+        "--seed",
+        "654"
+      ],
+      "report": {
+        "samples": 1000000,
+        "seed": 654,
+        "distribution": "uniform [-pi, pi) for all seven joints",
+        "frame": "iiwa_link_ee",
+        "workers": 1,
+        "input_fk": "literal iiwa7.urdf RPY/XYZ origin chain; quaternion round trip",
+        "timing_scope": "serial solve() calls including candidate FK verification; excludes input FK, RNG, JSON and independent output validation",
+        "solver_seconds": 6.572226397000001,
+        "microseconds_per_pose": 6.572226397000001,
+        "poses_per_second": 152155.44011941922,
+        "total_seconds": 9.246739176,
+        "solved_poses": 1000000,
+        "missed_poses": 0,
+        "recovered_seed_configurations": 1000000,
+        "missed_seed_configurations": 0,
+        "seed_joint_tolerance_rad": 2e-06,
+        "maximum_seed_joint_error_rad": 1.1628567841981408e-07,
+        "returned_solutions": 8000000,
+        "solution_count_histogram": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1000000
+        ],
+        "poses_with_eight_solutions": 1000000,
+        "within_limits_solutions": 2009812,
+        "rejected_by_fk": 0,
+        "invalid_returned_solutions": 0,
+        "maximum_position_error_m": 7.793697707769832e-16,
+        "rms_position_error_m": 1.8744489268995882e-16,
+        "maximum_rotation_error_rad": 1.1795303267933986e-15,
+        "rms_rotation_error_rad": 3.6473473243076173e-16,
+        "maximum_q3_error_rad": 0.0,
+        "first_failures": [],
+        "passed": true
+      }
+    },
+    {
+      "command": [
+        "iiwa7-ik",
+        "benchmark",
+        "--samples",
+        "1000000",
+        "--seed",
+        "654",
+        "--within-limits"
+      ],
+      "report": {
+        "samples": 1000000,
+        "seed": 654,
+        "distribution": "uniform within iiwa7.urdf hard limits",
+        "frame": "iiwa_link_ee",
+        "workers": 1,
+        "input_fk": "literal iiwa7.urdf RPY/XYZ origin chain; quaternion round trip",
+        "timing_scope": "serial solve() calls including candidate FK verification; excludes input FK, RNG, JSON and independent output validation",
+        "solver_seconds": 6.376045674999997,
+        "microseconds_per_pose": 6.376045674999997,
+        "poses_per_second": 156837.0195215078,
+        "total_seconds": 9.018468746,
+        "solved_poses": 1000000,
+        "missed_poses": 0,
+        "recovered_seed_configurations": 1000000,
+        "missed_seed_configurations": 0,
+        "seed_joint_tolerance_rad": 2e-06,
+        "maximum_seed_joint_error_rad": 3.574195606148578e-09,
+        "returned_solutions": 8000000,
+        "solution_count_histogram": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1000000
+        ],
+        "poses_with_eight_solutions": 1000000,
+        "within_limits_solutions": 6302170,
+        "rejected_by_fk": 0,
+        "invalid_returned_solutions": 0,
+        "maximum_position_error_m": 9.016891721015752e-16,
+        "rms_position_error_m": 2.1211942899509274e-16,
+        "maximum_rotation_error_rad": 1.1961493868598846e-15,
+        "rms_rotation_error_rad": 3.894671081742573e-16,
+        "maximum_q3_error_rad": 0.0,
+        "first_failures": [],
+        "passed": true
+      }
+    }
+  ],
+  "independent_xml_validation": {
+    "passed": true,
+    "poses": 1024,
+    "solutions": 8192,
+    "geometry_matches_urdf": true,
+    "limits_match_urdf": true,
+    "max_position_error_m": 6.883508658873538e-16,
+    "max_rotation_matrix_element_error": 1.1102230246251565e-15
+  },
+  "existing_js_branch_comparison": {
+    "passed": true,
+    "poses": 1000,
+    "matched_branches": 8000,
+    "maximum_joint_difference_rad": 6.169003086142766e-10
+  }
+}

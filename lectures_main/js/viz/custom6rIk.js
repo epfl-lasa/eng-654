@@ -254,10 +254,29 @@ async function buildWristCenter(kit) {
   const target = endEffectorTransform(q);
   const p = new THREE.Vector3().setFromMatrixPosition(target);
   const wrist = wristFromPose(target);
-  addFrame(kit.world, target, .58, 'F₆');
-  marker(kit.world, p, .12, 0xff0000, 'p_d');
-  marker(kit.world, wrist, .15, 0x2775ff, 'p_w');
-  kit.world.add(tube(wrist, p, .028, 0x2775ff, .85));
+  const showPositionVectors = kit.container.dataset.showPositionVectors === 'true';
+  const toolFrame = addFrame(kit.world, target, .58, showPositionVectors ? 'R_d' : 'F₆');
+  const toolPoint = marker(kit.world, p, .12, 0xff0000, 'p_d');
+  const wristPoint = marker(kit.world, wrist, .15, 0x2775ff, 'p_w');
+  if (showPositionVectors) {
+    kit.setCamera([8.2, 6.2, 6.6], [3.3, .45, 1.15]);
+    // Keep the two geometric points visible even when they lie inside an STL mesh.
+    [toolPoint, wristPoint].forEach((point) => {
+      point.material.transparent = true;
+      point.material.depthTest = false;
+      point.material.depthWrite = false;
+      point.renderOrder = 21;
+    });
+    toolFrame.children.find((child) => child.isSprite).position.add(new THREE.Vector3(-.3, 0, .5));
+    toolPoint.children.find((child) => child.isSprite).position.set(.3, -.3, -.25);
+    const origin = new THREE.Vector3();
+    addFrame(kit.world, new THREE.Matrix4(), .6, 'F₀');
+    addArrow(kit.world, origin, p, 0xff0000);
+    addArrow(kit.world, origin, wrist, 0x2775ff);
+    addArrow(kit.world, wrist, p.clone().sub(wrist), 0x2775ff);
+  } else {
+    kit.world.add(tube(wrist, p, .028, 0x2775ff, .85));
+  }
   addLabel(kit.world, wrist.clone().lerp(p, .5).add(new THREE.Vector3(0, 0, .22)), 'd₆ R_d eₓ', 0x2775ff);
   kit.note.textContent = 'Subtract the final 1.5 m link along the desired tool x-axis: p_w = p_d − d₆R_d eₓ.';
   return () => robot.update(q);
